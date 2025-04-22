@@ -1,0 +1,44 @@
+.btn-primary {
+  background: rgb(166, 18, 36);
+  background: linear-gradient(
+    90deg,
+    rgba(166, 18, 36, 1) 2%,
+    rgba(133, 27, 33, 0.9831582291119573) 27%,
+    rgba(10, 13, 10, 1) 99%
+  );
+  border: none;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+/* Estilo para el botón flotante del chatbot */
+.chatbot-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  border-radius: 50%;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+
+/* Cambiar color del botón cuando se pasa el mouse por encima */
+.chatbot-btn:hover {
+  background-color: #28a745;
+}
+
+.bg-primary {
+  background: rgb(166, 18, 36);
+  background: linear-gradient(
+    90deg,
+    rgba(166, 18, 36, 1) 2%,
+    rgba(133, 27, 33, 0.9831582291119573) 27%,
+    rgba(10, 13, 10, 1) 99%
+  );
+  border: none;
+}
+.react-datepicker-wrapper {
+  width: 100%;
+}

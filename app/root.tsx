@@ -67,6 +67,9 @@ export default function App() {
               <Nav.Link as={Link} to="/reservations">
                 Lista Reservas
               </Nav.Link>
+              <Nav.Link as={Link} to="/tipoequipo">
+                Tipo Equipo
+              </Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Container>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { deleteTipoEquipo, getTipoEquipos } from '~/services/tipoEquipoServices'
+import { deleteTipoEquipo, getTipoEquipos } from '~/services/tipoEquipoService'
 import type { TipoEquipo } from '~/types/tipoEquipo'
 import TipoEquipoList from '../components/tipoEquipo/TipoEquipoList'
 

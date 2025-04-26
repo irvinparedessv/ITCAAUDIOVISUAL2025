@@ -70,6 +70,9 @@ export default function App() {
               <Nav.Link as={Link} to="/tipoequipo">
                 Tipo Equipo
               </Nav.Link>
+              <Nav.Link as={Link} to="/equipo">
+                Equipos
+              </Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Container>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createTipoEquipo, updateTipoEquipo } from '~/services/tipoEquipoServices'
+import { createTipoEquipo, updateTipoEquipo } from '~/services/tipoEquipoService'
 import type { TipoEquipo } from '~/types/tipoEquipo'
 
 interface Props {

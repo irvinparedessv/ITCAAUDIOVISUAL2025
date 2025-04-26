@@ -15,9 +15,10 @@ export default function EquipoList({ equipos, tipos, onEdit, onDelete }: Props) 
   }
 
   return (
-    <div className="table-responsive">
-      <table className="table table-bordered table-hover align-middle">
-        <thead className="table-light">
+    <div className="table-responsive rounded shadow p-3 bg-white mt-4">
+      <h4 className="mb-3 text-center">Listado de Equipos</h4>
+      <table className="table table-hover align-middle text-center">
+        <thead className="table-dark">
           <tr>
             <th>Nombre</th>
             <th>Descripción</th>
@@ -30,10 +31,12 @@ export default function EquipoList({ equipos, tipos, onEdit, onDelete }: Props) 
         <tbody>
           {equipos.map(equipo => (
             <tr key={equipo.id}>
-              <td>{equipo.nombre}</td>
+              <td className="fw-bold">{equipo.nombre}</td>
               <td>{equipo.descripcion}</td>
-              <td className={equipo.estado ? 'text-success' : 'text-danger'}>
-                {equipo.estado ? 'Disponible' : 'No disponible'}
+              <td>
+                <span className={`badge ${equipo.estado ? 'bg-success' : 'bg-danger'}`}>
+                  {equipo.estado ? 'Disponible' : 'No disponible'}
+                </span>
               </td>
               <td>{equipo.cantidad}</td>
               <td><em>{getTipoNombre(equipo.tipo_equipo_id)}</em></td>

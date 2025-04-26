@@ -42,3 +42,9 @@
 .react-datepicker-wrapper {
   width: 100%;
 }
+
+
+.table-responsive {
+  background-color: #fdfdfd;
+  border-radius: 12px;
+}

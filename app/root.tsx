@@ -23,10 +23,6 @@ import {
 } from "react-icons/fa";
 import { Spinner, Dropdown } from "react-bootstrap";
 import { FaComputer } from "react-icons/fa6";
-import { useEffect, useState } from "react";
-import { FaHome, FaPlus, FaList, FaUserCircle, FaMoon, FaSun } from "react-icons/fa";
-import { Spinner, Dropdown } from "react-bootstrap";
-import { FaComputer } from "react-icons/fa6";
 
 // ---- HEAD Links ---- //
 export const links = () => [
@@ -68,31 +64,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
-  const [darkMode, setDarkMode] = useState(() => {
-    // Verificar preferencia del sistema o localStorage
-    if (typeof window !== 'undefined') {
-      const savedMode = localStorage.getItem('darkMode');
-      return savedMode ? JSON.parse(savedMode) : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
-
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("darkMode", JSON.stringify(darkMode));
       if (darkMode) {
-        document.documentElement.setAttribute('data-bs-theme', 'dark');
+        document.documentElement.setAttribute("data-bs-theme", "dark");
       } else {
-        document.documentElement.setAttribute('data-bs-theme', 'light');
+        document.documentElement.setAttribute("data-bs-theme", "light");
       }
     }
   }, [darkMode]);
 
-  const toggleDarkMode = () => setDarkMode(!darkMode);
-
   return (
     <html lang="en" className={darkMode ? "dark" : "light"}>
-    <html lang="en" className={darkMode ? 'dark' : 'light'}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -108,18 +92,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             aria-label={
               darkMode ? "Switch to light mode" : "Switch to dark mode"
             }
-          >
-            {darkMode ? <FaSun size={20} /> : <FaMoon size={20} />}
-          </Button>
-          {children}
-        </AuthProvider>
-      <body className="bg-body">
-        <AuthProvider>
-          <Button 
-            onClick={toggleDarkMode} 
-            variant="link" 
-            className="position-fixed bottom-0 end-0 m-3 p-2 rounded-circle shadow"
-            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {darkMode ? <FaSun size={20} /> : <FaMoon size={20} />}
           </Button>
@@ -285,16 +257,32 @@ export default function App() {
 
                 {user?.role === "Administrador" && (
                   <>
-                    <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded">
+                    <Nav.Link
+                      as={Link}
+                      to="/addreservation"
+                      className="px-3 py-2 rounded"
+                    >
                       <FaComputer className="me-1" /> Equipos
                     </Nav.Link>
-                    <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded">
+                    <Nav.Link
+                      as={Link}
+                      to="/reservations"
+                      className="px-3 py-2 rounded"
+                    >
                       <FaList className="me-1" /> Reservas
                     </Nav.Link>
-                    <Nav.Link as={Link} to="/formEquipo" className="px-3 py-2 rounded">
+                    <Nav.Link
+                      as={Link}
+                      to="/formEquipo"
+                      className="px-3 py-2 rounded"
+                    >
                       <FaPlus className="me-1" /> Nuevo Equipo
                     </Nav.Link>
-                    <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded">
+                    <Nav.Link
+                      as={Link}
+                      to="/formEspacio"
+                      className="px-3 py-2 rounded"
+                    >
                       <FaList className="me-1" /> Espacios
                     </Nav.Link>
                   </>
@@ -302,10 +290,18 @@ export default function App() {
 
                 {user?.role === "Encargado" && (
                   <>
-                    <Nav.Link as={Link} to="/formEquipo" className="px-3 py-2 rounded">
+                    <Nav.Link
+                      as={Link}
+                      to="/formEquipo"
+                      className="px-3 py-2 rounded"
+                    >
                       <FaPlus className="me-1" /> Equipos
                     </Nav.Link>
-                    <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded">
+                    <Nav.Link
+                      as={Link}
+                      to="/formEspacio"
+                      className="px-3 py-2 rounded"
+                    >
                       <FaList className="me-1" /> Reservas
                     </Nav.Link>
                   </>
@@ -313,17 +309,29 @@ export default function App() {
 
                 {user?.role === "Prestamista" && (
                   <>
-                    <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded">
+                    <Nav.Link
+                      as={Link}
+                      to="/addreservation"
+                      className="px-3 py-2 rounded"
+                    >
                       <FaPlus className="me-1" /> Reservar
                     </Nav.Link>
-                    <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded">
+                    <Nav.Link
+                      as={Link}
+                      to="/reservations"
+                      className="px-3 py-2 rounded"
+                    >
                       <FaList className="me-1" /> Mis Reservas
                     </Nav.Link>
                   </>
                 )}
 
                 <Dropdown align="end">
-                  <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic" className="d-flex align-items-center">
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    id="dropdown-basic"
+                    className="d-flex align-items-center"
+                  >
                     <FaUserCircle className="me-2" />
                     <span className="d-none d-lg-inline">{user?.name}</span>
                   </Dropdown.Toggle>

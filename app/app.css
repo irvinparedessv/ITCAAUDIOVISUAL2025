@@ -43,13 +43,10 @@
   width: 100%;
 }
 
-
-
-
-
-
-
-
+.table-responsive {
+  background-color: #fdfdfd;
+  border-radius: 12px;
+}
 /* Login.css */
 .login-container {
   background-color: #f8f9fa;
@@ -99,16 +96,6 @@
   color: #7b8a8b !important;
 }
 
-
-
-
-
-
-
-
-
-
-
 .fade-in {
   opacity: 0;
   animation: fadeIn 0.6s ease-in-out forwards;
@@ -124,7 +111,6 @@
     transform: translateY(0);
   }
 }
-
 
 /* Estilos para modo oscuro/claro */
 body.dark {
@@ -149,10 +135,10 @@ body.light {
 }
 
 /* Mejor contraste en modo oscuro */
-[data-bs-theme=dark] .bg-light {
+[data-bs-theme="dark"] .bg-light {
   background-color: var(--bs-dark-bg-subtle) !important;
 }
 
-[data-bs-theme=dark] pre {
+[data-bs-theme="dark"] pre {
   background-color: var(--bs-dark-bg-subtle) !important;
 }

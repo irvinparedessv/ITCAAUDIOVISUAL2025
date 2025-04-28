@@ -13,6 +13,17 @@ import { useAuth, AuthProvider } from "./hooks/AuthContext";
 import "./app.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useEffect, useState } from "react";
+import {
+  FaHome,
+  FaPlus,
+  FaList,
+  FaUserCircle,
+  FaMoon,
+  FaSun,
+} from "react-icons/fa";
+import { Spinner, Dropdown } from "react-bootstrap";
+import { FaComputer } from "react-icons/fa6";
+import { useEffect, useState } from "react";
 import { FaHome, FaPlus, FaList, FaUserCircle, FaMoon, FaSun } from "react-icons/fa";
 import { Spinner, Dropdown } from "react-bootstrap";
 import { FaComputer } from "react-icons/fa6";
@@ -33,6 +44,30 @@ export const links = () => [
 
 // ---- LAYOUT HTML ---- //
 export function Layout({ children }: { children: React.ReactNode }) {
+  const [darkMode, setDarkMode] = useState(() => {
+    // Verificar preferencia del sistema o localStorage
+    if (typeof window !== "undefined") {
+      const savedMode = localStorage.getItem("darkMode");
+      return savedMode
+        ? JSON.parse(savedMode)
+        : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("darkMode", JSON.stringify(darkMode));
+      if (darkMode) {
+        document.documentElement.setAttribute("data-bs-theme", "dark");
+      } else {
+        document.documentElement.setAttribute("data-bs-theme", "light");
+      }
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => setDarkMode(!darkMode);
+
   const [darkMode, setDarkMode] = useState(() => {
     // Verificar preferencia del sistema o localStorage
     if (typeof window !== 'undefined') {
@@ -56,6 +91,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
   return (
+    <html lang="en" className={darkMode ? "dark" : "light"}>
     <html lang="en" className={darkMode ? 'dark' : 'light'}>
       <head>
         <meta charSet="utf-8" />
@@ -63,6 +99,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
+      <body className="bg-body">
+        <AuthProvider>
+          <Button
+            onClick={toggleDarkMode}
+            variant="link"
+            className="position-fixed bottom-0 end-0 m-3 p-2 rounded-circle shadow"
+            aria-label={
+              darkMode ? "Switch to light mode" : "Switch to dark mode"
+            }
+          >
+            {darkMode ? <FaSun size={20} /> : <FaMoon size={20} />}
+          </Button>
+          {children}
+        </AuthProvider>
       <body className="bg-body">
         <AuthProvider>
           <Button 
@@ -110,6 +160,116 @@ export default function App() {
 
   return (
     <>
+      {isAuthenticated && (
+        <Navbar expand="lg" className="px-4 border-bottom">
+          <Container fluid>
+            <Navbar.Brand as={Link} to="/" className="fw-bold">
+              ReservasTI
+            </Navbar.Brand>
+            <Navbar.Toggle aria-controls="basic-navbar-nav" />
+            <Navbar.Collapse id="basic-navbar-nav">
+              <Nav className="ms-auto align-items-center gap-2">
+                <Nav.Link as={Link} to="/" className="px-3 py-2 rounded">
+                  <FaHome className="me-1" /> Inicio
+                </Nav.Link>
+
+                {user?.role === "Administrador" && (
+                  <>
+                    <Nav.Link
+                      as={Link}
+                      to="/addreservation"
+                      className="px-3 py-2 rounded"
+                    >
+                      <FaComputer className="me-1" /> Equipos
+                    </Nav.Link>
+                    <Nav.Link
+                      as={Link}
+                      to="/reservations"
+                      className="px-3 py-2 rounded"
+                    >
+                      <FaList className="me-1" /> Reservas
+                    </Nav.Link>
+                    <Nav.Link
+                      as={Link}
+                      to="/formEquipo"
+                      className="px-3 py-2 rounded"
+                    >
+                      <FaPlus className="me-1" /> Nuevo Equipo
+                    </Nav.Link>
+                    <Nav.Link
+                      as={Link}
+                      to="/formEspacio"
+                      className="px-3 py-2 rounded"
+                    >
+                      <FaList className="me-1" /> Espacios
+                    </Nav.Link>
+                  </>
+                )}
+
+                {user?.role === "Encargado" && (
+                  <>
+                    <Nav.Link
+                      as={Link}
+                      to="/formEquipo"
+                      className="px-3 py-2 rounded"
+                    >
+                      <FaPlus className="me-1" /> Equipos
+                    </Nav.Link>
+                    <Nav.Link
+                      as={Link}
+                      to="/formEspacio"
+                      className="px-3 py-2 rounded"
+                    >
+                      <FaList className="me-1" /> Reservas
+                    </Nav.Link>
+                  </>
+                )}
+
+                {user?.role === "Prestamista" && (
+                  <>
+                    <Nav.Link
+                      as={Link}
+                      to="/addreservation"
+                      className="px-3 py-2 rounded"
+                    >
+                      <FaPlus className="me-1" /> Reservar
+                    </Nav.Link>
+                    <Nav.Link
+                      as={Link}
+                      to="/reservations"
+                      className="px-3 py-2 rounded"
+                    >
+                      <FaList className="me-1" /> Mis Reservas
+                    </Nav.Link>
+                  </>
+                )}
+
+                <Dropdown align="end">
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    id="dropdown-basic"
+                    className="d-flex align-items-center"
+                  >
+                    <FaUserCircle className="me-2" />
+                    <span className="d-none d-lg-inline">{user?.name}</span>
+                  </Dropdown.Toggle>
+
+                  <Dropdown.Menu>
+                    <Dropdown.ItemText className="px-3 py-2">
+                      <div className="fw-bold">{user?.name}</div>
+                      <small className="text-muted">{user?.email}</small>
+                    </Dropdown.ItemText>
+                    <Dropdown.Divider />
+                    <Dropdown.Item onClick={handleLogout} className="px-3 py-2">
+                      Cerrar Sesión
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Nav>
+            </Navbar.Collapse>
+          </Container>
+        </Navbar>
+      )}
       {isAuthenticated && (
         <Navbar expand="lg" className="px-4 border-bottom">
           <Container fluid>

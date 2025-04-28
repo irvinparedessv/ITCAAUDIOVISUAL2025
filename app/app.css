@@ -43,8 +43,102 @@
   width: 100%;
 }
 
-
 .table-responsive {
   background-color: #fdfdfd;
   border-radius: 12px;
+}
+/* Login.css */
+.login-container {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.login-card {
+  background: white;
+  border-radius: 8px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.header-line {
+  height: 3px;
+  width: 80px;
+  margin: 0 auto;
+}
+
+.bg-primary {
+  background-color: #2c3e50 !important;
+}
+
+.text-primary {
+  color: #2c3e50 !important;
+}
+
+.border-primary {
+  border-color: #2c3e50 !important;
+}
+
+.btn-primary {
+  background-color: #2c3e50;
+  border-color: #2c3e50;
+  padding: 12px;
+  font-weight: 500;
+}
+
+.btn-primary:hover {
+  background-color: #1a252f;
+  border-color: #1a252f;
+}
+
+.text-secondary {
+  color: #7b8a8b !important;
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 0.6s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Estilos para modo oscuro/claro */
+body.dark {
+  color-scheme: dark;
+}
+
+body.light {
+  color-scheme: light;
+}
+
+/* Estilos minimalistas */
+.nav-link {
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: var(--bs-secondary-bg);
+}
+
+.dropdown-menu {
+  min-width: 250px;
+}
+
+/* Mejor contraste en modo oscuro */
+[data-bs-theme="dark"] .bg-light {
+  background-color: var(--bs-dark-bg-subtle) !important;
+}
+
+[data-bs-theme="dark"] pre {
+  background-color: var(--bs-dark-bg-subtle) !important;
 }

@@ -18,7 +18,8 @@ import { FaHome, FaPlus, FaList, FaUserCircle, FaMoon, FaSun } from "react-icons
 import { Spinner, Dropdown } from "react-bootstrap";
 import { FaComputer } from "react-icons/fa6";
 import Forbidden from "./layouts/Forbidden";
-import { routeRoles } from "./types/meta";
+import { routeRoles } from "./types/routeRoles";
+import { Role } from "./types/roles";
 
 
 // ---- HEAD Links ---- //
@@ -151,7 +152,7 @@ export default function App() {
                   <FaHome className="me-1" /> Inicio
                 </Nav.Link>
 
-                {user?.role === "Administrador" && (
+                {user?.role === Role.Administrador && (
                   <>
                     <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded">
                       <FaComputer className="me-1" /> Equipos
@@ -168,7 +169,7 @@ export default function App() {
                   </>
                 )}
 
-                {user?.role === "Encargado" && (
+                {user?.role === Role.Encargado && (
                   <>
                     <Nav.Link as={Link} to="/formEquipo" className="px-3 py-2 rounded">
                       <FaPlus className="me-1" /> Equipos
@@ -179,7 +180,7 @@ export default function App() {
                   </>
                 )}
 
-                {user?.role === "Prestamista" && (
+                {user?.role === Role.Prestamista && (
                   <>
                     <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded">
                       <FaPlus className="me-1" /> Reservar

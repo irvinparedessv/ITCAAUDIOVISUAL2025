@@ -1,5 +1,5 @@
 import { useMatches } from "react-router-dom";
-import { routeRoles } from "../types/meta"; // o "@/routes/meta" si lo moviste
+import { routeRoles } from "../types/routeRoles"; // o "@/routes/meta" si lo moviste
 import App from "app/root";
 
 export function ProtectedLayout() {
@@ -9,7 +9,7 @@ export function ProtectedLayout() {
   const routeId = currentRoute.id ?? ""; // OJO, no es currentRoute.route.id
   const allowedRoles = routeRoles[routeId] || [];
 
-  const userRole = "Prestamista"; // luego lo cambias a tu auth real
+  const userRole = 1; // luego lo cambias a tu auth real
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
     return <div>Acceso denegado</div>;

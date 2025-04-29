@@ -1,4 +1,5 @@
-import React, { useState, forwardRef } from "react";
+
+import React, { useState, forwardRef, useEffect } from "react";
 import api from "../api/axios";
 import { Button, Form, Container } from "react-bootstrap";
 import type { ButtonProps } from "react-bootstrap";
@@ -21,6 +22,13 @@ const Login = () => {
   const [activeField, setActiveField] = useState<string | null>(null);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/"); // Redirige a la página principal si ya está autenticado
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,3 +159,4 @@ const Login = () => {
 };
 
 export default Login;
+

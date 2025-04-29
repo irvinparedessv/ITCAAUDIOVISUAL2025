@@ -61,7 +61,7 @@ const Login = () => {
         >
           <div className="card-header text-center mb-4">
             <motion.h2 
-              className="text-dark"
+              className="login-title"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}

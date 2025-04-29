@@ -1,20 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-// Tipado del usuario
-type User = {
-  id: number;
-  name: string;
-  email: string;
-  role: number; // Asegúrate que tu API mande 'role'
-};
-
 // Tipado del contexto
 type AuthContextType = {
   isAuthenticated: boolean;
-  login: (token: string, user: User) => void;
+  login: (token: string, user: UserLogin) => void;
   logout: () => void;
   token: string | null;
-  user: User | null;
+  user: UserLogin | null;
   isLoading: boolean;
 };
 
@@ -23,7 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserLogin | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -38,7 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  const login = (newToken: string, newUser: User) => {
+  const login = (newToken: string, newUser: UserLogin) => {
     localStorage.setItem("token", newToken);
     localStorage.setItem("user", JSON.stringify(newUser));
     setToken(newToken);

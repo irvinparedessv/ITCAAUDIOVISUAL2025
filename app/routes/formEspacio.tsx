@@ -1,5 +1,11 @@
+import ProtectedRoute from "~/helpers/ProtectedRoute";
 import FormEspacio from "../components/FormEspacio";
 
 export default function FormEspacioPage() {
-  return <FormEspacio />;
+  return (
+      <ProtectedRoute>
+        <FormEspacio />
+      </ProtectedRoute>
+    );
+  
 }

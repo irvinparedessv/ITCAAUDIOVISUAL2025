@@ -1,6 +1,6 @@
 import { useAuth } from "../hooks/AuthContext";
 import { useLocation, Navigate } from "react-router";
-import { routeRoles } from "../types/meta";
+import { routeRoles } from "../types/routeRoles";
 import Forbidden from "~/layouts/Forbidden";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {

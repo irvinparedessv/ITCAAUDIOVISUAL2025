@@ -5,6 +5,7 @@ import type { Equipo, EquipoCreateDTO } from '~/types/equipo'
 import type { TipoEquipo } from '~/types/tipoEquipo'
 import EquipoForm from '../components/equipo/EquipoForm'
 import EquipoList from '../components/equipo/EquipoList'
+import ProtectedRoute from '~/helpers/ProtectedRoute'
 
 export default function EquipoPage() {
   const [equipos, setEquipos] = useState<Equipo[]>([])
@@ -53,10 +54,12 @@ export default function EquipoPage() {
   const resetEdit = () => setEditando(null)
 
   return (
-    <div className="max-w-3xl mx-auto mt-8 px-4">
-      <h1 className="text-2xl font-bold mb-4">Gestión de Equipos</h1>
-      <EquipoForm onSubmit={handleCreateOrUpdate} equipoEditando={editando} resetEdit={resetEdit} />
-      <EquipoList equipos={equipos} tipos={tipos} onEdit={handleEdit} onDelete={handleDelete} />
-    </div>
+    <ProtectedRoute>
+      <div className="max-w-3xl mx-auto mt-8 px-4">
+        <h1 className="text-2xl font-bold mb-4">Gestión de Equipos</h1>
+        <EquipoForm onSubmit={handleCreateOrUpdate} equipoEditando={editando} resetEdit={resetEdit} />
+        <EquipoList equipos={equipos} tipos={tipos} onEdit={handleEdit} onDelete={handleDelete} />
+      </div>
+    </ProtectedRoute>
   )
 }

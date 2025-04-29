@@ -1,17 +1,82 @@
-import { Card, ListGroup, Badge } from "react-bootstrap";
-import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
+import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Card, ListGroup, Badge, Spinner, Alert } from "react-bootstrap";
+import { QRCodeSVG } from "qrcode.react";
+import api from "../api/axios";
+
+type Reserva = {
+  usuario: string;
+  equipo: string[];
+  aula: string;
+  dia: string;
+  horaSalida: string;
+  horaEntrada: string;
+  estado: "Pendiente" | "Entregado" | "Devuelto";
+};
 
 export default function ReservationDetail() {
-  // Reserva por default
-  const reserva = {
-    usuario: "Juan Pérez",
-    equipo: ["Cámara", "Proyector"],
-    aula: "Aula 101",
-    dia: "2025-03-28",
-    horaSalida: "08:00",
-    horaEntrada: "12:00",
-    estado: "Pendiente" as "Pendiente" | "Entregado" | "Devuelto",
-  };
+  const { idQr } = useParams<{ idQr: string }>();
+  const [reserva, setReserva] = useState<Reserva | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  function formatDayWithDate(fecha: string) {
+    const date = new Date(fecha);
+    return date.toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
+
+  function formatTime(fechaHora: string) {
+    const fechaISO = fechaHora.replace(" ", "T");
+    const date = new Date(fechaISO);
+    return date.toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  useEffect(() => {
+    if (!idQr) return;
+
+    const fetchReserva = async () => {
+      try {
+        const response = await api.get(`/reservasQR/${idQr}`);
+        setReserva(response.data);
+      } catch (err) {
+        console.error(err);
+        setError("No se pudo cargar la reserva.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReserva();
+  }, [idQr]);
+
+  if (loading) {
+    return (
+      <div className="text-center my-5">
+        <Spinner animation="border" />
+        <p>Cargando reserva...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center my-5">
+        <Alert variant="danger">{error}</Alert>
+      </div>
+    );
+  }
+
+  if (!reserva) {
+    return null;
+  }
 
   const qrData = `Reserva de ${reserva.usuario} - ${reserva.equipo.join(
     ", "
@@ -36,13 +101,13 @@ export default function ReservationDetail() {
             <strong>Aula:</strong> {reserva.aula}
           </ListGroup.Item>
           <ListGroup.Item>
-            <strong>Día:</strong> {reserva.dia}
+            <strong>Día:</strong> {formatDayWithDate(reserva.horaSalida)}
           </ListGroup.Item>
           <ListGroup.Item>
-            <strong>Hora de Salida:</strong> {reserva.horaSalida}
+            <strong>Hora de Reserva:</strong> {formatTime(reserva.horaSalida)}
           </ListGroup.Item>
           <ListGroup.Item>
-            <strong>Hora de Entrada:</strong> {reserva.horaEntrada}
+            <strong>Hora de Entrega:</strong> {formatTime(reserva.horaEntrada)}
           </ListGroup.Item>
           <ListGroup.Item>
             <strong>Estado:</strong>{" "}

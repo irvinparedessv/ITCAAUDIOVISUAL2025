@@ -1,12 +1,12 @@
-import axios from 'axios'
+import api from '~/api/axios';
 import type { TipoEquipo } from '~/types/tipoEquipo'
 
 
-const API_URL = 'http://localhost:8000/api/tipoEquipos'
+//const API_URL = 'http://localhost:8000/api/tipoEquipos'
 
 export const getTipoEquipos = async (): Promise<TipoEquipo[]> => {
   try {
-    const res = await axios.get(API_URL);
+    const res = await api.get('/tipoEquipos');
     return res.data;
   } catch (error) {
     console.error("Error al obtener los tipos de equipo:", error);
@@ -16,7 +16,7 @@ export const getTipoEquipos = async (): Promise<TipoEquipo[]> => {
 
 export const createTipoEquipo = async (tipoEquipo: Omit<TipoEquipo, 'id'>) => {
   try {
-    const res = await axios.post(API_URL, tipoEquipo);
+    const res = await api.post('/tipoEquipos', tipoEquipo);
     return res.data;
   } catch (error) {
     console.error("Error al crear el tipo de equipo:", error);
@@ -26,7 +26,7 @@ export const createTipoEquipo = async (tipoEquipo: Omit<TipoEquipo, 'id'>) => {
 
 export const updateTipoEquipo = async (id: number, tipoEquipo: Partial<TipoEquipo>) => {
   try {
-    const res = await axios.put(`${API_URL}/${id}`, tipoEquipo);
+    const res = await api.put(`${'/tipoEquipos'}/${id}`, tipoEquipo);
     return res.data;
   } catch (error) {
     console.error(`Error al actualizar el tipo de equipo con ID ${id}:`, error);
@@ -36,7 +36,7 @@ export const updateTipoEquipo = async (id: number, tipoEquipo: Partial<TipoEquip
 
 export const deleteTipoEquipo = async (id: number) => {
   try {
-    const res = await axios.delete(`${API_URL}/${id}`);
+    const res = await api.delete(`${'/tipoEquipos'}/${id}`);
     return res.data;
   } catch (error) {
     console.error(`Error al eliminar el tipo de equipo con ID ${id}:`, error);

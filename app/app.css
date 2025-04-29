@@ -1,3 +1,36 @@
+:root {
+  /* Light theme colors */
+  --bs-body-bg: #f8f9fa;
+  --bs-body-color: #212529;
+  --bs-card-bg: #ffffff;
+  --bs-border-color: #dee2e6;
+  --bs-primary-bg: linear-gradient(90deg, rgba(166, 18, 36, 1) 2%, rgba(133, 27, 33, 0.98) 27%, rgba(10, 13, 10, 1) 99%);
+  --bs-primary-text: #ffffff;
+  --bs-secondary-bg: #e9ecef;
+}
+
+[data-bs-theme="dark"] {
+  /* Dark theme colors */
+  --bs-body-bg: #1a1a1a;
+  --bs-body-color: #f8f9fa;
+  --bs-card-bg: #2d2d2d;
+  --bs-border-color: #444;
+  --bs-primary-bg: linear-gradient(90deg, rgba(100, 10, 20, 1) 2%, rgba(80, 15, 20, 0.98) 27%, rgba(30, 30, 30, 1) 99%);
+  --bs-primary-text: #ffffff;
+  --bs-secondary-bg: #333;
+}
+
+.btn-primary {
+  background: rgb(166, 18, 36);
+  background: linear-gradient(
+    90deg,
+    rgba(166, 18, 36, 1) 2%,
+    rgba(133, 27, 33, 0.9831582291119573) 27%,
+    rgba(10, 13, 10, 1) 99%
+  );
+  border: none;
+}
+
 .btn-primary:hover {
   filter: brightness(1.1);
 }
@@ -25,53 +58,56 @@
 .table-responsive {
   border-radius: 12px;
 }
+
 /* Login.css */
 .login-container {
-  background-color: #f8f9fa;
+  background-color: var(--bs-body-bg);
   min-height: 100vh;
 }
 
 .login-card {
-  background: white;
+  background: var(--bs-card-bg);
   border-radius: 8px;
   padding: 2.5rem;
   width: 100%;
   max-width: 450px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--bs-border-color);
 }
 
 .header-line {
   height: 3px;
   width: 80px;
   margin: 0 auto;
-}
-
-.bg-primary {
-  background-color: #2c3e50 !important;
+  background: var(--bs-primary-bg);
 }
 
 .text-primary {
-  color: #2c3e50 !important;
+  color: var(--bs-primary-text) !important;
 }
 
 .border-primary {
-  border-color: #2c3e50 !important;
+  border-color: var(--bs-primary-bg) !important;
 }
 
 .btn-primary {
-  background-color: #2c3e50;
-  border-color: #2c3e50;
+  background: var(--bs-primary-bg);
+  border: none;
   padding: 12px;
   font-weight: 500;
+  color: var(--bs-primary-text);
 }
 
 .btn-primary:hover {
-  background-color: #1a252f;
-  border-color: #1a252f;
+  filter: brightness(1.1);
 }
 
 .text-secondary {
-  color: #7b8a8b !important;
+  color: var(--bs-secondary-color) !important;
+}
+
+.login-title {
+  color: var(--bs-body-color);
 }
 
 .fade-in {
@@ -112,11 +148,13 @@ body.light {
   min-width: 250px;
 }
 
-/* Mejor contraste en modo oscuro */
-[data-bs-theme="dark"] .bg-light {
-  background-color: var(--bs-dark-bg-subtle) !important;
+/* Asegura que las tablas y otros componentes respondan al tema */
+.table-responsive {
+  background-color: var(--bs-card-bg);
+  border-radius: 12px;
 }
 
-[data-bs-theme="dark"] pre {
-  background-color: var(--bs-dark-bg-subtle) !important;
+/* Ajusta el contraste en modo oscuro */
+[data-bs-theme="dark"] .table-responsive {
+  background-color: var(--bs-card-bg);
 }

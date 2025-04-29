@@ -103,6 +103,7 @@ export default function App() {
   }, [location.pathname, user]);
 
   useEffect(() => {
+    console.log({ isAuthenticated, isLoading, path: location.pathname });
     if (!isLoading) {
       if (isAuthenticated && location.pathname === "/login") {
         navigate("/"); // Redirige si está autenticado y trata de acceder al login
@@ -112,9 +113,8 @@ export default function App() {
     }
   }, [isAuthenticated, isLoading, location.pathname, navigate]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const handleLogout =() => {
+    logout(); 
   };
 
   if (isLoading) {

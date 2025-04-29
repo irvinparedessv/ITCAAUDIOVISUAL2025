@@ -5,7 +5,7 @@ export default [
   index("routes/home.tsx"), // Ruta Home como index
   route("addreservation", "routes/reservation.tsx"),
   route("reservations", "routes/reservationList.tsx"),
-  route("reservationdetail", "routes/reservationDetail.tsx"),
+  route("reservationdetail/:idQr", "routes/reservationDetail.tsx"),
   route("reservationdetailAdmin", "routes/reservationDetailAdmin.tsx"),
   route("formEquipo", "routes/formEquipo.tsx"),
   route("formEspacio", "routes/formEspacio.tsx"),
@@ -16,4 +16,5 @@ export default [
   route("reservationsroom", "routes/reservationRoom.tsx"),
   route("tipoequipo", "routes/tipoEquipos.tsx"),
   route("equipo", "routes/equipos.tsx"),
+  route("qrScan", "routes/qr.tsx"),
 ] satisfies RouteConfig;

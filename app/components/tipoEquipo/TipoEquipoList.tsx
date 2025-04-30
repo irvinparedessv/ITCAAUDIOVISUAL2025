@@ -1,5 +1,6 @@
 import type { TipoEquipo } from '~/types/tipoEquipo'
 import TipoEquipoForm from './TipoEquipoForm'
+import toast from 'react-hot-toast'
 
 interface Props {
   tipos: TipoEquipo[]
@@ -16,6 +17,34 @@ export default function TipoEquipoList({
   onDelete,
   onSuccess,
 }: Props) {
+  const confirmarEliminacion = (id: number) => {
+    toast((t) => (
+      <div>
+        <p className="mb-2">¿Seguro que deseas eliminar este tipo de equipo?</p>
+        <div className="d-flex justify-content-end gap-2">
+          <button
+            className="btn btn-sm btn-danger"
+            onClick={() => {
+              onDelete(id)
+              toast.dismiss(t.id)
+              toast.success('Tipo de equipo eliminado')
+            }}
+          >
+            Sí, eliminar
+          </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 5000,
+    })
+  }
+
   return (
     <div className="container py-5">
       <h1 className="text-center text-dark mb-4">Tipos de Equipo</h1>
@@ -48,7 +77,7 @@ export default function TipoEquipoList({
                     </button>
                     <button
                       className="btn btn-danger"
-                      onClick={() => onDelete(tipo.id)}
+                      onClick={() => confirmarEliminacion(tipo.id)}
                     >
                       Eliminar
                     </button>

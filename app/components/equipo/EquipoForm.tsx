@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import type { Equipo, EquipoCreateDTO } from '~/types/equipo'
 import type { TipoEquipo } from '~/types/tipoEquipo'
 import { getTipoEquipos } from '~/services/tipoEquipoService'
@@ -21,9 +22,12 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit }: Prop
   const [tipos, setTipos] = useState<TipoEquipo[]>([])
 
   useEffect(() => {
-    getTipoEquipos().then(setTipos).catch(err => {
-      console.error('Error cargando tipos de equipo:', err)
-    })
+    getTipoEquipos()
+      .then(setTipos)
+      .catch(err => {
+        console.error('Error cargando tipos de equipo:', err)
+        toast.error('Error al cargar tipos de equipo')
+      })
   }, [])
 
   useEffect(() => {
@@ -40,7 +44,33 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit }: Prop
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validaciones
+    if (!form.nombre.trim()) {
+      toast.error('El nombre es obligatorio')
+      return
+    }
+
+    if (!form.descripcion.trim()) {
+      toast.error('La descripción es obligatoria')
+      return
+    }
+
+    if (form.cantidad <= 0) {
+      toast.error('La cantidad debe ser mayor a cero')
+      return
+    }
+
+    if (!form.tipo_equipo_id) {
+      toast.error('Debe seleccionar un tipo de equipo')
+      return
+    }
+
+    // Enviar datos
     onSubmit(form, !!equipoEditando, equipoEditando?.id)
+    toast.success(equipoEditando ? 'Equipo actualizado correctamente' : 'Equipo creado exitosamente')
+
+    // Resetear formulario
     setForm({ nombre: '', descripcion: '', estado: true, cantidad: 0, tipo_equipo_id: 1 })
     resetEdit()
   }

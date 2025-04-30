@@ -6,6 +6,7 @@ import type { TipoEquipo } from '~/types/tipoEquipo'
 import EquipoForm from '../components/equipo/EquipoForm'
 import EquipoList from '../components/equipo/EquipoList'
 import ProtectedRoute from '~/helpers/ProtectedRoute'
+import { Toaster } from 'react-hot-toast'
 
 export default function EquipoPage() {
   const [equipos, setEquipos] = useState<Equipo[]>([])
@@ -55,6 +56,7 @@ export default function EquipoPage() {
 
   return (
     <ProtectedRoute>
+      <Toaster position="top-right" />
       <div className="max-w-3xl mx-auto mt-8 px-4">
         <h1 className="text-2xl font-bold mb-4">Gestión de Equipos</h1>
         <EquipoForm onSubmit={handleCreateOrUpdate} equipoEditando={editando} resetEdit={resetEdit} />

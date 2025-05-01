@@ -60,6 +60,7 @@ export default function EquipoList({ equipos, tipos, onEdit, onDelete }: Props) 
     <th>Estado</th>
     <th>Cantidad</th>
     <th>Tipo</th>
+    <th>Imagen</th>
     <th className="rounded-top-end">Acciones</th>
   </tr>
 </thead>
@@ -76,6 +77,17 @@ export default function EquipoList({ equipos, tipos, onEdit, onDelete }: Props) 
               </td>
               <td>{equipo.cantidad}</td>
               <td><em>{getTipoNombre(equipo.tipo_equipo_id)}</em></td>
+              <td>
+                {equipo.imagen_url ? (
+                  <img
+                    src={equipo.imagen_url}
+                    alt={equipo.nombre}
+                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }}
+                  />
+                ) : (
+                  <span className="text-muted">Sin imagen</span>
+                )}
+              </td>
               <td>
                 <div className="d-flex justify-content-center gap-2">
                   <button

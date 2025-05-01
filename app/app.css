@@ -4,7 +4,7 @@
   --bs-body-color: #212529;
   --bs-card-bg: #ffffff;
   --bs-border-color: #dee2e6;
-  --bs-primary-bg: linear-gradient(90deg, rgba(166, 18, 36, 1) 2%, rgba(133, 27, 33, 0.98) 27%, rgba(10, 13, 10, 1) 99%);
+  --bs-primary-bg: #8B0000; /* Rojo oscuro */
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #e9ecef;
 }
@@ -15,24 +15,33 @@
   --bs-body-color: #f8f9fa;
   --bs-card-bg: #2d2d2d;
   --bs-border-color: #444;
-  --bs-primary-bg: linear-gradient(90deg, rgba(100, 10, 20, 1) 2%, rgba(80, 15, 20, 0.98) 27%, rgba(30, 30, 30, 1) 99%);
+  --bs-primary-bg: #8B0000; /* Rojo oscuro */
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #333;
 }
 
-.btn-primary {
-  background: rgb(166, 18, 36);
-  background: linear-gradient(
-    90deg,
-    rgba(166, 18, 36, 1) 2%,
-    rgba(133, 27, 33, 0.9831582291119573) 27%,
-    rgba(10, 13, 10, 1) 99%
-  );
-  border: none;
+/* Elimina el conflicto en la raíz */
+.btn.primary-btn {
+  --bs-btn-bg: #8B0000;
+  --bs-btn-color: white;
+  --bs-btn-border-color: #8B0000;
+  --bs-btn-hover-bg: #A52A2A;
+  --bs-btn-hover-border-color: #A52A2A;
+  --bs-btn-hover-color: white;
 }
 
-.btn-primary:hover {
-  filter: brightness(1.1);
+.btn.secondary-btn {
+  --bs-btn-bg: #393a3c; /* Gris Bootstrap por defecto */
+  --bs-btn-color: white;
+  --bs-btn-border-color: #393a3c;
+  --bs-btn-hover-bg: #393a3c;
+  --bs-btn-hover-color: white;
+}
+
+/* Modo oscuro */
+[data-bs-theme="dark"] .btn.primary-btn {
+  --bs-btn-bg: #6B0000;
+  --bs-btn-hover-bg: #8B0000;
 }
 
 /* Estilo para el botón flotante del chatbot */
@@ -158,3 +167,98 @@ body.light {
 [data-bs-theme="dark"] .table-responsive {
   background-color: var(--bs-card-bg);
 }
+
+
+
+
+
+
+
+
+
+
+
+/* Estilos para el formulario (versión anterior mejorada) */
+.form-container {
+  background: var(--bs-card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--bs-border-color);
+  transition: all 0.3s ease;
+}
+
+.form-container:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--bs-body-color);
+  margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+  background-color: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color);
+  color: var(--bs-body-color);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: rgba(166, 18, 36, 0.5);
+  box-shadow: 0 0 0 0.25rem rgba(166, 18, 36, 0.1);
+  outline: none;
+}
+
+.submit-btn {
+  padding: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+/* Nuevos estilos para botones de acción */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.primary-btn {
+  background: var(--bs-primary-bg);
+  color: white;
+  border: none;
+  flex: 1;
+}
+
+.secondary-btn {
+  background: var(--bs-secondary-bg);
+  color: var(--bs-body-color);
+  border: none;
+  flex: 1;
+}
+
+.primary-btn:hover, .secondary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Corrección para el select */
+.form-select option[value=""] {
+  color: #6c757d;
+}
+
+
+
+
+
+
+
+
+

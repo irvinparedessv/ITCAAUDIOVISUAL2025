@@ -1,11 +1,11 @@
-
 import React, { useState, forwardRef, useEffect } from "react";
 import api from "../api/axios";
-import { Button, Form, Container } from "react-bootstrap";
+import { Button, Form, Container, Modal } from "react-bootstrap";
 import type { ButtonProps } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import ForgotPassword from "./auth/ForgotPassword"; // Ajusta la ruta si es necesario
 
 // Componente Button animado personalizado
 const MotionButton = motion(
@@ -23,6 +23,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { isAuthenticated } = useAuth();
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -66,7 +67,7 @@ const Login = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-             Iniciar Sesión
+              Iniciar Sesión
             </motion.h2>
             <motion.div 
               className="header-line"
@@ -124,26 +125,23 @@ const Login = () => {
             </motion.div>
 
             <MotionButton
-  type="submit"
-  disabled={isLoading}
-  className={`w-100 btn primary-btn border-0 ${isLoading ? 'loading' : ''}`}
-  whileHover={{ scale: 1.01 }}
-  whileTap={{ scale: 0.99 }}
-  style={{
-    outline: "none", // Eliminar el borde azul de enfoque
-    boxShadow: "none", // Eliminar la sombra de enfoque
-  }}
->
-  {isLoading ? (
-    <span className="spinner-border spinner-border-sm me-2"></span>
-  ) : (
-    <i className="bi bi-box-arrow-in-right me-2"></i>
-  )}
-  Ingresar
-</MotionButton>
-
-
-
+              type="submit"
+              disabled={isLoading}
+              className={`w-100 btn primary-btn border-0 ${isLoading ? 'loading' : ''}`}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              style={{
+                outline: "none", // Eliminar el borde azul de enfoque
+                boxShadow: "none", // Eliminar la sombra de enfoque
+              }}
+            >
+              {isLoading ? (
+                <span className="spinner-border spinner-border-sm me-2"></span>
+              ) : (
+                <i className="bi bi-box-arrow-in-right me-2"></i>
+              )}
+              Ingresar
+            </MotionButton>
           </Form>
 
           <motion.div 
@@ -153,18 +151,34 @@ const Login = () => {
             transition={{ delay: 0.7 }}
           >
             <div className="text-center mt-3">
-            <Link to="/forgot-password" className="text-decoration-none text-secondary fw-semibold">
-    ¿Olvidó su contraseña?
-  </Link>
-</div>
-
-
+              <span
+                onClick={() => setShowForgotModal(true)}
+                className="text-decoration-none text-secondary fw-semibold"
+                style={{ cursor: 'pointer' }}
+              >
+                ¿Olvidó su contraseña?
+              </span>
+            </div>
           </motion.div>
         </motion.div>
       </Container>
+
+      {/* Modal Forgot Password */}
+      <Modal
+        show={showForgotModal}
+        onHide={() => setShowForgotModal(false)}
+        centered
+        animation={true} // Para animación de apertura/cierre
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Recuperar Contraseña</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ForgotPassword />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
 
 export default Login;
-

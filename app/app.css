@@ -306,55 +306,7 @@ input.form-control.border-color-login {
 
 
 
-/* Modal básico */
-.forgot-password-container {
-  padding: 20px;
-  max-width: 100%;  /* El contenedor ahora se ajustará al tamaño del modal */
-  margin: 0 auto;
-  background-color: #fff;
-}
-
-.forgot-password-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  padding: 0;  /* El formulario ocupará todo el espacio disponible */
-  border: none; /* Eliminamos bordes adicionales */
-}
-
-.input-field {
-  padding: 12px;
-  font-size: 1rem;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-  box-shadow: none;
-  transition: border-color 0.3s ease-in-out;
-}
-
-.input-field:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(38, 143, 255, 0.5);
-}
-
-.submit-btn {
-  background-color: #007bff;
-  color: white;
-  font-weight: 600;
-  padding: 12px;
-  border-radius: 5px;
-  border: none;
-  font-size: 1rem;
-  transition: background-color 0.3s ease;
-}
-
-.submit-btn:disabled {
-  background-color: #c6c6c6;
-}
-
-.submit-btn:hover {
-  background-color: #0056b3;
-}
-
+/* DISENIO DE ALERTAS DE MODAL */
 .response-message {
   margin-top: 10px;
   padding: 10px;

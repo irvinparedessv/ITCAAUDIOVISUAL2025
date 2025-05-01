@@ -262,3 +262,41 @@ body.light {
 
 
 
+input.form-control.border-color-login {
+  border-color: #cc3300;
+}
+
+
+
+
+
+
+
+
+
+/* CAMBIANDO BOOTSTRAP AZUL A COLOR GRIS CUANDO ESPERA LA RESPUESTA DEL SERVIDOR (ESTO SE PUEDE VER MAS EN EL LOGIN)
+/* Eliminar borde azul y sombra cuando el botón está enfocado */
+.primary-btn:focus, 
+.primary-btn:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Cambiar el color de fondo a gris oscuro cuando está deshabilitado o cargando */
+.primary-btn[disabled] {
+  background-color: #555 !important; /* Gris oscuro */
+  border-color: #555 !important;
+  cursor: not-allowed; /* Cambiar el cursor para indicar que está deshabilitado */
+}
+
+/* Cambiar color de fondo cuando el botón tiene el estado de 'loading' */
+.primary-btn.loading {
+  background-color: #555 !important; /* Gris oscuro */
+  border-color: #555 !important;
+}
+
+.primary-btn:active {
+  background-color: #555 !important; /* Gris oscuro */
+  border-color: #555 !important; /* Cambia también el borde, si es necesario */
+}
+

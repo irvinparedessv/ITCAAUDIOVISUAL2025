@@ -69,7 +69,7 @@ const Login = () => {
              Iniciar Sesión
             </motion.h2>
             <motion.div 
-              className="header-line bg-primary"
+              className="header-line"
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ delay: 0.3, duration: 0.5 }}
@@ -103,7 +103,7 @@ const Login = () => {
                 placeholder="usuario@correo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border-primary"
+                className="border-color-login"
               />
             </motion.div>
 
@@ -119,24 +119,31 @@ const Login = () => {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border-primary"
+                className="border-color-login"
               />
             </motion.div>
 
-            <MotionButton 
-              type="submit"
-              disabled={isLoading}
-              className="w-100 bg-primary border-0"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-            >
-              {isLoading ? (
-                <span className="spinner-border spinner-border-sm me-2"></span>
-              ) : (
-                <i className="bi bi-box-arrow-in-right me-2"></i>
-              )}
-              Ingresar
-            </MotionButton>
+            <MotionButton
+  type="submit"
+  disabled={isLoading}
+  className={`w-100 btn primary-btn border-0 ${isLoading ? 'loading' : ''}`}
+  whileHover={{ scale: 1.01 }}
+  whileTap={{ scale: 0.99 }}
+  style={{
+    outline: "none", // Eliminar el borde azul de enfoque
+    boxShadow: "none", // Eliminar la sombra de enfoque
+  }}
+>
+  {isLoading ? (
+    <span className="spinner-border spinner-border-sm me-2"></span>
+  ) : (
+    <i className="bi bi-box-arrow-in-right me-2"></i>
+  )}
+  Ingresar
+</MotionButton>
+
+
+
           </Form>
 
           <motion.div 
@@ -145,12 +152,13 @@ const Login = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
           >
-            <a href="/forgot-password" className="text-decoration-none text-secondary">
-              ¿Olvidó su contraseña?
-            </a>
-            <a href="/register" className="text-decoration-none text-primary">
-              Crear nueva cuenta
-            </a>
+            <div className="text-center mt-3">
+  <a href="/forgot-password" className="text-decoration-none text-secondary fw-semibold">
+    ¿Olvidó su contraseña?
+  </a>
+</div>
+
+
           </motion.div>
         </motion.div>
       </Container>

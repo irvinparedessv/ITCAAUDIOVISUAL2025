@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import toast from 'react-hot-toast'
 import type { Equipo, EquipoCreateDTO } from '~/types/equipo'
 import type { TipoEquipo } from '~/types/tipoEquipo'
@@ -24,6 +24,10 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
 
   const [tipos, setTipos] = useState<TipoEquipo[]>([])
   const [loading, setLoading] = useState(true)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  // Referencia para el input de archivo
+  const inputFileRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     const loadTipos = async () => {
@@ -51,6 +55,7 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
         tipo_equipo_id: equipoEditando.tipo_equipo_id,
         imagen: null, // dejamos null para que no se sobrescriba hasta que el usuario suba una nueva
       })
+      setImagePreview(equipoEditando.imagen_url || null) // Set imagen actual si está editando
     } else {
       handleClear()
     }
@@ -122,12 +127,37 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
       tipo_equipo_id: 0,
       imagen: null
     })
+    setImagePreview(null)
     resetEdit()
+
+    // Limpiar el valor del input file
+    if (inputFileRef.current) {
+      inputFileRef.current.value = ''
+    }
   }
 
   const handleCancel = () => {
     if (onCancel) onCancel()
     handleClear()
+  }
+
+  // Función para manejar el arrastre y soltar
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (file && file.type.startsWith('image/')) {
+      setForm({ ...form, imagen: file })
+      setImagePreview(URL.createObjectURL(file))
+    }
+  }
+
+  // Función para manejar la selección de archivos
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      setForm({ ...form, imagen: file })
+      setImagePreview(URL.createObjectURL(file))
+    }
   }
 
   return (
@@ -188,28 +218,36 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
           </div>
         </div>
 
-
-        {equipoEditando?.imagen_url && (
+        {imagePreview && (
           <div className="mb-3">
-            <label className="form-label">Imagen actual:</label><br />
+            <label className="form-label">Imagen seleccionada:</label><br />
             <img
-              src={equipoEditando.imagen_url}
-              alt="Imagen actual del equipo"
+              src={imagePreview}
+              alt="Vista previa"
               className="img-thumbnail"
               style={{ maxWidth: '200px' }}
             />
           </div>
         )}
 
-        <div className="mb-4">
+        <div className="mb-4" onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
           <label htmlFor="imagen" className="form-label">Imagen</label>
-          <input
-            type="file"
-            id="imagen"
-            className="form-control"
-            accept="image/*"
-            onChange={e => setForm({ ...form, imagen: e.target.files?.[0] || null })}
-          />
+          <div className="border p-4 text-center" style={{ cursor: 'pointer' }}>
+            {form.imagen ? (
+              <p>Imagen seleccionada. Arrastra para cambiar.</p>
+            ) : (
+              <p>Arrastra y suelta una imagen aquí o haz clic para seleccionar</p>
+            )}
+            <input
+              ref={inputFileRef}
+              type="file"
+              id="imagen"
+              className="form-control"
+              accept="image/png, image/jpeg, image/gif"
+              onChange={handleFileChange}
+              hidden
+            />
+          </div>
         </div>
 
         <div className="mb-4">

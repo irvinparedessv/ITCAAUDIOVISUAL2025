@@ -24,7 +24,7 @@ const ForgotPassword: React.FC = () => {
   };
 
   return (
-    <div className="forgot-password-container">
+    <div className="">
       <Form onSubmit={handleSubmit} className="forgot-password-form">
         <Form.Group className="mb-3" controlId="email">
           <Form.Label className="text-muted">Correo electrónico</Form.Label>

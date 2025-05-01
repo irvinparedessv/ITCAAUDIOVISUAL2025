@@ -10,7 +10,8 @@ import {
   FaQrcode,
 } from "react-icons/fa";
 import { FaComputer } from "react-icons/fa6";
-import { Card, Container, Row, Col } from "react-bootstrap";
+import { Card, Container, Row, Col } from 'react-bootstrap';
+import { Role } from '~/types/roles';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export default function Dashboard() {
         Bienvenido, {user?.name}. Selecciona una opción:
       </p>
 
-      {user?.role === "Administrador" && (
+      {user?.role === Role.Administrador && (
         <Row xs={1} md={2} lg={3} className="g-4">
           <DashboardCard
             title="Reservar Equipo"
@@ -63,7 +64,7 @@ export default function Dashboard() {
         </Row>
       )}
 
-      {user?.role === "Encargado" && (
+      {user?.role === Role.Encargado && (
         <Row xs={1} md={2} lg={3} className="g-4">
           <DashboardCard
             title="Aprobar Reservas"
@@ -92,7 +93,7 @@ export default function Dashboard() {
         </Row>
       )}
 
-      {user?.role === "Prestamista" && (
+      {user?.role === Role.Prestamista && (
         <Row xs={1} md={2} className="g-4">
           <DashboardCard
             title="Nueva Reserva"

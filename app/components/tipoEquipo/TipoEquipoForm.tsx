@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createTipoEquipo, updateTipoEquipo } from '~/services/tipoEquipoService'
 import type { TipoEquipo } from '~/types/tipoEquipo'
+import toast from 'react-hot-toast'
 
 interface Props {
   tipoEditado?: TipoEquipo
@@ -18,13 +19,28 @@ export default function TipoEquipoForm({ tipoEditado, onSuccess }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (tipoEditado) {
-      await updateTipoEquipo(tipoEditado.id, { nombre })
-    } else {
-      await createTipoEquipo({ nombre })
+
+    // Validación simple
+    if (!nombre.trim()) {
+      toast.error('El nombre del tipo de equipo es obligatorio')
+      return
     }
-    onSuccess()
-    setNombre('')
+
+    try {
+      if (tipoEditado) {
+        await updateTipoEquipo(tipoEditado.id, { nombre })
+        toast.success('Tipo de equipo actualizado correctamente')
+      } else {
+        await createTipoEquipo({ nombre })
+        toast.success('Tipo de equipo creado exitosamente')
+      }
+
+      setNombre('')
+      onSuccess()
+    } catch (error) {
+      console.error(error)
+      toast.error('Ocurrió un error al guardar el tipo de equipo')
+    }
   }
 
   return (
@@ -37,7 +53,6 @@ export default function TipoEquipoForm({ tipoEditado, onSuccess }: Props) {
           value={nombre}
           onChange={e => setNombre(e.target.value)}
           placeholder="Ej. Laptop, Proyector..."
-          required
         />
       </div>
       <button type="submit" className={`btn ${tipoEditado ? 'btn-warning' : 'btn-success'}`}>

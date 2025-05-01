@@ -19,6 +19,7 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
     estado: true,
     cantidad: 0,
     tipo_equipo_id: 0,
+    imagen: null,
   })
 
   const [tipos, setTipos] = useState<TipoEquipo[]>([])
@@ -48,6 +49,7 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
         estado: equipoEditando.estado,
         cantidad: equipoEditando.cantidad,
         tipo_equipo_id: equipoEditando.tipo_equipo_id,
+        imagen: null, // dejamos null para que no se sobrescriba hasta que el usuario suba una nueva
       })
     } else {
       handleClear()
@@ -118,6 +120,7 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
       estado: true,
       cantidad: 0,
       tipo_equipo_id: 0,
+      imagen: null
     })
     resetEdit()
   }
@@ -183,6 +186,30 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
               className="form-control"
             />
           </div>
+        </div>
+
+
+        {equipoEditando?.imagen_url && (
+          <div className="mb-3">
+            <label className="form-label">Imagen actual:</label><br />
+            <img
+              src={equipoEditando.imagen_url}
+              alt="Imagen actual del equipo"
+              className="img-thumbnail"
+              style={{ maxWidth: '200px' }}
+            />
+          </div>
+        )}
+
+        <div className="mb-4">
+          <label htmlFor="imagen" className="form-label">Imagen</label>
+          <input
+            type="file"
+            id="imagen"
+            className="form-control"
+            accept="image/*"
+            onChange={e => setForm({ ...form, imagen: e.target.files?.[0] || null })}
+          />
         </div>
 
         <div className="mb-4">

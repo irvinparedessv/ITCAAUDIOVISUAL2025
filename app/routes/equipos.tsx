@@ -43,8 +43,11 @@ export default function EquipoPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await deleteEquipo(id)
-      cargarDatos()
+       // Llamada a la función deleteEquipo para eliminar el equipo
+       await deleteEquipo(id);
+       // Si se elimina correctamente, actualiza la lista de equipos
+       setEquipos(prevEquipos => prevEquipos.filter(equipo => equipo.id !== id));
+      
     } catch (error) {
       console.error('Error al eliminar el equipo:', error)
     }

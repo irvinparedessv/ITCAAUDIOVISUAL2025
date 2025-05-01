@@ -103,15 +103,17 @@ export default function App() {
   }, [location.pathname, user]);
 
   useEffect(() => {
-    console.log({ isAuthenticated, isLoading, path: location.pathname });
+    const publicRoutes = ["/login", "/forgot-password", "/reset-password"];
+  
     if (!isLoading) {
       if (isAuthenticated && location.pathname === "/login") {
-        navigate("/"); // Redirige si está autenticado y trata de acceder al login
-      } else if (!isAuthenticated && location.pathname !== "/login") {
-        navigate("/login"); // Redirige al login si no está autenticado
+        navigate("/"); // Redirige si está logueado e intenta entrar al login
+      } else if (!isAuthenticated && !publicRoutes.includes(location.pathname)) {
+        navigate("/login"); // Solo redirige si no está logueado y está en ruta privada
       }
     }
   }, [isAuthenticated, isLoading, location.pathname, navigate]);
+  
 
   const handleLogout =() => {
     logout(); 

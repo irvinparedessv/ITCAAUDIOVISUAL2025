@@ -3,7 +3,7 @@ import React, { useState, forwardRef, useEffect } from "react";
 import api from "../api/axios";
 import { Button, Form, Container } from "react-bootstrap";
 import type { ButtonProps } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -153,9 +153,9 @@ const Login = () => {
             transition={{ delay: 0.7 }}
           >
             <div className="text-center mt-3">
-  <a href="/forgot-password" className="text-decoration-none text-secondary fw-semibold">
+            <Link to="/forgot-password" className="text-decoration-none text-secondary fw-semibold">
     ¿Olvidó su contraseña?
-  </a>
+  </Link>
 </div>
 
 

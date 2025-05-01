@@ -1,18 +1,20 @@
-import { useEffect, useState, useRef } from 'react'
-import toast from 'react-hot-toast'
-import type { Equipo, EquipoCreateDTO } from '~/types/equipo'
-import type { TipoEquipo } from '~/types/tipoEquipo'
-import { getTipoEquipos } from '~/services/tipoEquipoService'
-import { FaSave, FaTimes, FaPlus, FaBroom } from 'react-icons/fa'
+import { useEffect, useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import toast from 'react-hot-toast';
+import type { Equipo, EquipoCreateDTO } from '~/types/equipo';
+import type { TipoEquipo } from '~/types/tipoEquipo';
+import { getTipoEquipos } from '~/services/tipoEquipoService';
+import { FaSave, FaTimes, FaPlus, FaBroom, FaUpload, FaTrash } from 'react-icons/fa';
 
 interface Props {
-  onSubmit: (data: EquipoCreateDTO, isEdit?: boolean, id?: number) => void
-  equipoEditando?: Equipo | null
-  resetEdit: () => void
-  onCancel?: () => void
+  onSubmit: (data: EquipoCreateDTO, isEdit?: boolean, id?: number) => void;
+  equipoEditando?: Equipo | null;
+  resetEdit: () => void;
+  onCancel?: () => void;
+  onDelete?: (id: number) => void;
 }
 
-export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCancel }: Props) {
+export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCancel, onDelete }: Props) {
   const [form, setForm] = useState<EquipoCreateDTO>({
     nombre: '',
     descripcion: '',
@@ -20,30 +22,103 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
     cantidad: 0,
     tipo_equipo_id: 0,
     imagen: null,
-  })
+  });
 
-  const [tipos, setTipos] = useState<TipoEquipo[]>([])
-  const [loading, setLoading] = useState(true)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [tipos, setTipos] = useState<TipoEquipo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Referencia para el input de archivo
-  const inputFileRef = useRef<HTMLInputElement | null>(null)
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      if (!file.type.match('image.*')) {
+        toast.error('Solo se permiten archivos de imagen (JPEG, PNG, GIF)');
+        return;
+      }
+      
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error('La imagen no puede ser mayor a 5MB');
+        return;
+      }
+
+      setForm({ ...form, imagen: file });
+      setImagePreview(URL.createObjectURL(file));
+    }
+  }, [form]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif']
+    },
+    maxFiles: 1,
+    multiple: false
+  });
+
+  const removeImage = () => {
+    setForm({ ...form, imagen: null });
+    setImagePreview(null);
+  };
+
+  const showConfirmationToast = (action: 'update' | 'delete', onConfirm: () => void) => {
+    const messages = {
+      update: {
+        question: '¿Seguro que deseas actualizar este equipo?',
+        confirmText: 'Sí, actualizar',
+        success: 'Equipo actualizado correctamente'
+      },
+      delete: {
+        question: '¿Seguro que deseas eliminar este equipo?',
+        confirmText: 'Sí, eliminar',
+        success: 'Equipo eliminado correctamente'
+      }
+    };
+
+    const { question, confirmText, success } = messages[action];
+
+    toast((t) => (
+      <div>
+        <p>{question}</p>
+        <div className="d-flex justify-content-end gap-2 mt-2">
+          <button
+            className="btn btn-sm btn-success"
+            onClick={() => {
+              onConfirm();
+              toast.dismiss(t.id);
+              toast.success(success);
+            }}
+          >
+            {confirmText}
+          </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 5000,
+    });
+  };
 
   useEffect(() => {
     const loadTipos = async () => {
       try {
-        const data = await getTipoEquipos()
-        setTipos(data)
+        const data = await getTipoEquipos();
+        setTipos(data);
       } catch (err) {
-        console.error('Error cargando tipos de equipo:', err)
-        toast.error('Error al cargar tipos de equipo')
+        console.error('Error cargando tipos de equipo:', err);
+        toast.error('Error al cargar tipos de equipo');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    loadTipos()
-  }, [])
+    loadTipos();
+  }, []);
 
   useEffect(() => {
     if (equipoEditando) {
@@ -53,70 +128,57 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
         estado: equipoEditando.estado,
         cantidad: equipoEditando.cantidad,
         tipo_equipo_id: equipoEditando.tipo_equipo_id,
-        imagen: null, // dejamos null para que no se sobrescriba hasta que el usuario suba una nueva
-      })
-      setImagePreview(equipoEditando.imagen_url || null) // Set imagen actual si está editando
+        imagen: null,
+      });
+      setImagePreview(equipoEditando.imagen_url || null);
     } else {
-      handleClear()
+      handleClear();
     }
-  }, [equipoEditando])
+  }, [equipoEditando]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!form.nombre.trim()) {
-      toast.error('El nombre es obligatorio')
-      return
+      toast.error('El nombre es obligatorio');
+      return;
     }
 
     if (!form.descripcion.trim()) {
-      toast.error('La descripción es obligatoria')
-      return
+      toast.error('La descripción es obligatoria');
+      return;
     }
 
     if (form.cantidad <= 0) {
-      toast.error('La cantidad debe ser mayor a cero')
-      return
+      toast.error('La cantidad debe ser mayor a cero');
+      return;
     }
 
     if (!form.tipo_equipo_id) {
-      toast.error('Debe seleccionar un tipo de equipo')
-      return
+      toast.error('Debe seleccionar un tipo de equipo');
+      return;
     }
 
     if (equipoEditando) {
-      // Mostrar toast de confirmación para editar
-      toast.custom((t) => (
-        <div className="bg-white p-4 rounded shadow-md w-[300px]">
-          <p className="mb-3">¿Deseas actualizar este equipo?</p>
-          <div className="flex justify-end gap-2">
-            <button
-              className="px-3 py-1 bg-green-600 text-white rounded"
-              onClick={() => {
-                onSubmit(form, true, equipoEditando.id)
-                toast.success('Equipo actualizado correctamente')
-                handleClear()
-                toast.dismiss(t.id)
-              }}
-            >
-              Sí
-            </button>
-            <button
-              className="px-3 py-1 bg-gray-300 rounded"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              No
-            </button>
-          </div>
-        </div>
-      ))
+      showConfirmationToast('update', () => {
+        onSubmit(form, true, equipoEditando.id);
+        handleClear();
+      });
     } else {
-      // Crear nuevo equipo
-      onSubmit(form, false)
-      toast.success('Equipo creado exitosamente')
-      handleClear()
+      onSubmit(form, false);
+      toast.success('Equipo creado exitosamente');
+      handleClear();
     }
-  }
+  };
+
+  const handleDelete = () => {
+    if (!equipoEditando || !onDelete) return;
+    
+    showConfirmationToast('delete', () => {
+      onDelete(equipoEditando.id);
+      handleClear();
+    });
+  };
 
   const handleClear = () => {
     setForm({
@@ -126,39 +188,15 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
       cantidad: 0,
       tipo_equipo_id: 0,
       imagen: null
-    })
-    setImagePreview(null)
-    resetEdit()
-
-    // Limpiar el valor del input file
-    if (inputFileRef.current) {
-      inputFileRef.current.value = ''
-    }
-  }
+    });
+    setImagePreview(null);
+    resetEdit();
+  };
 
   const handleCancel = () => {
-    if (onCancel) onCancel()
-    handleClear()
-  }
-
-  // Función para manejar el arrastre y soltar
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    const file = e.dataTransfer.files[0]
-    if (file && file.type.startsWith('image/')) {
-      setForm({ ...form, imagen: file })
-      setImagePreview(URL.createObjectURL(file))
-    }
-  }
-
-  // Función para manejar la selección de archivos
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file && file.type.startsWith('image/')) {
-      setForm({ ...form, imagen: file })
-      setImagePreview(URL.createObjectURL(file))
-    }
-  }
+    if (onCancel) onCancel();
+    handleClear();
+  };
 
   return (
     <div className="form-container">
@@ -218,36 +256,47 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
           </div>
         </div>
 
-        {imagePreview && (
-          <div className="mb-3">
-            <label className="form-label">Imagen seleccionada:</label><br />
-            <img
-              src={imagePreview}
-              alt="Vista previa"
-              className="img-thumbnail"
-              style={{ maxWidth: '200px' }}
-            />
-          </div>
-        )}
-
-        <div className="mb-4" onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
-          <label htmlFor="imagen" className="form-label">Imagen</label>
-          <div className="border p-4 text-center" style={{ cursor: 'pointer' }}>
-            {form.imagen ? (
-              <p>Imagen seleccionada. Arrastra para cambiar.</p>
-            ) : (
-              <p>Arrastra y suelta una imagen aquí o haz clic para seleccionar</p>
-            )}
-            <input
-              ref={inputFileRef}
-              type="file"
-              id="imagen"
-              className="form-control"
-              accept="image/png, image/jpeg, image/gif"
-              onChange={handleFileChange}
-              hidden
-            />
-          </div>
+        <div className="mb-4">
+          <label className="form-label">Imagen</label>
+          
+          {imagePreview ? (
+            <div className="d-flex flex-column align-items-center">
+              <img
+                src={imagePreview}
+                alt="Vista previa"
+                className="img-fluid rounded border mb-2"
+                style={{ maxWidth: '220px' }}
+              />
+              <button
+                type="button"
+                onClick={removeImage}
+                className="btn btn-outline-danger btn-sm"
+              >
+                <FaTrash className="me-1" />
+                Eliminar imagen
+              </button>
+            </div>
+          ) : (
+            <div
+              {...getRootProps()}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
+                isDragActive ? 'border-primary bg-light' : ''
+              }`}
+            >
+              <input {...getInputProps()} />
+              <div className="d-flex flex-column align-items-center justify-content-center">
+                <FaUpload className="text-muted mb-2" />
+                {isDragActive ? (
+                  <p className="text-primary mb-0">Suelta la imagen aquí...</p>
+                ) : (
+                  <>
+                    <p className="mb-1">Arrastra y suelta una imagen aquí, o haz clic para seleccionar</p>
+                    <p className="text-muted small mb-0">Formatos: JPEG, PNG, GIF (Máx. 5MB)</p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mb-4">
@@ -301,7 +350,20 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
             </>
           )}
         </div>
+
+        {equipoEditando && onDelete && (
+          <div className="form-actions mt-3">
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleDelete}
+            >
+              <FaTrash className="me-2" />
+              Eliminar Equipo
+            </button>
+          </div>
+        )}
       </form>
     </div>
-  )
+  );
 }

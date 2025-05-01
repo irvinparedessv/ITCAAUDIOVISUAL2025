@@ -23,7 +23,6 @@ export default function TipoEquiposPage() {
       <Toaster position="top-right" />
         <TipoEquipoList
           tipos={tipos}
-          tipoEditado={tipoEditado}
           onEdit={(tipo) => setTipoEditado(tipo)}
           onDelete={async (id) => {
             await deleteTipoEquipo(id)

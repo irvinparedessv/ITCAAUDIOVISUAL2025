@@ -17,4 +17,5 @@ export default [
   route("tipoequipo", "routes/tipoEquipos.tsx"),
   route("equipo", "routes/equipos.tsx"),
   route("qrScan", "routes/qr.tsx"),
+  route("formUsuario", "routes/formUsuario.tsx"),
 ] satisfies RouteConfig;

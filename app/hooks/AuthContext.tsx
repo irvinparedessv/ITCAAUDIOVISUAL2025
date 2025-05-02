@@ -3,9 +3,11 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 // Tipado del usuario
 type User = {
   id: number;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   role: string; // Asegúrate que tu API mande 'role'
+  image?: string; // Añadir la propiedad image aquí
 };
 
 // Tipado del contexto

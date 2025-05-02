@@ -222,13 +222,30 @@ export default function App() {
                     id="dropdown-basic"
                     className="d-flex align-items-center"
                   >
-                    <FaUserCircle className="me-2" />
-                    <span className="d-none d-lg-inline">{user?.name}</span>
+                    {user?.image ? (
+                      <img
+                        src={`http://localhost:8000/storage/${user.image}`} // Usando 'image' aquí
+                        alt="User"
+                        className="me-2 rounded-circle"
+                        style={{
+                          width: "30px",
+                          height: "30px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <FaUserCircle className="me-2" size={24} />
+                    )}
+                    <span className="d-none d-lg-inline">
+                      {user?.first_name} {user?.last_name}
+                    </span>
                   </Dropdown.Toggle>
 
                   <Dropdown.Menu>
                     <Dropdown.ItemText className="px-3 py-2">
-                      <div className="fw-bold">{user?.name}</div>
+                      <div className="fw-bold">
+                        {user?.first_name} {user?.last_name}
+                      </div>
                       <small className="text-muted">{user?.email}</small>
                     </Dropdown.ItemText>
                     <Dropdown.Divider />

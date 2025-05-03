@@ -37,11 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      // 1. Obtener CSRF token
-      // await axios.get("http://127.0.0.1:8000/sanctum/csrf-cookie", {
-      //   withCredentials: true,
-      // });
-  
+
       // 2. Hacer login
       const response = await api.post("/login", { email, password });
   

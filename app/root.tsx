@@ -87,35 +87,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 // ---- APP CON NAVBAR ---- //
+// ---- APP CON NAVBAR ---- //
 export default function App() {
-  const { isAuthenticated, logout, user, isLoading } = useAuth();
+  // Añade checkAccess aquí en la desestructuración
+  const { isAuthenticated, logout, user, isLoading, checkAccess } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [hasAccess, setHasAccess] = useState<boolean>(true); // Estado para controlar el acceso
-
-   // Verificar acceso según la ruta
-   useEffect(() => {
-    if (user) {
-      const currentRoute = location.pathname;
-      const allowedRoles = routeRoles[currentRoute];
-      setHasAccess(allowedRoles ? allowedRoles.includes(user.role) : true); // Verificar si tiene acceso
-    }
-  }, [location.pathname, user]);
 
   useEffect(() => {
     const publicRoutes = ["/login", "/forgot-password", "/reset-password"];
   
     if (!isLoading) {
       if (isAuthenticated && location.pathname === "/login") {
-        navigate("/"); // Redirige si está logueado e intenta entrar al login
+        navigate("/");
       } else if (!isAuthenticated && !publicRoutes.includes(location.pathname)) {
-        navigate("/login"); // Solo redirige si no está logueado y está en ruta privada
+        navigate("/login");
       }
     }
   }, [isAuthenticated, isLoading, location.pathname, navigate]);
-  
 
-  const handleLogout =() => {
+  const handleLogout = () => {
     logout(); 
   };
 
@@ -130,14 +121,8 @@ export default function App() {
   }
 
   if (location.pathname === "/login") {
-    return <Outlet />; // Retorna solo el contenido para la página de login
+    return <Outlet />;
   }
-
-   // Si no tiene acceso, mostrar Forbidden
-   if (!hasAccess) {
-    return <Forbidden />;
-  }
-
 
   return (
     <>
@@ -154,42 +139,60 @@ export default function App() {
                   <FaHome className="me-1" /> Inicio
                 </Nav.Link>
 
+                {/* Ejemplo de uso de checkAccess */}
+                {checkAccess("/addreservation") && (
+                  <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded">
+                    <FaComputer className="me-1" /> Equipos
+                  </Nav.Link>
+                )}
+
                 {user?.role === Role.Administrador && (
                   <>
-                    <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded">
-                      <FaComputer className="me-1" /> Equipos
-                    </Nav.Link>
+                   {checkAccess("/reservations") && (
                     <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded">
                       <FaList className="me-1" /> Reservas
                     </Nav.Link>
-                    <Nav.Link as={Link} to="/formEquipo" className="px-3 py-2 rounded">
-                      <FaPlus className="me-1" /> Nuevo Equipo
-                    </Nav.Link>
-                    <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded">
-                      <FaList className="me-1" /> Espacios
-                    </Nav.Link>
+                     )}
+                    {checkAccess("/equipo") && (
+                      <Nav.Link as={Link} to="/equipo" className="px-3 py-2 rounded">
+                        <FaPlus className="me-1" /> Nuevo Equipo
+                      </Nav.Link>
+                    )}
+                    {checkAccess("/formEspacio") && (
+                      <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded">
+                        <FaList className="me-1" /> Espacios
+                      </Nav.Link>
+                    )}
                   </>
                 )}
 
                 {user?.role === Role.Encargado && (
                   <>
-                    <Nav.Link as={Link} to="/formEquipo" className="px-3 py-2 rounded">
-                      <FaPlus className="me-1" /> Equipos
-                    </Nav.Link>
-                    <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded">
-                      <FaList className="me-1" /> Reservas
-                    </Nav.Link>
+                    {checkAccess("/formEquipo") && (
+                      <Nav.Link as={Link} to="/formEquipo" className="px-3 py-2 rounded">
+                        <FaPlus className="me-1" /> Equipos
+                      </Nav.Link>
+                    )}
+                    {checkAccess("/formEspacio") && (
+                      <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded">
+                        <FaList className="me-1" /> Reservas
+                      </Nav.Link>
+                    )}
                   </>
                 )}
 
                 {user?.role === Role.Prestamista && (
                   <>
-                    <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded">
-                      <FaPlus className="me-1" /> Reservar
-                    </Nav.Link>
-                    <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded">
-                      <FaList className="me-1" /> Mis Reservas
-                    </Nav.Link>
+                    {checkAccess("/addreservation") && (
+                      <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded">
+                        <FaPlus className="me-1" /> Reservar
+                      </Nav.Link>
+                    )}
+                    {checkAccess("/reservations") && (
+                      <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded">
+                        <FaList className="me-1" /> Mis Reservas
+                      </Nav.Link>
+                    )}
                   </>
                 )}
 
@@ -218,12 +221,9 @@ export default function App() {
       <main className="container my-4">
         <Outlet />
       </main>
-      
     </>
-    
   );
 }
-
 // ---- ERROR BOUNDARY ---- //
 export function ErrorBoundary({ error }: any) {
   let message = "Oops!";

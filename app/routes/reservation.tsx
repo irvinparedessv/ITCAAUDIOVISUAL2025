@@ -1,5 +1,10 @@
+import ProtectedRoute from "~/helpers/ProtectedRoute";
 import EquipmentReservationForm from "../components/EquipmentReservationForm";
 
 export default function ReservationPage() {
-  return <EquipmentReservationForm />;
+   return (
+      <ProtectedRoute>
+        <EquipmentReservationForm />
+      </ProtectedRoute>
+    );
 }

@@ -1,14 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import api from "../api/axios";
+import axios from "axios";
+import { routeRoles } from "~/types/routeRoles";
 
 // Tipado del contexto
 type AuthContextType = {
   isAuthenticated: boolean;
-  login: (token: string, user: UserLogin) => void;
+  login: (email: string, password: string) => Promise<void>; // Ahora es async
   logout: () => void;
   token: string | null;
   user: UserLogin | null;
   isLoading: boolean;
+  checkAccess: (route: string) => boolean;
 };
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -30,13 +35,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  const login = (newToken: string, newUser: UserLogin) => {
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
-    setIsAuthenticated(true);
+  const login = async (email: string, password: string) => {
+    try {
+      // 1. Obtener CSRF token
+      // await axios.get("http://127.0.0.1:8000/sanctum/csrf-cookie", {
+      //   withCredentials: true,
+      // });
+  
+      // 2. Hacer login
+      const response = await api.post("/login", { email, password });
+  
+      const token = response.data.token;
+      const user = response.data.user;
+  
+      // 3. Guardar token y usuario
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+  
+      setToken(token);
+      setUser(user);
+      setIsAuthenticated(true);
+    } catch (error) {
+      throw error; // lo manejarás en el componente Login
+    }
   };
+  
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -46,8 +69,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsAuthenticated(false);
   };
 
+  const checkAccess = (route: string) => {
+    if (!user) return false;
+    const allowedRoles = routeRoles[route] || [];
+    return allowedRoles.length === 0 || allowedRoles.includes(user.role);
+  };
+  
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, token, user, isLoading }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, token, user, isLoading, checkAccess }}>
       {children}
     </AuthContext.Provider>
   );

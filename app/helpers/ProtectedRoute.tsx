@@ -1,24 +1,23 @@
-import { useAuth } from "../hooks/AuthContext";
-import { useLocation, Navigate } from "react-router";
-import { routeRoles } from "../types/routeRoles";
-import Forbidden from "~/layouts/Forbidden";
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/AuthContext';
+import { Spinner } from 'react-bootstrap';
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user, isLoading } = useAuth();
+export function ProtectedRoute({ children }: { children:  React.ReactNode }) {
+  const { isAuthenticated, isLoading, checkAccess } = useAuth();
   const location = useLocation();
+  const currentRoute = location.pathname.split('/')[1] || '';
 
-  if (isLoading) return null; // O un spinner cargando
+  if (isLoading) {
+    return <Spinner animation="border" />;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const path = location.pathname.replace(/^\/+/, ""); // Quita el slash inicial
-  const allowedRoles = routeRoles[path] || [];
-
-  if (allowedRoles.length > 0 && (!user || !allowedRoles.includes(user.role))) {
-    return <Forbidden />; // 👈 Aquí mostramos el Forbidden
+  if (!checkAccess(currentRoute)) {
+    return <Navigate to="/forbidden" replace />;
   }
 
-  return <>{children}</>;
+  return children;
 }

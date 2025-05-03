@@ -41,9 +41,9 @@ const Login = () => {
       return;
     }
   
+
     try {
-      const response = await api.post('/login', { email, password });
-      login(response.data.token, response.data.user);
+      await login(email, password); // Ya incluye CSRF + login + manejo de estado
       navigate('/');
     } catch (err) {
       setError('Credenciales incorrectas. Por favor intente nuevamente');

@@ -1,26 +1,39 @@
-import { useMatches } from "react-router-dom";
+import { useLocation, Outlet, Navigate } from "react-router-dom";
+import { useAuth } from "../hooks/AuthContext";
 import { routeRoles } from "../types/routeRoles";
-import App from "app/root";
-import { useAuth } from "~/hooks/AuthContext"; // 👈 importar tu hook
+import { Spinner } from "react-bootstrap";
+import { Role } from "../types/roles"; // Importa el enum Role
 
 export function ProtectedLayout() {
-  const matches = useMatches();
-  const currentRoute = matches[matches.length - 1];
-  
-  const routeId = currentRoute.id ?? "";
-  const allowedRoles = routeRoles[routeId] || [];
+  const { user, isLoading, isAuthenticated } = useAuth();
+  const location = useLocation();
 
-  const { user, isLoading } = useAuth(); // 👈 obtener el usuario y el estado de carga
+  const getCurrentRouteKey = (): string => {
+    // Manejo más robusto para rutas vacías o con múltiples barras
+    const routeParts = location.pathname.split('/').filter(part => part !== '');
+    return routeParts[0] || 'home';
+  };
 
   if (isLoading) {
-    return <div>Cargando...</div>; // 👈 opcional, para UX
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <Spinner animation="border" />
+      </div>
+    );
   }
 
-  const userRole = user?.role;
-
-  if (allowedRoles.length > 0 && (!userRole || !allowedRoles.includes(userRole))) {
-    return <div>Acceso denegado</div>;
+  if (!isAuthenticated) {
+    // Guarda la ubicación intentada para redirigir después del login
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <App />;
+  const currentRoute = getCurrentRouteKey();
+  const allowedRoles = routeRoles[currentRoute] ?? []; // Usamos ?? en lugar de ||
+
+  // Verificación de acceso mejorada
+  if (allowedRoles.length > 0 && (!user?.role || !allowedRoles.includes(user.role))) {
+    return <Navigate to="/forbidden" replace />;
+  }
+
+  return <Outlet />;
 }

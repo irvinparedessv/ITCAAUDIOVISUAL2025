@@ -38,29 +38,31 @@ export const links = () => [
 
 // ---- LAYOUT HTML ---- //
 export function Layout({ children }: { children: React.ReactNode }) {
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedMode = localStorage.getItem('darkMode');
-      return savedMode ? JSON.parse(savedMode) : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('darkMode', JSON.stringify(darkMode));
-      if (darkMode) {
-        document.documentElement.setAttribute('data-bs-theme', 'dark');
-      } else {
-        document.documentElement.setAttribute('data-bs-theme', 'light');
-      }
-    }
-  }, [darkMode]);
+    const savedMode = localStorage.getItem("darkMode");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = savedMode ? JSON.parse(savedMode) : prefersDark;
 
-  const toggleDarkMode = () => setDarkMode(!darkMode);
+    setDarkMode(isDark);
+    document.documentElement.setAttribute("data-bs-theme", isDark ? "dark" : "light");
+    document.body.classList.add(isDark ? "dark" : "light");
+    document.body.classList.remove(isDark ? "light" : "dark");
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem("darkMode", JSON.stringify(newMode));
+    document.documentElement.setAttribute("data-bs-theme", newMode ? "dark" : "light");
+    document.body.classList.add(newMode ? "dark" : "light");
+    document.body.classList.remove(newMode ? "light" : "dark");
+  };
+
 
   return (
-    <html lang="en" className={darkMode ? 'dark' : 'light'}>
+    <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

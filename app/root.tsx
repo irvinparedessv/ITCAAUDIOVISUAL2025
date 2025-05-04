@@ -129,21 +129,27 @@ export default function App() {
   return (
     <>
       {isAuthenticated && (
-        <Navbar expand="lg" className="px-4 border-bottom">
+        <Navbar  expand="lg"
+        className="px-4 border-bottom"
+        style={{ background: 'linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))', color: '#000'}}>
           <Container fluid>
             <Navbar.Brand as={Link} to="/" className="fw-bold">
-              ReservasTI
+              <img
+                src="/images/logo.png"
+                alt="Logo ReservasTI"
+                style={{ height: '50px' }} // ajusta el tamaño según necesites
+              />
             </Navbar.Brand>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="ms-auto align-items-center gap-2">
-                <Nav.Link as={Link} to="/" className="px-3 py-2 rounded">
-                  <FaHome className="me-1" /> Inicio
-                </Nav.Link>
+              <Nav.Link as={Link} to="/" className="px-3 py-2 rounded nav-hover-white">
+                <FaHome className="me-1" /> Inicio
+              </Nav.Link>
 
                 {/* Ejemplo de uso de checkAccess */}
                 {checkAccess("/addreservation") && (
-                  <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded">
+                  <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded nav-hover-white">
                     <FaComputer className="me-1" /> Equipos
                   </Nav.Link>
                 )}
@@ -151,17 +157,17 @@ export default function App() {
                 {user?.role === Role.Administrador && (
                   <>
                    {checkAccess("/reservations") && (
-                    <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded">
+                    <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded nav-hover-white">
                       <FaList className="me-1" /> Reservas
                     </Nav.Link>
                      )}
                     {checkAccess("/equipo") && (
-                      <Nav.Link as={Link} to="/equipo" className="px-3 py-2 rounded">
+                      <Nav.Link as={Link} to="/equipo" className="px-3 py-2 rounded nav-hover-white">
                         <FaPlus className="me-1" /> Nuevo Equipo
                       </Nav.Link>
                     )}
                     {checkAccess("/formEspacio") && (
-                      <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded">
+                      <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded nav-hover-white">
                         <FaList className="me-1" /> Espacios
                       </Nav.Link>
                     )}
@@ -171,12 +177,12 @@ export default function App() {
                 {user?.role === Role.Encargado && (
                   <>
                     {checkAccess("/formEquipo") && (
-                      <Nav.Link as={Link} to="/formEquipo" className="px-3 py-2 rounded">
+                      <Nav.Link as={Link} to="/formEquipo" className="px-3 py-2 rounded nav-hover-white">
                         <FaPlus className="me-1" /> Equipos
                       </Nav.Link>
                     )}
                     {checkAccess("/formEspacio") && (
-                      <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded">
+                      <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded nav-hover-white">
                         <FaList className="me-1" /> Reservas
                       </Nav.Link>
                     )}
@@ -186,12 +192,12 @@ export default function App() {
                 {user?.role === Role.Prestamista && (
                   <>
                     {checkAccess("/addreservation") && (
-                      <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded">
+                      <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded nav-hover-white">
                         <FaPlus className="me-1" /> Reservar
                       </Nav.Link>
                     )}
                     {checkAccess("/reservations") && (
-                      <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded">
+                      <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded nav-hover-white">
                         <FaList className="me-1" /> Mis Reservas
                       </Nav.Link>
                     )}
@@ -199,22 +205,40 @@ export default function App() {
                 )}
 
                 <Dropdown align="end">
-                  <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic" className="d-flex align-items-center">
+                  <Dropdown.Toggle
+                    id="dropdown-basic"
+                    className="d-flex align-items-center"
+                    style={{
+                      background: 'linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))',
+                      border: 'none',
+                      color: '#000', // texto negro para contraste
+                    }}
+                  >
                     <FaUserCircle className="me-2" />
                     <span className="d-none d-lg-inline">{user?.name}</span>
                   </Dropdown.Toggle>
 
-                  <Dropdown.Menu>
-                    <Dropdown.ItemText className="px-3 py-2">
+                  <Dropdown.Menu
+                    style={{
+                      background: 'linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))',
+                      color: '#000',
+                    }}
+                  >
+                    <Dropdown.ItemText className="px-3 py-2" style={{ color: '#000' }}>
                       <div className="fw-bold">{user?.name}</div>
                       <small className="text-muted">{user?.email}</small>
                     </Dropdown.ItemText>
                     <Dropdown.Divider />
-                    <Dropdown.Item onClick={handleLogout} className="px-3 py-2">
+                    <Dropdown.Item
+                       onClick={handleLogout}
+                       className="px-3 py-2 nav-hover-white"
+                       style={{ color: '#000' }}
+                    >
                       Cerrar Sesión
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
+
               </Nav>
             </Navbar.Collapse>
           </Container>

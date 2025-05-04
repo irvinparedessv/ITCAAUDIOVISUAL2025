@@ -38,8 +38,34 @@ export const links = () => [
 
 // ---- LAYOUT HTML ---- //
 export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <Meta />
+        <Links />
+      </head>
+      <body className="bg-body">
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+// ---- APP CON NAVBAR ---- //
+export default function App() {
+  const { isAuthenticated, logout, user, isLoading, checkAccess } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [darkMode, setDarkMode] = useState(false);
 
+  // Cargar tema desde localStorage
   useEffect(() => {
     const savedMode = localStorage.getItem("darkMode");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -51,6 +77,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     document.body.classList.remove(isDark ? "light" : "dark");
   }, []);
 
+  // Alternar tema
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
@@ -60,45 +87,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     document.body.classList.remove(newMode ? "light" : "dark");
   };
 
-
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body className="bg-body">
-        <AuthProvider>
-          <Button 
-            onClick={toggleDarkMode} 
-            variant="link" 
-            className="position-fixed bottom-0 end-0 m-3 p-2 rounded-circle shadow"
-            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {darkMode ? <FaSun size={20} /> : <FaMoon size={20} />}
-          </Button>
-          {children}
-        </AuthProvider>
-        <ScrollRestoration />
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
-// ---- APP CON NAVBAR ---- //
-// ---- APP CON NAVBAR ---- //
-export default function App() {
-  // Añade checkAccess aquí en la desestructuración
-  const { isAuthenticated, logout, user, isLoading, checkAccess } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
+  // Redirección basada en autenticación
   useEffect(() => {
     const publicRoutes = ["/login", "/forgot-password", "/reset-password"];
-  
+
     if (!isLoading) {
       if (isAuthenticated && location.pathname === "/login") {
         navigate("/");
@@ -109,7 +101,8 @@ export default function App() {
   }, [isAuthenticated, isLoading, location.pathname, navigate]);
 
   const handleLogout = () => {
-    logout(); 
+    logout();
+    // No usar localStorage.clear(); para no borrar darkMode
   };
 
   if (isLoading) {
@@ -129,21 +122,18 @@ export default function App() {
   return (
     <>
       {isAuthenticated && (
-        <Navbar  expand="lg"
-        className="px-4 border-bottom"
-        style={{ background: 'linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92))'}}>
+        <Navbar expand="lg"
+          className="px-4 border-bottom"
+          style={{ background: 'linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92))' }}>
           <Container fluid>
             <Navbar.Brand as={Link} to="/" className="fw-bold">
               <img
                 src="/images/logo.png"
                 alt="Logo ReservasTI"
-                style={{ height: '50px' }} // ajusta el tamaño según necesites
+                style={{ height: '50px' }}
               />
             </Navbar.Brand>
-            <Navbar.Toggle
-              aria-controls="basic-navbar-nav"
-              className="custom-toggler"
-            >
+            <Navbar.Toggle aria-controls="basic-navbar-nav" className="custom-toggler">
               <span className="navbar-toggler-icon">
                 <div></div>
               </span>
@@ -151,11 +141,10 @@ export default function App() {
 
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="ms-auto align-items-center gap-2">
-              <Nav.Link as={Link} to="/" className="px-3 py-2 rounded nav-hover-white">
-                <FaHome className="me-1" /> Inicio
-              </Nav.Link>
+                <Nav.Link as={Link} to="/" className="px-3 py-2 rounded nav-hover-white">
+                  <FaHome className="me-1" /> Inicio
+                </Nav.Link>
 
-                {/* Ejemplo de uso de checkAccess */}
                 {checkAccess("/addreservation") && (
                   <Nav.Link as={Link} to="/addreservation" className="px-3 py-2 rounded nav-hover-white">
                     <FaComputer className="me-1" /> Equipos
@@ -164,11 +153,11 @@ export default function App() {
 
                 {user?.role === Role.Administrador && (
                   <>
-                   {checkAccess("/reservations") && (
-                    <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded nav-hover-white">
-                      <FaList className="me-1" /> Reservas
-                    </Nav.Link>
-                     )}
+                    {checkAccess("/reservations") && (
+                      <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded nav-hover-white">
+                        <FaList className="me-1" /> Reservas
+                      </Nav.Link>
+                    )}
                     {checkAccess("/equipo") && (
                       <Nav.Link as={Link} to="/equipo" className="px-3 py-2 rounded nav-hover-white">
                         <FaPlus className="me-1" /> Nuevo Equipo
@@ -219,7 +208,7 @@ export default function App() {
                     style={{
                       background: 'linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))',
                       border: 'none',
-                      color: '#000', // texto negro para contraste
+                      color: '#000',
                     }}
                   >
                     <FaUserCircle className="me-2" />
@@ -237,16 +226,27 @@ export default function App() {
                       <small style={{ color: '#000' }}>{user?.email}</small>
                     </Dropdown.ItemText>
                     <Dropdown.Divider />
+
+                    {/* ✅ Modo Oscuro */}
                     <Dropdown.Item
-                       onClick={handleLogout}
-                       className="px-3 py-2 nav-hover-white"
-                       style={{ color: '#000' }}
+                      onClick={toggleDarkMode}
+                      className="px-3 py-2 nav-hover-white d-flex align-items-center gap-2"
+                      style={{ color: '#000' }}
+                    >
+                      {darkMode ? <FaSun /> : <FaMoon />}
+                      {darkMode ? "Modo Claro" : "Modo Oscuro"}
+                    </Dropdown.Item>
+
+                    {/* ✅ Cerrar sesión */}
+                    <Dropdown.Item
+                      onClick={handleLogout}
+                      className="px-3 py-2 nav-hover-white"
+                      style={{ color: '#000' }}
                     >
                       Cerrar Sesión
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
-
               </Nav>
             </Navbar.Collapse>
           </Container>
@@ -258,6 +258,7 @@ export default function App() {
     </>
   );
 }
+
 // ---- ERROR BOUNDARY ---- //
 export function ErrorBoundary({ error }: any) {
   let message = "Oops!";

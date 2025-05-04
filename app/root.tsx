@@ -140,7 +140,15 @@ export default function App() {
                 style={{ height: '50px' }} // ajusta el tamaño según necesites
               />
             </Navbar.Brand>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
+            <Navbar.Toggle
+              aria-controls="basic-navbar-nav"
+              className="custom-toggler"
+            >
+              <span className="navbar-toggler-icon">
+                <div></div>
+              </span>
+            </Navbar.Toggle>
+
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="ms-auto align-items-center gap-2">
               <Nav.Link as={Link} to="/" className="px-3 py-2 rounded nav-hover-white">

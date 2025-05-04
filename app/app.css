@@ -7,6 +7,7 @@
   --bs-primary-bg: #8B0000; /* Rojo oscuro */
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #e9ecef;
+  --nav-link-color: black;
 }
 
 [data-bs-theme="dark"] {
@@ -18,6 +19,7 @@
   --bs-primary-bg: #8B0000; /* Rojo oscuro */
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #333;
+  --nav-link-color: black; /* o blanco si prefieres otro en dark mode */
 }
 
 /* Elimina el conflicto en la raíz */
@@ -167,6 +169,7 @@ body.light {
 /* Estilos minimalistas */
 .nav-link {
   transition: all 0.2s ease;
+  color: var(--nav-link-color) !important;
 }
 
 .nav-link:hover {

@@ -65,7 +65,6 @@ type Reservation = {
 export default function ReservationList() {
   const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [scanning, setScanning] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const qrBaseUrl = "https://midominio.com/qrcode/";
@@ -95,13 +94,6 @@ export default function ReservationList() {
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedReservation(null);
-  };
-
-  const handleScanQR = () => {
-    setScanning(!scanning);
-    if (!scanning) {
-      toast.success("Modo escaneo activado");
-    }
   };
 
   return (
@@ -159,20 +151,6 @@ export default function ReservationList() {
                       onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                     >
                       <FaEye className="fs-5" />
-                    </button>
-                    <button
-                      className="btn btn-outline-success rounded-circle d-flex align-items-center justify-content-center"
-                      title="Escanear QR"
-                      onClick={handleScanQR}
-                      style={{
-                        width: '44px',
-                        height: '44px',
-                        transition: 'transform 0.2s ease-in-out',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.15)')}
-                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                    >
-                      <FaQrcode className="fs-5" />
                     </button>
                   </div>
                 </td>

@@ -131,7 +131,7 @@ export default function App() {
       {isAuthenticated && (
         <Navbar  expand="lg"
         className="px-4 border-bottom"
-        style={{ background: 'linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))', color: '#000'}}>
+        style={{ background: 'linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92))'}}>
           <Container fluid>
             <Navbar.Brand as={Link} to="/" className="fw-bold">
               <img
@@ -226,7 +226,7 @@ export default function App() {
                   >
                     <Dropdown.ItemText className="px-3 py-2" style={{ color: '#000' }}>
                       <div className="fw-bold">{user?.name}</div>
-                      <small className="text-muted">{user?.email}</small>
+                      <small style={{ color: '#000' }}>{user?.email}</small>
                     </Dropdown.ItemText>
                     <Dropdown.Divider />
                     <Dropdown.Item

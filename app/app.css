@@ -439,3 +439,9 @@ input.form-control.border-color-login {
   background-color: #f8d7da;
   color: #721c24;
 }
+
+
+.nav-hover-white:hover {
+  background-color: white !important;
+  color: black !important;
+}

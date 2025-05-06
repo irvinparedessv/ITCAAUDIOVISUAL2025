@@ -18,4 +18,6 @@ export default [
   route("equipo", "routes/equipos.tsx"),
   route("qrScan", "routes/qr.tsx"),
   route("formUsuario", "routes/formUsuario.tsx"),
+  route("usuarios", "routes/usuarioList.tsx"),
+  route("editarUsuario/:id", "routes/editUsuario.tsx"),
 ] satisfies RouteConfig;

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import type { User, UserCreateDTO, UserUpdateDTO } from '~/types/user';
+import type { User, UserUpdateDTO } from '~/types/user';
 
 const API_URL = 'http://localhost:8000/api/users';
 
@@ -15,7 +15,18 @@ export const getUsuarios = async (): Promise<User[]> => {
   }
 };
 
-// Crear un usuario con soporte para FormData (para subir imagen)
+// Obtener un usuario por ID
+export const getUsuarioById = async (id: string): Promise<User> => {
+  try {
+    const res = await axios.get(`${API_URL}/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error(`Error al obtener el usuario con ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Crear un usuario (si necesitaras mantener soporte para imágenes, se podría dejar esta parte como está)
 export const createUsuario = async (formData: FormData) => {
   try {
     const res = await axios.post(API_URL, formData, {
@@ -26,20 +37,25 @@ export const createUsuario = async (formData: FormData) => {
     return res.data;
   } catch (error) {
     console.error("Error al crear el usuario:", error);
-    toast.error("Hubo un error al crear el usuario.");  // Notificar al usuario
+    toast.error("Hubo un error al crear el usuario.");
     throw error;
   }
 };
 
 // Actualizar un usuario
-export const updateUsuario = async (id: number, usuario: UserUpdateDTO) => {
+export const updateUsuario = async (id: number, data: UserUpdateDTO): Promise<any> => {
   try {
-    const res = await axios.put(`${API_URL}/${id}`, usuario);
-    return res.data;
-  } catch (error) {
-    console.error(`Error al actualizar el usuario con ID ${id}:`, error);
-    throw error;
-  }
+    // Enviamos los datos como JSON sin FormData
+    const response = await axios.put(`${API_URL}/${id}`, data);
+    return response.data;
+  } catch (error: any) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("Errores del backend:", error.response.data);
+      // Mostramos los errores del backend, si los hay
+      toast.error("Error de validación: " + JSON.stringify(error.response.data.errors));
+    }
+    throw new Error("No se pudo actualizar el usuario");
+  }  
 };
 
 // Eliminar un usuario

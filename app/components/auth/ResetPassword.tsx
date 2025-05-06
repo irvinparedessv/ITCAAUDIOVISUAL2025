@@ -30,9 +30,7 @@ const ResetPassword: React.FC = () => {
   
       if (now > expirationTime) {
         setIsExpired(true);
-        toast.error('El enlace ha expirado. Por favor solicita uno nuevo.', {
-          icon: <FaExclamationTriangle className="text-red-500" />
-        });
+        toast.error('El enlace ha expirado. Por favor solicita uno nuevo.');
       }
     }
   }, [expires]);
@@ -40,21 +38,22 @@ const ResetPassword: React.FC = () => {
   const validatePassword = (): boolean => {
     if (!password || !passwordConfirm) {
       toast.error('Por favor completa todos los campos', {
-        icon: <FaExclamationTriangle className="text-orange-500" />
+        icon: '⚠️',
       });
       return false;
     }
 
     if (password !== passwordConfirm) {
       toast.error('Las contraseñas no coinciden', {
-        icon: <FaExclamationTriangle className="text-orange-500" />
+        icon: '⚠️',
       });
       return false;
     }
 
     if (password.length < 8) {
       toast.error('La contraseña debe tener al menos 8 caracteres', {
-        icon: <FaExclamationTriangle className="text-orange-500" />
+        icon: '⚠️',
+        duration: 4000,
       });
       return false;
     }
@@ -68,8 +67,8 @@ const ResetPassword: React.FC = () => {
       toast.error(
         'La contraseña debe contener mayúsculas, minúsculas, números y caracteres especiales',
         {
-          icon: <FaExclamationTriangle className="text-orange-500" />,
-          duration: 6000
+          icon: '⚠️',
+          duration: 6000,
         }
       );
       return false;
@@ -85,9 +84,7 @@ const ResetPassword: React.FC = () => {
     if (!validatePassword()) return;
 
     if (!token || !email) {
-      toast.error('El enlace de restablecimiento no es válido', {
-        icon: <FaExclamationTriangle className="text-red-500" />
-      });
+      toast.error('El enlace de restablecimiento no es válido');
       return;
     }
 
@@ -102,14 +99,7 @@ const ResetPassword: React.FC = () => {
         expires,
       });
 
-      toast.success('¡Contraseña restablecida con éxito!', {
-        icon: '✅',
-        duration: 4000,
-        style: {
-          background: '#4BB543',
-          color: '#fff'
-        }
-      });
+      toast.success('¡Contraseña restablecida con éxito!');
 
       setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
@@ -118,7 +108,7 @@ const ResetPassword: React.FC = () => {
         'Hubo un problema al restablecer la contraseña';
 
       toast.error(errorMessage, {
-        icon: <FaExclamationTriangle className="text-red-500" />,
+        icon: '⚠️',
         duration: 5000
       });
 
@@ -132,9 +122,10 @@ const ResetPassword: React.FC = () => {
 
   const handleCancel = () => {
     toast('Cancelaste el restablecimiento de contraseña', {
-      icon: '⚠️'
+      icon: '⚠️',
+      duration: 6000,
     });
-    navigate('/login');
+    setTimeout(() => navigate('/login'), 1000);
   };
 
   const toggleShowPassword = () => setShowPassword(!showPassword);

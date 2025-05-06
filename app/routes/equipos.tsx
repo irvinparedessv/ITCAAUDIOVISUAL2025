@@ -6,7 +6,8 @@ import type { TipoEquipo } from '~/types/tipoEquipo'
 import EquipoForm from '../components/equipo/EquipoForm'
 import EquipoList from '../components/equipo/EquipoList'
 import { Toaster } from 'react-hot-toast'
-import ProtectedRoute from '~/helpers/ProtectedRoute'
+import { ProtectedRoute } from '~/helpers/ProtectedRoute'
+
 
 export default function EquipoPage() {
   const [equipos, setEquipos] = useState<Equipo[]>([])

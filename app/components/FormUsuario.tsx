@@ -1,10 +1,23 @@
-import { useState } from "react";
-import { Container, Form, Button, Row, Col, Card } from "react-bootstrap";
+import { useState, useRef } from "react";
+import {
+  Container,
+  Form,
+  Button,
+  Row,
+  Col,
+  Card,
+  Image,
+} from "react-bootstrap";
 import { createUsuario } from "~/services/userService";
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 
 export default function FormUsuario() {
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -16,94 +29,148 @@ export default function FormUsuario() {
     image: null as File | null,
   });
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const nameRegex = /^[a-zA-Z\s]{2,}$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
+  const phoneRegex = /^[0-9]{4}-[0-9]{4}$/;
+  const imageTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
+  const maxImageSize = 2 * 1024 * 1024;
+
+  const validateField = (name: string, value: any): string => {
+    if (
+      ["first_name", "last_name", "email", "password", "role_id"].includes(
+        name
+      ) &&
+      (!value || value.trim() === "")
+    ) {
+      return "Este campo es obligatorio";
+    }
+    switch (name) {
+      case "first_name":
+      case "last_name":
+        if (!nameRegex.test(value))
+          return "Debe tener al menos 2 letras y solo letras/espacios.";
+        break;
+      case "email":
+        if (!emailRegex.test(value)) return "Correo electrónico inválido.";
+        break;
+      case "password":
+        if (!passwordRegex.test(value))
+          return "Al menos 6 caracteres, una letra y un número.";
+        break;
+      case "role_id":
+        if (!value) return "Debe seleccionar un rol.";
+        break;
+      case "phone":
+        if (value && !phoneRegex.test(value))
+          return "Debe tener el formato 0000-0000.";
+        break;
+      case "address":
+        if (value && value.length < 5)
+          return "Debe tener al menos 5 caracteres.";
+        break;
+    }
+    return "";
+  };
 
   const handleChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let newValue = value;
+
+    if (name === "phone") {
+      const digitsOnly = value.replace(/\D/g, "");
+      if (digitsOnly.length <= 4) {
+        newValue = digitsOnly;
+      } else {
+        newValue = `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4, 8)}`;
+      }
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
+  };
+
+  const handleBlur = (e: React.FocusEvent<any>) => {
+    const { name, value } = e.target;
+    const error = validateField(name, value);
+    setFormErrors((prev) => ({ ...prev, [name]: error }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    setFormData(prev => ({ ...prev, image: file }));
+    setFormData((prev) => ({ ...prev, image: file }));
+
+    if (file) {
+      if (!imageTypes.includes(file.type)) {
+        setFormErrors((prev) => ({
+          ...prev,
+          image: "Tipo de imagen no permitido.",
+        }));
+        return;
+      }
+      if (file.size > maxImageSize) {
+        setFormErrors((prev) => ({
+          ...prev,
+          image: "La imagen no debe exceder los 2MB.",
+        }));
+        return;
+      }
+
+      setFormErrors((prev) => ({ ...prev, image: "" }));
+      const reader = new FileReader();
+      reader.onloadend = () => setPreviewImage(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewImage(null);
+    }
   };
 
-  const validateForm = (): string | null => {
-    const nameRegex = /^[a-zA-Z\s]{2,}$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
-    const phoneRegex = /^[0-9]{8}$/;
-    const imageTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
-    const maxImageSize = 2 * 1024 * 1024; // 2MB
-
-    if (!nameRegex.test(formData.first_name)) {
-      return "El primer nombre debe contener al menos 2 letras y solo puede tener letras y espacios.";
-    }
-
-    if (!nameRegex.test(formData.last_name)) {
-      return "El apellido debe contener al menos 2 letras y solo puede tener letras y espacios.";
-    }
-
-    if (!emailRegex.test(formData.email)) {
-      return "Ingrese un correo electrónico válido.";
-    }
-
-    if (!passwordRegex.test(formData.password)) {
-      return "La contraseña debe tener al menos 6 caracteres e incluir al menos una letra y un número.";
-    }
-
-    if (!formData.role_id) {
-      return "Seleccione un rol.";
-    }
-
-    if (formData.phone && !phoneRegex.test(formData.phone)) {
-      return "El teléfono debe contener exactamente 8 dígitos numéricos.";
-    }
-
-    if (formData.address && formData.address.length < 5) {
-      return "La dirección debe tener al menos 5 caracteres si se proporciona.";
-    }
+  const isFormValid = (): boolean => {
+    const errors: Record<string, string> = {};
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === "image") return;
+      const error = validateField(key, value);
+      if (error) errors[key] = error;
+    });
 
     if (formData.image) {
       if (!imageTypes.includes(formData.image.type)) {
-        return "La imagen debe ser de tipo JPG, JPEG, PNG o GIF.";
-      }
-      if (formData.image.size > maxImageSize) {
-        return "La imagen no debe exceder los 2MB.";
+        errors.image = "La imagen debe ser de tipo JPG, JPEG, PNG o GIF.";
+      } else if (formData.image.size > maxImageSize) {
+        errors.image = "La imagen no debe exceder los 2MB.";
       }
     }
 
-    return null;
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formError = validateForm();
-    if (formError) {
-      toast.error(formError);
+    if (!isFormValid()) {
+      toast.error("Revisa los campos antes de enviar.");
       return;
     }
 
     setIsLoading(true);
 
-    const formDataWithRoleIdAsNumber = {
-      ...formData,
-      role_id: Number(formData.role_id),
-    };
+    const formDataToSend = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null) {
+        if (key === "role_id")
+          formDataToSend.append(key, Number(value).toString());
+        else if (key !== "image") formDataToSend.append(key, value.toString());
+      }
+    });
+    if (formData.image) formDataToSend.append("image", formData.image);
 
     try {
-      const formDataWithImage = new FormData();
-      Object.entries(formDataWithRoleIdAsNumber).forEach(([key, value]) => {
-        if (key !== "image" && value !== null) {
-          formDataWithImage.append(key, value.toString());
-        }
-      });
-      if (formData.image) {
-        formDataWithImage.append("image", formData.image);
-      }
-
-      await createUsuario(formDataWithImage);
+      await createUsuario(formDataToSend);
       toast.success("Usuario creado con éxito");
+
       setFormData({
         first_name: "",
         last_name: "",
@@ -114,8 +181,12 @@ export default function FormUsuario() {
         address: "",
         image: null,
       });
+      setFormErrors({});
+      setPreviewImage(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      navigate("/usuarios");
     } catch (error) {
-      toast.error("Hubo un error al procesar la solicitud");
+      throw error; // Deja que el handler externo lo maneje
     } finally {
       setIsLoading(false);
     }
@@ -136,54 +207,63 @@ export default function FormUsuario() {
               <h4 className="mb-0">Crear Nuevo Usuario</h4>
             </Card.Header>
             <Card.Body>
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Primer Nombre</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    placeholder="Primer nombre"
-                    required
-                  />
-                </Form.Group>
+              <Form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!isFormValid()) {
+                    toast.error("Revisa los campos antes de enviar.");
+                    return;
+                  }
 
-                <Form.Group className="mb-3">
-                  <Form.Label>Apellido</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    placeholder="Apellido"
-                    required
-                  />
-                </Form.Group>
+                  const result = await Swal.fire({
+                    title: "¿Crear usuario?",
+                    text: "¿Estás seguro de que deseas crear este usuario?",
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, crear",
+                    cancelButtonText: "Cancelar",
+                  });
 
-                <Form.Group className="mb-3">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="Correo electrónico"
-                    required
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Contraseña</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Contraseña"
-                    required
-                  />
-                </Form.Group>
+                  if (result.isConfirmed) {
+                    try {
+                      await handleSubmit(e);
+                    } catch (error) {
+                      toast.error("Hubo un error al crear el usuario");
+                    }
+                  } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    toast.info("Creación cancelada por el usuario");
+                  }
+                }}
+                encType="multipart/form-data"
+              >
+                {[
+                  { label: "Nombres", name: "first_name", type: "text" },
+                  { label: "Apellidos", name: "last_name", type: "text" },
+                  { label: "Email", name: "email", type: "email" },
+                  { label: "Contraseña", name: "password", type: "password" },
+                  { label: "Teléfono (Opcional)", name: "phone", type: "text" },
+                  {
+                    label: "Dirección (Opcional)",
+                    name: "address",
+                    type: "text",
+                  },
+                ].map(({ label, name, type }) => (
+                  <Form.Group className="mb-3" key={name}>
+                    <Form.Label>{label}</Form.Label>
+                    <Form.Control
+                      type={type}
+                      name={name}
+                      value={(formData as any)[name]}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      placeholder={label}
+                      isInvalid={!!formErrors[name]}
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      {formErrors[name]}
+                    </Form.Control.Feedback>
+                  </Form.Group>
+                ))}
 
                 <Form.Group className="mb-3">
                   <Form.Label>Rol</Form.Label>
@@ -191,37 +271,19 @@ export default function FormUsuario() {
                     name="role_id"
                     value={formData.role_id}
                     onChange={handleChange}
-                    required
+                    onBlur={handleBlur}
+                    isInvalid={!!formErrors.role_id}
                   >
                     <option value="">Selecciona un rol</option>
-                    {roles.map(role => (
+                    {roles.map((role) => (
                       <option key={role.id} value={role.id}>
                         {role.name}
                       </option>
                     ))}
                   </Form.Select>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Teléfono (Opcional)</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="Teléfono"
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Dirección (Opcional)</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    placeholder="Dirección"
-                  />
+                  <Form.Control.Feedback type="invalid">
+                    {formErrors.role_id}
+                  </Form.Control.Feedback>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
@@ -231,8 +293,34 @@ export default function FormUsuario() {
                     name="image"
                     onChange={handleImageChange}
                     accept="image/*"
+                    ref={fileInputRef}
+                    isInvalid={!!formErrors.image}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {formErrors.image}
+                  </Form.Control.Feedback>
+                  {previewImage && (
+                    <div className="mt-3 text-center">
+                      <Image
+                        src={previewImage}
+                        alt="Vista previa"
+                        fluid
+                        rounded
+                        thumbnail
+                        style={{ maxHeight: "200px" }}
+                      />
+                    </div>
+                  )}
                 </Form.Group>
+
+                <div className="d-grid mb-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => navigate("/usuarios")}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
 
                 <div className="d-grid">
                   <Button variant="primary" type="submit" disabled={isLoading}>

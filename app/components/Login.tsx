@@ -36,10 +36,16 @@ const Login = () => {
       const response = await api.post('/login', { email, password });
       login(response.data.token, response.data.user);
       navigate('/');
-    } catch (err) {
-      setError('Credenciales incorrectas. Por favor intente nuevamente');
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setError('Credenciales incorrectas. Por favor intente nuevamente.');
+      } else if (err.response?.status === 403) {
+        setError('Tu cuenta está inactiva o ha sido eliminada. Contacta al administrador.');
+      } else {
+        setError('Ocurrió un error inesperado. Intenta más tarde.');
+      }
       setIsLoading(false);
-    }
+    }    
   };
 
   return (

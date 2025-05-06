@@ -25,12 +25,6 @@ const Login = () => {
   const { isAuthenticated } = useAuth();
   const [showForgotModal, setShowForgotModal] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/"); // Redirige a la página principal si ya está autenticado
-    }
-  }, [isAuthenticated, navigate]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);

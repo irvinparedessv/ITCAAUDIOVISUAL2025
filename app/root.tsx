@@ -17,8 +17,6 @@ import { useEffect, useState } from "react";
 import { FaHome, FaPlus, FaList, FaUserCircle, FaMoon, FaSun } from "react-icons/fa";
 import { Spinner, Dropdown } from "react-bootstrap";
 import { FaComputer } from "react-icons/fa6";
-import Forbidden from "./layouts/Forbidden";
-import { routeRoles } from "./types/routeRoles";
 import { Role } from "./types/roles";
 
 
@@ -87,10 +85,9 @@ export default function App() {
     document.body.classList.remove(newMode ? "light" : "dark");
   };
 
+  const publicRoutes = ["/login", "/forgot-password", "/reset-password", "/forbidden"];
   // Redirección basada en autenticación
   useEffect(() => {
-    const publicRoutes = ["/login", "/forgot-password", "/reset-password"];
-
     if (!isLoading) {
       if (isAuthenticated && location.pathname === "/login") {
         navigate("/");
@@ -115,9 +112,11 @@ export default function App() {
     );
   }
 
-  if (location.pathname === "/login") {
-    return <Outlet />;
-  }
+ const hideNavbarRoutes = ["/login", "/forgot-password", "/reset-password", "/forbidden"];
+
+if (hideNavbarRoutes.some(route => location.pathname.startsWith(route))) {
+  return <Outlet />;
+}
 
   return (
     <>

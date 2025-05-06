@@ -1,4 +1,5 @@
-import ProtectedRoute from "~/helpers/ProtectedRoute";
+
+import { ProtectedRoute } from "~/helpers/ProtectedRoute";
 import type { Route } from "./+types/home";
 import Dashboard from "~/dashboard/dashboard";
 

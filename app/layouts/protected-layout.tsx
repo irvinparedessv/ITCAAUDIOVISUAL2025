@@ -3,6 +3,7 @@ import { useLocation, Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { routeRoles } from "../types/routeRoles";
 import { Spinner } from "react-bootstrap";
+import Forbidden from "~/components/auth/Forbidden";
 
 export function ProtectedLayout() {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -25,8 +26,7 @@ export function ProtectedLayout() {
   const allowedRoles = routeRoles[currentRoute] || [];
   
   if (allowedRoles.length > 0 && (!user?.role || !allowedRoles.includes(user.role))) {
-    return <Navigate to="/forbidden" replace />;
+    return <Forbidden />;
   }
-
   return <Outlet />;
 }

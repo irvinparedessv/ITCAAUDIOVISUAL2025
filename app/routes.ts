@@ -5,6 +5,7 @@ export default [
   route("login", "routes/login.tsx"),
   route("forgot-password", "routes/forgot-password.tsx"),
   route("reset-password", "routes/reset-password.tsx"),
+  
   // Ruta protegida principal (con layout)
   route(
     "/",
@@ -23,7 +24,6 @@ export default [
       route("reservationsroom", "routes/reservationRoom.tsx"),
       route("tipoequipo", "routes/tipoEquipos.tsx"),
       route("equipo", "routes/equipos.tsx"),
-      route("forbidden", "layouts/Forbidden.tsx"),
     ]
   ),
 ] satisfies RouteConfig;

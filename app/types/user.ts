@@ -1,21 +1,33 @@
 export interface User {
-    id: number;
-    first_name: string;
-    last_name: string;
-    email: string;
-    password: string;
-    role_id: number;
-    phone?: string;
-    address?: string;
-    image?: string; // normalmente es la URL o nombre de archivo
-    status: boolean; // campo estado (activo/inactivo)
-    is_deleted: boolean;
-  }
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  role_id: number;
+  phone?: string;
+  address?: string;
+  image: string | File; // sigue requerido aquí, porque lo usas en creación
+  estado?: number; // puede ser 0, 1 o 3
+  is_deleted: boolean;
+}
 
-  export type UserCreateDTO = Omit<User, 'id' | 'is_deleted' | 'status' | 'image'> & {
-    image?: File | null; // En creación, la imagen es un archivo
-  };
-  
-  export type UserUpdateDTO = Partial<UserCreateDTO>; // Para actualizaciones opcionales
-  
-  
+// Para crear usuarios, incluyendo imagen opcional tipo archivo
+export type UserCreateDTO = Omit<User, 'id' | 'is_deleted' | 'estado' | 'image'> & {
+  image?: File | null;
+};
+
+// Para actualizar usuarios, SIN imagen y SIN password obligatorio
+export type UserUpdateDTO = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  role_id: number;
+  estado?: number;
+  password?: string;
+};
+
+// Para identificar el usuario a actualizar (id requerido)
+export type UserWithId = UserUpdateDTO & { id: number };

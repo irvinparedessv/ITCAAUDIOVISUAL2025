@@ -9,7 +9,7 @@ import {
   FaUserShield,
   FaQrcode,
 } from "react-icons/fa";
-import { FaComputer } from "react-icons/fa6";
+import { FaComputer, FaRestroom } from "react-icons/fa6";
 import { Card, Container, Row, Col } from "react-bootstrap";
 
 export default function Dashboard() {
@@ -94,6 +94,12 @@ export default function Dashboard() {
 
       {user?.role === "Prestamista" && (
         <Row xs={1} md={2} className="g-4">
+          <DashboardCard
+            title="Reservar Espacio"
+            icon={<FaRestroom size={24} />}
+            link="/crearEspacio"
+            description="Crear nueva reserva de espacio"
+          />
           <DashboardCard
             title="Nueva Reserva"
             icon={<FaComputer size={24} />}

@@ -15,7 +15,6 @@
     "axios": "^1.9.0",
     "bootstrap": "^5.3.3",
     "isbot": "^5.1.17",
-    "photo-sphere-viewer": "^4.8.1",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-360-view": "^0.1.3",

@@ -1,8 +1,10 @@
-import { Table, Container, Badge, Button, Form, Modal } from "react-bootstrap";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react"; // Añade useEffect aquí
+import { Badge, Button, Modal } from "react-bootstrap";
 import api from "../api/axios";
 import { BrowserMultiFormatReader } from "@zxing/library";
 import { useAuth } from "../hooks/AuthContext";
+import toast from "react-hot-toast";
+import { FaEye, FaQrcode } from "react-icons/fa";
 
 type Role = {
   id: number;
@@ -63,30 +65,26 @@ type Reservation = {
 export default function ReservationList() {
   const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [qrData, setQrData] = useState<string | null>(null);
-  const [scanning, setScanning] = useState(false);
-  const [selectedReservation, setSelectedReservation] =
-    useState<Reservation | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const qrBaseUrl = "https://midominio.com/qrcode/";
+  
 
   useEffect(() => {
-    if (scanning && videoRef.current) {
-      const codeReader = new BrowserMultiFormatReader();
-      codeReader
-        .decodeFromInputVideoDevice(undefined, videoRef.current)
-        .then((result) => {
-          setQrData(result.getText());
-        })
-        .catch((err) => {
-          console.error("Error al escanear:", err);
-        });
+    const fetchReservations = async () => {
+      try {
+        const response = await api.get(`/reservas/${user?.id}`);
+        setReservations(response.data);
+      } catch (error) {
+        console.error(error);
+        toast.error("Error al cargar las reservas");
+      }
+    };
 
-      return () => {
-        codeReader.reset();
-      };
+    if (user?.id) {
+      fetchReservations();
     }
-  }, [scanning]);
+  }, [user]);
 
   const handleDetailClick = (reservation: Reservation) => {
     setSelectedReservation(reservation);
@@ -98,135 +96,249 @@ export default function ReservationList() {
     setSelectedReservation(null);
   };
 
-  useEffect(() => {
-    // Obtener las reservas del usuario autenticado
-    const fetchReservations = async () => {
-      try {
-        const response = await api.get(`/reservas/${user?.id}`); // Ajusta la ruta si es necesario
-        setReservations(response.data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    if (user?.id) {
-      fetchReservations();
-    }
-  }, [user]);
-
-  const qrBaseUrl = "https://midominio.com/qrcode/"; // ⚡️ Cambia a tu dominio real
-
   return (
-    <Container className="my-5">
-      <h3 className="mb-4 text-center">Listado de Reservas</h3>
-
-      {scanning && (
-        <div className="mt-3">
-          <video
-            ref={videoRef}
-            width="100%"
-            height="auto"
-            style={{ border: "1px solid black" }}
-          />
-        </div>
-      )}
-
-      {qrData && (
-        <Form.Group className="mt-3">
-          <Form.Label>Datos del Código QR</Form.Label>
-          <Form.Control type="text" value={qrData} readOnly />
-        </Form.Group>
-      )}
-
-      <Table striped bordered hover responsive className="mt-4">
-        <thead className="table-primary">
-          <tr>
-            <th>Usuario</th>
-            <th>Equipos</th>
-            <th>Aula</th>
-            <th>Fecha de Salida</th>
-            <th>Fecha de Entrega</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {reservations.map((reserva) => (
-            <tr key={reserva.id}>
-              <td>{reserva.user.name}</td>
-              <td>{reserva.equipos.map((e) => e.nombre).join(", ")}</td>
-              <td>{reserva.aula}</td> {/* ⚡️ Ajusta si después agregas aula */}
-              <td>{formatDate(reserva.fecha_reserva)}</td>
-              <td>{formatDate(reserva.fecha_entrega)}</td>
-              <td>
-                <Badge bg={getBadgeColor(reserva.estado)}>
-                  {reserva.estado}
-                </Badge>
-              </td>
-              <td>
-                <Button size="sm" onClick={() => handleDetailClick(reserva)}>
-                  Detalles
-                </Button>
-              </td>
+    <div className="container py-5">
+      <div className="table-responsive rounded shadow p-3 mt-4">
+        <h4 className="mb-3 text-center">Listado de Reservas</h4>
+        
+        <table
+          className="table table-hover align-middle text-center overflow-hidden"
+          style={{ borderRadius: '0.8rem' }}
+        >
+          <thead className="table-dark">
+            <tr>
+              <th className="rounded-top-start">Usuario</th>
+              <th>Equipos</th>
+              <th>Aula</th>
+              <th>Fecha Salida</th>
+              <th>Fecha Entrega</th>
+              <th>Estado</th>
+              <th className="rounded-top-end">Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {reservations.map((reserva) => (
+              <tr key={reserva.id}>
+                <td className="fw-bold">{reserva.user.name}</td>
+                <td>
+                  {reserva.equipos.slice(0, 2).map(e => e.nombre).join(", ")}
+                  {reserva.equipos.length > 2 && "..."}
+                </td>
+                <td>{reserva.aula}</td>
+                <td>{formatDate(reserva.fecha_reserva)}</td>
+                <td>{formatDate(reserva.fecha_entrega)}</td>
+                <td>
+                  <Badge 
+                    bg={getBadgeColor(reserva.estado)}
+                    className="px-3 py-2"
+                    style={{ fontSize: '0.9rem' }}
+                  >
+                    {reserva.estado}
+                  </Badge>
+                </td>
+                <td>
+                  <div className="d-flex justify-content-center gap-2">
+                    <button
+                      className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+                      title="Ver detalles"
+                      onClick={() => handleDetailClick(reserva)}
+                      style={{
+                        width: '44px',
+                        height: '44px',
+                        transition: 'transform 0.2s ease-in-out',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.15)')}
+                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                    >
+                      <FaEye className="fs-5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {reservations.length === 0 && (
+              <tr>
+                <td colSpan={7} className="text-center text-muted">
+                  No hay reservas registradas
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      {/* Modal de Detalle */}
-      <Modal show={showModal} onHide={handleCloseModal} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Detalle de la Reserva</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedReservation && (
-            <div>
-              <p>
-                <strong>Usuario:</strong> {selectedReservation.user.name}
-              </p>
-              <p>
-                <strong>Correo:</strong> {selectedReservation.user.email}
-              </p>
-              <p>
-                <strong>Equipos:</strong>{" "}
-                {selectedReservation.equipos.map((e) => e.nombre).join(", ")}
-              </p>
-              <p>
-                <strong>Aula:</strong> {selectedReservation.aula}
-              </p>
-              <p>
-                <strong>Fecha de Salida:</strong>{" "}
-                {formatDate(selectedReservation.fecha_reserva)}
-              </p>
-              <p>
-                <strong>Fecha de Entrega:</strong>{" "}
-                {formatDate(selectedReservation.fecha_entrega)}
-              </p>
-              <p>
-                <strong>Estado:</strong> {selectedReservation.estado}
-              </p>
-
-              {/* Código QR */}
-              <div className="text-center mt-3">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.codigo_qr.id}&size=200x200`}
-                  alt="Código QR de Reserva"
-                />
-                <p className="mt-2 small">
-                  {qrBaseUrl}
-                  {selectedReservation.codigo_qr.id}
+      <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
+  <Modal.Header 
+    closeButton 
+    className="text-white"
+    style={{ 
+      backgroundColor: 'rgb(177, 41, 29)',
+      borderBottom: 'none',
+      padding: '1.5rem'
+    }}
+  >
+    <Modal.Title className="fw-bold">
+      <i className="bi bi-card-checklist me-2" style={{ color: '#D4A017' }}></i>
+      Detalles de Reserva #{selectedReservation?.id}
+    </Modal.Title>
+  </Modal.Header>
+  
+  <Modal.Body style={{ padding: '2rem' }}>
+    {selectedReservation && (
+      <div className="row g-4">
+        {/* Sección izquierda - Información principal */}
+        <div className="col-md-6">
+          <div className="mb-4">
+            <div className="d-flex align-items-center mb-3">
+              <div className="p-2 rounded me-3" style={{ backgroundColor: 'rgb(212, 158, 23)' }}>
+                <i className="bi bi-person-fill fs-4" style={{ color: '#D4A017' }}></i>
+              </div>
+              <h5 className="fw-bold mb-0">Información del Usuario</h5>
+            </div>
+            <div className="ps-5">
+              <div className="d-flex align-items-center mb-3">
+                <span className="d-inline-block text-nowrap me-3" style={{ width: '100px', fontWeight: '500' }}>
+                  <i className="bi bi-person me-2 text-body-emphasis"></i>Nombre
+                </span>
+                <p className="mb-0 fw-semibold flex-grow-1">{selectedReservation.user.name}</p>
+              </div>
+              <div className="d-flex align-items-center mb-3">
+                <span className="d-inline-block text-nowrap me-3" style={{ width: '100px', fontWeight: '500' }}>
+                  <i className="bi bi-envelope me-2 text-body-emphasis"></i>Correo
+                </span>
+                <p className="mb-0 fw-semibold flex-grow-1">{selectedReservation.user.email}</p>
+              </div>
+              <div className="d-flex align-items-center mb-3">
+                <span className="d-inline-block text-nowrap me-3" style={{ width: '100px', fontWeight: '500' }}>
+                  <i className="bi bi-telephone me-2 text-body-emphasis"></i>Teléfono
+                </span>
+                <p className="mb-0 fw-semibold flex-grow-1">
+                  {selectedReservation.user.phone || <span className="text-body-secondary">No registrado</span>}
                 </p>
               </div>
+              <div className="d-flex align-items-center mb-3">
+                <span className="d-inline-block text-nowrap me-3" style={{ width: '100px', fontWeight: '500' }}>
+                  <i className="bi bi-person-gear me-2 text-body-emphasis"></i>Rol
+                </span>
+                <p className="mb-0 fw-semibold flex-grow-1">{selectedReservation.user.role.nombre}</p>
+              </div>
             </div>
-          )}
-        </Modal.Body>
-      </Modal>
-    </Container>
+          </div>
+
+          <div className="mb-4">
+            <div className="d-flex align-items-center mb-3">
+              <div className="p-2 rounded me-3" style={{ backgroundColor: 'rgb(212, 158, 23)' }}>
+                <i className="bi bi-calendar-check fs-4" style={{ color: '#D4A017' }}></i>
+              </div>
+              <h5 className="fw-bold mb-0">Detalles de Reserva</h5>
+            </div>
+            <div className="ps-5">
+              <div className="d-flex align-items-center mb-3">
+                <span className="d-inline-block text-nowrap me-3" style={{ width: '100px', fontWeight: '500' }}>
+                  <i className="bi bi-door-open me-2 text-body-emphasis"></i>Aula
+                </span>
+                <p className="mb-0 fw-semibold flex-grow-1">{selectedReservation.aula}</p>
+              </div>
+              <div className="d-flex align-items-center mb-3">
+                <span className="d-inline-block text-nowrap me-3" style={{ width: '100px', fontWeight: '500' }}>
+                  <i className="bi bi-box-arrow-right me-2 text-body-emphasis"></i>Salida
+                </span>
+                <p className="mb-0 fw-semibold flex-grow-1">{formatDate(selectedReservation.fecha_reserva)}</p>
+              </div>
+              <div className="d-flex align-items-center mb-3">
+                <span className="d-inline-block text-nowrap me-3" style={{ width: '100px', fontWeight: '500' }}>
+                  <i className="bi bi-box-arrow-in-left me-2 text-body-emphasis"></i>Entrega
+                </span>
+                <p className="mb-0 fw-semibold flex-grow-1">{formatDate(selectedReservation.fecha_entrega)}</p>
+              </div>
+              <div className="d-flex align-items-center mb-3">
+                <span className="d-inline-block text-nowrap me-3" style={{ width: '100px', fontWeight: '500' }}>
+                  <i className="bi bi-info-circle me-2 text-body-emphasis"></i>Estado
+                </span>
+                <Badge 
+  bg={getBadgeColor(selectedReservation.estado)}
+  className="px-3 py-1 d-flex justify-content-center align-items-center" 
+  style={{ 
+    fontSize: '0.85rem',
+    width: '100%' // Opcional: asegura que ocupe todo el ancho disponible
+  }}
+>
+  {selectedReservation.estado}
+</Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sección derecha - Equipos y QR */}
+        <div className="col-md-6">
+          <div className="mb-4">
+            <div className="d-flex align-items-center mb-3">
+              <div className="p-2 rounded me-3" style={{ backgroundColor: 'rgb(212, 158, 23)' }}>
+                <i className="bi bi-pc-display fs-4" style={{ color: '#D4A017' }}></i>
+              </div>
+              <h5 className="fw-bold mb-0">Equipos Reservados</h5>
+            </div>
+            <div className="ps-5">
+              <div className="list-group">
+                {selectedReservation.equipos.map((equipo) => (
+                  <div 
+                    key={equipo.id} 
+                    className="list-group-item border-0 bg-body-secondary mb-2 rounded d-flex justify-content-between align-items-center"
+                  >
+                    <div>
+                      <h6 className="fw-bold mb-1 d-flex align-items-center">
+                        <i className="bi bi-pc-display-horizontal me-2" style={{ color: '#D4A017' }}></i>
+                        {equipo.nombre}
+                      </h6>
+                      <p className="small text-body-secondary mb-0">{equipo.descripcion}</p>
+                    </div>
+                    <span className="badge rounded-pill bg-body-tertiary text-body-emphasis" style={{ minWidth: '2rem' }}>1</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+  <div className="d-flex align-items-center mb-3">
+    <div className="p-2 rounded me-3" style={{ backgroundColor: 'rgb(212, 158, 23)' }}>
+      <i className="bi bi-qr-code-scan fs-4" style={{ color: '#D4A017' }}></i>
+    </div>
+    <h5 className="fw-bold mb-0">Código QR</h5>
+  </div>
+  
+  <div className="ps-5">
+    <div className="text-center"> {/* Contenedor centrado para el QR */}
+      <div className="bg-body-secondary p-3 rounded-3 shadow-sm mb-3 d-inline-block">
+        <img
+          src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.codigo_qr.id}&size=150x150`}
+          alt="Código QR de Reserva"
+          style={{ width: '160px', height: '160px' }}
+        />
+      </div>
+    </div>
+    
+    <div> {/* Mantenemos el texto alineado a la izquierda */}
+      <p className="small text-body-secondary mb-1">
+        Escanee este código para verificar la reserva
+      </p>
+      <p className="small bg-body-secondary p-2 rounded text-break">
+        <code className="text-body-secondary">{qrBaseUrl}{selectedReservation.codigo_qr.id}</code>
+      </p>
+    </div>
+  </div>
+</div>
+        </div>
+      </div>
+    )}
+  </Modal.Body>
+</Modal>
+    </div>
   );
 }
 
-// Función para colorear el estado
-function getBadgeColor(estado: Reservation["estado"]) {
+function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto") {
   switch (estado) {
     case "Pendiente":
       return "warning";
@@ -239,8 +351,13 @@ function getBadgeColor(estado: Reservation["estado"]) {
   }
 }
 
-// Formatear fechas bonitas
 function formatDate(dateString: string) {
   const date = new Date(dateString);
-  return date.toLocaleString(); // o puedes usar date.toLocaleDateString()
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }

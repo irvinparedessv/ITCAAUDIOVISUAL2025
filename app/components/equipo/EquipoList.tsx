@@ -1,6 +1,7 @@
 import type { Equipo } from '~/types/equipo'
 import type { TipoEquipo } from '~/types/tipoEquipo'
 import toast from 'react-hot-toast'
+import { FaEdit, FaTrash } from 'react-icons/fa'
 
 interface Props {
   equipos: Equipo[]
@@ -44,19 +45,26 @@ export default function EquipoList({ equipos, tipos, onEdit, onDelete }: Props) 
   }
 
   return (
-    <div className="table-responsive rounded shadow p-3 bg-white mt-4">
+    <div className="table-responsive rounded shadow p-3 mt-4">
       <h4 className="mb-3 text-center">Listado de Equipos</h4>
-      <table className="table table-hover align-middle text-center">
-        <thead className="table-dark">
-          <tr>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Estado</th>
-            <th>Cantidad</th>
-            <th>Tipo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+      <table
+  className="table table-hover align-middle text-center overflow-hidden"
+  style={{ borderRadius: '0.8rem' }}
+>
+
+
+      <thead className="table-dark">
+  <tr>
+    <th className="rounded-top-start">Nombre</th>
+    <th>Descripción</th>
+    <th>Estado</th>
+    <th>Cantidad</th>
+    <th>Tipo</th>
+    <th>Imagen</th>
+    <th className="rounded-top-end">Acciones</th>
+  </tr>
+</thead>
+
         <tbody>
           {equipos.map(equipo => (
             <tr key={equipo.id}>
@@ -70,18 +78,47 @@ export default function EquipoList({ equipos, tipos, onEdit, onDelete }: Props) 
               <td>{equipo.cantidad}</td>
               <td><em>{getTipoNombre(equipo.tipo_equipo_id)}</em></td>
               <td>
-                <button
-                  className="btn btn-sm btn-outline-primary me-2"
-                  onClick={() => onEdit(equipo)}
-                >
-                  Editar
-                </button>
-                <button
-                  className="btn btn-sm btn-outline-danger"
-                  onClick={() => confirmarEliminacion(equipo.id)}
-                >
-                  Eliminar
-                </button>
+                {equipo.imagen_url ? (
+                  <img
+                    src={equipo.imagen_url}
+                    alt={equipo.nombre}
+                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }}
+                  />
+                ) : (
+                  <span className="text-muted">Sin imagen</span>
+                )}
+              </td>
+              <td>
+                <div className="d-flex justify-content-center gap-2">
+                  <button
+                    className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+                    title="Editar equipo"
+                    onClick={() => onEdit(equipo)}
+                    style={{
+                      width: '44px',
+                      height: '44px',
+                      transition: 'transform 0.2s ease-in-out',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.15)')}
+                    onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                  >
+                    <FaEdit className="fs-5" />
+                  </button>
+                  <button
+                    className="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center"
+                    title="Eliminar equipo"
+                    onClick={() => confirmarEliminacion(equipo.id)}
+                    style={{
+                      width: '44px',
+                      height: '44px',
+                      transition: 'transform 0.2s ease-in-out',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.15)')}
+                    onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                  >
+                    <FaTrash className="fs-5" />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

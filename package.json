@@ -12,7 +12,7 @@
     "@react-router/node": "^7.4.0",
     "@react-router/serve": "^7.4.0",
     "@zxing/library": "^0.21.3",
-    "axios": "^1.8.4",
+    "axios": "^1.9.0",
     "bootstrap": "^5.3.3",
     "isbot": "^5.1.17",
     "photo-sphere-viewer": "^4.8.1",
@@ -29,7 +29,9 @@
     "react-router-dom": "^7.5.2",
     "react-select": "^5.10.1",
     "react-to-print": "^3.1.0",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "sweetalert2": "^11.21.0",
+    "sweetalert2-react-content": "^5.1.0"
   },
   "devDependencies": {
     "@react-router/dev": "^7.4.0",

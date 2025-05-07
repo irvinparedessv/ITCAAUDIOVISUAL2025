@@ -39,10 +39,16 @@ const Login = () => {
     try {
       await login(email, password); // Ya incluye CSRF + login + manejo de estado
       navigate('/');
-    } catch (err) {
-      setError('Credenciales incorrectas. Por favor intente nuevamente');
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setError('Credenciales incorrectas. Por favor intente nuevamente.');
+      } else if (err.response?.status === 403) {
+        setError('Tu cuenta está inactiva o ha sido eliminada. Contacta al administrador.');
+      } else {
+        setError('Ocurrió un error inesperado. Intenta más tarde.');
+      }
       setIsLoading(false);
-    }
+    }    
   };
 
   return (

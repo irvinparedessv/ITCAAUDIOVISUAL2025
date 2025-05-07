@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import { FaComputer, FaRestroom } from "react-icons/fa6";
 import { Card, Container, Row, Col } from "react-bootstrap";
+import { Role } from "~/types/roles";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -33,7 +34,7 @@ export default function Dashboard() {
     <Container className="py-5">
       <h1 className="mb-4">Panel de Control</h1>
       <p className="text-muted mb-5">
-        Bienvenido, {user?.name}. Selecciona una opción:
+        Bienvenido, {user?.first_name}. Selecciona una opción:
       </p>
 
       {user?.role === Role.Administrador && (

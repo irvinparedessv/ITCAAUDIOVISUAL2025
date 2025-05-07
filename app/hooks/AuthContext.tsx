@@ -1,9 +1,22 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import api from "../api/axios";
 import { routeRoles } from "~/types/routeRoles";
- // Asegúrate de importar tu tipo User
+import type { UserLogin } from "~/types/user";
+// Asegúrate de importar tu tipo User
 
 // 1. Tipado del contexto (sin isAuthenticated como estado independiente)
+
+// Tipado del usuario
+type User = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string; // Asegúrate que tu API mande 'role'
+  image?: string; // Añadir la propiedad image aquí
+};
+
+// Tipado del contexto
 type AuthContextType = {
   token: string | null;
   user: UserLogin | null;

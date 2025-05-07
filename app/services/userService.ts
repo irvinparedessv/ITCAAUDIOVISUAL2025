@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import api from '~/api/axios';
 import type { User, UserUpdateDTO } from '~/types/user';
 
 const API_URL = 'http://localhost:8000/api/users';
@@ -67,4 +68,20 @@ export const deleteUsuario = async (id: number) => {
     console.error(`Error al eliminar el usuario con ID ${id}:`, error);
     throw error;
   }
+};
+
+
+interface ResetPasswordData {
+  token: string | null;
+  email: string | null;
+  password: string;
+  password_confirmation: string;
+}
+
+export const forgotPassword = async (email: string) => {
+  return api.post('/forgot-password', { email });
+};
+
+export const resetPassword = async (data: ResetPasswordData) => {
+  return api.post('/reset-password', data);
 };

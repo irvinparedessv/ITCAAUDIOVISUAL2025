@@ -1,4 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import api from "../api/axios";
+import { routeRoles } from "~/types/routeRoles";
+import type { UserLogin } from "~/types/user";
+// Asegúrate de importar tu tipo User
+
+// 1. Tipado del contexto (sin isAuthenticated como estado independiente)
 
 // Tipado del usuario
 type User = {
@@ -12,22 +18,26 @@ type User = {
 
 // Tipado del contexto
 type AuthContextType = {
-  isAuthenticated: boolean;
-  login: (token: string, user: User) => void;
-  logout: () => void;
   token: string | null;
-  user: User | null;
+  user: UserLogin | null;
   isLoading: boolean;
+  isAuthenticated: boolean; // Derivado de !!token
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  checkAccess: (route: string) => boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null); // Fuente de verdad
+  const [user, setUser] = useState<UserLogin | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // isAuthenticated es derivado (evita estados redundantes)
+  const isAuthenticated = !!token;
+
+  // 2. Efecto para cargar credenciales al inicio (solo una ejecución)
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -35,37 +45,64 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
     }
     setIsLoading(false);
-  }, []);
+  }, []); // Sin dependencias = solo al montar
 
-  const login = (newToken: string, newUser: User) => {
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
-    setIsAuthenticated(true);
+  // 3. Login optimizado (con manejo de carga)
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post("/login", { email, password });
+      const { token: newToken, user: newUser } = response.data;
+
+      localStorage.setItem("token", newToken);
+      localStorage.setItem("user", JSON.stringify(newUser));
+      setToken(newToken);
+      setUser(newUser);
+    } catch (error) {
+      throw error; // Maneja el error en el componente Login
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // 4. Logout síncrono (sin esperar)
   const logout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem("user"); // <-- Añade esto
     setToken(null);
-    setUser(null);
-    setIsAuthenticated(false);
+    setUser(null); // <-- Asegúrate de resetear el estado
   };
 
+  // 5. Verificación de permisos
+  const checkAccess = (route: string) => {
+    if (!user) return false;
+    const allowedRoles = routeRoles[route] || [];
+    return allowedRoles.length === 0 || allowedRoles.includes(user.role);
+  };
+
+  // 6. Proveedor del contexto
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, token, user, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        isLoading,
+        isAuthenticated, // Derivado
+        login,
+        logout,
+        checkAccess,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-
+// Hook personalizado para usar el contexto
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within an AuthProvider");
+  if (!context) throw new Error("useAuth debe usarse dentro de AuthProvider");
   return context;
 };

@@ -3,7 +3,16 @@ import { useDropzone } from "react-dropzone";
 import Select from "react-select";
 import type { MultiValue, SingleValue } from "react-select";
 import { useAuth } from "../hooks/AuthContext";
-import { FaCalendarAlt, FaClock, FaBoxOpen, FaBoxes, FaSchool, FaSave, FaTimes, FaBroom } from "react-icons/fa";
+import {
+  FaCalendarAlt,
+  FaClock,
+  FaBoxOpen,
+  FaBoxes,
+  FaSchool,
+  FaSave,
+  FaTimes,
+  FaBroom,
+} from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../api/axios";
 
@@ -184,6 +193,7 @@ export default function EquipmentReservationForm() {
             value={formData.date}
             onChange={handleChange}
             className="form-control"
+            min={new Date().toISOString().split("T")[0]}
             required
           />
         </div>
@@ -228,7 +238,10 @@ export default function EquipmentReservationForm() {
           >
             {loadingSubmit ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  aria-hidden="true"
+                ></span>
                 <span role="status">Guardando...</span>
               </>
             ) : (

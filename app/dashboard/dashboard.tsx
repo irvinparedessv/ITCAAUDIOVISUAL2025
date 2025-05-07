@@ -9,24 +9,24 @@ import {
   FaUserShield,
   FaQrcode,
 } from "react-icons/fa";
-import { FaComputer } from "react-icons/fa6";
-import { Card, Container, Row, Col } from 'react-bootstrap';
-import { Role } from '~/types/roles';
+import { FaComputer, FaRestroom } from "react-icons/fa6";
+import { Card, Container, Row, Col } from "react-bootstrap";
 
 export default function Dashboard() {
   const { user } = useAuth();
 
   // Estilo para los iconos basado en el tema
   const getIconStyle = () => {
-    const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    return { color: isDarkMode ? '#b1291d' : '#8B0000' };
+    const isDarkMode =
+      document.documentElement.getAttribute("data-bs-theme") === "dark";
+    return { color: isDarkMode ? "#b1291d" : "#8B0000" };
   };
-  
+
   // Estilo para el borde con gradiente
   const cardBorderStyle = {
-    border: '2px solid',
-    borderImage: 'linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20)) 1',
-    boxShadow: '0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)'
+    border: "2px solid",
+    borderImage: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20)) 1",
+    boxShadow: "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)",
   };
 
   return (
@@ -119,6 +119,13 @@ export default function Dashboard() {
       {user?.role === Role.Prestamista && (
         <Row xs={1} md={2} className="g-4">
           <DashboardCard
+            title="Reservar Espacio"
+            icon={<FaRestroom size={24} />}
+            link="/crearEspacio"
+            description="Crear nueva reserva de espacio"
+            borderStyle={cardBorderStyle}
+          />
+          <DashboardCard
             title="Nueva Reserva"
             icon={<FaComputer size={24} style={getIconStyle()} />}
             link="/addreservation"
@@ -151,7 +158,7 @@ function DashboardCard({
   icon,
   link,
   description,
-  borderStyle
+  borderStyle,
 }: DashboardCardProps) {
   return (
     <Col>

@@ -12,8 +12,20 @@ export interface User {
   is_deleted: boolean;
 }
 
+export type UserLogin = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: number; // Asegúrate que tu API mande 'role'
+  image?: string;
+};
+
 // Para crear usuarios, incluyendo imagen opcional tipo archivo
-export type UserCreateDTO = Omit<User, 'id' | 'is_deleted' | 'estado' | 'image'> & {
+export type UserCreateDTO = Omit<
+  User,
+  "id" | "is_deleted" | "estado" | "image"
+> & {
   image?: File | null;
 };
 

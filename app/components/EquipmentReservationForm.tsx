@@ -192,6 +192,7 @@ export default function EquipmentReservationForm() {
                     value={formData.date}
                     onChange={handleChange}
                     required
+                    min={new Date().toISOString().split("T")[0]}
                   />
                 </Form.Group>
 
@@ -224,6 +225,7 @@ export default function EquipmentReservationForm() {
                         value={formData.endTime}
                         onChange={handleChange}
                         required
+                        min={formData.startTime}
                       />
                     </Form.Group>
                   </Col>

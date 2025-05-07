@@ -21,9 +21,10 @@ import {
   FaUserCircle,
   FaMoon,
   FaSun,
+  FaCalendarAlt,
 } from "react-icons/fa";
 import { Spinner, Dropdown } from "react-bootstrap";
-import { FaComputer } from "react-icons/fa6";
+import { FaBell, FaComputer } from "react-icons/fa6";
 import { Role } from "./types/roles";
 
 // ---- HEAD Links ---- //
@@ -267,6 +268,40 @@ export default function App() {
                     )}
                   </>
                 )}
+
+                  {/* Botón de notificaciones */}
+                <Dropdown align="end" className="me-2">
+                  <Dropdown.Toggle
+                    variant="link"
+                    id="dropdown-notifications"
+                    className="position-relative p-0 bg-transparent border-0"
+                  >
+                    <FaBell size={20} className="text-dark" />
+                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                      3
+                      <span className="visually-hidden">notificaciones no leídas</span>
+                    </span>
+                  </Dropdown.Toggle>
+
+                  <Dropdown.Menu
+                    style={{
+                      background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
+                      minWidth: "300px",
+                    }}
+                  >
+                    <Dropdown.Header className="fw-bold">Notificaciones</Dropdown.Header>
+                    <Dropdown.Item as={Link} to="/reservations" className="d-flex align-items-start py-2">
+                      <div className="me-2">
+                        <FaCalendarAlt  />
+                      </div>
+                      <div>
+                        <div className="fw-bold">Tus reservas</div>
+                        <small className="text-muted">Ver todas tus reservas activas</small>
+                      </div>
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+
 
                 <Dropdown align="end">
                   <Dropdown.Toggle

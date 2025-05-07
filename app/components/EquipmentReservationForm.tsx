@@ -1,49 +1,35 @@
-import { useState, useEffect } from "react";
-import type { FormEvent } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useDropzone } from "react-dropzone";
 import Select from "react-select";
 import type { MultiValue, SingleValue } from "react-select";
 import { useAuth } from "../hooks/AuthContext";
-import {
-  Container,
-  Form,
-  Button,
-  Card,
-  Row,
-  Col,
-  Spinner,
-} from "react-bootstrap";
 import {
   FaCalendarAlt,
   FaClock,
   FaBoxOpen,
   FaBoxes,
   FaSchool,
+  FaSave,
+  FaTimes,
+  FaBroom,
 } from "react-icons/fa";
-import { ToastContainer, toast } from "react-toastify"; // ⭐ CAMBIO
-import "react-toastify/dist/ReactToastify.css"; // ⭐ CAMBIO
+import toast from "react-hot-toast";
 import api from "../api/axios";
 
 export default function EquipmentReservationForm() {
   type OptionType = { value: string; label: string };
 
-  const [formData, setFormData] = useState<{
-    equipment: MultiValue<OptionType>;
-    aula: SingleValue<OptionType>;
-    date: string;
-    startTime: string;
-    endTime: string;
-  }>({
-    equipment: [],
-    aula: null,
+  const [formData, setFormData] = useState({
+    equipment: [] as MultiValue<OptionType>,
+    aula: null as SingleValue<OptionType>,
     date: "",
     startTime: "",
     endTime: "",
   });
 
   const [equipmentOptions, setEquipmentOptions] = useState<OptionType[]>([]);
-  const [loadingEquipments, setLoadingEquipments] = useState<boolean>(true);
-  const [errorEquipments, setErrorEquipments] = useState<string | null>(null);
-  const [loadingSubmit, setLoadingSubmit] = useState<boolean>(false); // ⭐ CAMBIO
+  const [loadingEquipments, setLoadingEquipments] = useState(true);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
   const { user } = useAuth();
 
   const aulaOptions = [
@@ -65,7 +51,7 @@ export default function EquipmentReservationForm() {
 
         setEquipmentOptions(options);
       } catch (error) {
-        setErrorEquipments("Error cargando los equipos. Intente nuevamente.");
+        toast.error("Error cargando los equipos. Intente nuevamente.");
       } finally {
         setLoadingEquipments(false);
       }
@@ -74,12 +60,22 @@ export default function EquipmentReservationForm() {
     fetchEquipments();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<any>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleClear = () => {
+    setFormData({
+      equipment: [],
+      aula: null,
+      date: "",
+      startTime: "",
+      endTime: "",
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!user) {
@@ -87,182 +83,184 @@ export default function EquipmentReservationForm() {
       return;
     }
 
+    if (formData.equipment.length === 0) {
+      toast.error("Debe seleccionar al menos un equipo");
+      return;
+    }
+
+    if (!formData.aula) {
+      toast.error("Debe seleccionar un aula");
+      return;
+    }
+
+    if (!formData.date) {
+      toast.error("La fecha de reserva es obligatoria");
+      return;
+    }
+
+    if (!formData.startTime || !formData.endTime) {
+      toast.error("Las horas de inicio y fin son obligatorias");
+      return;
+    }
+
     const payload = {
       user_id: user.id,
       equipo: formData.equipment.map((eq) => eq.value),
-      aula: formData.aula?.value || "",
+      aula: formData.aula.value,
       fecha_reserva: formData.date,
       startTime: formData.startTime,
       endTime: formData.endTime,
     };
 
     try {
-      setLoadingSubmit(true); // ⭐ CAMBIO
-
+      setLoadingSubmit(true);
       await api.post("/reservas", payload);
-
-      toast.success("¡Reserva guardada exitosamente!"); // ⭐ CAMBIO
-
-      // Limpiar formulario
-      setFormData({
-        equipment: [],
-        aula: null,
-        date: "",
-        startTime: "",
-        endTime: "",
-      });
+      toast.success("¡Reserva guardada exitosamente!");
+      handleClear();
     } catch (error) {
       console.error(error);
-      toast.error("Error al guardar la reserva. Intenta nuevamente."); // ⭐ CAMBIO
+      toast.error("Error al guardar la reserva. Intenta nuevamente.");
     } finally {
-      setLoadingSubmit(false); // ⭐ CAMBIO
+      setLoadingSubmit(false);
     }
   };
 
   return (
-    <Container className="d-flex justify-content-center align-items-center min-vh-100">
-      <ToastContainer /> {/* ⭐ CAMBIO */}
-      <Row className="w-100 justify-content-center">
-        <Col md={6} lg={5}>
-          <Card className="shadow-lg">
-            <Card.Header className="bg-primary text-white text-center">
-              <h4 className="mb-0">Reservación de Equipos</h4>
-            </Card.Header>
+    <div className="form-container">
+      <h2 className="mb-4 text-center fw-bold">Reservación de Equipos</h2>
 
-            <Card.Body>
-              <Form onSubmit={handleSubmit}>
-                {/* Multiselect Equipos */}
-                <Form.Group className="mb-3" controlId="formEquipment">
-                  <Form.Label className="d-flex align-items-center">
-                    <FaBoxes className="me-2" />
-                    Equipos
-                  </Form.Label>
-                  {loadingEquipments ? (
-                    <div className="d-flex justify-content-center">
-                      <Spinner animation="border" variant="primary" />
-                    </div>
-                  ) : errorEquipments ? (
-                    <div className="text-danger text-center">
-                      {errorEquipments}
-                    </div>
-                  ) : (
-                    <Select
-                      isMulti
-                      options={equipmentOptions}
-                      value={formData.equipment}
-                      onChange={(selected) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          equipment: selected,
-                        }))
-                      }
-                      placeholder="Selecciona equipos"
-                    />
-                  )}
-                </Form.Group>
+      <form onSubmit={handleSubmit}>
+        {/* Multiselect Equipos */}
+        <div className="mb-4">
+          <label className="form-label d-flex align-items-center">
+            <FaBoxes className="me-2" />
+            Equipos
+          </label>
+          {loadingEquipments ? (
+            <div className="d-flex justify-content-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          ) : (
+            <Select
+              isMulti
+              options={equipmentOptions}
+              value={formData.equipment}
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  equipment: selected,
+                }))
+              }
+              placeholder="Selecciona equipos"
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
+          )}
+        </div>
 
-                {/* Select Aula */}
-                <Form.Group className="mb-3" controlId="formAula">
-                  <Form.Label className="d-flex align-items-center">
-                    <FaSchool className="me-2" />
-                    Aula
-                  </Form.Label>
-                  <Select
-                    options={aulaOptions}
-                    value={formData.aula}
-                    onChange={(selected) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        aula: selected,
-                      }))
-                    }
-                    placeholder="Selecciona aula"
-                  />
-                </Form.Group>
+        {/* Select Aula */}
+        <div className="mb-4">
+          <label className="form-label d-flex align-items-center">
+            <FaSchool className="me-2" />
+            Aula
+          </label>
+          <Select
+            options={aulaOptions}
+            value={formData.aula}
+            onChange={(selected) =>
+              setFormData((prev) => ({
+                ...prev,
+                aula: selected,
+              }))
+            }
+            placeholder="Selecciona aula"
+            className="react-select-container"
+            classNamePrefix="react-select"
+          />
+        </div>
 
-                {/* Fecha */}
-                <Form.Group className="mb-3" controlId="formDate">
-                  <Form.Label className="d-flex align-items-center">
-                    <FaCalendarAlt className="me-2" />
-                    Fecha de Reserva
-                  </Form.Label>
-                  <Form.Control
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    required
-                    min={new Date().toISOString().split("T")[0]}
-                  />
-                </Form.Group>
+        {/* Fecha */}
+        <div className="mb-4">
+          <label className="form-label d-flex align-items-center">
+            <FaCalendarAlt className="me-2" />
+            Fecha de Reserva
+          </label>
+          <input
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            className="form-control"
+            min={new Date().toISOString().split("T")[0]}
+            required
+          />
+        </div>
 
-                {/* Horas */}
-                <Row>
-                  <Col sm={6}>
-                    <Form.Group className="mb-3" controlId="formStartTime">
-                      <Form.Label className="d-flex align-items-center">
-                        <FaClock className="me-2" />
-                        Hora de inicio
-                      </Form.Label>
-                      <Form.Control
-                        type="time"
-                        name="startTime"
-                        value={formData.startTime}
-                        onChange={handleChange}
-                        required
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col sm={6}>
-                    <Form.Group className="mb-3" controlId="formEndTime">
-                      <Form.Label className="d-flex align-items-center">
-                        <FaClock className="me-2" />
-                        Hora de entrega
-                      </Form.Label>
-                      <Form.Control
-                        type="time"
-                        name="endTime"
-                        value={formData.endTime}
-                        onChange={handleChange}
-                        required
-                        min={formData.startTime}
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
+        {/* Horas */}
+        <div className="row mb-4">
+          <div className="col-md-6 mb-3 mb-md-0">
+            <label className="form-label d-flex align-items-center">
+              <FaClock className="me-2" />
+              Hora de inicio
+            </label>
+            <input
+              type="time"
+              name="startTime"
+              value={formData.startTime}
+              onChange={handleChange}
+              className="form-control"
+              required
+            />
+          </div>
+          <div className="col-md-6">
+            <label className="form-label d-flex align-items-center">
+              <FaClock className="me-2" />
+              Hora de entrega
+            </label>
+            <input
+              type="time"
+              name="endTime"
+              value={formData.endTime}
+              onChange={handleChange}
+              className="form-control"
+              required
+            />
+          </div>
+        </div>
 
-                <div className="d-grid">
-                  <Button
-                    className="d-flex align-items-center justify-content-center"
-                    variant="primary"
-                    type="submit"
-                    disabled={loadingSubmit} // ⭐ CAMBIO
-                  >
-                    {loadingSubmit ? ( // ⭐ CAMBIO
-                      <>
-                        <Spinner
-                          as="span"
-                          animation="border"
-                          size="sm"
-                          role="status"
-                          aria-hidden="true"
-                          className="me-2"
-                        />
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <FaBoxOpen className="me-2" />
-                        Reservar Equipos
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="btn primary-btn"
+            disabled={loadingSubmit}
+          >
+            {loadingSubmit ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  aria-hidden="true"
+                ></span>
+                <span role="status">Guardando...</span>
+              </>
+            ) : (
+              <>
+                <FaSave className="me-2" />
+                Reservar Equipos
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            className="btn secondary-btn"
+            onClick={handleClear}
+          >
+            <FaBroom className="me-2" />
+            Limpiar
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

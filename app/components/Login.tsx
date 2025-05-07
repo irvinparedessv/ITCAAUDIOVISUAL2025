@@ -1,11 +1,11 @@
-
 import React, { useState, forwardRef, useEffect } from "react";
 import api from "../api/axios";
-import { Button, Form, Container } from "react-bootstrap";
+import { Button, Form, Container, Modal } from "react-bootstrap";
 import type { ButtonProps } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import ForgotPassword from "./auth/ForgotPassword"; // Ajusta la ruta si es necesario
 
 // Componente Button animado personalizado
 const MotionButton = motion(
@@ -23,12 +23,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { isAuthenticated } = useAuth();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/"); // Redirige a la página principal si ya está autenticado
-    }
-  }, [isAuthenticated, navigate]);
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,9 +35,9 @@ const Login = () => {
       return;
     }
   
+
     try {
-      const response = await api.post('/login', { email, password });
-      login(response.data.token, response.data.user);
+      await login(email, password); // Ya incluye CSRF + login + manejo de estado
       navigate('/');
     } catch (err) {
       setError('Credenciales incorrectas. Por favor intente nuevamente');
@@ -66,10 +61,10 @@ const Login = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-             Iniciar Sesión
+              Iniciar Sesión
             </motion.h2>
             <motion.div 
-              className="header-line bg-primary"
+              className="header-line"
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ delay: 0.3, duration: 0.5 }}
@@ -103,7 +98,7 @@ const Login = () => {
                 placeholder="usuario@correo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border-primary"
+                className="border-color-login"
               />
             </motion.div>
 
@@ -119,16 +114,20 @@ const Login = () => {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border-primary"
+                className="border-color-login"
               />
             </motion.div>
 
-            <MotionButton 
+            <MotionButton
               type="submit"
               disabled={isLoading}
-              className="w-100 bg-primary border-0"
+              className={`w-100 btn primary-btn border-0 ${isLoading ? 'loading' : ''}`}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
+              style={{
+                outline: "none", // Eliminar el borde azul de enfoque
+                boxShadow: "none", // Eliminar la sombra de enfoque
+              }}
             >
               {isLoading ? (
                 <span className="spinner-border spinner-border-sm me-2"></span>
@@ -145,18 +144,35 @@ const Login = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
           >
-            <a href="/forgot-password" className="text-decoration-none text-secondary">
-              ¿Olvidó su contraseña?
-            </a>
-            <a href="/register" className="text-decoration-none text-primary">
-              Crear nueva cuenta
-            </a>
+            <div className="text-center mt-3">
+              <span
+                onClick={() => setShowForgotModal(true)}
+                className="text-decoration-none text-secondary fw-semibold"
+                style={{ cursor: 'pointer' }}
+              >
+                ¿Olvidó su contraseña?
+              </span>
+            </div>
           </motion.div>
         </motion.div>
       </Container>
+
+      {/* Modal Forgot Password */}
+      <Modal
+        show={showForgotModal}
+        onHide={() => setShowForgotModal(false)}
+        centered
+        animation={true} // Para animación de apertura/cierre
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Recuperar Contraseña</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ForgotPassword />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
 
 export default Login;
-

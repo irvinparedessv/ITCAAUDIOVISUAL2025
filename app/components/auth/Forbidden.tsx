@@ -1,8 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { FaBan } from "react-icons/fa";
 import { motion } from "framer-motion";
 
 export default function Forbidden() {
+  const location = useLocation();
+
+  // // Evita acceso directo a /forbidden
+  // if (!location.state?.fromProtectedRoute) {
+  //   return <Navigate to="/" replace />;
+  // }
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}

@@ -1,26 +1,32 @@
-import { useMatches } from "react-router-dom";
+// layouts/protected-layout.tsx
+import { useLocation, Outlet, Navigate } from "react-router-dom";
+import { useAuth } from "../hooks/AuthContext";
 import { routeRoles } from "../types/routeRoles";
-import App from "app/root";
-import { useAuth } from "~/hooks/AuthContext"; // 👈 importar tu hook
+import { Spinner } from "react-bootstrap";
+import Forbidden from "~/components/auth/Forbidden";
 
 export function ProtectedLayout() {
-  const matches = useMatches();
-  const currentRoute = matches[matches.length - 1];
-  
-  const routeId = currentRoute.id ?? "";
-  const allowedRoles = routeRoles[routeId] || [];
-
-  const { user, isLoading } = useAuth(); // 👈 obtener el usuario y el estado de carga
+  const { user, isLoading, isAuthenticated } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
-    return <div>Cargando...</div>; // 👈 opcional, para UX
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <Spinner animation="border" />
+      </div>
+    );
   }
 
-  const userRole = user?.role;
-
-  if (allowedRoles.length > 0 && (!userRole || !allowedRoles.includes(userRole))) {
-    return <div>Acceso denegado</div>;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <App />;
+  // Verificar acceso a la ruta actual
+  const currentRoute = location.pathname;
+  const allowedRoles = routeRoles[currentRoute] || [];
+  
+  if (allowedRoles.length > 0 && (!user?.role || !allowedRoles.includes(user.role))) {
+    return <Forbidden />;
+  }
+  return <Outlet />;
 }

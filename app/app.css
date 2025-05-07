@@ -4,9 +4,10 @@
   --bs-body-color: #212529;
   --bs-card-bg: #ffffff;
   --bs-border-color: #dee2e6;
-  --bs-primary-bg: linear-gradient(90deg, rgba(166, 18, 36, 1) 2%, rgba(133, 27, 33, 0.98) 27%, rgba(10, 13, 10, 1) 99%);
+  --bs-primary-bg: #8B0000; /* Rojo oscuro */
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #e9ecef;
+  --nav-link-color: black;
 }
 
 [data-bs-theme="dark"] {
@@ -15,25 +16,80 @@
   --bs-body-color: #f8f9fa;
   --bs-card-bg: #2d2d2d;
   --bs-border-color: #444;
-  --bs-primary-bg: linear-gradient(90deg, rgba(100, 10, 20, 1) 2%, rgba(80, 15, 20, 0.98) 27%, rgba(30, 30, 30, 1) 99%);
+  --bs-primary-bg: #8B0000; /* Rojo oscuro */
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #333;
+  --nav-link-color: black; /* o blanco si prefieres otro en dark mode */
 }
 
-.btn-primary {
-  background: rgb(166, 18, 36);
-  background: linear-gradient(
-    90deg,
-    rgba(166, 18, 36, 1) 2%,
-    rgba(133, 27, 33, 0.9831582291119573) 27%,
-    rgba(10, 13, 10, 1) 99%
-  );
-  border: none;
+/* Elimina el conflicto en la raíz */
+.btn.primary-btn {
+  --bs-btn-bg: #8B0000;
+  --bs-btn-color: white;
+  --bs-btn-border-color: #8B0000;
+  --bs-btn-hover-bg: #A52A2A;
+  --bs-btn-hover-border-color: #A52A2A;
+  --bs-btn-hover-color: white;
 }
 
-.btn-primary:hover {
-  filter: brightness(1.1);
+.btn.secondary-btn {
+  --bs-btn-bg: #393a3c; /* Gris Bootstrap por defecto */
+  --bs-btn-color: white;
+  --bs-btn-border-color: #393a3c;
+  --bs-btn-hover-bg: #393a3c;
+  --bs-btn-hover-color: white;
 }
+
+/* Modo oscuro */
+[data-bs-theme="dark"] .btn.primary-btn {
+  --bs-btn-bg: #6B0000;
+  --bs-btn-hover-bg: #8B0000;
+}
+
+/*NAVBARR TOGGLE SIN CAMBIAR COLOR EN MODO OSCURO */
+.custom-toggler {
+  border: 1px solid black !important;
+}
+
+.custom-toggler .navbar-toggler-icon {
+  background-image: none !important;
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.custom-toggler .navbar-toggler-icon::before,
+.custom-toggler .navbar-toggler-icon::after,
+.custom-toggler .navbar-toggler-icon div {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: black; /* Cambia aquí el color */
+  transition: all 0.3s;
+}
+
+.custom-toggler .navbar-toggler-icon div {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.custom-toggler .navbar-toggler-icon::before {
+  top: 6px;
+}
+
+.custom-toggler .navbar-toggler-icon::after {
+  bottom: 6px;
+}
+/* Elimina el borde y la sombra (box-shadow) cuando se hace clic o se tiene foco */
+.custom-toggler:focus {
+  outline: none; /* Elimina el borde de enfoque */
+  box-shadow: none !important; /* Elimina cualquier sombra */
+}
+
+/* FIN DE NAVBARR TOGGLE SIN CAMBIAR COLOR EN MODO OSCURO */
+
 
 /* Estilo para el botón flotante del chatbot */
 .chatbot-btn {
@@ -126,6 +182,26 @@
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* Estilos para modo oscuro/claro */
 body.dark {
   color-scheme: dark;
@@ -138,6 +214,7 @@ body.light {
 /* Estilos minimalistas */
 .nav-link {
   transition: all 0.2s ease;
+  color: var(--nav-link-color) !important;
 }
 
 .nav-link:hover {
@@ -157,4 +234,262 @@ body.light {
 /* Ajusta el contraste en modo oscuro */
 [data-bs-theme="dark"] .table-responsive {
   background-color: var(--bs-card-bg);
+}
+
+
+
+
+
+
+
+/* =======================
+   VARIABLES GLOBALES
+======================= */
+
+/* Claro (por defecto) */
+:root {
+  --select-bg: #ffffff;
+  --select-border: #ced4da;
+  --select-text: #212529;
+  --select-multi-bg: #e9ecef;
+  --select-focused-bg: #f8f9fa;
+  --select-remove-color: #495057;
+}
+
+/* Oscuro */
+[data-bs-theme="dark"] {
+  --select-bg: #2d2d2d;
+  --select-border: #4a5568;
+  --select-text: #f8f9fa;
+  --select-multi-bg: #444; /* fondo más oscuro para etiquetas */
+  --select-focused-bg: #3c3c3c;
+  --select-remove-color: #f8f9fa;
+}
+
+/* =======================
+   ESTILOS REACT-SELECT
+======================= */
+
+.react-select__control {
+  background-color: var(--bs-body-bg) !important;
+  border: 1px solid var(--select-border) !important;
+  min-height: 38px;
+  color: var(--select-text) !important;
+}
+
+.react-select__value-container {
+  color: var(--select-text) !important;
+  padding: 0 8px;
+}
+
+.react-select__single-value,
+.react-select__input-container,
+.react-select__multi-value__label {
+  color: var(--select-text) !important;
+}
+
+.react-select__multi-value {
+  background-color: var(--select-multi-bg) !important;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+.react-select__multi-value__remove {
+  color: var(--select-remove-color) !important;
+  cursor: pointer;
+}
+
+.react-select__multi-value__remove:hover {
+  background-color: transparent !important;
+  color: #dc3545 !important; /* rojo para hover eliminar */
+}
+
+.react-select__menu {
+  background-color: var(--select-bg) !important;
+  border: 1px solid var(--select-border) !important;
+  color: var(--select-text) !important;
+  z-index: 100;
+}
+
+.react-select__option {
+  background-color: var(--select-bg) !important;
+  color: var(--select-text) !important;
+}
+
+.react-select__option--is-focused {
+  background-color: var(--select-focused-bg) !important;
+  color: var(--select-text) !important;
+}
+
+.react-select__indicator,
+.react-select__dropdown-indicator {
+  color: var(--select-text) !important;
+}
+
+.react-select__indicator:hover {
+  color: var(--select-text) !important;
+}
+
+.css-tj5bde-Svg {
+  fill: var(--select-remove-color) !important;
+}
+
+
+
+
+
+
+
+
+
+/* Estilos para el formulario (versión anterior mejorada) */
+.form-container {
+  background: var(--bs-card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--bs-border-color);
+  transition: all 0.3s ease;
+}
+
+.form-container:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--bs-body-color);
+  margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+  background-color: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color);
+  color: var(--bs-body-color);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: rgba(166, 18, 36, 0.5);
+  box-shadow: 0 0 0 0.25rem rgba(166, 18, 36, 0.1);
+  outline: none;
+}
+
+.submit-btn {
+  padding: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+/* Nuevos estilos para botones de acción */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.primary-btn {
+  background: var(--bs-primary-bg);
+  color: white;
+  border: none;
+  flex: 1;
+}
+
+.secondary-btn {
+  background: var(--bs-secondary-bg);
+  color: var(--bs-body-color);
+  border: none;
+  flex: 1;
+}
+
+.primary-btn:hover, .secondary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Corrección para el select */
+.form-select option[value=""] {
+  color: #6c757d;
+}
+
+
+
+
+
+
+
+
+
+input.form-control.border-color-login {
+  border-color: #cc3300;
+}
+
+
+
+
+
+
+
+
+
+/* CAMBIANDO BOOTSTRAP AZUL A COLOR GRIS CUANDO ESPERA LA RESPUESTA DEL SERVIDOR (ESTO SE PUEDE VER MAS EN EL LOGIN)
+/* Eliminar borde azul y sombra cuando el botón está enfocado */
+.primary-btn:focus, 
+.primary-btn:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Cambiar el color de fondo a gris oscuro cuando está deshabilitado o cargando */
+.primary-btn[disabled] {
+  background-color: #555 !important; /* Gris oscuro */
+  border-color: #555 !important;
+  cursor: not-allowed; /* Cambiar el cursor para indicar que está deshabilitado */
+}
+
+/* Cambiar color de fondo cuando el botón tiene el estado de 'loading' */
+.primary-btn.loading {
+  background-color: #555 !important; /* Gris oscuro */
+  border-color: #555 !important;
+}
+
+.primary-btn:active {
+  background-color: #555 !important; /* Gris oscuro */
+  border-color: #555 !important; /* Cambia también el borde, si es necesario */
+}
+
+
+
+
+
+
+
+/* DISENIO DE ALERTAS DE MODAL */
+.response-message {
+  margin-top: 10px;
+  padding: 10px;
+  font-size: 0.9rem;
+  border-radius: 5px;
+}
+
+.response-message.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.response-message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+
+.nav-hover-white:hover {
+  background-color: white !important;
+  color: black !important;
 }

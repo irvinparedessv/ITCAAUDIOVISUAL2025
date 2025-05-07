@@ -1,11 +1,11 @@
-import axios from 'axios'
+import api from '~/api/axios';
 import type { Equipo, EquipoCreateDTO, EquipoUpdateDTO } from '~/types/equipo'
 
-const API_URL = 'http://localhost:8000/api/equipos'
+//const API_URL = 'http://localhost:8000/api/equipos'
 
 export const getEquipos = async (): Promise<Equipo[]> => {
   try {
-    const res = await axios.get(API_URL)
+    const res = await api.get('/equipos')
     return res.data
   } catch (error) {
     console.error("Error al obtener los equipos:", error)
@@ -14,18 +14,55 @@ export const getEquipos = async (): Promise<Equipo[]> => {
 }
 
 export const createEquipo = async (equipo: EquipoCreateDTO) => {
+  const formData = new FormData()
+
+  formData.append('nombre', equipo.nombre)
+  formData.append('descripcion', equipo.descripcion)
+  formData.append('estado', equipo.estado ? '1' : '0')
+  formData.append('cantidad', equipo.cantidad.toString())
+  formData.append('tipo_equipo_id', equipo.tipo_equipo_id.toString())
+  formData.append('is_deleted', '0') // ← Esto soluciona el 422
+
+  if ((equipo as any).imagen) {
+    formData.append('imagen', (equipo as any).imagen)
+  }
+
   try {
-    const res = await axios.post(API_URL, { ...equipo, is_deleted: false })
+    const res = await api.post('/equipos', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
     return res.data
-  } catch (error) {
-    console.error("Error al crear el equipo:", error)
+  } catch (error: any) {
+    if (error.response) {
+      console.error('Errores de validación:', error.response.data.errors)
+    }
     throw error
   }
 }
 
+
 export const updateEquipo = async (id: number, equipo: EquipoUpdateDTO) => {
+  const formData = new FormData()
+
+
+  if (equipo.nombre !== undefined) formData.append('nombre', equipo.nombre)
+  if (equipo.descripcion !== undefined) formData.append('descripcion', equipo.descripcion)
+  if (equipo.estado !== undefined) formData.append('estado', equipo.estado ? '1' : '0')
+  if (equipo.cantidad !== undefined) formData.append('cantidad', equipo.cantidad.toString())
+  if (equipo.tipo_equipo_id !== undefined) formData.append('tipo_equipo_id', equipo.tipo_equipo_id.toString())
+
+  if ((equipo as any).imagen) {
+    formData.append('imagen', (equipo as any).imagen)
+  }
+
   try {
-    const res = await axios.put(`${API_URL}/${id}`, equipo)
+    const res = await api.post(`/equipos/${id}?_method=PUT`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
     return res.data
   } catch (error) {
     console.error(`Error al actualizar el equipo con ID ${id}:`, error)
@@ -35,10 +72,11 @@ export const updateEquipo = async (id: number, equipo: EquipoUpdateDTO) => {
 
 export const deleteEquipo = async (id: number) => {
   try {
-    const res = await axios.put(`${API_URL}/${id}`, { is_deleted: true })
-    return res.data
+    const res = await api.put(`/equipos/${id}`, { is_deleted: true });
+    return res.data;
   } catch (error) {
-    console.error(`Error al eliminar lógicamente el equipo con ID ${id}:`, error)
-    throw error
+    console.error(`Error al eliminar lógicamente el equipo con ID ${id}:`, error);
+    throw error;
   }
 }
+

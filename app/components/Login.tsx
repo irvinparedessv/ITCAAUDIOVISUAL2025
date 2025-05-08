@@ -1,13 +1,10 @@
-import React, { useState, forwardRef, useEffect } from "react";
-import api from "../api/axios";
-import { Button, Form, Container, Modal } from "react-bootstrap";
-import type { ButtonProps } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, forwardRef } from "react";
+import { Button, Form, Container, Modal, type ButtonProps } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import ForgotPassword from "./auth/ForgotPassword"; // Ajusta la ruta si es necesario
+import ForgotPassword from "./auth/ForgotPassword";
 
-// Componente Button animado personalizado
 const MotionButton = motion(
   forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => (
     <Button {...props} ref={ref} />
@@ -19,11 +16,16 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeField, setActiveField] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const { isAuthenticated } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [showForgotModal, setShowForgotModal] = useState(false);
+
+  useEffect(() => {
+    // Solo redirigir si el usuario no está en la página de login
+    if (isAuthenticated && window.location.pathname === "/login") {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,10 +36,9 @@ const Login = () => {
       setIsLoading(false);
       return;
     }
-  
 
     try {
-      await login(email, password); // Ya incluye CSRF + login + manejo de estado
+      await login(email, password);
       navigate('/');
     } catch (err: any) {
       if (err.response?.status === 401) {
@@ -48,7 +49,7 @@ const Login = () => {
         setError('Ocurrió un error inesperado. Intenta más tarde.');
       }
       setIsLoading(false);
-    }    
+    }
   };
 
   return (
@@ -131,8 +132,8 @@ const Login = () => {
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               style={{
-                outline: "none", // Eliminar el borde azul de enfoque
-                boxShadow: "none", // Eliminar la sombra de enfoque
+                outline: "none",
+                boxShadow: "none",
               }}
             >
               {isLoading ? (
@@ -163,12 +164,11 @@ const Login = () => {
         </motion.div>
       </Container>
 
-      {/* Modal Forgot Password */}
       <Modal
         show={showForgotModal}
         onHide={() => setShowForgotModal(false)}
         centered
-        animation={true} // Para animación de apertura/cierre
+        animation={true}
       >
         <Modal.Header closeButton>
           <Modal.Title>Recuperar Contraseña</Modal.Title>

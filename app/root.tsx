@@ -104,20 +104,17 @@ export default function App() {
     "/reset-password",
     "/forbidden",
   ];
-  // Redirección basada en autenticación
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated && location.pathname === "/login") {
-        navigate("/");
-      } else if (
-        !isAuthenticated &&
-        !publicRoutes.includes(location.pathname)
-      ) {
-        navigate("/login");
+        navigate("/"); // solo redirige si no estás ya en '/'
+      } else if (!isAuthenticated && !publicRoutes.includes(location.pathname) && location.pathname !== "/login") {
+        navigate("/login"); // solo redirige si no estás ya en '/login'
       }
     }
   }, [isAuthenticated, isLoading, location.pathname, navigate]);
-
+  
+ 
   const handleLogout = () => {
     logout();
     // No usar localStorage.clear(); para no borrar darkMode
@@ -140,10 +137,11 @@ export default function App() {
     "/forbidden",
   ];
 
-  if (hideNavbarRoutes.some((route) => location.pathname.startsWith(route))) {
-    return <Outlet />;
-  }
-
+  // if (hideNavbarRoutes.some((route) => location.pathname.startsWith(route))) {
+  //   return <Outlet />;
+  // }
+  //console.log("Datos del usuario:", user);
+  console.log("Layout rendered");
   return (
     <>
       {isAuthenticated && (

@@ -1,13 +1,90 @@
+/* ==================== */
+/* ESTILOS ESPECÍFICOS DEL NAVBAR (NO AFECTAN AL RESTO) */
+/* ==================== */
+
+/* Variables específicas solo para el navbar */
+:root {
+  /* Colores base del navbar (siempre amarillo) */
+  --navbar-bg: linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92));
+  --dropdown-bg: linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20));
+  
+  /* Texto del navbar (siempre negro) */
+  --navbar-text: #000000;
+  
+  /* Hovers del navbar */
+  --navbar-hover-bg-light: rgba(255, 255, 255, 0.3); /* Modo claro */
+  --navbar-hover-bg-dark: rgba(0, 0, 0, 0.2);        /* Modo oscuro */
+  --dropdown-hover-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* Estructura del navbar */
+.navbar {
+  background: var(--navbar-bg) !important;
+}
+
+/* Elementos del navbar */
+.navbar-nav .nav-link,
+.nav-dropdown-toggle {
+  color: var(--navbar-text) !important;
+  transition: background-color 0.2s ease;
+}
+
+/* Hovers (dependiendo del modo) */
+.navbar-nav .nav-link:hover,
+.nav-dropdown-toggle:hover,
+.nav-dropdown-toggle[aria-expanded="true"] {
+  background-color: var(--navbar-hover-bg-light) !important;
+}
+
+[data-bs-theme="dark"] .navbar-nav .nav-link:hover,
+[data-bs-theme="dark"] .nav-dropdown-toggle:hover,
+[data-bs-theme="dark"] .nav-dropdown-toggle[aria-expanded="true"] {
+  background-color: var(--navbar-hover-bg-dark) !important;
+}
+
+/* Dropdowns del navbar */
+.navbar .dropdown-menu {
+  background: var(--dropdown-bg) !important;
+}
+
+.navbar .dropdown-item {
+  color: var(--navbar-text) !important;
+}
+
+.navbar .dropdown-item:hover {
+  background-color: var(--dropdown-hover-bg) !important;
+}
+
+/* Toggler del navbar */
+.custom-toggler {
+  border: 1px solid var(--navbar-text) !important;
+}
+
+.custom-toggler .navbar-toggler-icon::before,
+.custom-toggler .navbar-toggler-icon::after,
+.custom-toggler .navbar-toggler-icon div {
+  background-color: var(--navbar-text) !important;
+}
+
+.custom-toggler:focus {
+  outline: none;
+  box-shadow: none !important;
+}
+
+/* ==================== */
+/* ESTILOS GENERALES (NO AFECTAN AL NAVBAR) */
+/* ==================== */
+
+/* Variables generales para la aplicación */
 :root {
   /* Light theme colors */
   --bs-body-bg: #f8f9fa;
   --bs-body-color: #212529;
   --bs-card-bg: #ffffff;
   --bs-border-color: #dee2e6;
-  --bs-primary-bg: #8B0000; /* Rojo oscuro */
+  --bs-primary-bg: #8B0000;
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #e9ecef;
-  --nav-link-color: black;
 }
 
 [data-bs-theme="dark"] {
@@ -16,13 +93,12 @@
   --bs-body-color: #f8f9fa;
   --bs-card-bg: #2d2d2d;
   --bs-border-color: #444;
-  --bs-primary-bg: #8B0000; /* Rojo oscuro */
+  --bs-primary-bg: #6B0000;
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #333;
-  --nav-link-color: black; /* o blanco si prefieres otro en dark mode */
 }
 
-/* Elimina el conflicto en la raíz */
+/* Botones (no afectan al navbar) */
 .btn.primary-btn {
   --bs-btn-bg: #8B0000;
   --bs-btn-color: white;
@@ -33,46 +109,59 @@
 }
 
 .btn.secondary-btn {
-  --bs-btn-bg: #393a3c; /* Gris Bootstrap por defecto */
+  --bs-btn-bg: #393a3c;
   --bs-btn-color: white;
   --bs-btn-border-color: #393a3c;
   --bs-btn-hover-bg: #393a3c;
   --bs-btn-hover-color: white;
 }
 
-/* Modo oscuro */
 [data-bs-theme="dark"] .btn.primary-btn {
   --bs-btn-bg: #6B0000;
   --bs-btn-hover-bg: #8B0000;
 }
 
-/*NAVBARR TOGGLE SIN CAMBIAR COLOR EN MODO OSCURO */
-.custom-toggler {
-  border: 1px solid black !important;
+
+
+/* DISENIO DE TOOGLE EN SIEMPRE OSCURO /*
+/* Elimina completamente el SVG de Bootstrap */
+.navbar-toggler-icon {
+  background-image: none !important;
 }
 
+/* Fuerza el color negro en ambos modos */
+.custom-toggler .navbar-toggler-icon div,
+.custom-toggler .navbar-toggler-icon::before,
+.custom-toggler .navbar-toggler-icon::after {
+  background-color: #000 !important;
+}
+
+/* Estructura del ícono personalizado */
 .custom-toggler .navbar-toggler-icon {
-  background-image: none !important;
   position: relative;
   width: 24px;
   height: 24px;
 }
 
-.custom-toggler .navbar-toggler-icon::before,
-.custom-toggler .navbar-toggler-icon::after,
 .custom-toggler .navbar-toggler-icon div {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: all 0.3s;
+}
+
+.custom-toggler .navbar-toggler-icon::before,
+.custom-toggler .navbar-toggler-icon::after {
   content: "";
   position: absolute;
   left: 0;
   width: 100%;
   height: 2px;
-  background-color: black; /* Cambia aquí el color */
+  background-color: #000;
   transition: all 0.3s;
-}
-
-.custom-toggler .navbar-toggler-icon div {
-  top: 50%;
-  transform: translateY(-50%);
 }
 
 .custom-toggler .navbar-toggler-icon::before {
@@ -82,13 +171,22 @@
 .custom-toggler .navbar-toggler-icon::after {
   bottom: 6px;
 }
-/* Elimina el borde y la sombra (box-shadow) cuando se hace clic o se tiene foco */
-.custom-toggler:focus {
-  outline: none; /* Elimina el borde de enfoque */
-  box-shadow: none !important; /* Elimina cualquier sombra */
-}
 
-/* FIN DE NAVBARR TOGGLE SIN CAMBIAR COLOR EN MODO OSCURO */
+/* FIN DE DISENIO DE TOOGLE EN SIEMPRE OSCURO /*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /* Estilo para el botón flotante del chatbot */

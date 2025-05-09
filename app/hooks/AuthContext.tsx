@@ -23,15 +23,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Cargar credenciales al inicio
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const loadCredentials = async () => {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
+  
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      }
+      setIsLoading(false);
+    };
+  
+    loadCredentials();
   }, []);
+  
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);

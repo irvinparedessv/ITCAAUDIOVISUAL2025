@@ -31,3 +31,5 @@ export default [
     route("espacioList", "routes/espacioList.tsx"),
   ]),
 ] satisfies RouteConfig;
+
+

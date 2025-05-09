@@ -13,7 +13,7 @@ import { Navbar, Nav, Container, Button } from "react-bootstrap";
 import { useAuth, AuthProvider } from "./hooks/AuthContext";
 import "./app.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FaHome,
   FaPlus,
@@ -73,53 +73,28 @@ export default function App() {
   // Cargar tema desde localStorage
   useEffect(() => {
     const savedMode = localStorage.getItem("darkMode");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const isDark = savedMode ? JSON.parse(savedMode) : prefersDark;
-
+    
     setDarkMode(isDark);
-    document.documentElement.setAttribute(
-      "data-bs-theme",
-      isDark ? "dark" : "light"
-    );
-    document.body.classList.add(isDark ? "dark" : "light");
-    document.body.classList.remove(isDark ? "light" : "dark");
+    updateTheme(isDark);
   }, []);
 
-  // Alternar tema
-  const toggleDarkMode = () => {
+  const updateTheme = (isDark: boolean) => {
+    document.documentElement.setAttribute("data-bs-theme", isDark ? "dark" : "light");
+    document.body.classList.toggle("dark", isDark);
+    document.body.classList.toggle("light", !isDark);
+  };
+
+  const toggleDarkMode = useCallback(() => {
     const newMode = !darkMode;
     setDarkMode(newMode);
     localStorage.setItem("darkMode", JSON.stringify(newMode));
-    document.documentElement.setAttribute(
-      "data-bs-theme",
-      newMode ? "dark" : "light"
-    );
-    document.body.classList.add(newMode ? "dark" : "light");
-    document.body.classList.remove(newMode ? "light" : "dark");
-  };
+    updateTheme(newMode);
+  }, [darkMode]);
 
-  const publicRoutes = [
-    "/login",
-    "/forgot-password",
-    "/reset-password",
-    "/forbidden",
-  ];
-  useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated && location.pathname === "/login") {
-        navigate("/"); // solo redirige si no estás ya en '/'
-      } else if (!isAuthenticated && !publicRoutes.includes(location.pathname) && location.pathname !== "/login") {
-        navigate("/login"); // solo redirige si no estás ya en '/login'
-      }
-    }
-  }, [isAuthenticated, isLoading, location.pathname, navigate]);
-  
- 
   const handleLogout = () => {
     logout();
-    // No usar localStorage.clear(); para no borrar darkMode
   };
 
   if (isLoading) {
@@ -139,14 +114,11 @@ export default function App() {
     "/forbidden",
   ];
 
-  // if (hideNavbarRoutes.some((route) => location.pathname.startsWith(route))) {
-  //   return <Outlet />;
-  // }
-  //console.log("Datos del usuario:", user);
-  console.log("Layout rendered");
+  const shouldShowNavbar = isAuthenticated && !hideNavbarRoutes.includes(location.pathname);
+  console.log("App rendered");
   return (
     <>
-      {isAuthenticated && (
+      {shouldShowNavbar && (
         <Navbar
           expand="lg"
           className="px-4 border-bottom"

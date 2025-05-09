@@ -99,13 +99,29 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </Spinner>
+      <div
+        className="d-flex justify-content-center align-items-center vh-100"
+        style={{
+          backgroundColor: "#f4f4f4", // Puedes elegir el color de fondo que prefieras
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999, // Asegura que este contenido esté por encima de otros
+        }}
+      >
+        <div className="text-center">
+          <Spinner animation="border" role="status" style={{ width: "3rem", height: "3rem" }}>
+            <span className="visually-hidden">Cargando...</span>
+          </Spinner>
+          <h3 className="mt-3">Cargando...</h3>
+          <p>Estamos verificando tu sesión, por favor espera...</p>
+        </div>
       </div>
     );
   }
+  
 
   const hideNavbarRoutes = [
     "/login",

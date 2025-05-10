@@ -85,3 +85,11 @@ export const forgotPassword = async (email: string) => {
 export const resetPassword = async (data: ResetPasswordData) => {
   return api.post('/reset-password', data);
 };
+
+export const changePassword = async (data: {
+  email: string;
+  password: string;
+  password_confirmation: string;
+}) => {
+  return api.post('/change-password', data);
+};

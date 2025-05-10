@@ -6,6 +6,7 @@ import Forbidden from "~/components/auth/Forbidden";
 import { getAllowedRoles } from "../helpers/matchRouteRoles";
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
+import Chatbot from "~/components/chatbot/chatbot";
 
 // export default function() {
 //   const { user, isLoading, isAuthenticated } = useAuth();
@@ -88,5 +89,10 @@ export default function() {
   console.log("Usuario:", user);
 
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <Chatbot/>  
+    </>
+  );
 }

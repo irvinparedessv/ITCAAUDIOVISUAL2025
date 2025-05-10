@@ -27,6 +27,7 @@ import { Spinner, Dropdown } from "react-bootstrap";
 import { FaBell, FaComputer } from "react-icons/fa6";
 import { Role } from "./types/roles";
 import { Offcanvas } from "react-bootstrap";
+import Chatbot from "./components/chatbot/chatbot";
 
 
 // ---- HEAD Links ---- //
@@ -393,6 +394,7 @@ export default function App() {
       )}
       <main className="container my-4">
         <Outlet />
+
       </main>
     </>
   );

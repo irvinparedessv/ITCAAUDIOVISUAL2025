@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
+  
   const [messages, setMessages] = useState([
     { id: 1, text: '¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?', sender: 'bot' },
     { id: 2, text: 'Puedes preguntarme sobre nuestros servicios o cualquier duda que tengas.', sender: 'bot' }
   ]);
 
+  const chatRef = useRef<HTMLDivElement>(null);
+
+
+  // Detecta el modo oscuro de Bootstrap
   useEffect(() => {
     const checkDarkMode = () => {
       const darkModeEnabled = document.documentElement.getAttribute('data-bs-theme') === 'dark';
@@ -26,6 +31,20 @@ const Chatbot = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Detecta clics fuera del modal para cerrarlo
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isOpen && chatRef.current && !chatRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
   const toggleChat = () => {
     setIsOpen(!isOpen);
   };
@@ -33,7 +52,6 @@ const Chatbot = () => {
   const handleSendMessage = () => {
     if (inputMessage.trim() === '') return;
 
-    // Agregar mensaje del usuario
     const userMessage = {
       id: messages.length + 1,
       text: inputMessage,
@@ -42,7 +60,6 @@ const Chatbot = () => {
     setMessages([...messages, userMessage]);
     setInputMessage('');
 
-    // Simular respuesta del bot después de un breve retraso
     setTimeout(() => {
       const botResponse = {
         id: messages.length + 2,
@@ -60,41 +77,44 @@ const Chatbot = () => {
   };
 
   return (
-    <div className={`chatbot-container ${isOpen ? 'open' : ''}`}>
-      {isOpen ? (
-        <div className={`chat-window ${isDarkMode ? 'dark-mode' : ''}`}>
-          <div className="chat-header">
-            <h3>Asistente Virtual</h3>
-            <button className="close-btn" onClick={toggleChat}>
-              ×
-            </button>
-          </div>
-          <div className="chat-messages">
-            {messages.map((message) => (
-              <div 
-                key={message.id} 
-                className={`message ${message.sender} ${isDarkMode ? 'dark-mode' : ''}`}
+    <div ref={chatRef} className={`chatbot-container ${isOpen ? 'open' : ''}`}>
+  {isOpen ? (
+    <div className={`chat-window ${isDarkMode ? 'dark-mode' : ''}`}>
+
+          <div className={`chat-window ${isDarkMode ? 'dark-mode' : ''}`}>
+            <div className="chat-header">
+              <h3>Asistente Virtual</h3>
+              <button className="close-btn" onClick={toggleChat}>
+                ×
+              </button>
+            </div>
+            <div className="chat-messages">
+              {messages.map((message) => (
+                <div 
+                  key={message.id} 
+                  className={`message ${message.sender} ${isDarkMode ? 'dark-mode' : ''}`}
+                >
+                  {message.text}
+                </div>
+              ))}
+            </div>
+            <div className="chat-input">
+              <input 
+                type="text" 
+                placeholder="Escribe tu mensaje..." 
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className={isDarkMode ? 'dark-mode' : ''}
+              />
+              <button 
+                onClick={handleSendMessage}
+                className={isDarkMode ? 'dark-mode' : ''}
+                disabled={!inputMessage.trim()}
               >
-                {message.text}
-              </div>
-            ))}
-          </div>
-          <div className="chat-input">
-            <input 
-              type="text" 
-              placeholder="Escribe tu mensaje..." 
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className={isDarkMode ? 'dark-mode' : ''}
-            />
-            <button 
-              onClick={handleSendMessage}
-              className={isDarkMode ? 'dark-mode' : ''}
-              disabled={!inputMessage.trim()}
-            >
-              Enviar
-            </button>
+                Enviar
+              </button>
+            </div>
           </div>
         </div>
       ) : (

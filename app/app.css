@@ -108,6 +108,52 @@
   --bs-btn-hover-color: white;
 }
 
+.btn-primary {
+  background-color: var(--bs-primary-bg) !important;
+  border-color: var(--bs-primary-bg) !important;
+}
+
+.btn-primary:hover, 
+.btn-primary:focus {
+  background-color: color-mix(in srgb, var(--bs-primary-bg), black 15%) !important;
+  border-color: color-mix(in srgb, var(--bs-primary-bg), black 15%) !important;
+}
+
+
+
+
+/* INICIO DE Estilos base para los enlaces de paginación */
+.page-link {
+  color: var(--bs-body-color) !important; /* Usará el color de texto principal del tema */
+  background-color: transparent;
+  border-color: var(--bs-border-color);
+  transition: all 0.2s ease;
+}
+
+/* Estado hover - usa el color primario para destacar */
+.page-link:hover {
+  color: var(--bs-primary-bg) !important;
+  background-color: var(--bs-secondary-bg);
+}
+
+/* Página activa - estilo diferenciado */
+.page-item.active .page-link {
+  background-color: var(--bs-primary-bg) !important;
+  border-color: var(--bs-primary-bg) !important;
+  color: var(--bs-primary-text) !important; /* Texto blanco */
+}
+
+/* Elementos deshabilitados */
+.page-item.disabled .page-link {
+  color: var(--bs-secondary-color) !important;
+  opacity: 0.6;
+}
+/* FIN DE Estilo base para los enlaces de paginación */
+
+
+
+
+
 .btn.secondary-btn {
   --bs-btn-bg: #393a3c;
   --bs-btn-color: white;
@@ -172,7 +218,7 @@
   bottom: 6px;
 }
 
-/* FIN DE DISENIO DE TOOGLE EN SIEMPRE OSCURO /*
+/* FIN DE DISENIO DE TOOGLE EN SIEMPRE OSCURO */
 
 
 

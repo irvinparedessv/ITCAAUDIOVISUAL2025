@@ -22,20 +22,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = !!token;
 
   // Cargar credenciales al inicio
-  useEffect(() => {
-    const loadCredentials = async () => {
-      const storedToken = localStorage.getItem("token");
-      const storedUser = localStorage.getItem("user");
-  
-      if (storedToken && storedUser) {
+// En el useEffect que carga las credenciales
+useEffect(() => {
+  const loadCredentials = async () => {
+    const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
+    if (!storedToken || !storedUser) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Verificar el token con el backend
+      const response = await api.get("/validate-token", {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      });
+
+      if (response.data.valid) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
+      } else {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
       }
+    } catch (error) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    } finally {
       setIsLoading(false);
-    };
-  
-    loadCredentials();
-  }, []);
+    }
+  };
+
+  loadCredentials();
+}, []);
   
 
   const login = async (email: string, password: string) => {

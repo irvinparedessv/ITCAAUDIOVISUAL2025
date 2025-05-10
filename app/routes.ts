@@ -11,6 +11,7 @@ export default [
    route("change-password", "routes/change-password.tsx"),
 
   // Ruta protegida principal (con layout)
+  
   route("/", "layouts/protected-layout.tsx", [
     index("routes/home.tsx"),
     route("addreservation", "routes/reservation.tsx"),

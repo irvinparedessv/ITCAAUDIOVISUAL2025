@@ -39,7 +39,7 @@ const ConfirmAccount = () => {
 
                 // Timeout para redirección
                 timeoutRef.current = setTimeout(() => {
-                    navigate(`/change-password?email=${encodeURIComponent(response.data.email)}`, {
+                    navigate('/login', {
                         replace: true
                     });
                 }, 3000); // 3 segundos de delay
@@ -92,27 +92,27 @@ const ConfirmAccount = () => {
                     )}
 
                    {status === 'error' && (
-                    <div className="alert alert-danger">
-                        <h4 className="alert-heading">⚠️ Requiere atención</h4>
-                        <p className="mb-2">{message}</p>
-                        
-                        <hr className="my-2" />
-                        
-                        <div className="mt-3">
-                        <h5 className="fw-bold mb-2">Por favor contactar al equipo de soporte:</h5>
-                        <ul className="list-unstyled">
-                            <li className="mb-1">
-                            <i className="bi bi-envelope me-2"></i>
-                            Email: <a href="mailto:soporte@tuapp.com" className="text-decoration-none">soporte@tuapp.com</a>
-                            </li>
-                            <li className="mb-1">
-                            <i className="bi bi-telephone me-2"></i>
-                            Teléfono: <a href="tel:+123456789" className="text-decoration-none">+1 (234) 567-89</a>
-                            </li>
-                        </ul>
-                        </div>
+                <div className="alert alert-danger">
+                    <h4 className="alert-heading">⚠️ Requiere atención</h4>
+                    <p className="mb-2">{message}</p>
+                    
+                    <hr className="my-2" />
+                    
+                    <div className="mt-3">
+                    <h5 className="fw-bold mb-2">Por favor contactar al equipo de soporte:</h5>
+                    <ul className="list-unstyled">
+                        <li className="mb-1">
+                        <i className="bi bi-envelope me-2"></i>
+                        Email: <a href="mailto:soporte@tuapp.com" className="text-decoration-none">soporte@tuapp.com</a>
+                        </li>
+                        <li className="mb-1">
+                        <i className="bi bi-telephone me-2"></i>
+                        Teléfono: <a href="tel:+123456789" className="text-decoration-none">+1 (234) 567-89</a>
+                        </li>
+                    </ul>
                     </div>
-                    )}
+                </div>
+                )}
                 </div>
             </div>
         </div>

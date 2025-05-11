@@ -8,7 +8,7 @@ export default [
   route("forbidden", "components/auth/Forbidden.tsx"),
   route("usuarios", "routes/usuarioList.tsx"),
    route("confirm-account/:token", "routes/confirm-account.tsx"),
-   route("change-password", "routes/change-password.tsx"),
+   route("change-password", "components/auth/change-password.tsx"),
 
   // Ruta protegida principal (con layout)
   

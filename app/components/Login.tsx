@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ForgotPassword from "./auth/ForgotPassword";
+import ChangePassword from "./auth/change-password";
 
 const MotionButton = motion(
   forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => (
@@ -19,38 +20,48 @@ const Login = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
   const [showForgotModal, setShowForgotModal] = useState(false);
+    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false); // 👈 MUÉVELO AQUÍ
+
 
   useEffect(() => {
-    // Solo redirigir si el usuario no está en la página de login
-    if (isAuthenticated && window.location.pathname === "/login") {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
+  if (isAuthenticated && location.pathname === "/login") {
+    navigate('/');
+  }
+}, [isAuthenticated, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    if (!email || !password) {
-      setError('Por favor ingrese su correo y contraseña');
-      setIsLoading(false);
-      return;
-    }
+  e.preventDefault();
+  setIsLoading(true);
+  setError(null); // Limpia errores anteriores
 
-    try {
-      await login(email, password);
-      navigate('/');
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        setError('Credenciales incorrectas. Por favor intente nuevamente.');
-      } else if (err.response?.status === 403) {
-        setError('Tu cuenta está inactiva o ha sido eliminada. Contacta al administrador.');
-      } else {
-        setError('Ocurrió un error inesperado. Intenta más tarde.');
-      }
-      setIsLoading(false);
+  if (!email || !password) {
+    setError('Por favor ingrese su correo y contraseña');
+    setIsLoading(false);
+    return;
+  }
+
+  try {
+    const result = await login(email, password);
+
+    setIsLoading(false); // Asegura que se detenga el loading
+
+    if (result?.requiresPasswordChange) {
+  navigate('/change-password', { state: { email, password } });
+} else {
+  navigate('/');
+}
+  } catch (err: any) {
+    setIsLoading(false);
+    if (err.response?.status === 401) {
+      setError('Credenciales incorrectas. Por favor intente nuevamente.');
+    } else if (err.response?.status === 403) {
+      setError('Tu cuenta está inactiva o ha sido eliminada. Contacta al administrador.');
+    } else {
+      setError('Ocurrió un error inesperado. Intenta más tarde.');
     }
-  };
+  }
+};
+
 
   return (
     <div className="login-container">
@@ -164,19 +175,43 @@ const Login = () => {
         </motion.div>
       </Container>
 
-      <Modal
-        show={showForgotModal}
-        onHide={() => setShowForgotModal(false)}
-        centered
-        animation={true}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Recuperar Contraseña</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <ForgotPassword />
-        </Modal.Body>
-      </Modal>
+    {/* Modal: Recuperar contraseña */}
+  <Modal
+    show={showForgotModal}
+    onHide={() => setShowForgotModal(false)}
+    centered
+    animation={true}
+  >
+    <Modal.Header closeButton>
+      <Modal.Title>Recuperar Contraseña</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+      <ForgotPassword />
+    </Modal.Body>
+  </Modal>
+
+  {/* Modal: Cambiar contraseña temporal
+  <Modal
+    show={showChangePasswordModal}
+    onHide={() => setShowChangePasswordModal(false)}
+    centered
+    animation={true}
+  >
+    <Modal.Header closeButton>
+      <Modal.Title>Cambiar Contraseña</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+      <ChangePassword
+        email={email}
+        onSuccess={() => {
+          setShowChangePasswordModal(false);
+          navigate('/');
+        }}
+      />
+    </Modal.Body>
+  </Modal> */}
+
+
     </div>
   );
 };

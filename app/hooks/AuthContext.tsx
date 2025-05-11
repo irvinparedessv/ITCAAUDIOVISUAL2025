@@ -8,9 +8,17 @@ type AuthContextType = {
   user: UserLogin | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login:  (email: string, password: string) => Promise<
+  | void
+  | {
+      requiresPasswordChange: boolean;
+      token: string;
+      user: UserLogin;
+    }
+>;
   logout: () => void;
   checkAccess: (route: string) => boolean;
+  setUser: React.Dispatch<React.SetStateAction<UserLogin | null>>; // ✅ AGREGA ESTO
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserLogin | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const isAuthenticated = !!token;
+console.log("isAuthenticated:", isAuthenticated); // Verifica este valor
 
   // Cargar credenciales al inicio
 // En el useEffect que carga las credenciales
@@ -34,7 +43,6 @@ useEffect(() => {
     }
 
     try {
-      // Verificar el token con el backend
       const response = await api.get("/validate-token", {
         headers: { Authorization: `Bearer ${storedToken}` }
       });
@@ -56,24 +64,47 @@ useEffect(() => {
 
   loadCredentials();
 }, []);
+
   
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const response = await api.post("/login", { email, password });
-      const { token: newToken, user: newUser } = response.data;
+  setIsLoading(true);
+  try {
+    const response = await api.post("/login", { email, password });
+    const { token: newToken, user: newUser } = response.data;
 
-      localStorage.setItem("token", newToken);
-      localStorage.setItem("user", JSON.stringify(newUser));
-      setToken(newToken);
-      setUser(newUser);
-    } catch (error) {
-      throw error;
-    } finally {
-      setIsLoading(false);
+      // Si está pendiente, no logueamos aún pero retornamos el estado
+    if (newUser.estado === 3) {
+      return { requiresPasswordChange: true, token: newToken, user: newUser };
     }
-  };
+    // Verifica si el usuario está activo
+    if (newUser.estado !== 1) {
+      throw {
+        response: {
+          status: 403,
+          data: { message: "Usuario inactivo" }
+        }
+      };
+    }
+
+    // Guarda el token y usuario en localStorage
+    localStorage.setItem("token", newToken);
+    localStorage.setItem("user", JSON.stringify(newUser));
+
+    // Actualiza el estado
+    setToken(newToken);
+    setUser(newUser);
+
+    console.log("Login exitoso:", newToken, newUser);  // Verifica que se actualicen correctamente
+
+  } catch (error) {
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -97,6 +128,7 @@ useEffect(() => {
     login,
     logout,
     checkAccess,
+    setUser, // ✅ AGREGA ESTO
   }), [token, user, isLoading]);
 
   return (

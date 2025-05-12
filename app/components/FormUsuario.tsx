@@ -34,7 +34,7 @@ export default function FormUsuario() {
   const [isLoading, setIsLoading] = useState(false);
 
   const nameRegex = /^[a-zA-Z\s]{2,}$/;
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@itca\.edu\.sv$/; //Permitir correo institucional (JOSUE)
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
   const phoneRegex = /^[0-9]{4}-[0-9]{4}$/;
   const imageTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
@@ -56,11 +56,9 @@ export default function FormUsuario() {
           return "Debe tener al menos 2 letras y solo letras/espacios.";
         break;
       case "email":
-        if (!emailRegex.test(value)) return "Correo electrónico inválido.";
-        break;
-      case "password":
-        if (!passwordRegex.test(value))
-          return "Al menos 6 caracteres, una letra y un número.";
+        if (!emailRegex.test(value))
+          //JOSUE
+          return "Solo se permiten correos institucionales (@itca.edu.sv).";
         break;
       case "role_id":
         if (!value) return "Debe seleccionar un rol.";
@@ -155,6 +153,11 @@ export default function FormUsuario() {
       return;
     }
 
+    toast.info("Creando usuario...", {
+      autoClose: 2000,
+      hideProgressBar: false,
+    });
+
     setIsLoading(true);
 
     const formDataToSend = new FormData();
@@ -167,9 +170,15 @@ export default function FormUsuario() {
     });
     if (formData.image) formDataToSend.append("image", formData.image);
 
+    // ✅ JOSUE (ESTADO DE USUARIO AL SER CREADO 3-PENDIENTE)
+    formDataToSend.append("estado", "3");
+
     try {
       await createUsuario(formDataToSend);
-      toast.success("Usuario creado con éxito");
+      toast.success("Usuario creado con éxito", {
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
 
       setFormData({
         first_name: "",
@@ -184,9 +193,13 @@ export default function FormUsuario() {
       setFormErrors({});
       setPreviewImage(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      navigate("/usuarios");
+      setTimeout(() => navigate("/usuarios"), 3200);
     } catch (error) {
-      throw error; // Deja que el handler externo lo maneje
+      console.error("Error al crear usuario:", error);
+      toast.error("Error al crear usuario", {
+        autoClose: 2500,
+        hideProgressBar: false,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -207,35 +220,7 @@ export default function FormUsuario() {
               <h4 className="mb-0">Crear Nuevo Usuario</h4>
             </Card.Header>
             <Card.Body>
-              <Form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!isFormValid()) {
-                    toast.error("Revisa los campos antes de enviar.");
-                    return;
-                  }
-
-                  const result = await Swal.fire({
-                    title: "¿Crear usuario?",
-                    text: "¿Estás seguro de que deseas crear este usuario?",
-                    icon: "question",
-                    showCancelButton: true,
-                    confirmButtonText: "Sí, crear",
-                    cancelButtonText: "Cancelar",
-                  });
-
-                  if (result.isConfirmed) {
-                    try {
-                      await handleSubmit(e);
-                    } catch (error) {
-                      toast.error("Hubo un error al crear el usuario");
-                    }
-                  } else if (result.dismiss === Swal.DismissReason.cancel) {
-                    toast.info("Creación cancelada por el usuario");
-                  }
-                }}
-                encType="multipart/form-data"
-              >
+              <Form onSubmit={handleSubmit} encType="multipart/form-data">
                 {[
                   { label: "Nombres", name: "first_name", type: "text" },
                   { label: "Apellidos", name: "last_name", type: "text" },

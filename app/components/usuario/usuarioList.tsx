@@ -4,14 +4,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getUsuarios, deleteUsuario } from '~/services/userService';
 import type { User } from '~/types/user';
-import UsuarioForm from '~/components/usuario/editUsuario';
 import { FaUserCircle, FaEdit, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-
-const MySwal = withReactContent(Swal);
 
 const rolesMap: Record<number, string> = {
   1: 'Administrador',
@@ -43,18 +37,11 @@ const UsuarioList = () => {
   };
 
   const eliminarUsuario = async (id: number) => {
-    const result = await MySwal.fire({
-      title: '¿Estás seguro?',
-      text: 'Esta acción desactivará al usuario.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, desactivar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-    });
+    const confirmDelete = window.confirm(
+      '¿Estás seguro de que deseas desactivar a este usuario? Esta acción es irreversible.'
+    );
 
-    if (result.isConfirmed) {
+    if (confirmDelete) {
       try {
         await deleteUsuario(id);
         setUsuarios((prevUsuarios) =>
@@ -66,10 +53,9 @@ const UsuarioList = () => {
       } catch (error) {
         toast.error('Error al desactivar el usuario');
       }
-    } else if (result.dismiss === Swal.DismissReason.cancel) {
+    } else {
       toast.info('Acción cancelada por el usuario');
     }
-
   };
 
   const indexUltimo = currentPage * usuariosPorPagina;
@@ -92,19 +78,19 @@ const UsuarioList = () => {
   }
 
   return (
-  <div className="p-4">
-    <h2 className="text-xl font-bold mb-4 text-center">Lista de Usuarios</h2>
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4 text-center">Lista de Usuarios</h2>
 
-    {/* BOTÓN DE CREAR USUARIO */}
-    <div className="d-flex justify-content-end mb-3">
-      <Link to="/formUsuario" className="btn btn-primary">
-        Crear Usuario
-      </Link>
-    </div>
+      {/* BOTÓN DE CREAR USUARIO */}
+      <div className="d-flex justify-content-end mb-3">
+        <Link to="/formUsuario" className="btn btn-primary">
+          Crear Usuario
+        </Link>
+      </div>
 
-    {loading ? (
-      <p className="text-center">Cargando usuarios...</p>
-    ) : (
+      {loading ? (
+        <p className="text-center">Cargando usuarios...</p>
+      ) : (
         <div className="w-100" style={{ overflowX: 'auto' }}>
           <Table
             striped
@@ -163,7 +149,7 @@ const UsuarioList = () => {
                       <Link
                         to={`/editarUsuario/${usuario.id}`}
                         className="btn btn-warning"
-                        style={{ fontSize: '1.5rem', padding: '0' }}
+                        style={{ fontSize: '1.1rem', padding: '0' }}
                       >
                         <FaEdit />
                       </Link>
@@ -171,7 +157,7 @@ const UsuarioList = () => {
                         variant="link"
                         size="sm"
                         className="text-danger"
-                        style={{ fontSize: '1.5rem', padding: '0' }}
+                        style={{ fontSize: '1.1rem', padding: '0' }}
                         onClick={() => eliminarUsuario(usuario.id)}
                       >
                         <FaTrash />

@@ -12,7 +12,7 @@ type User = {
   first_name: string;
   last_name: string;
   email: string;
-  role: string; // Asegúrate que tu API mande 'role'
+  role: number; // Asegúrate que tu API mande 'role'
   image?: string; // Añadir la propiedad image aquí
 };
 

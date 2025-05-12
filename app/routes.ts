@@ -27,5 +27,6 @@ export default [
     route("qrScan", "routes/qr.tsx"),
     route("crearEspacio", "routes/creacionEspacio.tsx"),
     route("espacioList", "routes/espacioList.tsx"),
+    route("perfil", "routes/verPerfil.tsx"),
   ]),
 ] satisfies RouteConfig;

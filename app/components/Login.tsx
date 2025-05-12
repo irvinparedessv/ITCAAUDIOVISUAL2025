@@ -1,13 +1,12 @@
-import React, { useState, forwardRef, useEffect } from "react";
+import React, { useState, forwardRef } from "react";
 import api from "../api/axios";
 import { Button, Form, Container, Modal } from "react-bootstrap";
 import type { ButtonProps } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ForgotPassword from "./auth/ForgotPassword"; // Ajusta la ruta si es necesario
 
-// Componente Button animado personalizado
 const MotionButton = motion(
   forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => (
     <Button {...props} ref={ref} />
@@ -15,40 +14,48 @@ const MotionButton = motion(
 );
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeField, setActiveField] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const { login } = useAuth();
-  const { isAuthenticated } = useAuth();
   const [showForgotModal, setShowForgotModal] = useState(false);
+
+  const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+    setError(null);
+
     if (!email || !password) {
-      setError('Por favor ingrese su correo y contraseña');
+      setError("Por favor ingrese su correo y contraseña");
       setIsLoading(false);
       return;
     }
-  
 
     try {
-      await login(email, password); // Ya incluye CSRF + login + manejo de estado
-      navigate('/');
+      await login(email, password);
+      navigate("/");
     } catch (err: any) {
-      if (err.response?.status === 401) {
-        setError('Credenciales incorrectas. Por favor intente nuevamente.');
-      } else if (err.response?.status === 403) {
-        setError('Tu cuenta está inactiva o ha sido eliminada. Contacta al administrador.');
+      console.error("Error de login:", err);
+
+      const status = err?.response?.status;
+      const message = err?.response?.data?.message;
+
+      if (status === 401) {
+        console.log("⚠️ Error 401: Credenciales incorrectas");
+        setError("Credenciales incorrectas. Por favor intente nuevamente.");
+      } else if (status === 403) {
+        console.log("🚫 Error 403: Cuenta inactiva u otro bloqueo");
+        setError(message || "Tu cuenta está inactiva.");
       } else {
-        setError('Ocurrió un error inesperado. Intenta más tarde.');
+        console.log("❌ Error inesperado:", err);
+        setError("Ocurrió un error inesperado. Intenta más tarde.");
       }
+    } finally {
       setIsLoading(false);
-    }    
+    }
   };
 
   return (
@@ -61,7 +68,7 @@ const Login = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="card-header text-center mb-4">
-            <motion.h2 
+            <motion.h2
               className="login-title"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -69,7 +76,7 @@ const Login = () => {
             >
               Iniciar Sesión
             </motion.h2>
-            <motion.div 
+            <motion.div
               className="header-line"
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
@@ -92,13 +99,15 @@ const Login = () => {
           </AnimatePresence>
 
           <Form onSubmit={handleSubmit}>
-            <motion.div 
+            <motion.div
               className="mb-3"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              <Form.Label className="text-secondary">Correo electrónico</Form.Label>
+              <Form.Label className="text-secondary">
+                Correo electrónico
+              </Form.Label>
               <Form.Control
                 type="email"
                 placeholder="usuario@correo.com"
@@ -108,7 +117,7 @@ const Login = () => {
               />
             </motion.div>
 
-            <motion.div 
+            <motion.div
               className="mb-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -127,12 +136,14 @@ const Login = () => {
             <MotionButton
               type="submit"
               disabled={isLoading}
-              className={`w-100 btn primary-btn border-0 ${isLoading ? 'loading' : ''}`}
+              className={`w-100 btn primary-btn border-0 ${
+                isLoading ? "loading" : ""
+              }`}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               style={{
-                outline: "none", // Eliminar el borde azul de enfoque
-                boxShadow: "none", // Eliminar la sombra de enfoque
+                outline: "none",
+                boxShadow: "none",
               }}
             >
               {isLoading ? (
@@ -144,7 +155,7 @@ const Login = () => {
             </MotionButton>
           </Form>
 
-          <motion.div 
+          <motion.div
             className="d-flex justify-content-between mt-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -154,7 +165,7 @@ const Login = () => {
               <span
                 onClick={() => setShowForgotModal(true)}
                 className="text-decoration-none text-secondary fw-semibold"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: "pointer" }}
               >
                 ¿Olvidó su contraseña?
               </span>
@@ -163,12 +174,11 @@ const Login = () => {
         </motion.div>
       </Container>
 
-      {/* Modal Forgot Password */}
       <Modal
         show={showForgotModal}
         onHide={() => setShowForgotModal(false)}
         centered
-        animation={true} // Para animación de apertura/cierre
+        animation={true}
       >
         <Modal.Header closeButton>
           <Modal.Title>Recuperar Contraseña</Modal.Title>

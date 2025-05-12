@@ -294,9 +294,9 @@ export default function App() {
                       <FaUserCircle className="me-2" size={24} />
                     )}
 
-                    <span className="d-none d-lg-inline">
-                      {" "}
-                      {user?.first_name} {user?.last_name}
+                    <span>
+                      {user?.first_name?.split(" ")[0]}{" "}
+                      {user?.last_name?.split(" ")[0]}
                     </span>
                   </Dropdown.Toggle>
 
@@ -307,6 +307,15 @@ export default function App() {
                       color: "#000",
                     }}
                   >
+                    {/* ✅ Ver Perfil */}
+                    <Dropdown.Item
+                      as={Link}
+                      to="/perfil" // 👈 Asegúrate que esta ruta exista en tu router
+                      className="px-3 py-2 nav-hover-white"
+                      style={{ color: "#000" }}
+                    >
+                      Ver Perfil
+                    </Dropdown.Item>
                     <Dropdown.ItemText
                       className="px-3 py-2"
                       style={{ color: "#000" }}

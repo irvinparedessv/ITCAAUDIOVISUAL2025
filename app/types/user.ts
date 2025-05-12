@@ -1,4 +1,5 @@
 export interface User {
+  image_url: string;
   id: number;
   first_name: string;
   last_name: string;
@@ -43,3 +44,17 @@ export type UserUpdateDTO = {
 
 // Para identificar el usuario a actualizar (id requerido)
 export type UserWithId = UserUpdateDTO & { id: number };
+
+
+export interface UserProfileUpdateDTO {
+  first_name: string;
+  last_name: string;
+  email: string;
+  role_id: number;
+  phone?: string;
+  address?: string;
+  estado: number;
+  image: File | string;
+  image_url?: string; // Asegúrate de que este campo esté presente
+}
+

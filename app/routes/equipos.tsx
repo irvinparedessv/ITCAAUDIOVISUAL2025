@@ -6,7 +6,6 @@ import type { TipoEquipo } from '~/types/tipoEquipo'
 import EquipoForm from '../components/equipo/EquipoForm'
 import EquipoList from '../components/equipo/EquipoList'
 import { Toaster } from 'react-hot-toast'
-import { ProtectedRoute } from '~/helpers/ProtectedRoute'
 
 
 export default function EquipoPage() {
@@ -60,14 +59,13 @@ export default function EquipoPage() {
 
   return (
     <>
-      <ProtectedRoute>
         <Toaster position="top-right" />
         <div className="max-w-3xl mx-auto mt-8 px-4">
           <h1 className="text-2xl font-bold mb-4">Gestión de Equipos</h1>
           <EquipoForm onSubmit={handleCreateOrUpdate} equipoEditando={editando} resetEdit={resetEdit} />
           <EquipoList equipos={equipos} tipos={tipos} onEdit={handleEdit} onDelete={handleDelete} />
         </div>
-      </ProtectedRoute>
+
     </>
   )
 }

@@ -5,8 +5,13 @@ export default [
   route("login", "routes/login.tsx"),
   route("forgot-password", "routes/forgot-password.tsx"),
   route("reset-password", "routes/reset-password.tsx"),
+  route("forbidden", "components/auth/Forbidden.tsx"),
+  route("usuarios", "routes/usuarioList.tsx"),
+   route("confirm-account/:token", "routes/confirm-account.tsx"),
+   route("change-password", "components/auth/change-password.tsx"),
 
   // Ruta protegida principal (con layout)
+  
   route("/", "layouts/protected-layout.tsx", [
     index("routes/home.tsx"),
     route("addreservation", "routes/reservation.tsx"),
@@ -22,10 +27,12 @@ export default [
     route("tipoequipo", "routes/tipoEquipos.tsx"),
     route("equipo", "routes/equipos.tsx"),
     route("formUsuario", "routes/formUsuario.tsx"),
-    route("usuarios", "routes/usuarioList.tsx"),
+
     route("editarUsuario/:id", "routes/editUsuario.tsx"),
     route("qrScan", "routes/qr.tsx"),
     route("crearEspacio", "routes/creacionEspacio.tsx"),
     route("espacioList", "routes/espacioList.tsx"),
   ]),
 ] satisfies RouteConfig;
+
+

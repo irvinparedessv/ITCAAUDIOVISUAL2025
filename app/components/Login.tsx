@@ -1,13 +1,10 @@
-import React, { useState, forwardRef, useEffect } from "react";
-import api from "../api/axios";
-import { Button, Form, Container, Modal } from "react-bootstrap";
-import type { ButtonProps } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, forwardRef } from "react";
+import { Button, Form, Container, Modal, type ButtonProps } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import ForgotPassword from "./auth/ForgotPassword"; // Ajusta la ruta si es necesario
+import ForgotPassword from "./auth/ForgotPassword";
 
-// Componente Button animado personalizado
 const MotionButton = motion(
   forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => (
     <Button {...props} ref={ref} />
@@ -19,37 +16,42 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeField, setActiveField] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const { isAuthenticated } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [showForgotModal, setShowForgotModal] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    if (!email || !password) {
-      setError('Por favor ingrese su correo y contraseña');
-      setIsLoading(false);
-      return;
-    }
-  
 
-    try {
-      await login(email, password); // Ya incluye CSRF + login + manejo de estado
-      navigate('/');
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        setError('Credenciales incorrectas. Por favor intente nuevamente.');
-      } else if (err.response?.status === 403) {
-        setError('Tu cuenta está inactiva o ha sido eliminada. Contacta al administrador.');
-      } else {
-        setError('Ocurrió un error inesperado. Intenta más tarde.');
-      }
-      setIsLoading(false);
-    }    
-  };
+  useEffect(() => {
+  if (isAuthenticated && location.pathname === "/login") {
+    navigate('/');
+  }
+}, [isAuthenticated, navigate, location]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+
+  try {
+    const result = await login(email, password);
+    setIsLoading(false);
+
+    if (result?.requiresPasswordChange) {
+      navigate('/change-password', {
+        state: { email, password },
+      });
+    }
+
+  } catch (err: any) {
+    setIsLoading(false);
+    if (err.response && err.response.data && err.response.data.message) {
+      setError(err.response.data.message);
+    } else {
+      setError("Error al iniciar sesión");
+    }
+  }
+};
+
+
 
   return (
     <div className="login-container">
@@ -131,8 +133,8 @@ const Login = () => {
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               style={{
-                outline: "none", // Eliminar el borde azul de enfoque
-                boxShadow: "none", // Eliminar la sombra de enfoque
+                outline: "none",
+                boxShadow: "none",
               }}
             >
               {isLoading ? (
@@ -163,20 +165,20 @@ const Login = () => {
         </motion.div>
       </Container>
 
-      {/* Modal Forgot Password */}
-      <Modal
-        show={showForgotModal}
-        onHide={() => setShowForgotModal(false)}
-        centered
-        animation={true} // Para animación de apertura/cierre
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Recuperar Contraseña</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <ForgotPassword />
-        </Modal.Body>
-      </Modal>
+    {/* Modal: Recuperar contraseña */}
+  <Modal
+    show={showForgotModal}
+    onHide={() => setShowForgotModal(false)}
+    centered
+    animation={true}
+  >
+    <Modal.Header closeButton>
+      <Modal.Title>Recuperar Contraseña</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+      <ForgotPassword />
+    </Modal.Body>
+  </Modal>
     </div>
   );
 };

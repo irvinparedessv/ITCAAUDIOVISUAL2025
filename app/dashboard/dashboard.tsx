@@ -77,7 +77,7 @@ export default function Dashboard() {
           <DashboardCard
             title="Administración"
             icon={<FaUserShield size={24} style={getIconStyle()} />}
-            link="/usuarios" 
+            link="/usuarios"
             description="Configuración del sistema"
             borderStyle={cardBorderStyle}
           />
@@ -89,7 +89,7 @@ export default function Dashboard() {
           <DashboardCard
             title="Aprobar Reservas"
             icon={<FaClipboardList size={24} style={getIconStyle()} />}
-            link="/reservations"
+            link="/approvereservations"
             description="Revisar y aprobar reservas pendientes"
             borderStyle={cardBorderStyle}
           />

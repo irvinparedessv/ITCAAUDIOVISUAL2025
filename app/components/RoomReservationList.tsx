@@ -3,14 +3,29 @@ import { Card, Button, Row, Col, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { Badge } from "react-bootstrap";
+import api from "../api/axios";
 
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
     from: null,
     to: null,
   });
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
-
+  const getEstadoVariant = (estado: string) => {
+    switch (estado.toLowerCase()) {
+      case "pendiente":
+        return "warning";
+      case "cancelado":
+        return "danger";
+      case "aprobado":
+        return "success";
+      default:
+        return "secondary";
+    }
+  };
   useEffect(() => {
     const today = new Date();
     const pastWeek = new Date(today);
@@ -18,11 +33,36 @@ const RoomReservationList = () => {
     setRange({ from: pastWeek, to: today });
   }, []);
 
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleString("es-SV", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
+  useEffect(() => {
+    const fetchReservations = async () => {
+      if (!range.from || !range.to) return;
+
+      setIsLoading(true);
+      try {
+        const response = await api.get("/reservas-aula", {
+          params: {
+            from: range.from.toISOString(),
+            to: range.to.toISOString(),
+          },
+        });
+        setReservations(response.data);
+      } catch (error) {
+        console.error("Error al obtener reservas:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReservations();
+  }, [range.from, range.to]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   return (
     <div className="mt-4 px-3">
@@ -70,15 +110,18 @@ const RoomReservationList = () => {
             <Col key={res.id}>
               <Card>
                 <Card.Body>
-                  <Card.Title>
-                    {res.aula?.nombre || "Aula Desconocida"}
+                  <Card.Title className="d-flex justify-content-between align-items-center">
+                    <span>{res.aula?.name || "Aula Desconocida"}</span>
+                    <Badge bg={getEstadoVariant(res.estado)}>
+                      {res.estado}
+                    </Badge>
                   </Card.Title>
                   <Card.Text>
-                    {formatDate(res.fecha_inicio)} - {formatDate(res.fecha_fin)}
+                    {formatDate(res.fecha)} - {res.horario}
                   </Card.Text>
                   <Card.Text>
                     Reservado por:{" "}
-                    <strong>{res.profesor?.nombre || "Desconocido"}</strong>
+                    <strong>{res.user?.first_name || "Desconocido"}</strong>
                   </Card.Text>
                   <Button
                     variant="primary"

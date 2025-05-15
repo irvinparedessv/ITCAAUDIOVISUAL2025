@@ -1,11 +1,15 @@
-import React, { useState, forwardRef } from "react";
-import api from "../api/axios";
-import { Button, Form, Container, Modal } from "react-bootstrap";
-import type { ButtonProps } from "react-bootstrap";
+import React, { useState, useEffect, forwardRef } from "react";
+import {
+  Button,
+  Form,
+  Container,
+  Modal,
+  type ButtonProps,
+} from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import ForgotPassword from "./auth/ForgotPassword"; // Ajusta la ruta si es necesario
+import ForgotPassword from "./auth/ForgotPassword";
 
 const MotionButton = motion(
   forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => (
@@ -18,43 +22,36 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showForgotModal, setShowForgotModal] = useState(false);
-
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
+  const [showForgotModal, setShowForgotModal] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated && location.pathname === "/login") {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
-
-    if (!email || !password) {
-      setError("Por favor ingrese su correo y contraseña");
-      setIsLoading(false);
-      return;
-    }
 
     try {
-      await login(email, password);
-      navigate("/");
-    } catch (err: any) {
-      console.error("Error de login:", err);
-
-      const status = err?.response?.status;
-      const message = err?.response?.data?.message;
-
-      if (status === 401) {
-        console.log("⚠️ Error 401: Credenciales incorrectas");
-        setError("Credenciales incorrectas. Por favor intente nuevamente.");
-      } else if (status === 403) {
-        console.log("🚫 Error 403: Cuenta inactiva u otro bloqueo");
-        setError(message || "Tu cuenta está inactiva.");
-      } else {
-        console.log("❌ Error inesperado:", err);
-        setError("Ocurrió un error inesperado. Intenta más tarde.");
-      }
-    } finally {
+      const result = await login(email, password);
       setIsLoading(false);
+
+      if (result?.requiresPasswordChange) {
+        navigate("/change-password", {
+          state: { email, password },
+        });
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Error al iniciar sesión");
+      }
     }
   };
 
@@ -174,6 +171,7 @@ const Login = () => {
         </motion.div>
       </Container>
 
+      {/* Modal: Recuperar contraseña */}
       <Modal
         show={showForgotModal}
         onHide={() => setShowForgotModal(false)}

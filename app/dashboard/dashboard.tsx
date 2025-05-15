@@ -122,7 +122,7 @@ export default function Dashboard() {
           <DashboardCard
             title="Reservar Espacio"
             icon={<FaRestroom size={24} />}
-            link="/crearEspacio"
+            link="/reservationsroom"
             description="Crear nueva reserva de espacio"
             borderStyle={cardBorderStyle}
           />

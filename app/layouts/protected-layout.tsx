@@ -2,55 +2,59 @@
 import { useLocation, Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { Spinner } from "react-bootstrap";
-import Forbidden from "~/components/auth/Forbidden";
 import { getAllowedRoles } from "../helpers/matchRouteRoles";
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import Chatbot from "~/components/chatbot/chatbot";
 
+const publicRoutes = ["/login", "/forgot-password", "/reset-password"];
 
-export default function() {
+export default function ProtectedLayout() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [redirectHandled, setRedirectHandled] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || redirectHandled) return;
 
-    // Redirigir a login si no está autenticado y no es ruta pública
-    if (!isAuthenticated && !['/login', '/forgot-password', '/reset-password'].includes(location.pathname)) {
-      navigate('/login', { replace: true, state: { from: location } });
+    if (!isAuthenticated && !publicRoutes.includes(location.pathname)) {
+      navigate("/login", { replace: true, state: { from: location } });
+      setRedirectHandled(true);
       return;
     }
 
-    // Si está autenticado y en login, redirigir a home
-    if (isAuthenticated && location.pathname === '/login') {
-      navigate('/', { replace: true });
+    if (isAuthenticated && location.pathname === "/login") {
+      navigate("/", { replace: true });
+      setRedirectHandled(true);
       return;
     }
-  }, [isAuthenticated, isLoading, location.pathname]);
+  }, [isLoading, isAuthenticated, location.pathname, redirectHandled, navigate]);
+
+  useEffect(() => {
+    // Reset redirectHandled cuando cambia la ruta
+    setRedirectHandled(false);
+  }, [location.pathname]);
 
   if (isLoading) {
     return <Spinner />;
   }
 
-  // Verificación de roles solo si está autenticado
   if (isAuthenticated) {
     const allowedRoles = getAllowedRoles(location.pathname);
-    if (allowedRoles.length > 0 && (!user?.role || !allowedRoles.includes(Number(user.role)))) {
+    const userRole = Number(user?.role);
+
+    if (allowedRoles.length > 0 && (!userRole || !allowedRoles.includes(userRole))) {
       return <Navigate to="/forbidden" replace />;
     }
   }
-    // Si no tiene el rol permitido, muestra la página de acceso denegado
-    console.log("Ruta:", location.pathname);
-  console.log("Usuario:", user);
 
+  console.log('DESDE PROTECTED')
 
   return (
     <>
-      
       <Outlet />
-      <Chatbot/>  
+      <Chatbot />
     </>
   );
 }

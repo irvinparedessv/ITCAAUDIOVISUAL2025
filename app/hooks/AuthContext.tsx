@@ -8,17 +8,13 @@ type AuthContextType = {
   user: UserLogin | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login:  (email: string, password: string) => Promise<
-  | void
-  | {
-      requiresPasswordChange: boolean;
-      token: string;
-      user: UserLogin;
-    }
->;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<void | { requiresPasswordChange: boolean; token: string; user: UserLogin }>;
   logout: () => void;
   checkAccess: (route: string) => boolean;
-  setUser: React.Dispatch<React.SetStateAction<UserLogin | null>>; // ✅ AGREGA ESTO
+  setUser: React.Dispatch<React.SetStateAction<UserLogin | null>>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,36 +23,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserLogin | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const isAuthenticated = !!token;
-console.log("isAuthenticated:", isAuthenticated); // Verifica este valor
 
-  // Cargar credenciales al inicio
-// En el useEffect que carga las credenciales
+  const isAuthenticated = !!token && !!user;
+
 useEffect(() => {
   const loadCredentials = async () => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (!storedToken || !storedUser) {
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
+
+      if (!storedToken || !storedUser) {
+        setIsLoading(false);
+        return;
+      }
+
       const response = await api.get("/validate-token", {
-        headers: { Authorization: `Bearer ${storedToken}` }
+        headers: { Authorization: `Bearer ${storedToken}` },
       });
 
       if (response.data.valid) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        // Evitar actualizar estado si ya son iguales
+        setToken((prev) => (prev !== storedToken ? storedToken : prev));
+        setUser((prev) => {
+          const parsedUser = JSON.parse(storedUser);
+          return JSON.stringify(prev) !== JSON.stringify(parsedUser) ? parsedUser : prev;
+        });
       } else {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        setToken(null);
+        setUser(null);
       }
     } catch (error) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      setToken(null);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -65,46 +67,42 @@ useEffect(() => {
   loadCredentials();
 }, []);
 
-  
+
+
+  useEffect(() => {
+    console.log("Valor actual del token:", token);
+    console.log("Valor de isAuthenticated:", isAuthenticated);
+  }, [token, isAuthenticated]);
 
   const login = async (email: string, password: string) => {
-  setIsLoading(true);
-  try {
-    const response = await api.post("/login", { email, password });
-    const { token: newToken, user: newUser } = response.data;
+    setIsLoading(true);
+    try {
+      const response = await api.post("/login", { email, password });
+      const { token: newToken, user: newUser } = response.data;
 
-      // Si está pendiente, no logueamos aún pero retornamos el estado
-    if (newUser.estado === 3) {
-      return { requiresPasswordChange: true, token: newToken, user: newUser };
+      if (newUser.estado === 3) {
+        return { requiresPasswordChange: true, token: newToken, user: newUser };
+      }
+
+      if (newUser.estado !== 1) {
+        throw {
+          response: {
+            status: 403,
+            data: { message: "Usuario inactivo" }
+          }
+        };
+      }
+
+      localStorage.setItem("token", newToken);
+      localStorage.setItem("user", JSON.stringify(newUser));
+      setToken(newToken);
+      setUser(newUser);
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-    // Verifica si el usuario está activo
-    if (newUser.estado !== 1) {
-      throw {
-        response: {
-          status: 403,
-          data: { message: "Usuario inactivo" }
-        }
-      };
-    }
-
-    // Guarda el token y usuario en localStorage
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(newUser));
-
-    // Actualiza el estado
-    setToken(newToken);
-    setUser(newUser);
-
-    console.log("Login exitoso:", newToken, newUser);  // Verifica que se actualicen correctamente
-
-  } catch (error) {
-    throw error;
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
+  };
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -119,7 +117,6 @@ useEffect(() => {
     return allowedRoles.length === 0 || allowedRoles.includes(user.role);
   };
 
-  // Memoizar el valor del contexto para evitar renders innecesarios
   const contextValue = useMemo(() => ({
     token,
     user,
@@ -128,8 +125,8 @@ useEffect(() => {
     login,
     logout,
     checkAccess,
-    setUser, // ✅ AGREGA ESTO
-  }), [token, user, isLoading]);
+    setUser,
+  }), [token, user, isLoading, isAuthenticated]);
 
   return (
     <AuthContext.Provider value={contextValue}>

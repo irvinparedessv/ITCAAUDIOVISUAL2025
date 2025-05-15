@@ -67,23 +67,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
 // ---- APP CON NAVBAR ---- //
 export default function App() {
   const { isAuthenticated, logout, user, isLoading, checkAccess } = useAuth();
-
   const location = useLocation();
 
- 
+  const hideNavbarRoutes = [
+    "/login",
+    "/forgot-password",
+    "/reset-password",
+    "/forbidden",
+  ];
 
+  const shouldShowNavbar =
+    isAuthenticated && !hideNavbarRoutes.includes(location.pathname);
+
+  // Spinner global durante carga de sesión
   if (isLoading) {
     return (
       <div
         className="d-flex justify-content-center align-items-center vh-100"
         style={{
-          backgroundColor: "#f4f4f4", // Puedes elegir el color de fondo que prefieras
+          backgroundColor: "#f4f4f4",
           position: "fixed",
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          zIndex: 9999, // Asegura que este contenido esté por encima de otros
+          zIndex: 9999,
         }}
       >
         <div className="text-center">
@@ -96,24 +104,10 @@ export default function App() {
       </div>
     );
   }
-  
 
-  const hideNavbarRoutes = [
-    "/login",
-    "/forgot-password",
-    "/reset-password",
-    "/forbidden",
-  ];
-
-  const shouldShowNavbar = isAuthenticated && !hideNavbarRoutes.includes(location.pathname);
-  console.log("App rendered");
   return (
     <>
-      {shouldShowNavbar && (
-        <NavbarMenu
-          
-        />
-      )}
+      {shouldShowNavbar && <NavbarMenu />}
       <main className="container my-4">
         <Outlet />
       </main>

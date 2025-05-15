@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Badge, Button, Pagination } from 'react-bootstrap';
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Badge, Pagination } from 'react-bootstrap';
+import { toast } from 'react-hot-toast';
 import { getUsuarios, deleteUsuario } from '~/services/userService';
 import type { User } from '~/types/user';
-import UsuarioForm from '~/components/usuario/editUsuario';
 import { FaUserCircle, FaEdit, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
@@ -67,9 +64,8 @@ const UsuarioList = () => {
         toast.error('Error al desactivar el usuario');
       }
     } else if (result.dismiss === Swal.DismissReason.cancel) {
-      toast.info('Acción cancelada por el usuario');
+      toast('Acción cancelada por el usuario');
     }
-
   };
 
   const indexUltimo = currentPage * usuariosPorPagina;
@@ -92,44 +88,42 @@ const UsuarioList = () => {
   }
 
   return (
-  <div className="p-4">
-    <h2 className="text-xl font-bold mb-4 text-center">Lista de Usuarios</h2>
+    <div className="table-responsive rounded shadow p-3 mt-4">
+      <h4 className="mb-3 text-center">Listado de Usuarios</h4>
+      
+      {/* BOTÓN DE CREAR USUARIO */}
+      <div className="d-flex justify-content-end mb-3 ">
+        <Link 
+          to="/formUsuario" 
+          className="btn btn-primary"
+          style={{
+            transition: 'transform 0.2s ease-in-out',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+        >
+          Crear Usuario
+        </Link>
+      </div>
 
-    {/* BOTÓN DE CREAR USUARIO */}
-    <div className="d-flex justify-content-end mb-3">
-      <Link to="/formUsuario" className="btn btn-primary">
-        Crear Usuario
-      </Link>
-    </div>
-
-    {loading ? (
-      <p className="text-center">Cargando usuarios...</p>
-    ) : (
-        <div className="w-100" style={{ overflowX: 'auto' }}>
-          <Table
-            striped
-            bordered
-            hover
-            responsive
-            className="text-center text-sm"
-            style={{
-              fontSize: '0.8rem',
-              minWidth: '850px',
-            }}
-          >
-            <thead className="table-primary">
+      {loading ? (
+        <p className="text-center">Cargando usuarios...</p>
+      ) : (
+        <>
+          <table className="table table-hover align-middle text-center overflow-hidden" style={{ borderRadius: '0.8rem' }}>
+            <thead className="table-dark">
               <tr>
-                <th style={{ width: '50px' }}>Imagen</th>
-                <th style={{ width: '150px' }}>Nombre</th>
-                <th style={{ width: '180px' }}>Correo</th>
-                <th style={{ width: '120px' }}>Teléfono</th>
-                <th style={{ width: '150px' }}>Dirección</th>
-                <th style={{ width: '100px' }}>Rol</th>
-                <th style={{ width: '80px' }}>Estado</th>
-                <th style={{ width: '100px' }}>Acciones</th>
+                <th className="rounded-top-start">Imagen</th>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Dirección</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th className="rounded-top-end">Acciones</th>
               </tr>
             </thead>
-            <tbody className="align-middle">
+            <tbody>
               {usuariosActuales.map((usuario) => (
                 <tr key={usuario.id}>
                   <td>
@@ -137,60 +131,71 @@ const UsuarioList = () => {
                       <img
                         src={`http://localhost:8000/storage/${usuario.image}`}
                         alt={usuario.first_name}
-                        className="rounded-circle object-cover"
-                        style={{ width: '40px', height: '40px' }}
+                        style={{ 
+                          width: '50px', 
+                          height: '50px', 
+                          objectFit: 'cover', 
+                          borderRadius: '50%' 
+                        }}
                       />
                     ) : (
                       <FaUserCircle size={40} className="text-secondary" />
                     )}
                   </td>
-                  <td>{usuario.first_name} {usuario.last_name}</td>
+                  <td className="fw-bold">{usuario.first_name} {usuario.last_name}</td>
                   <td>{usuario.email}</td>
                   <td>{usuario.phone || 'N/A'}</td>
                   <td>{usuario.address || 'N/A'}</td>
-                  <td>{rolesMap[usuario.role_id] || 'Desconocido'}</td>
+                  <td><em>{rolesMap[usuario.role_id] || 'Desconocido'}</em></td>
                   <td>
-                    {usuario.estado === 1 ? (
-                      <Badge bg="success" style={{ fontSize: '0.8rem' }}>Activo</Badge>
-                    ) : usuario.estado === 0 ? (
-                      <Badge bg="danger" style={{ fontSize: '0.8rem' }}>Inactivo</Badge>
-                    ) : (
-                      <Badge bg="warning" style={{ fontSize: '0.8rem' }}>Pendiente</Badge>
-                    )}
+                    <span className={`badge ${usuario.estado === 1 ? 'bg-success' : usuario.estado === 0 ? 'bg-danger' : 'bg-warning'}`}>
+                      {usuario.estado === 1 ? 'Activo' : usuario.estado === 0 ? 'Inactivo' : 'Pendiente'}
+                    </span>
                   </td>
                   <td>
-                    <div className="d-flex justify-content-around" style={{ gap: '10px' }}>
+                    <div className="d-flex justify-content-center gap-2">
                       <Link
                         to={`/editarUsuario/${usuario.id}`}
-                        className="btn btn-warning"
-                        style={{ fontSize: '1.5rem', padding: '0' }}
+                        className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+                        title="Editar usuario"
+                        style={{
+                          width: '44px',
+                          height: '44px',
+                          transition: 'transform 0.2s ease-in-out',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.15)')}
+                        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                       >
-                        <FaEdit />
+                        <FaEdit className="fs-5" />
                       </Link>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="text-danger"
-                        style={{ fontSize: '1.5rem', padding: '0' }}
+                      <button
+                        className="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center"
+                        title="Desactivar usuario"
                         onClick={() => eliminarUsuario(usuario.id)}
+                        style={{
+                          width: '44px',
+                          height: '44px',
+                          transition: 'transform 0.2s ease-in-out',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.15)')}
+                        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                       >
-                        <FaTrash />
-                      </Button>
+                        <FaTrash className="fs-5" />
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </Table>
+          </table>
 
           {totalPaginas > 1 && (
             <div className="d-flex justify-content-center">
               <Pagination className="mt-3">{items}</Pagination>
             </div>
           )}
-        </div>
+        </>
       )}
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

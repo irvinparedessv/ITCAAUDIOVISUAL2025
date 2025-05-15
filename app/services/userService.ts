@@ -3,12 +3,12 @@ import { toast } from 'react-toastify';
 import api from '~/api/axios';
 import type { User, UserUpdateDTO } from '~/types/user';
 
-const API_URL = 'http://localhost:8000/api/users';
+//const API_URL = 'http://localhost:8000/api/users';
 
 // Obtener todos los usuarios
 export const getUsuarios = async (): Promise<User[]> => {
   try {
-    const res = await axios.get(API_URL);
+    const res = await api.get('/users');
     return res.data;
   } catch (error) {
     console.error("Error al obtener los usuarios:", error);
@@ -19,7 +19,7 @@ export const getUsuarios = async (): Promise<User[]> => {
 // Obtener un usuario por ID
 export const getUsuarioById = async (id: string): Promise<User> => {
   try {
-    const res = await axios.get(`${API_URL}/${id}`);
+    const res = await api.get(`/users/${id}`);
     return res.data;
   } catch (error) {
     console.error(`Error al obtener el usuario con ID ${id}:`, error);
@@ -30,7 +30,7 @@ export const getUsuarioById = async (id: string): Promise<User> => {
 // Crear un usuario (si necesitaras mantener soporte para imágenes, se podría dejar esta parte como está)
 export const createUsuario = async (formData: FormData) => {
   try {
-    const res = await axios.post(API_URL, formData, {
+    const res = await api.post('/users', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -47,7 +47,7 @@ export const createUsuario = async (formData: FormData) => {
 export const updateUsuario = async (id: number, data: UserUpdateDTO): Promise<any> => {
   try {
     // Enviamos los datos como JSON sin FormData
-    const response = await axios.put(`${API_URL}/${id}`, data);
+    const response = await api.put(`/users/${id}`, data);
     return response.data;
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
@@ -62,7 +62,7 @@ export const updateUsuario = async (id: number, data: UserUpdateDTO): Promise<an
 // Eliminar un usuario
 export const deleteUsuario = async (id: number) => {
   try {
-    const res = await axios.delete(`${API_URL}/${id}`);
+    const res = await api.delete(`/users/${id}`);
     return res.data;
   } catch (error) {
     console.error(`Error al eliminar el usuario con ID ${id}:`, error);
@@ -84,4 +84,12 @@ export const forgotPassword = async (email: string) => {
 
 export const resetPassword = async (data: ResetPasswordData) => {
   return api.post('/reset-password', data);
+};
+
+export const changePassword = async (data: {
+  email: string;
+  password: string;
+  password_confirmation: string;
+}) => {
+  return api.post('/change-password', data);
 };

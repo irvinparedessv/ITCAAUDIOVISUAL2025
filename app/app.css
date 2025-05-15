@@ -1,13 +1,90 @@
+/* ==================== */
+/* ESTILOS ESPECÍFICOS DEL NAVBAR (NO AFECTAN AL RESTO) */
+/* ==================== */
+
+/* Variables específicas solo para el navbar */
+:root {
+  /* Colores base del navbar (siempre amarillo) */
+  --navbar-bg: linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92));
+  --dropdown-bg: linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20));
+  
+  /* Texto del navbar (siempre negro) */
+  --navbar-text: #000000;
+  
+  /* Hovers del navbar */
+  --navbar-hover-bg-light: rgba(255, 255, 255, 0.3); /* Modo claro */
+  --navbar-hover-bg-dark: rgba(0, 0, 0, 0.2);        /* Modo oscuro */
+  --dropdown-hover-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* Estructura del navbar */
+.navbar {
+  background: var(--navbar-bg) !important;
+}
+
+/* Elementos del navbar */
+.navbar-nav .nav-link,
+.nav-dropdown-toggle {
+  color: var(--navbar-text) !important;
+  transition: background-color 0.2s ease;
+}
+
+/* Hovers (dependiendo del modo) */
+.navbar-nav .nav-link:hover,
+.nav-dropdown-toggle:hover,
+.nav-dropdown-toggle[aria-expanded="true"] {
+  background-color: var(--navbar-hover-bg-light) !important;
+}
+
+[data-bs-theme="dark"] .navbar-nav .nav-link:hover,
+[data-bs-theme="dark"] .nav-dropdown-toggle:hover,
+[data-bs-theme="dark"] .nav-dropdown-toggle[aria-expanded="true"] {
+  background-color: var(--navbar-hover-bg-dark) !important;
+}
+
+/* Dropdowns del navbar */
+.navbar .dropdown-menu {
+  background: var(--dropdown-bg) !important;
+}
+
+.navbar .dropdown-item {
+  color: var(--navbar-text) !important;
+}
+
+.navbar .dropdown-item:hover {
+  background-color: var(--dropdown-hover-bg) !important;
+}
+
+/* Toggler del navbar */
+.custom-toggler {
+  border: 1px solid var(--navbar-text) !important;
+}
+
+.custom-toggler .navbar-toggler-icon::before,
+.custom-toggler .navbar-toggler-icon::after,
+.custom-toggler .navbar-toggler-icon div {
+  background-color: var(--navbar-text) !important;
+}
+
+.custom-toggler:focus {
+  outline: none;
+  box-shadow: none !important;
+}
+
+/* ==================== */
+/* ESTILOS GENERALES (NO AFECTAN AL NAVBAR) */
+/* ==================== */
+
+/* Variables generales para la aplicación */
 :root {
   /* Light theme colors */
   --bs-body-bg: #f8f9fa;
   --bs-body-color: #212529;
   --bs-card-bg: #ffffff;
   --bs-border-color: #dee2e6;
-  --bs-primary-bg: #8B0000; /* Rojo oscuro */
+  --bs-primary-bg: #8B0000;
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #e9ecef;
-  --nav-link-color: black;
 }
 
 [data-bs-theme="dark"] {
@@ -16,13 +93,12 @@
   --bs-body-color: #f8f9fa;
   --bs-card-bg: #2d2d2d;
   --bs-border-color: #444;
-  --bs-primary-bg: #8B0000; /* Rojo oscuro */
+  --bs-primary-bg: #6B0000;
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #333;
-  --nav-link-color: black; /* o blanco si prefieres otro en dark mode */
 }
 
-/* Elimina el conflicto en la raíz */
+/* Botones (no afectan al navbar) */
 .btn.primary-btn {
   --bs-btn-bg: #8B0000;
   --bs-btn-color: white;
@@ -32,47 +108,106 @@
   --bs-btn-hover-color: white;
 }
 
+.btn-primary {
+  background-color: var(--bs-primary-bg) !important;
+  border-color: var(--bs-primary-bg) !important;
+}
+
+.btn-primary:hover, 
+.btn-primary:focus {
+  background-color: color-mix(in srgb, var(--bs-primary-bg), black 15%) !important;
+  border-color: color-mix(in srgb, var(--bs-primary-bg), black 15%) !important;
+}
+
+
+
+
+/* INICIO DE Estilos base para los enlaces de paginación */
+.page-link {
+  color: var(--bs-body-color) !important; /* Usará el color de texto principal del tema */
+  background-color: transparent;
+  border-color: var(--bs-border-color);
+  transition: all 0.2s ease;
+}
+
+/* Estado hover - usa el color primario para destacar */
+.page-link:hover {
+  color: var(--bs-primary-bg) !important;
+  background-color: var(--bs-secondary-bg);
+}
+
+/* Página activa - estilo diferenciado */
+.page-item.active .page-link {
+  background-color: var(--bs-primary-bg) !important;
+  border-color: var(--bs-primary-bg) !important;
+  color: var(--bs-primary-text) !important; /* Texto blanco */
+}
+
+/* Elementos deshabilitados */
+.page-item.disabled .page-link {
+  color: var(--bs-secondary-color) !important;
+  opacity: 0.6;
+}
+/* FIN DE Estilo base para los enlaces de paginación */
+
+
+
+
+
 .btn.secondary-btn {
-  --bs-btn-bg: #393a3c; /* Gris Bootstrap por defecto */
+  --bs-btn-bg: #393a3c;
   --bs-btn-color: white;
   --bs-btn-border-color: #393a3c;
   --bs-btn-hover-bg: #393a3c;
   --bs-btn-hover-color: white;
 }
 
-/* Modo oscuro */
 [data-bs-theme="dark"] .btn.primary-btn {
   --bs-btn-bg: #6B0000;
   --bs-btn-hover-bg: #8B0000;
 }
 
-/*NAVBARR TOGGLE SIN CAMBIAR COLOR EN MODO OSCURO */
-.custom-toggler {
-  border: 1px solid black !important;
+
+
+/* DISENIO DE TOOGLE EN SIEMPRE OSCURO /*
+/* Elimina completamente el SVG de Bootstrap */
+.navbar-toggler-icon {
+  background-image: none !important;
 }
 
+/* Fuerza el color negro en ambos modos */
+.custom-toggler .navbar-toggler-icon div,
+.custom-toggler .navbar-toggler-icon::before,
+.custom-toggler .navbar-toggler-icon::after {
+  background-color: #000 !important;
+}
+
+/* Estructura del ícono personalizado */
 .custom-toggler .navbar-toggler-icon {
-  background-image: none !important;
   position: relative;
   width: 24px;
   height: 24px;
 }
 
-.custom-toggler .navbar-toggler-icon::before,
-.custom-toggler .navbar-toggler-icon::after,
 .custom-toggler .navbar-toggler-icon div {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: all 0.3s;
+}
+
+.custom-toggler .navbar-toggler-icon::before,
+.custom-toggler .navbar-toggler-icon::after {
   content: "";
   position: absolute;
   left: 0;
   width: 100%;
   height: 2px;
-  background-color: black; /* Cambia aquí el color */
+  background-color: #000;
   transition: all 0.3s;
-}
-
-.custom-toggler .navbar-toggler-icon div {
-  top: 50%;
-  transform: translateY(-50%);
 }
 
 .custom-toggler .navbar-toggler-icon::before {
@@ -82,13 +217,210 @@
 .custom-toggler .navbar-toggler-icon::after {
   bottom: 6px;
 }
-/* Elimina el borde y la sombra (box-shadow) cuando se hace clic o se tiene foco */
-.custom-toggler:focus {
-  outline: none; /* Elimina el borde de enfoque */
-  box-shadow: none !important; /* Elimina cualquier sombra */
+
+/* FIN DE DISENIO DE TOOGLE EN SIEMPRE OSCURO */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* INICIO DE DISENIO CHATBOT */
+
+/* Estilos base del chatbot */
+.chatbot-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
 }
 
-/* FIN DE NAVBARR TOGGLE SIN CAMBIAR COLOR EN MODO OSCURO */
+/* Botón flotante del chatbot - AHORA DORADO */
+.chatbot-button {
+  background-color: #f5c35c; /* Cambiado a dorado */
+  color: #8B0000; /* Color del icono - rojo oscuro */
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.chatbot-button:hover {
+  background-color: #f5c35c; /* Mantiene dorado al hacer hover */
+  transform: scale(1.1);
+}
+
+/* Versión modo oscuro del botón */
+.chatbot-button.dark-mode {
+  background-color: #f5c35c; /* Sigue dorado en modo oscuro */
+  color: #6B0000; /* Rojo más oscuro para modo oscuro */
+}
+
+.chatbot-button.dark-mode:hover {
+  background-color: #f5c35c; /* Mantiene dorado */
+}
+
+/* Estilos para el SVG (icono de burbuja) */
+.chatbot-button svg {
+  stroke: currentColor; /* Hereda el color rojo definido arriba */
+  width: 24px;
+  height: 24px;
+}
+
+/* El resto del CSS se mantiene igual que en la versión anterior */
+.chat-window {
+  width: 350px;
+  height: 500px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-window.dark-mode {
+  background-color: #2d2d2d;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+}
+
+.chat-header {
+  background-color: #f5c35c;
+  color: #000000;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #000000;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: var(--bs-card-bg);
+}
+
+.message {
+  max-width: 80%;
+  padding: 10px 15px;
+  border-radius: 18px;
+  line-height: 1.4;
+  position: relative;
+  word-wrap: break-word;
+}
+
+.message.user {
+  align-self: flex-end;
+  background-color: #8B0000;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.message.user.dark-mode {
+  background-color: #6B0000;
+}
+
+.message.bot {
+  align-self: flex-start;
+  background-color: #f0f0f0;
+  color: #333;
+  border-bottom-left-radius: 4px;
+}
+
+.message.bot.dark-mode {
+  background-color: #393a3c;
+  color: #f0f0f0;
+}
+
+.chat-input {
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid var(--bs-border-color);
+  background-color: var(--bs-card-bg);
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 20px;
+  margin-right: 10px;
+  background-color: var(--bs-card-bg);
+  color: var(--bs-body-color);
+}
+
+.chat-input input:focus {
+  outline: none;
+  border-color: #8B0000;
+}
+
+.chat-input input.dark-mode:focus {
+  border-color: #f5c35c;
+}
+
+.chat-input button {
+  background-color: #8B0000;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 0 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.chat-input button.dark-mode {
+  background-color: #6B0000;
+}
+
+.chat-input button:hover {
+  background-color: #A52A2A;
+}
+
+.chat-input button.dark-mode:hover {
+  background-color: #8B0000;
+}
+
+.chat-input button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.chat-input button.dark-mode:disabled {
+  background-color: #555555;
+}
+
+/* FIN DE DISENIO CHATBOT */
+
+
+
+
+
 
 
 /* Estilo para el botón flotante del chatbot */

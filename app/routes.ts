@@ -31,6 +31,7 @@ export default [
     route("editarUsuario/:id", "routes/editUsuario.tsx"),
     route("qrScan", "routes/qr.tsx"),
     route("espacioList", "routes/espacioList.tsx"),
+    route("perfil", "routes/verPerfil.tsx"),
   ]),
 ] satisfies RouteConfig;
 

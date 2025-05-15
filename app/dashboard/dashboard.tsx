@@ -77,7 +77,7 @@ export default function Dashboard() {
           <DashboardCard
             title="Administración"
             icon={<FaUserShield size={24} style={getIconStyle()} />}
-            link="/"
+            link="/usuarios" 
             description="Configuración del sistema"
             borderStyle={cardBorderStyle}
           />

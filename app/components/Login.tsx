@@ -1,5 +1,11 @@
 import React, { useState, useEffect, forwardRef } from "react";
-import { Button, Form, Container, Modal, type ButtonProps } from "react-bootstrap";
+import {
+  Button,
+  Form,
+  Container,
+  Modal,
+  type ButtonProps,
+} from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,46 +18,42 @@ const MotionButton = motion(
 );
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
   const [showForgotModal, setShowForgotModal] = useState(false);
 
-
   useEffect(() => {
-  if (isAuthenticated && location.pathname === "/login") {
-    navigate('/');
-  }
-}, [isAuthenticated, navigate, location]);
+    if (isAuthenticated && location.pathname === "/login") {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
+    e.preventDefault();
+    setIsLoading(true);
 
-  try {
-    const result = await login(email, password);
-    setIsLoading(false);
+    try {
+      const result = await login(email, password);
+      setIsLoading(false);
 
-    if (result?.requiresPasswordChange) {
-      navigate('/change-password', {
-        state: { email, password },
-      });
+      if (result?.requiresPasswordChange) {
+        navigate("/change-password", {
+          state: { email, password },
+        });
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Error al iniciar sesión");
+      }
     }
-
-  } catch (err: any) {
-    setIsLoading(false);
-    if (err.response && err.response.data && err.response.data.message) {
-      setError(err.response.data.message);
-    } else {
-      setError("Error al iniciar sesión");
-    }
-  }
-};
-
-
+  };
 
   return (
     <div className="login-container">
@@ -63,7 +65,7 @@ const Login = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="card-header text-center mb-4">
-            <motion.h2 
+            <motion.h2
               className="login-title"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -71,7 +73,7 @@ const Login = () => {
             >
               Iniciar Sesión
             </motion.h2>
-            <motion.div 
+            <motion.div
               className="header-line"
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
@@ -94,13 +96,15 @@ const Login = () => {
           </AnimatePresence>
 
           <Form onSubmit={handleSubmit}>
-            <motion.div 
+            <motion.div
               className="mb-3"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              <Form.Label className="text-secondary">Correo electrónico</Form.Label>
+              <Form.Label className="text-secondary">
+                Correo electrónico
+              </Form.Label>
               <Form.Control
                 type="email"
                 placeholder="usuario@correo.com"
@@ -110,7 +114,7 @@ const Login = () => {
               />
             </motion.div>
 
-            <motion.div 
+            <motion.div
               className="mb-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -129,7 +133,9 @@ const Login = () => {
             <MotionButton
               type="submit"
               disabled={isLoading}
-              className={`w-100 btn primary-btn border-0 ${isLoading ? 'loading' : ''}`}
+              className={`w-100 btn primary-btn border-0 ${
+                isLoading ? "loading" : ""
+              }`}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               style={{
@@ -146,7 +152,7 @@ const Login = () => {
             </MotionButton>
           </Form>
 
-          <motion.div 
+          <motion.div
             className="d-flex justify-content-between mt-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -156,7 +162,7 @@ const Login = () => {
               <span
                 onClick={() => setShowForgotModal(true)}
                 className="text-decoration-none text-secondary fw-semibold"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: "pointer" }}
               >
                 ¿Olvidó su contraseña?
               </span>
@@ -165,20 +171,20 @@ const Login = () => {
         </motion.div>
       </Container>
 
-    {/* Modal: Recuperar contraseña */}
-  <Modal
-    show={showForgotModal}
-    onHide={() => setShowForgotModal(false)}
-    centered
-    animation={true}
-  >
-    <Modal.Header closeButton>
-      <Modal.Title>Recuperar Contraseña</Modal.Title>
-    </Modal.Header>
-    <Modal.Body>
-      <ForgotPassword />
-    </Modal.Body>
-  </Modal>
+      {/* Modal: Recuperar contraseña */}
+      <Modal
+        show={showForgotModal}
+        onHide={() => setShowForgotModal(false)}
+        centered
+        animation={true}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Recuperar Contraseña</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ForgotPassword />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

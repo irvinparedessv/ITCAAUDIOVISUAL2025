@@ -3,7 +3,14 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "react-hot-toast";
 import { createUsuario } from "~/services/userService";
 import { useNavigate } from "react-router-dom";
-import { FaSave, FaTimes, FaPlus, FaBroom, FaUpload, FaTrash } from "react-icons/fa";
+import {
+  FaSave,
+  FaTimes,
+  FaPlus,
+  FaBroom,
+  FaUpload,
+  FaTrash,
+} from "react-icons/fa";
 
 export default function FormUsuario() {
   const navigate = useNavigate();
@@ -25,7 +32,7 @@ export default function FormUsuario() {
 
   // Validation regex patterns
   const nameRegex = /^[a-zA-Z\s]{2,}$/;
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@itca\.edu\.sv$/; //Permitir correo institucional (JOSUE)
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
   const phoneRegex = /^[0-9]{4}-[0-9]{4}$/;
   const imageTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
@@ -36,43 +43,47 @@ export default function FormUsuario() {
     const file = acceptedFiles[0];
     if (file) {
       if (!imageTypes.includes(file.type)) {
-        toast.error('Solo se permiten archivos de imagen (JPEG, PNG, JPG, GIF)');
-        return;
-      }
-      
-      if (file.size > maxImageSize) {
-        toast.error('La imagen no puede ser mayor a 2MB');
+        toast.error(
+          "Solo se permiten archivos de imagen (JPEG, PNG, JPG, GIF)"
+        );
         return;
       }
 
-      setFormData(prev => ({ ...prev, image: file }));
+      if (file.size > maxImageSize) {
+        toast.error("La imagen no puede ser mayor a 2MB");
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, image: file }));
       setImagePreview(URL.createObjectURL(file));
-      setFormErrors(prev => ({ ...prev, image: '' }));
+      setFormErrors((prev) => ({ ...prev, image: "" }));
     }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif']
+      "image/*": [".jpeg", ".jpg", ".png", ".gif"],
     },
     maxFiles: 1,
-    multiple: false
+    multiple: false,
   });
 
   const removeImage = () => {
-    setFormData(prev => ({ ...prev, image: null }));
+    setFormData((prev) => ({ ...prev, image: null }));
     setImagePreview(null);
   };
 
   const validateField = (name: string, value: any): string => {
     if (
-      ["first_name", "last_name", "email", "password", "role_id"].includes(name) &&
+      ["first_name", "last_name", "email", "password", "role_id"].includes(
+        name
+      ) &&
       (!value || value.trim() === "")
     ) {
       return "Este campo es obligatorio";
     }
-    
+
     switch (name) {
       case "first_name":
       case "last_name":
@@ -80,11 +91,9 @@ export default function FormUsuario() {
           return "Debe tener al menos 2 letras y solo letras/espacios.";
         break;
       case "email":
-        if (!emailRegex.test(value)) return "Correo electrónico inválido.";
-        break;
-      case "password":
-        if (!passwordRegex.test(value))
-          return "Al menos 6 caracteres, una letra y un número.";
+        if (!emailRegex.test(value))
+          //JOSUE
+          return "Solo se permiten correos institucionales (@itca.edu.sv).";
         break;
       case "role_id":
         if (!value) return "Debe seleccionar un rol.";
@@ -114,14 +123,14 @@ export default function FormUsuario() {
       }
     }
 
-    setFormData(prev => ({ ...prev, [name]: newValue }));
-    setFormErrors(prev => ({ ...prev, [name]: '' }));
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
+    setFormErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleBlur = (e: React.FocusEvent<any>) => {
     const { name, value } = e.target;
     const error = validateField(name, value);
-    setFormErrors(prev => ({ ...prev, [name]: error }));
+    setFormErrors((prev) => ({ ...prev, [name]: error }));
   };
 
   const isFormValid = (): boolean => {
@@ -143,6 +152,11 @@ export default function FormUsuario() {
       return;
     }
 
+    toast.info("Creando usuario...", {
+      autoClose: 2000,
+      hideProgressBar: false,
+    });
+
     setIsLoading(true);
 
     const formDataToSend = new FormData();
@@ -154,6 +168,9 @@ export default function FormUsuario() {
       }
     });
     if (formData.image) formDataToSend.append("image", formData.image);
+
+    // ✅ JOSUE (ESTADO DE USUARIO AL SER CREADO 3-PENDIENTE)
+    formDataToSend.append("estado", "3");
 
     try {
       await createUsuario(formDataToSend);
@@ -195,7 +212,9 @@ export default function FormUsuario() {
       <form onSubmit={handleSubmit}>
         <div className="row mb-4">
           <div className="col-md-6 mb-3 mb-md-0">
-            <label htmlFor="first_name" className="form-label">Nombres</label>
+            <label htmlFor="first_name" className="form-label">
+              Nombres
+            </label>
             <input
               id="first_name"
               name="first_name"
@@ -203,7 +222,9 @@ export default function FormUsuario() {
               value={formData.first_name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${formErrors.first_name ? 'is-invalid' : ''}`}
+              className={`form-control ${
+                formErrors.first_name ? "is-invalid" : ""
+              }`}
             />
             {formErrors.first_name && (
               <div className="invalid-feedback">{formErrors.first_name}</div>
@@ -211,7 +232,9 @@ export default function FormUsuario() {
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="last_name" className="form-label">Apellidos</label>
+            <label htmlFor="last_name" className="form-label">
+              Apellidos
+            </label>
             <input
               id="last_name"
               name="last_name"
@@ -219,7 +242,9 @@ export default function FormUsuario() {
               value={formData.last_name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${formErrors.last_name ? 'is-invalid' : ''}`}
+              className={`form-control ${
+                formErrors.last_name ? "is-invalid" : ""
+              }`}
             />
             {formErrors.last_name && (
               <div className="invalid-feedback">{formErrors.last_name}</div>
@@ -229,7 +254,9 @@ export default function FormUsuario() {
 
         <div className="row mb-4">
           <div className="col-md-6 mb-3 mb-md-0">
-            <label htmlFor="email" className="form-label">Email</label>
+            <label htmlFor="email" className="form-label">
+              Email
+            </label>
             <input
               id="email"
               type="email"
@@ -238,7 +265,7 @@ export default function FormUsuario() {
               value={formData.email}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${formErrors.email ? 'is-invalid' : ''}`}
+              className={`form-control ${formErrors.email ? "is-invalid" : ""}`}
             />
             {formErrors.email && (
               <div className="invalid-feedback">{formErrors.email}</div>
@@ -246,7 +273,9 @@ export default function FormUsuario() {
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="password" className="form-label">Contraseña</label>
+            <label htmlFor="password" className="form-label">
+              Contraseña
+            </label>
             <input
               id="password"
               type="password"
@@ -255,7 +284,9 @@ export default function FormUsuario() {
               value={formData.password}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${formErrors.password ? 'is-invalid' : ''}`}
+              className={`form-control ${
+                formErrors.password ? "is-invalid" : ""
+              }`}
             />
             {formErrors.password && (
               <div className="invalid-feedback">{formErrors.password}</div>
@@ -265,7 +296,9 @@ export default function FormUsuario() {
 
         <div className="row mb-4">
           <div className="col-md-6 mb-3 mb-md-0">
-            <label htmlFor="phone" className="form-label">Teléfono (Opcional)</label>
+            <label htmlFor="phone" className="form-label">
+              Teléfono (Opcional)
+            </label>
             <input
               id="phone"
               name="phone"
@@ -273,7 +306,7 @@ export default function FormUsuario() {
               value={formData.phone}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${formErrors.phone ? 'is-invalid' : ''}`}
+              className={`form-control ${formErrors.phone ? "is-invalid" : ""}`}
             />
             {formErrors.phone && (
               <div className="invalid-feedback">{formErrors.phone}</div>
@@ -281,7 +314,9 @@ export default function FormUsuario() {
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="address" className="form-label">Dirección (Opcional)</label>
+            <label htmlFor="address" className="form-label">
+              Dirección (Opcional)
+            </label>
             <input
               id="address"
               name="address"
@@ -289,7 +324,9 @@ export default function FormUsuario() {
               value={formData.address}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${formErrors.address ? 'is-invalid' : ''}`}
+              className={`form-control ${
+                formErrors.address ? "is-invalid" : ""
+              }`}
             />
             {formErrors.address && (
               <div className="invalid-feedback">{formErrors.address}</div>
@@ -298,17 +335,19 @@ export default function FormUsuario() {
         </div>
 
         <div className="mb-4">
-          <label htmlFor="role_id" className="form-label">Rol</label>
+          <label htmlFor="role_id" className="form-label">
+            Rol
+          </label>
           <select
             id="role_id"
             name="role_id"
             value={formData.role_id}
             onChange={handleChange}
             onBlur={handleBlur}
-            className={`form-select ${formErrors.role_id ? 'is-invalid' : ''}`}
+            className={`form-select ${formErrors.role_id ? "is-invalid" : ""}`}
           >
             <option value="">Seleccione un rol</option>
-            {roles.map(role => (
+            {roles.map((role) => (
               <option key={role.id} value={role.id}>
                 {role.name}
               </option>
@@ -321,14 +360,14 @@ export default function FormUsuario() {
 
         <div className="mb-4">
           <label className="form-label">Imagen (Opcional)</label>
-          
+
           {imagePreview ? (
             <div className="d-flex flex-column align-items-center">
               <img
                 src={imagePreview}
                 alt="Vista previa"
                 className="img-fluid rounded border mb-2"
-                style={{ maxWidth: '220px' }}
+                style={{ maxWidth: "220px" }}
               />
               <button
                 type="button"
@@ -343,7 +382,7 @@ export default function FormUsuario() {
             <div
               {...getRootProps()}
               className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
-                isDragActive ? 'border-primary bg-light' : ''
+                isDragActive ? "border-primary bg-light" : ""
               }`}
             >
               <input {...getInputProps()} />
@@ -353,8 +392,13 @@ export default function FormUsuario() {
                   <p className="text-primary mb-0">Suelta la imagen aquí...</p>
                 ) : (
                   <>
-                    <p className="mb-1">Arrastra y suelta una imagen aquí, o haz clic para seleccionar</p>
-                    <p className="text-muted small mb-0">Formatos: JPEG, PNG, JPG, GIF (Máx. 2MB)</p>
+                    <p className="mb-1">
+                      Arrastra y suelta una imagen aquí, o haz clic para
+                      seleccionar
+                    </p>
+                    <p className="text-muted small mb-0">
+                      Formatos: JPEG, PNG, JPG, GIF (Máx. 2MB)
+                    </p>
                   </>
                 )}
               </div>
@@ -366,8 +410,14 @@ export default function FormUsuario() {
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="btn primary-btn" disabled={isLoading}>
-            {isLoading ? 'Procesando...' : (
+          <button
+            type="submit"
+            className="btn primary-btn"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              "Procesando..."
+            ) : (
               <>
                 <FaPlus className="me-2" />
                 Crear Usuario

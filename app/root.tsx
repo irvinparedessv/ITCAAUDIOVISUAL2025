@@ -30,7 +30,6 @@ import { Offcanvas } from "react-bootstrap";
 import Chatbot from "./components/chatbot/chatbot";
 import NavbarMenu from "./components/menu/menu";
 
-
 // ---- HEAD Links ---- //
 export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -95,7 +94,11 @@ export default function App() {
         }}
       >
         <div className="text-center">
-          <Spinner animation="border" role="status" style={{ width: "3rem", height: "3rem" }}>
+          <Spinner
+            animation="border"
+            role="status"
+            style={{ width: "3rem", height: "3rem" }}
+          >
             <span className="visually-hidden">Cargando...</span>
           </Spinner>
           <h3 className="mt-3">Cargando...</h3>

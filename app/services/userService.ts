@@ -1,14 +1,13 @@
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import api from '~/api/axios';
-import type { User, UserUpdateDTO } from '~/types/user';
-
+import axios from "axios";
+import { toast } from "react-toastify";
+import type { User, UserUpdateDTO } from "~/types/user";
+import api from "../api/axios";
 //const API_URL = 'http://localhost:8000/api/users';
 
 // Obtener todos los usuarios
 export const getUsuarios = async (): Promise<User[]> => {
   try {
-    const res = await api.get('/users');
+    const res = await api.get("/users");
     return res.data;
   } catch (error) {
     console.error("Error al obtener los usuarios:", error);
@@ -27,24 +26,26 @@ export const getUsuarioById = async (id: string): Promise<User> => {
   }
 };
 
-// Crear un usuario (si necesitaras mantener soporte para imágenes, se podría dejar esta parte como está)
+// Crear un usuario
 export const createUsuario = async (formData: FormData) => {
   try {
-    const res = await api.post('/users', formData, {
+    const res = await api.post("/users", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return res.data;
   } catch (error) {
     console.error("Error al crear el usuario:", error);
-    toast.error("Hubo un error al crear el usuario.");
     throw error;
   }
 };
 
 // Actualizar un usuario
-export const updateUsuario = async (id: number, data: UserUpdateDTO): Promise<any> => {
+export const updateUsuario = async (
+  id: number,
+  data: UserUpdateDTO
+): Promise<any> => {
   try {
     // Enviamos los datos como JSON sin FormData
     const response = await api.put(`/users/${id}`, data);
@@ -53,10 +54,12 @@ export const updateUsuario = async (id: number, data: UserUpdateDTO): Promise<an
     if (axios.isAxiosError(error) && error.response) {
       console.error("Errores del backend:", error.response.data);
       // Mostramos los errores del backend, si los hay
-      toast.error("Error de validación: " + JSON.stringify(error.response.data.errors));
+      toast.error(
+        "Error de validación: " + JSON.stringify(error.response.data.errors)
+      );
     }
     throw new Error("No se pudo actualizar el usuario");
-  }  
+  }
 };
 
 // Eliminar un usuario
@@ -70,7 +73,6 @@ export const deleteUsuario = async (id: number) => {
   }
 };
 
-
 interface ResetPasswordData {
   token: string | null;
   email: string | null;
@@ -79,11 +81,11 @@ interface ResetPasswordData {
 }
 
 export const forgotPassword = async (email: string) => {
-  return api.post('/forgot-password', { email });
+  return api.post("/forgot-password", { email });
 };
 
 export const resetPassword = async (data: ResetPasswordData) => {
-  return api.post('/reset-password', data);
+  return api.post("/reset-password", data);
 };
 
 export const changePassword = async (data: {
@@ -91,5 +93,30 @@ export const changePassword = async (data: {
   password: string;
   password_confirmation: string;
 }) => {
-  return api.post('/change-password', data);
+  return api.post("/change-password", data);
+};
+
+export const getPerfil = async (): Promise<User> => {
+  try {
+    const res = await api.get("/user/profile");
+    return res.data;
+  } catch (error) {
+    console.error("Error al obtener el perfil:", error);
+    throw error;
+  }
+};
+
+// Actualizar perfil del usuario autenticado
+export const updateProfile = async (formData: FormData): Promise<any> => {
+  try {
+    const res = await api.put("/user/profile", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error al actualizar el perfil:", error);
+    throw error;
+  }
 };

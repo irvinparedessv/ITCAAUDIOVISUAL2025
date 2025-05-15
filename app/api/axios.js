@@ -13,4 +13,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// ⬇️ Este interceptor permite que los errores lleguen al catch del Login
+api.interceptors.response.use(
+  response => response,
+  error => Promise.reject(error)
+);
+
 export default api;

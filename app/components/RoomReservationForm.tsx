@@ -3,6 +3,11 @@ import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ThreeSixty from "react-360-view";
+import api from "../api/axios";
+type Aula = {
+  id: number;
+  name: string;
+};
 
 const availableTimes = [
   "08:00 AM - 10:00 AM",
@@ -11,18 +16,31 @@ const availableTimes = [
   "02:00 PM - 04:00 PM",
   "04:00 PM - 06:00 PM",
 ];
-const availableClassrooms = [
-  { name: "Aula 101", image: "chair_58.jpg?v1" },
-  { name: "Aula 102", image: "aula101.jpg" },
-  { name: "Aula 103", image: "aula101.jpg" },
-  { name: "Aula 104", image: "aula101.jpg" },
-];
 
 export default function ReserveClassroom() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
   const [formError, setFormError] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
+
+  const [availableClassrooms, setAvailableClassrooms] = useState<Aula[]>([]);
+
+  useEffect(() => {
+    const fetchAulas = async () => {
+      try {
+        const response = await api.get("/aulas");
+        setAvailableClassrooms(response.data);
+      } catch (error) {
+        console.error("Error al cargar aulas", error);
+      }
+    };
+
+    fetchAulas();
+  }, []);
+
+  // Simulación de usuario logueado (reemplaza por auth real)
+  const userId = 1;
 
   const selectedClassroomData = availableClassrooms.find(
     (classroom) => classroom.name === selectedClassroom
@@ -30,9 +48,10 @@ export default function ReserveClassroom() {
 
   useEffect(() => {
     setFormError("");
+    setSuccessMessage("");
   }, [selectedDate, selectedTime, selectedClassroom]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedDate || !selectedTime || !selectedClassroom) {
@@ -40,9 +59,29 @@ export default function ReserveClassroom() {
       return;
     }
 
-    alert(
-      `Reserva enviada para el ${selectedDate.toLocaleDateString()} a las ${selectedTime} en ${selectedClassroom}`
-    );
+    const aula = availableClassrooms.find((c) => c.name === selectedClassroom);
+    if (!aula) {
+      setFormError("Aula no válida.");
+      return;
+    }
+
+    try {
+      const response = await api.post("/reservas", {
+        aula_id: aula.id,
+        fecha: selectedDate.toISOString().split("T")[0], // yyyy-mm-dd
+        horario: selectedTime,
+        user_id: userId,
+        estado: "pendiente",
+      });
+
+      setSuccessMessage("Reserva realizada con éxito");
+      setSelectedDate(null);
+      setSelectedTime("");
+      setSelectedClassroom("");
+    } catch (error: any) {
+      console.error(error);
+      setFormError("Error al enviar la reserva. Intenta nuevamente.");
+    }
   };
 
   return (
@@ -52,6 +91,9 @@ export default function ReserveClassroom() {
           <h2 className="text-center mb-4">Reserva de Aula</h2>
 
           {formError && <div className="alert alert-danger">{formError}</div>}
+          {successMessage && (
+            <div className="alert alert-success">{successMessage}</div>
+          )}
 
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="classroom">
@@ -63,8 +105,8 @@ export default function ReserveClassroom() {
                 required
               >
                 <option value="">Selecciona un aula</option>
-                {availableClassrooms.map((classroom, index) => (
-                  <option key={index} value={classroom.name}>
+                {availableClassrooms.map((classroom) => (
+                  <option key={classroom.id} value={classroom.name}>
                     {classroom.name}
                   </option>
                 ))}

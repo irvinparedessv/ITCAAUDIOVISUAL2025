@@ -1,6 +1,15 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Card, ListGroup, Badge, Spinner, Alert } from "react-bootstrap";
+import {
+  Card,
+  ListGroup,
+  Badge,
+  Spinner,
+  Alert,
+  Button,
+  Modal,
+  Form,
+} from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
 import api from "../api/axios";
 
@@ -19,6 +28,9 @@ export default function ReservationDetail() {
   const [reserva, setReserva] = useState<Reserva | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [accion, setAccion] = useState<"Aprobar" | "Rechazar" | null>(null);
+  const [comentario, setComentario] = useState("");
 
   function formatDayWithDate(fecha: string) {
     const date = new Date(fecha);
@@ -38,6 +50,18 @@ export default function ReservationDetail() {
       minute: "2-digit",
     });
   }
+  useEffect(() => {
+    const verificarUsuario = async () => {
+      try {
+        const res = await api.get("/verificar-rol");
+        console.log("Usuario autenticado:", res.data);
+      } catch (error) {
+        console.error("Error al verificar usuario:", error);
+      }
+    };
+
+    verificarUsuario();
+  }, []);
 
   useEffect(() => {
     if (!idQr) return;
@@ -56,6 +80,41 @@ export default function ReservationDetail() {
 
     fetchReserva();
   }, [idQr]);
+
+  const handleAbrirModal = (tipo: "Aprobar" | "Rechazar") => {
+    setAccion(tipo);
+    setComentario("");
+    setShowModal(true);
+  };
+
+  const handleCerrarModal = () => {
+    setShowModal(false);
+    setAccion(null);
+  };
+
+  const handleEnviar = async () => {
+    if (!reserva) return;
+
+    try {
+      await api.post(`/reservas/${idQr}/estado`, {
+        estado: accion === "Aprobar" ? "Entregado" : "Rechazado",
+        comentario,
+      });
+      alert(
+        `Reserva ${
+          accion === "Aprobar" ? "aprobada" : "rechazada"
+        } correctamente.`
+      );
+      setReserva({
+        ...reserva,
+        estado: accion === "Aprobar" ? "Entregado" : "Devuelto",
+      });
+      setShowModal(false);
+    } catch (err) {
+      console.error(err);
+      alert("Funcionamiento en proceso.");
+    }
+  };
 
   if (loading) {
     return (
@@ -85,43 +144,94 @@ export default function ReservationDetail() {
   }`;
 
   return (
-    <Card className="shadow-lg my-4">
-      <Card.Header className="bg-primary text-white text-center">
-        <h5>Detalle de Reserva</h5>
-      </Card.Header>
-      <Card.Body>
-        <ListGroup variant="flush">
-          <ListGroup.Item>
-            <strong>Usuario:</strong> {reserva.usuario}
-          </ListGroup.Item>
-          <ListGroup.Item>
-            <strong>Equipos:</strong> {reserva.equipo.join(", ")}
-          </ListGroup.Item>
-          <ListGroup.Item>
-            <strong>Aula:</strong> {reserva.aula}
-          </ListGroup.Item>
-          <ListGroup.Item>
-            <strong>Día:</strong> {formatDayWithDate(reserva.horaSalida)}
-          </ListGroup.Item>
-          <ListGroup.Item>
-            <strong>Hora de Reserva:</strong> {formatTime(reserva.horaSalida)}
-          </ListGroup.Item>
-          <ListGroup.Item>
-            <strong>Hora de Entrega:</strong> {formatTime(reserva.horaEntrada)}
-          </ListGroup.Item>
-          <ListGroup.Item>
-            <strong>Estado:</strong>{" "}
-            <Badge bg={getBadgeColor(reserva.estado)}>{reserva.estado}</Badge>
-          </ListGroup.Item>
-          <ListGroup.Item className="text-center">
-            <strong>Código QR de la Reserva:</strong>
-            <div className="mt-2">
-              <QRCodeSVG value={qrData} size={128} />
-            </div>
-          </ListGroup.Item>
-        </ListGroup>
-      </Card.Body>
-    </Card>
+    <>
+      <Card className="shadow-lg my-4">
+        <Card.Header className="bg-primary text-white text-center">
+          <h5>Detalle de Reserva</h5>
+        </Card.Header>
+        <Card.Body>
+          <ListGroup variant="flush">
+            <ListGroup.Item>
+              <strong>Usuario:</strong> {reserva.usuario}
+            </ListGroup.Item>
+            <ListGroup.Item>
+              <strong>Equipos:</strong> {reserva.equipo.join(", ")}
+            </ListGroup.Item>
+            <ListGroup.Item>
+              <strong>Aula:</strong> {reserva.aula}
+            </ListGroup.Item>
+            <ListGroup.Item>
+              <strong>Día:</strong> {formatDayWithDate(reserva.horaSalida)}
+            </ListGroup.Item>
+            <ListGroup.Item>
+              <strong>Hora de Reserva:</strong> {formatTime(reserva.horaSalida)}
+            </ListGroup.Item>
+            <ListGroup.Item>
+              <strong>Hora de Entrega:</strong>{" "}
+              {formatTime(reserva.horaEntrada)}
+            </ListGroup.Item>
+            <ListGroup.Item>
+              <strong>Estado:</strong>{" "}
+              <Badge bg={getBadgeColor(reserva.estado)}>{reserva.estado}</Badge>
+            </ListGroup.Item>
+            <ListGroup.Item className="text-center">
+              <strong>Código QR de la Reserva:</strong>
+              <div className="mt-2">
+                <QRCodeSVG value={qrData} size={128} />
+              </div>
+            </ListGroup.Item>
+            {reserva.estado === "Pendiente" && (
+              <ListGroup.Item className="text-center mt-3">
+                <Button
+                  variant="success"
+                  className="mx-2"
+                  onClick={() => handleAbrirModal("Aprobar")}
+                >
+                  Aprobar
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => handleAbrirModal("Rechazar")}
+                >
+                  Rechazar
+                </Button>
+              </ListGroup.Item>
+            )}
+          </ListGroup>
+        </Card.Body>
+      </Card>
+
+      <Modal show={showModal} onHide={handleCerrarModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>{accion} Reserva</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="comentario">
+              <Form.Label>Comentario</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={comentario}
+                onChange={(e) => setComentario(e.target.value)}
+                placeholder={`Escribe un comentario para ${accion?.toLowerCase()} la reserva...`}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCerrarModal}>
+            Cancelar
+          </Button>
+          <Button
+            variant={accion === "Aprobar" ? "success" : "danger"}
+            onClick={handleEnviar}
+          >
+            {accion}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 }
 

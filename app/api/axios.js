@@ -7,6 +7,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
+  console.log(localStorage.getItem("token"));
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -15,8 +16,8 @@ api.interceptors.request.use((config) => {
 
 // ⬇️ Este interceptor permite que los errores lleguen al catch del Login
 api.interceptors.response.use(
-  response => response,
-  error => Promise.reject(error)
+  (response) => response,
+  (error) => Promise.reject(error)
 );
 
 export default api;

@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ForgotPassword from "./auth/ForgotPassword";
-import ChangePassword from "./auth/change-password";
 
 const MotionButton = motion(
   forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => (
@@ -20,7 +19,6 @@ const Login = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
   const [showForgotModal, setShowForgotModal] = useState(false);
-    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false); // 👈 MUÉVELO AQUÍ
 
 
   useEffect(() => {
@@ -32,35 +30,27 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setIsLoading(true);
-  setError(null); // Limpia errores anteriores
-
-  if (!email || !password) {
-    setError('Por favor ingrese su correo y contraseña');
-    setIsLoading(false);
-    return;
-  }
 
   try {
     const result = await login(email, password);
-
-    setIsLoading(false); // Asegura que se detenga el loading
+    setIsLoading(false);
 
     if (result?.requiresPasswordChange) {
-  navigate('/change-password', { state: { email, password } });
-} else {
-  navigate('/');
-}
+      navigate('/change-password', {
+        state: { email, password },
+      });
+    }
+
   } catch (err: any) {
     setIsLoading(false);
-    if (err.response?.status === 401) {
-      setError('Credenciales incorrectas. Por favor intente nuevamente.');
-    } else if (err.response?.status === 403) {
-      setError('Tu cuenta está inactiva o ha sido eliminada. Contacta al administrador.');
+    if (err.response && err.response.data && err.response.data.message) {
+      setError(err.response.data.message);
     } else {
-      setError('Ocurrió un error inesperado. Intenta más tarde.');
+      setError("Error al iniciar sesión");
     }
   }
 };
+
 
 
   return (
@@ -189,29 +179,6 @@ const Login = () => {
       <ForgotPassword />
     </Modal.Body>
   </Modal>
-
-  {/* Modal: Cambiar contraseña temporal
-  <Modal
-    show={showChangePasswordModal}
-    onHide={() => setShowChangePasswordModal(false)}
-    centered
-    animation={true}
-  >
-    <Modal.Header closeButton>
-      <Modal.Title>Cambiar Contraseña</Modal.Title>
-    </Modal.Header>
-    <Modal.Body>
-      <ChangePassword
-        email={email}
-        onSuccess={() => {
-          setShowChangePasswordModal(false);
-          navigate('/');
-        }}
-      />
-    </Modal.Body>
-  </Modal> */}
-
-
     </div>
   );
 };

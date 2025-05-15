@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"; // Añade useEffect aquí
 import { Badge, Button, Modal } from "react-bootstrap";
-import api from "../api/axios";
+import api from "../../api/axios";
 import { BrowserMultiFormatReader } from "@zxing/library";
-import { useAuth } from "../hooks/AuthContext";
+import { useAuth } from "../../hooks/AuthContext";
 import toast from "react-hot-toast";
 import { FaEye, FaQrcode } from "react-icons/fa";
 
@@ -66,6 +66,12 @@ type Reservation = {
 export default function ReservationList() {
   const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [showDecisionModal, setShowDecisionModal] = useState(false);
+  const [decisionType, setDecisionType] = useState<
+    "Aprobar" | "Rechazar" | null
+  >(null);
+  const [comentario, setComentario] = useState("");
+
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -74,7 +80,7 @@ export default function ReservationList() {
   useEffect(() => {
     const fetchReservations = async () => {
       try {
-        const response = await api.get(`/reservas/${user?.id}`);
+        const response = await api.get(`/reservas`);
         setReservations(response.data);
       } catch (error) {
         console.error(error);
@@ -90,6 +96,35 @@ export default function ReservationList() {
   const handleDetailClick = (reservation: Reservation) => {
     setSelectedReservation(reservation);
     setShowModal(true);
+  };
+
+  const handleDecisionClick = (type: "Aprobar" | "Rechazar") => {
+    setDecisionType(type);
+    setComentario("");
+    setShowDecisionModal(true);
+  };
+
+  const handleConfirmDecision = async () => {
+    if (!selectedReservation || !decisionType) return;
+
+    try {
+      await api.post(`/reservas/${selectedReservation.id}/estado`, {
+        estado: decisionType === "Aprobar" ? "Aprobado" : "Rechazado",
+        comentario,
+      });
+
+      toast.success(`Reserva ${decisionType.toLowerCase()}da con éxito`);
+      setShowDecisionModal(false);
+      setShowModal(false);
+      setSelectedReservation(null);
+
+      // Opcional: recargar reservas
+      const res = await api.get("/reservas");
+      setReservations(res.data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al actualizar el estado de la reserva");
+    }
   };
 
   const handleCloseModal = () => {
@@ -121,7 +156,7 @@ export default function ReservationList() {
             {reservations.map((reserva) => (
               <tr key={reserva.id}>
                 <td className="fw-bold">
-                  {reserva.user.first_name}-{reserva.user.last_name}
+                  {reserva.user.first_name} - {reserva.user.last_name}{" "}
                 </td>
                 <td>
                   {reserva.equipos
@@ -162,6 +197,20 @@ export default function ReservationList() {
                     >
                       <FaEye className="fs-5" />
                     </button>
+                    <div className="d-flex justify-content-end gap-2">
+                      <Button
+                        variant="success"
+                        onClick={() => handleDecisionClick("Aprobar")}
+                      >
+                        Aprobar
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleDecisionClick("Rechazar")}
+                      >
+                        Rechazar
+                      </Button>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -176,6 +225,41 @@ export default function ReservationList() {
           </tbody>
         </table>
       </div>
+      <Modal
+        show={showDecisionModal}
+        onHide={() => setShowDecisionModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>{decisionType} Reserva</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="mb-3">
+            <label className="form-label">Comentario</label>
+            <textarea
+              className="form-control"
+              rows={4}
+              value={comentario}
+              onChange={(e) => setComentario(e.target.value)}
+              placeholder={`Escribe un comentario para ${decisionType?.toLowerCase()} la reserva...`}
+            />
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowDecisionModal(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant={decisionType === "Aprobar" ? "success" : "danger"}
+            onClick={handleConfirmDecision}
+          >
+            Confirmar {decisionType}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
         <Modal.Header
@@ -224,7 +308,7 @@ export default function ReservationList() {
                         Nombre
                       </span>
                       <p className="mb-0 fw-semibold flex-grow-1">
-                        {selectedReservation.user.first_name}-
+                        {selectedReservation.user.first_name}{" "}
                         {selectedReservation.user.last_name}
                       </p>
                     </div>

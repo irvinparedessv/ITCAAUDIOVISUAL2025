@@ -7,16 +7,16 @@ export default [
   route("reset-password", "routes/reset-password.tsx"),
   route("forbidden", "components/auth/Forbidden.tsx"),
   route("usuarios", "routes/usuarioList.tsx"),
-   route("confirm-account/:token", "routes/confirm-account.tsx"),
-   route("change-password", "components/auth/change-password.tsx"),
+  route("confirm-account/:token", "routes/confirm-account.tsx"),
+  route("change-password", "components/auth/change-password.tsx"),
 
   // Ruta protegida principal (con layout)
-  
+
   route("/", "layouts/protected-layout.tsx", [
     index("routes/home.tsx"),
     route("addreservation", "routes/reservation.tsx"),
     route("reservations", "routes/reservationList.tsx"),
-    route("reservationdetail", "routes/reservationDetail.tsx"),
+    route("reservationdetail/:idQr", "routes/reservationDetail.tsx"),
     route("reservationdetailAdmin", "routes/reservationDetailAdmin.tsx"),
     route("formEquipo", "routes/formEquipo.tsx"),
     route("formEspacio", "routes/creacionEspacio.tsx"),
@@ -31,8 +31,8 @@ export default [
     route("editarUsuario/:id", "routes/editUsuario.tsx"),
     route("qrScan", "routes/qr.tsx"),
     route("espacioList", "routes/espacioList.tsx"),
-    route("perfil", "routes/verPerfil.tsx"),
+    route("reservations-room", "routes/reservationRoomList.tsx"),
+    route("approvereservations", "routes/attendant/approveReservations.tsx"),
+    //route("perfil", "routes/verPerfil.tsx"),
   ]),
 ] satisfies RouteConfig;
-
-

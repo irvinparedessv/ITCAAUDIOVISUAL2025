@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import Select from "react-select";
 import type { MultiValue, SingleValue } from "react-select";
@@ -6,11 +6,9 @@ import { useAuth } from "../hooks/AuthContext";
 import {
   FaCalendarAlt,
   FaClock,
-  FaBoxOpen,
   FaBoxes,
   FaSchool,
   FaSave,
-  FaTimes,
   FaBroom,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
@@ -28,16 +26,11 @@ export default function EquipmentReservationForm() {
   });
 
   const [equipmentOptions, setEquipmentOptions] = useState<OptionType[]>([]);
+  const [aulaOptions, setAulaOptions] = useState<OptionType[]>([]);
   const [loadingEquipments, setLoadingEquipments] = useState(true);
+  const [loadingAulas, setLoadingAulas] = useState(true);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const { user } = useAuth();
-
-  const aulaOptions = [
-    { value: "Aula 101", label: "Aula 101" },
-    { value: "Aula 202", label: "Aula 202" },
-    { value: "Auditorio", label: "Auditorio" },
-    { value: "Sala de grabación", label: "Sala de grabación" },
-  ];
 
   useEffect(() => {
     const fetchEquipments = async () => {
@@ -57,7 +50,24 @@ export default function EquipmentReservationForm() {
       }
     };
 
+    const fetchAulas = async () => {
+      try {
+        const response = await api.get("/aulasEquipos");
+        const data = response.data;
+        const options = data.map((item: any) => ({
+          value: item.name,
+          label: item.name,
+        }));
+        setAulaOptions(options);
+      } catch (error) {
+        toast.error("Error cargando las aulas. Intente nuevamente.");
+      } finally {
+        setLoadingAulas(false);
+      }
+    };
+
     fetchEquipments();
+    fetchAulas();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,19 +176,27 @@ export default function EquipmentReservationForm() {
             <FaSchool className="me-2" />
             Aula
           </label>
-          <Select
-            options={aulaOptions}
-            value={formData.aula}
-            onChange={(selected) =>
-              setFormData((prev) => ({
-                ...prev,
-                aula: selected,
-              }))
-            }
-            placeholder="Selecciona aula"
-            className="react-select-container"
-            classNamePrefix="react-select"
-          />
+          {loadingAulas ? (
+            <div className="d-flex justify-content-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          ) : (
+            <Select
+              options={aulaOptions}
+              value={formData.aula}
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  aula: selected,
+                }))
+              }
+              placeholder="Selecciona aula"
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
+          )}
         </div>
 
         {/* Fecha */}

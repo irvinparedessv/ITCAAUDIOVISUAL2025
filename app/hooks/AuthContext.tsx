@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+} from "react";
 import api from "../api/axios";
 import { routeRoles } from "~/types/routeRoles";
 import type { UserLogin } from "~/types/user";
@@ -11,7 +17,11 @@ type AuthContextType = {
   login: (
     email: string,
     password: string
-  ) => Promise<void | { requiresPasswordChange: boolean; token: string; user: UserLogin }>;
+  ) => Promise<void | {
+    requiresPasswordChange: boolean;
+    token: string;
+    user: UserLogin;
+  }>;
   logout: () => void;
   checkAccess: (route: string) => boolean;
   setUser: React.Dispatch<React.SetStateAction<UserLogin | null>>;
@@ -26,48 +36,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const isAuthenticated = !!token && !!user;
 
-useEffect(() => {
-  const loadCredentials = async () => {
-    try {
-      const storedToken = localStorage.getItem("token");
-      const storedUser = localStorage.getItem("user");
+  useEffect(() => {
+    const loadCredentials = async () => {
+      try {
+        const storedToken = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user");
 
-      if (!storedToken || !storedUser) {
-        setIsLoading(false);
-        return;
-      }
+        if (!storedToken || !storedUser) {
+          setIsLoading(false);
+          return;
+        }
 
-      const response = await api.get("/validate-token", {
-        headers: { Authorization: `Bearer ${storedToken}` },
-      });
-
-      if (response.data.valid) {
-        // Evitar actualizar estado si ya son iguales
-        setToken((prev) => (prev !== storedToken ? storedToken : prev));
-        setUser((prev) => {
-          const parsedUser = JSON.parse(storedUser);
-          return JSON.stringify(prev) !== JSON.stringify(parsedUser) ? parsedUser : prev;
+        const response = await api.get("/validate-token", {
+          headers: { Authorization: `Bearer ${storedToken}` },
         });
-      } else {
+
+        if (response.data.valid) {
+          // Evitar actualizar estado si ya son iguales
+          setToken((prev) => (prev !== storedToken ? storedToken : prev));
+          setUser((prev) => {
+            const parsedUser = JSON.parse(storedUser);
+            return JSON.stringify(prev) !== JSON.stringify(parsedUser)
+              ? parsedUser
+              : prev;
+          });
+        } else {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          setToken(null);
+          setUser(null);
+        }
+      } catch (error) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         setToken(null);
         setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      setToken(null);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  loadCredentials();
-}, []);
-
-
+    loadCredentials();
+  }, []);
 
   useEffect(() => {
     console.log("Valor actual del token:", token);
@@ -88,8 +98,8 @@ useEffect(() => {
         throw {
           response: {
             status: 403,
-            data: { message: "Usuario inactivo" }
-          }
+            data: { message: "Usuario inactivo" },
+          },
         };
       }
 
@@ -117,21 +127,22 @@ useEffect(() => {
     return allowedRoles.length === 0 || allowedRoles.includes(user.role);
   };
 
-  const contextValue = useMemo(() => ({
-    token,
-    user,
-    isLoading,
-    isAuthenticated,
-    login,
-    logout,
-    checkAccess,
-    setUser,
-  }), [token, user, isLoading, isAuthenticated]);
+  const contextValue = useMemo(
+    () => ({
+      token,
+      user,
+      isLoading,
+      isAuthenticated,
+      login,
+      logout,
+      checkAccess,
+      setUser,
+    }),
+    [token, user, isLoading, isAuthenticated]
+  );
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 

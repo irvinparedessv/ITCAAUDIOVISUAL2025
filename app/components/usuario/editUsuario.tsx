@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Form, Button, Spinner } from "react-bootstrap";
-import Swal from "sweetalert2";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getUsuarioById, updateUsuario } from "~/services/userService";
@@ -106,16 +105,15 @@ const EditUsuario = () => {
 
     if (!validate()) return;
 
-    const result = await Swal.fire({
-      title: "¿Guardar cambios?",
-      text: "Se actualizará la información del usuario.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, guardar",
-      cancelButtonText: "Cancelar",
+    // Aquí se elimina el uso de SweetAlert y se usa solo Toastify
+    toast.info("Se actualizará la información del usuario", {
+      autoClose: 2500,
+      hideProgressBar: false,
     });
 
-    if (result.isConfirmed) {
+    const confirmUpdate = window.confirm("¿Guardar cambios?");
+
+    if (confirmUpdate) {
       if (!id) return;
 
       const numericId = Number(id);
@@ -144,9 +142,12 @@ const EditUsuario = () => {
         setTimeout(() => navigate("/usuarios"), 3000);
       } catch (error) {
         console.error("Error al actualizar usuario:", error);
-        toast.error("Error al actualizar usuario");
+        toast.error("Error al actualizar usuario", {
+          autoClose: 2500,
+          hideProgressBar: false,
+        });
       }
-    } else if (result.dismiss === Swal.DismissReason.cancel) {
+    } else {
       toast.info("Acción cancelada por el usuario", {
         autoClose: 2000,
         hideProgressBar: false,

@@ -19,7 +19,7 @@ export default [
     route("reservationdetail", "routes/reservationDetail.tsx"),
     route("reservationdetailAdmin", "routes/reservationDetailAdmin.tsx"),
     route("formEquipo", "routes/formEquipo.tsx"),
-    route("formEspacio", "routes/formEspacio.tsx"),
+    route("formEspacio", "routes/creacionEspacio.tsx"),
     route("formChat", "routes/formChat.tsx"),
     route("inventario", "routes/inventario.tsx"),
     route("menu", "routes/optionsReservation.tsx"),
@@ -30,7 +30,6 @@ export default [
 
     route("editarUsuario/:id", "routes/editUsuario.tsx"),
     route("qrScan", "routes/qr.tsx"),
-    route("crearEspacio", "routes/creacionEspacio.tsx"),
     route("espacioList", "routes/espacioList.tsx"),
   ]),
 ] satisfies RouteConfig;

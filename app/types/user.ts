@@ -18,9 +18,11 @@ export type UserLogin = {
   first_name: string;
   last_name: string;
   email: string;
-  role: number; // Asegúrate que tu API mande 'role'
+  role: number;
   image?: string;
+  estado: number; // ahora obligatorio
 };
+
 
 // Para crear usuarios, incluyendo imagen opcional tipo archivo
 export type UserCreateDTO = Omit<

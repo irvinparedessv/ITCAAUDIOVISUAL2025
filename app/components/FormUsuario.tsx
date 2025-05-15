@@ -1,22 +1,19 @@
-import { useState, useRef } from "react";
-import {
-  Container,
-  Form,
-  Button,
-  Row,
-  Col,
-  Card,
-  Image,
-} from "react-bootstrap";
+import { useState, useCallback } from "react";
+import { useDropzone } from "react-dropzone";
+import { toast } from "react-hot-toast";
 import { createUsuario } from "~/services/userService";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import {
+  FaSave,
+  FaTimes,
+  FaPlus,
+  FaBroom,
+  FaUpload,
+  FaTrash,
+} from "react-icons/fa";
 
 export default function FormUsuario() {
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -30,15 +27,52 @@ export default function FormUsuario() {
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Validation regex patterns
   const nameRegex = /^[a-zA-Z\s]{2,}$/;
   const emailRegex = /^[a-zA-Z0-9._%+-]+@itca\.edu\.sv$/; //Permitir correo institucional (JOSUE)
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
   const phoneRegex = /^[0-9]{4}-[0-9]{4}$/;
   const imageTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
   const maxImageSize = 2 * 1024 * 1024;
+
+  // Dropzone configuration
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      if (!imageTypes.includes(file.type)) {
+        toast.error(
+          "Solo se permiten archivos de imagen (JPEG, PNG, JPG, GIF)"
+        );
+        return;
+      }
+
+      if (file.size > maxImageSize) {
+        toast.error("La imagen no puede ser mayor a 2MB");
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, image: file }));
+      setImagePreview(URL.createObjectURL(file));
+      setFormErrors((prev) => ({ ...prev, image: "" }));
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/*": [".jpeg", ".jpg", ".png", ".gif"],
+    },
+    maxFiles: 1,
+    multiple: false,
+  });
+
+  const removeImage = () => {
+    setFormData((prev) => ({ ...prev, image: null }));
+    setImagePreview(null);
+  };
 
   const validateField = (name: string, value: any): string => {
     if (
@@ -49,6 +83,7 @@ export default function FormUsuario() {
     ) {
       return "Este campo es obligatorio";
     }
+
     switch (name) {
       case "first_name":
       case "last_name":
@@ -89,41 +124,13 @@ export default function FormUsuario() {
     }
 
     setFormData((prev) => ({ ...prev, [name]: newValue }));
+    setFormErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleBlur = (e: React.FocusEvent<any>) => {
     const { name, value } = e.target;
     const error = validateField(name, value);
     setFormErrors((prev) => ({ ...prev, [name]: error }));
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    setFormData((prev) => ({ ...prev, image: file }));
-
-    if (file) {
-      if (!imageTypes.includes(file.type)) {
-        setFormErrors((prev) => ({
-          ...prev,
-          image: "Tipo de imagen no permitido.",
-        }));
-        return;
-      }
-      if (file.size > maxImageSize) {
-        setFormErrors((prev) => ({
-          ...prev,
-          image: "La imagen no debe exceder los 2MB.",
-        }));
-        return;
-      }
-
-      setFormErrors((prev) => ({ ...prev, image: "" }));
-      const reader = new FileReader();
-      reader.onloadend = () => setPreviewImage(reader.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      setPreviewImage(null);
-    }
   };
 
   const isFormValid = (): boolean => {
@@ -134,14 +141,6 @@ export default function FormUsuario() {
       if (error) errors[key] = error;
     });
 
-    if (formData.image) {
-      if (!imageTypes.includes(formData.image.type)) {
-        errors.image = "La imagen debe ser de tipo JPG, JPEG, PNG o GIF.";
-      } else if (formData.image.size > maxImageSize) {
-        errors.image = "La imagen no debe exceder los 2MB.";
-      }
-    }
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -149,7 +148,7 @@ export default function FormUsuario() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid()) {
-      toast.error("Revisa los campos antes de enviar.");
+      toast.error("Por favor corrija los errores antes de enviar");
       return;
     }
 
@@ -175,34 +174,29 @@ export default function FormUsuario() {
 
     try {
       await createUsuario(formDataToSend);
-      toast.success("Usuario creado con éxito", {
-        autoClose: 3000,
-        hideProgressBar: false,
-      });
-
-      setFormData({
-        first_name: "",
-        last_name: "",
-        email: "",
-        password: "",
-        role_id: "",
-        phone: "",
-        address: "",
-        image: null,
-      });
-      setFormErrors({});
-      setPreviewImage(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      setTimeout(() => navigate("/usuarios"), 3200);
+      toast.success("Usuario creado con éxito");
+      handleClear();
+      navigate("/usuarios");
     } catch (error) {
-      console.error("Error al crear usuario:", error);
-      toast.error("Error al crear usuario", {
-        autoClose: 2500,
-        hideProgressBar: false,
-      });
+      toast.error("Error al crear el usuario");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleClear = () => {
+    setFormData({
+      first_name: "",
+      last_name: "",
+      email: "",
+      password: "",
+      role_id: "",
+      phone: "",
+      address: "",
+      image: null,
+    });
+    setFormErrors({});
+    setImagePreview(null);
   };
 
   const roles = [
@@ -212,112 +206,242 @@ export default function FormUsuario() {
   ];
 
   return (
-    <Container className="my-5">
-      <Row className="justify-content-center">
-        <Col md={6} lg={5}>
-          <Card className="shadow-lg">
-            <Card.Header className="bg-primary text-white text-center">
-              <h4 className="mb-0">Crear Nuevo Usuario</h4>
-            </Card.Header>
-            <Card.Body>
-              <Form onSubmit={handleSubmit} encType="multipart/form-data">
-                {[
-                  { label: "Nombres", name: "first_name", type: "text" },
-                  { label: "Apellidos", name: "last_name", type: "text" },
-                  { label: "Email", name: "email", type: "email" },
-                  { label: "Contraseña", name: "password", type: "password" },
-                  { label: "Teléfono (Opcional)", name: "phone", type: "text" },
-                  {
-                    label: "Dirección (Opcional)",
-                    name: "address",
-                    type: "text",
-                  },
-                ].map(({ label, name, type }) => (
-                  <Form.Group className="mb-3" key={name}>
-                    <Form.Label>{label}</Form.Label>
-                    <Form.Control
-                      type={type}
-                      name={name}
-                      value={(formData as any)[name]}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      placeholder={label}
-                      isInvalid={!!formErrors[name]}
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {formErrors[name]}
-                    </Form.Control.Feedback>
-                  </Form.Group>
-                ))}
+    <div className="form-container">
+      <h2 className="mb-4 text-center fw-bold">Crear Nuevo Usuario</h2>
 
-                <Form.Group className="mb-3">
-                  <Form.Label>Rol</Form.Label>
-                  <Form.Select
-                    name="role_id"
-                    value={formData.role_id}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    isInvalid={!!formErrors.role_id}
-                  >
-                    <option value="">Selecciona un rol</option>
-                    {roles.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                  <Form.Control.Feedback type="invalid">
-                    {formErrors.role_id}
-                  </Form.Control.Feedback>
-                </Form.Group>
+      <form onSubmit={handleSubmit}>
+        <div className="row mb-4">
+          <div className="col-md-6 mb-3 mb-md-0">
+            <label htmlFor="first_name" className="form-label">
+              Nombres
+            </label>
+            <input
+              id="first_name"
+              name="first_name"
+              placeholder="Nombres del usuario"
+              value={formData.first_name}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`form-control ${
+                formErrors.first_name ? "is-invalid" : ""
+              }`}
+            />
+            {formErrors.first_name && (
+              <div className="invalid-feedback">{formErrors.first_name}</div>
+            )}
+          </div>
 
-                <Form.Group className="mb-3">
-                  <Form.Label>Imagen (Opcional)</Form.Label>
-                  <Form.Control
-                    type="file"
-                    name="image"
-                    onChange={handleImageChange}
-                    accept="image/*"
-                    ref={fileInputRef}
-                    isInvalid={!!formErrors.image}
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {formErrors.image}
-                  </Form.Control.Feedback>
-                  {previewImage && (
-                    <div className="mt-3 text-center">
-                      <Image
-                        src={previewImage}
-                        alt="Vista previa"
-                        fluid
-                        rounded
-                        thumbnail
-                        style={{ maxHeight: "200px" }}
-                      />
-                    </div>
-                  )}
-                </Form.Group>
+          <div className="col-md-6">
+            <label htmlFor="last_name" className="form-label">
+              Apellidos
+            </label>
+            <input
+              id="last_name"
+              name="last_name"
+              placeholder="Apellidos del usuario"
+              value={formData.last_name}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`form-control ${
+                formErrors.last_name ? "is-invalid" : ""
+              }`}
+            />
+            {formErrors.last_name && (
+              <div className="invalid-feedback">{formErrors.last_name}</div>
+            )}
+          </div>
+        </div>
 
-                <div className="d-grid mb-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => navigate("/usuarios")}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
+        <div className="row mb-4">
+          <div className="col-md-6 mb-3 mb-md-0">
+            <label htmlFor="email" className="form-label">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              placeholder="Correo electrónico"
+              value={formData.email}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`form-control ${formErrors.email ? "is-invalid" : ""}`}
+            />
+            {formErrors.email && (
+              <div className="invalid-feedback">{formErrors.email}</div>
+            )}
+          </div>
 
-                <div className="d-grid">
-                  <Button variant="primary" type="submit" disabled={isLoading}>
-                    {isLoading ? "Procesando..." : "Crear Usuario"}
-                  </Button>
-                </div>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-      <ToastContainer />
-    </Container>
+          <div className="col-md-6">
+            <label htmlFor="password" className="form-label">
+              Contraseña
+            </label>
+            <input
+              id="password"
+              type="password"
+              name="password"
+              placeholder="Contraseña"
+              value={formData.password}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`form-control ${
+                formErrors.password ? "is-invalid" : ""
+              }`}
+            />
+            {formErrors.password && (
+              <div className="invalid-feedback">{formErrors.password}</div>
+            )}
+          </div>
+        </div>
+
+        <div className="row mb-4">
+          <div className="col-md-6 mb-3 mb-md-0">
+            <label htmlFor="phone" className="form-label">
+              Teléfono (Opcional)
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              placeholder="0000-0000"
+              value={formData.phone}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`form-control ${formErrors.phone ? "is-invalid" : ""}`}
+            />
+            {formErrors.phone && (
+              <div className="invalid-feedback">{formErrors.phone}</div>
+            )}
+          </div>
+
+          <div className="col-md-6">
+            <label htmlFor="address" className="form-label">
+              Dirección (Opcional)
+            </label>
+            <input
+              id="address"
+              name="address"
+              placeholder="Dirección"
+              value={formData.address}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`form-control ${
+                formErrors.address ? "is-invalid" : ""
+              }`}
+            />
+            {formErrors.address && (
+              <div className="invalid-feedback">{formErrors.address}</div>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="role_id" className="form-label">
+            Rol
+          </label>
+          <select
+            id="role_id"
+            name="role_id"
+            value={formData.role_id}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            className={`form-select ${formErrors.role_id ? "is-invalid" : ""}`}
+          >
+            <option value="">Seleccione un rol</option>
+            {roles.map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.name}
+              </option>
+            ))}
+          </select>
+          {formErrors.role_id && (
+            <div className="invalid-feedback">{formErrors.role_id}</div>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label className="form-label">Imagen (Opcional)</label>
+
+          {imagePreview ? (
+            <div className="d-flex flex-column align-items-center">
+              <img
+                src={imagePreview}
+                alt="Vista previa"
+                className="img-fluid rounded border mb-2"
+                style={{ maxWidth: "220px" }}
+              />
+              <button
+                type="button"
+                onClick={removeImage}
+                className="btn btn-outline-danger btn-sm"
+              >
+                <FaTrash className="me-1" />
+                Eliminar imagen
+              </button>
+            </div>
+          ) : (
+            <div
+              {...getRootProps()}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
+                isDragActive ? "border-primary bg-light" : ""
+              }`}
+            >
+              <input {...getInputProps()} />
+              <div className="d-flex flex-column align-items-center justify-content-center">
+                <FaUpload className="text-muted mb-2" />
+                {isDragActive ? (
+                  <p className="text-primary mb-0">Suelta la imagen aquí...</p>
+                ) : (
+                  <>
+                    <p className="mb-1">
+                      Arrastra y suelta una imagen aquí, o haz clic para
+                      seleccionar
+                    </p>
+                    <p className="text-muted small mb-0">
+                      Formatos: JPEG, PNG, JPG, GIF (Máx. 2MB)
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+          {formErrors.image && (
+            <div className="text-danger small mt-2">{formErrors.image}</div>
+          )}
+        </div>
+
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="btn primary-btn"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              "Procesando..."
+            ) : (
+              <>
+                <FaPlus className="me-2" />
+                Crear Usuario
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            className="btn secondary-btn"
+            onClick={handleClear}
+          >
+            <FaBroom className="me-2" />
+            Limpiar
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={() => navigate("/usuarios")}
+          >
+            <FaTimes className="me-2" />
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

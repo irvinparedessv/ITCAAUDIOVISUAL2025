@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import echo from "../utils/pusher";
-import { FaTimes } from "react-icons/fa";
+import { useAuth } from "./AuthContext";
+import { Role } from "~/types/roles";
 
 interface ReservaNotification {
   id: number;
@@ -17,7 +18,7 @@ interface NotificacionStorage {
   createdAt: string;
 }
 
-interface Notificacion extends Omit<NotificacionStorage, 'createdAt'> {
+interface Notificacion extends Omit<NotificacionStorage, "createdAt"> {
   createdAt: Date;
 }
 
@@ -25,22 +26,25 @@ export function useNotificaciones() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const { user } = useAuth();
 
   // Cargar notificaciones del localStorage
   useEffect(() => {
-    const savedNotifications = localStorage.getItem('notifications');
+    const savedNotifications = localStorage.getItem("notifications");
     if (savedNotifications) {
       try {
         const parsed = JSON.parse(savedNotifications);
-        const loadedNotifications = parsed.notifications.map((n: NotificacionStorage) => ({
-          ...n,
-          createdAt: new Date(n.createdAt)
-        }));
+        const loadedNotifications = parsed.notifications.map(
+          (n: NotificacionStorage) => ({
+            ...n,
+            createdAt: new Date(n.createdAt),
+          })
+        );
         setNotificaciones(loadedNotifications);
         setUnreadCount(parsed.unreadCount);
       } catch (error) {
         console.error("Error loading notifications:", error);
-        localStorage.removeItem('notifications');
+        localStorage.removeItem("notifications");
       }
     }
     setLoaded(true);
@@ -50,29 +54,35 @@ export function useNotificaciones() {
   useEffect(() => {
     if (!loaded) return;
 
-    const notificationsToSave: NotificacionStorage[] = notificaciones.map(n => ({
+    const notificationsToSave: NotificacionStorage[] = notificaciones.map((n) => ({
       ...n,
-      createdAt: n.createdAt.toISOString()
+      createdAt: n.createdAt.toISOString(),
     }));
 
-    localStorage.setItem('notifications', JSON.stringify({
-      notifications: notificationsToSave,
-      unreadCount
-    }));
+    localStorage.setItem(
+      "notifications",
+      JSON.stringify({
+        notifications: notificationsToSave,
+        unreadCount,
+      })
+    );
   }, [notificaciones, unreadCount, loaded]);
 
   // Escuchar nuevas notificaciones
   useEffect(() => {
-    if (!echo || !loaded) return;
-
-    const channel = echo.channel('notifications');
+  if (!echo || !loaded || !user) return;
+console.log('Subscripción a notificaciones creada'); // <--- mira cuántas veces sale en consola
+  // Solo si es admin o encargado
+  if ([Role.Administrador, Role.Encargado].includes(user.role)) {
+    const channelName = 'notifications.rol.admin-encargado';
+    const channel = echo.channel(channelName);
 
     const handler = (data: { reserva: ReservaNotification }) => {
       const nuevaNotificacion: Notificacion = {
         id: Date.now().toString(),
         reserva: data.reserva,
         unread: true,
-        createdAt: new Date()
+        createdAt: new Date(),
       };
 
       setNotificaciones(prev => [nuevaNotificacion, ...prev]);
@@ -83,21 +93,22 @@ export function useNotificaciones() {
 
     return () => {
       channel.stopListening('.nueva.reserva', handler);
-      echo?.leave('notifications');
+      echo!.leave(channelName);
     };
-  }, [loaded]);
+  }
+}, [echo, loaded, user]);
 
   // Marcar como leídas
   const markAsRead = () => {
-    setNotificaciones(prev => prev.map(n => ({ ...n, unread: false })));
+    setNotificaciones((prev) => prev.map((n) => ({ ...n, unread: false })));
     setUnreadCount(0);
   };
 
   // Eliminar notificación
   const removeNotification = (id: string) => {
-    setNotificaciones(prev => {
-      const updated = prev.filter(n => n.id !== id);
-      const newUnreadCount = updated.filter(n => n.unread).length;
+    setNotificaciones((prev) => {
+      const updated = prev.filter((n) => n.id !== id);
+      const newUnreadCount = updated.filter((n) => n.unread).length;
       setUnreadCount(newUnreadCount);
       return updated;
     });
@@ -114,6 +125,6 @@ export function useNotificaciones() {
     unreadCount,
     markAsRead,
     removeNotification,
-    clearAllNotifications
+    clearAllNotifications,
   };
 }

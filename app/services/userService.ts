@@ -35,8 +35,14 @@ export const createUsuario = async (formData: FormData) => {
       },
     });
     return res.data;
-  } catch (error) {
-    console.error("Error al crear el usuario:", error);
+  } catch (error: any) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("Error del backend:", error.response.data);
+      toast.error(error.response.data.message || "Error al crear el usuario");
+    } else {
+      console.error("Error desconocido:", error);
+      toast.error("Error inesperado");
+    }
     throw error;
   }
 };
@@ -98,8 +104,8 @@ export const changePassword = async (data: {
 
 export const getPerfil = async (): Promise<User> => {
   try {
-    const res = await api.get("/user/profile");
-    return res.data;
+    const res = await api.get("/user/profile"); // ❌ Elimina el `data`
+    return res.data.user; // ⚠️ Asegúrate de acceder a `user` si es `{ user: {...} }`
   } catch (error) {
     console.error("Error al obtener el perfil:", error);
     throw error;
@@ -109,11 +115,7 @@ export const getPerfil = async (): Promise<User> => {
 // Actualizar perfil del usuario autenticado
 export const updateProfile = async (formData: FormData): Promise<any> => {
   try {
-    const res = await api.put("/user/profile", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const res = await api.put("/user/profile", formData);
     return res.data;
   } catch (error) {
     console.error("Error al actualizar el perfil:", error);

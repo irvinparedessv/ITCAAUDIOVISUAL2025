@@ -395,6 +395,14 @@ const NavbarMenu = () => {
                   color: "#000",
                 }}
               >
+                <Dropdown.Item
+                  as={Link}
+                  to="/perfil"
+                  className="px-3 py-2 d-flex align-items-center gap-2"
+                >
+                  Ver Perfil
+                </Dropdown.Item>
+
                 <Dropdown.ItemText
                   className="px-3 py-2"
                   style={{ color: "#000" }}

@@ -74,8 +74,8 @@ export function useNotificaciones() {
 console.log('Subscripción a notificaciones creada'); // <--- mira cuántas veces sale en consola
   // Solo si es admin o encargado
   if ([Role.Administrador, Role.Encargado].includes(user.role)) {
-    const channelName = 'notifications.rol.admin-encargado';
-    const channel = echo.channel(channelName);
+    const channelName = `notifications.user.${user.id}`;
+const channel = echo.private(channelName); // canal privado
 
     const handler = (data: { reserva: ReservaNotification }) => {
       const nuevaNotificacion: Notificacion = {

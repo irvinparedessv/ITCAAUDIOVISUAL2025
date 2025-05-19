@@ -152,9 +152,8 @@ export default function FormUsuario() {
       return;
     }
 
-    toast.info("Creando usuario...", {
-      autoClose: 2000,
-      hideProgressBar: false,
+    toast.success("Creando usuario...", {
+     
     });
 
     setIsLoading(true);
@@ -170,7 +169,7 @@ export default function FormUsuario() {
     if (formData.image) formDataToSend.append("image", formData.image);
 
     // ✅ JOSUE (ESTADO DE USUARIO AL SER CREADO 3-PENDIENTE)
-    formDataToSend.append("estado", "3");
+    formDataToSend.append("estado", "0");
 
     try {
       await createUsuario(formDataToSend);

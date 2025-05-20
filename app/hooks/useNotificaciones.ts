@@ -9,6 +9,7 @@ interface ReservaNotification {
   aula: string;
   fecha_reserva: string;
   fecha_entrega: string;
+  estado: string;
 }
 
 interface NotificacionStorage {
@@ -69,15 +70,15 @@ export function useNotificaciones() {
   }, [notificaciones, unreadCount, loaded]);
 
   // Escuchar nuevas notificaciones
-  useEffect(() => {
-  if (!echo || !loaded || !user) return;
-console.log('Subscripción a notificaciones creada'); // <--- mira cuántas veces sale en consola
-  // Solo si es admin o encargado
-  if ([Role.Administrador, Role.Encargado].includes(user.role)) {
-    const channelName = `notifications.user.${user.id}`;
-const channel = echo.private(channelName); // canal privado
+    useEffect(() => {
+    if (!echo || !loaded || !user) return;
+    console.log('Subscripción a notificaciones creada');
 
-    const handler = (data: { reserva: ReservaNotification }) => {
+    const channelName = `notifications.user.${user.id}`;
+    const channel = echo.private(channelName);
+
+    const handler = (data: any) => {
+      console.log("Datos recibidos en notificación:", data);
       const nuevaNotificacion: Notificacion = {
         id: Date.now().toString(),
         reserva: data.reserva,
@@ -89,14 +90,26 @@ const channel = echo.private(channelName); // canal privado
       setUnreadCount(prev => prev + 1);
     };
 
-    channel.listen('.nueva.reserva', handler);
+    // Admins y encargados escuchan nuevas reservas
+    if ([Role.Administrador, Role.Encargado].includes(user.role)) {
+      channel.listen('.nueva.reserva', handler);
+    }
+
+    // Prestamista escucha cambios de estado
+    if (user.role === Role.Prestamista) {
+     channel.listen('.reserva.estado.actualizado', data => {
+  console.log('Evento recibido:', data);
+});
+
+    }
 
     return () => {
       channel.stopListening('.nueva.reserva', handler);
+      channel.stopListening('.reserva.estado.actualizado', handler);
       echo!.leave(channelName);
     };
-  }
-}, [echo, loaded, user]);
+  }, [echo, loaded, user]);
+
 
   // Marcar como leídas
   const markAsRead = () => {

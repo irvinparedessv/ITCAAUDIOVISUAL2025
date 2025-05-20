@@ -97,9 +97,7 @@ export function useNotificaciones() {
 
     // Prestamista escucha cambios de estado
     if (user.role === Role.Prestamista) {
-     channel.listen('.reserva.estado.actualizado', data => {
-  console.log('Evento recibido:', data);
-});
+       channel.listen('.reserva.estado.actualizado', handler);
 
     }
 

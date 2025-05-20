@@ -319,7 +319,7 @@ const NavbarMenu = () => {
         <Dropdown.Item
   key={noti.id}
   onClick={() => {
-    if (noti.reserva?.estado === "pendiente") {
+    if (noti.reserva?.estado === "Pendiente") {
       navigate(`/actualizarEstado/${noti.reserva?.id}`);
     } else {
       navigate("/reservations");

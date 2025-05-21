@@ -33,6 +33,8 @@ export default [
     route("espacioList", "routes/espacioList.tsx"),
     route("reservations-room", "routes/reservationRoomList.tsx"),
     route("approvereservations", "routes/attendant/approveReservations.tsx"),
-    //route("perfil", "routes/verPerfil.tsx"),
+    route("perfil", "routes/verPerfil.tsx"),
+    route("editarPerfil", "routes/editPerfil.tsx"),
+    route("actualizarEstado/:id", "routes/ReservacionEstado.tsx"),
   ]),
 ] satisfies RouteConfig;

@@ -7,13 +7,13 @@
   /* Colores base del navbar (siempre amarillo) */
   --navbar-bg: linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92));
   --dropdown-bg: linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20));
-  
+
   /* Texto del navbar (siempre negro) */
   --navbar-text: #000000;
-  
+
   /* Hovers del navbar */
   --navbar-hover-bg-light: rgba(255, 255, 255, 0.3); /* Modo claro */
-  --navbar-hover-bg-dark: rgba(0, 0, 0, 0.2);        /* Modo oscuro */
+  --navbar-hover-bg-dark: rgba(0, 0, 0, 0.2); /* Modo oscuro */
   --dropdown-hover-bg: rgba(0, 0, 0, 0.1);
 }
 
@@ -82,7 +82,7 @@
   --bs-body-color: #212529;
   --bs-card-bg: #ffffff;
   --bs-border-color: #dee2e6;
-  --bs-primary-bg: #8B0000;
+  --bs-primary-bg: #8b0000;
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #e9ecef;
 }
@@ -93,18 +93,18 @@
   --bs-body-color: #f8f9fa;
   --bs-card-bg: #2d2d2d;
   --bs-border-color: #444;
-  --bs-primary-bg: #6B0000;
+  --bs-primary-bg: #6b0000;
   --bs-primary-text: #ffffff;
   --bs-secondary-bg: #333;
 }
 
 /* Botones (no afectan al navbar) */
 .btn.primary-btn {
-  --bs-btn-bg: #8B0000;
+  --bs-btn-bg: #8b0000;
   --bs-btn-color: white;
-  --bs-btn-border-color: #8B0000;
-  --bs-btn-hover-bg: #A52A2A;
-  --bs-btn-hover-border-color: #A52A2A;
+  --bs-btn-border-color: #8b0000;
+  --bs-btn-hover-bg: #a52a2a;
+  --bs-btn-hover-border-color: #a52a2a;
   --bs-btn-hover-color: white;
 }
 
@@ -113,18 +113,21 @@
   border-color: var(--bs-primary-bg) !important;
 }
 
-.btn-primary:hover, 
+.btn-primary:hover,
 .btn-primary:focus {
-  background-color: color-mix(in srgb, var(--bs-primary-bg), black 15%) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--bs-primary-bg),
+    black 15%
+  ) !important;
   border-color: color-mix(in srgb, var(--bs-primary-bg), black 15%) !important;
 }
 
-
-
-
 /* INICIO DE Estilos base para los enlaces de paginación */
 .page-link {
-  color: var(--bs-body-color) !important; /* Usará el color de texto principal del tema */
+  color: var(
+    --bs-body-color
+  ) !important; /* Usará el color de texto principal del tema */
   background-color: transparent;
   border-color: var(--bs-border-color);
   transition: all 0.2s ease;
@@ -150,10 +153,6 @@
 }
 /* FIN DE Estilo base para los enlaces de paginación */
 
-
-
-
-
 .btn.secondary-btn {
   --bs-btn-bg: #393a3c;
   --bs-btn-color: white;
@@ -163,11 +162,9 @@
 }
 
 [data-bs-theme="dark"] .btn.primary-btn {
-  --bs-btn-bg: #6B0000;
-  --bs-btn-hover-bg: #8B0000;
+  --bs-btn-bg: #6b0000;
+  --bs-btn-hover-bg: #8b0000;
 }
-
-
 
 /* DISENIO DE TOOGLE EN SIEMPRE OSCURO /*
 /* Elimina completamente el SVG de Bootstrap */
@@ -220,20 +217,6 @@
 
 /* FIN DE DISENIO DE TOOGLE EN SIEMPRE OSCURO */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* INICIO DE DISENIO CHATBOT */
 
 /* Estilos base del chatbot */
@@ -247,7 +230,7 @@
 /* Botón flotante del chatbot - AHORA DORADO */
 .chatbot-button {
   background-color: #f5c35c; /* Cambiado a dorado */
-  color: #8B0000; /* Color del icono - rojo oscuro */
+  color: #8b0000; /* Color del icono - rojo oscuro */
   border: none;
   border-radius: 50%;
   width: 60px;
@@ -259,6 +242,10 @@
   justify-content: center;
   transition: all 0.3s ease;
 }
+.chat-options,
+.equipo-botones {
+  display: contents;
+}
 
 .chatbot-button:hover {
   background-color: #f5c35c; /* Mantiene dorado al hacer hover */
@@ -268,7 +255,7 @@
 /* Versión modo oscuro del botón */
 .chatbot-button.dark-mode {
   background-color: #f5c35c; /* Sigue dorado en modo oscuro */
-  color: #6B0000; /* Rojo más oscuro para modo oscuro */
+  color: #6b0000; /* Rojo más oscuro para modo oscuro */
 }
 
 .chatbot-button.dark-mode:hover {
@@ -337,13 +324,13 @@
 
 .message.user {
   align-self: flex-end;
-  background-color: #8B0000;
+  background-color: #8b0000;
   color: white;
   border-bottom-right-radius: 4px;
 }
 
 .message.user.dark-mode {
-  background-color: #6B0000;
+  background-color: #6b0000;
 }
 
 .message.bot {
@@ -377,7 +364,7 @@
 
 .chat-input input:focus {
   outline: none;
-  border-color: #8B0000;
+  border-color: #8b0000;
 }
 
 .chat-input input.dark-mode:focus {
@@ -385,7 +372,7 @@
 }
 
 .chat-input button {
-  background-color: #8B0000;
+  background-color: #8b0000;
   color: white;
   border: none;
   border-radius: 20px;
@@ -395,15 +382,15 @@
 }
 
 .chat-input button.dark-mode {
-  background-color: #6B0000;
+  background-color: #6b0000;
 }
 
 .chat-input button:hover {
-  background-color: #A52A2A;
+  background-color: #a52a2a;
 }
 
 .chat-input button.dark-mode:hover {
-  background-color: #8B0000;
+  background-color: #8b0000;
 }
 
 .chat-input button:disabled {
@@ -416,12 +403,6 @@
 }
 
 /* FIN DE DISENIO CHATBOT */
-
-
-
-
-
-
 
 /* Estilo para el botón flotante del chatbot */
 .chatbot-btn {
@@ -514,26 +495,6 @@
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Estilos para modo oscuro/claro */
 body.dark {
   color-scheme: dark;
@@ -567,12 +528,6 @@ body.light {
 [data-bs-theme="dark"] .table-responsive {
   background-color: var(--bs-card-bg);
 }
-
-
-
-
-
-
 
 /* =======================
    VARIABLES GLOBALES
@@ -666,14 +621,6 @@ body.light {
   fill: var(--select-remove-color) !important;
 }
 
-
-
-
-
-
-
-
-
 /* Estilos para el formulario (versión anterior mejorada) */
 .form-container {
   background: var(--bs-card-bg);
@@ -694,7 +641,8 @@ body.light {
   margin-bottom: 0.5rem;
 }
 
-.form-control, .form-select {
+.form-control,
+.form-select {
   background-color: var(--bs-card-bg);
   border: 1px solid var(--bs-border-color);
   color: var(--bs-body-color);
@@ -703,7 +651,8 @@ body.light {
   transition: all 0.2s ease;
 }
 
-.form-control:focus, .form-select:focus {
+.form-control:focus,
+.form-select:focus {
   border-color: rgba(166, 18, 36, 0.5);
   box-shadow: 0 0 0 0.25rem rgba(166, 18, 36, 0.1);
   outline: none;
@@ -740,7 +689,8 @@ body.light {
   flex: 1;
 }
 
-.primary-btn:hover, .secondary-btn:hover {
+.primary-btn:hover,
+.secondary-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -750,29 +700,13 @@ body.light {
   color: #6c757d;
 }
 
-
-
-
-
-
-
-
-
 input.form-control.border-color-login {
   border-color: #cc3300;
 }
 
-
-
-
-
-
-
-
-
 /* CAMBIANDO BOOTSTRAP AZUL A COLOR GRIS CUANDO ESPERA LA RESPUESTA DEL SERVIDOR (ESTO SE PUEDE VER MAS EN EL LOGIN)
 /* Eliminar borde azul y sombra cuando el botón está enfocado */
-.primary-btn:focus, 
+.primary-btn:focus,
 .primary-btn:active {
   outline: none !important;
   box-shadow: none !important;
@@ -796,12 +730,6 @@ input.form-control.border-color-login {
   border-color: #555 !important; /* Cambia también el borde, si es necesario */
 }
 
-
-
-
-
-
-
 /* DISENIO DE ALERTAS DE MODAL */
 .response-message {
   margin-top: 10px;
@@ -819,7 +747,6 @@ input.form-control.border-color-login {
   background-color: #f8d7da;
   color: #721c24;
 }
-
 
 .nav-hover-white:hover {
   background-color: white !important;

@@ -38,5 +38,6 @@ export default [
     route("actualizarEstado/:id", "routes/ReservacionEstado.tsx"),
 
     route("bitacora", "routes/BitacoraPage.tsx"),
+    route("notifications", "routes/NotificationsList.tsx"),
   ]),
 ] satisfies RouteConfig;

@@ -4,11 +4,27 @@ import type { User, UserUpdateDTO } from "~/types/user";
 import api from "../api/axios";
 //const API_URL = 'http://localhost:8000/api/users';
 
+// Obtener todos los usuarios con paginación y filtros opcionales
+interface UsuarioQueryParams {
+  page?: number;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  role_id?: number;
+  estado?: number;
+  phone?: string;
+}
+
 // Obtener todos los usuarios
-export const getUsuarios = async (): Promise<User[]> => {
+export const getUsuarios = async (params: UsuarioQueryParams = {}) => {
   try {
-    const res = await api.get("/users");
-    return res.data;
+    const res = await api.get("/users", { params });
+    return {
+      data: res.data.data,
+      current_page: res.data.current_page,
+      last_page: res.data.last_page,
+      total: res.data.total,
+    };
   } catch (error) {
     console.error("Error al obtener los usuarios:", error);
     throw error;

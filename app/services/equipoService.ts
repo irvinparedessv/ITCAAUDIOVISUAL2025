@@ -3,10 +3,27 @@ import type { Equipo, EquipoCreateDTO, EquipoUpdateDTO } from '~/types/equipo'
 
 //const API_URL = 'http://localhost:8000/api/equipos'
 
-export const getEquipos = async (): Promise<Equipo[]> => {
+export interface EquipoFilters {
+  search?: string
+  page?: number
+  perPage?: number
+  tipoEquipoId?: number
+}
+
+export const getEquipos = async (filters: EquipoFilters = {}): Promise<{ data: Equipo[], total: number }> => {
   try {
-    const res = await api.get('/equipos')
-    return res.data
+    const res = await api.get('/equipos', {
+      params: {
+        search: filters.search || '',
+        page: filters.page || 1,
+        per_page: filters.perPage || 5,
+        tipo_equipo_id: filters.tipoEquipoId || undefined,
+      },
+    })
+    return {
+      data: res.data.data,
+      total: res.data.total,
+    }
   } catch (error) {
     console.error("Error al obtener los equipos:", error)
     throw error

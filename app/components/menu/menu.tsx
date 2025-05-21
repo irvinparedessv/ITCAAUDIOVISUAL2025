@@ -269,99 +269,128 @@ const NavbarMenu = () => {
               </>
             )}
 
-<Dropdown
-  align="end"
-  className="w-200"
-  onToggle={(isOpen) => isOpen && markAsRead()}
->
-  <Dropdown.Toggle
-    variant="link"
-    id="dropdown-notifications"
-    className="position-relative w-200 d-flex align-items-center justify-content-start px-3 py-2 border-0"
-    style={{ background: "transparent", color: "#000" }}
-  >
-    <FaBell size={20} className="me-2 text-dark" />
-    Notificaciones
-    {unreadCount > 0 && (
-      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-        {unreadCount}
-        <span className="visually-hidden">notificaciones no leídas</span>
-      </span>
-    )}
-  </Dropdown.Toggle>
+    <Dropdown
+      align="end"
+      className="w-200"
+      onToggle={(isOpen) => isOpen && markAsRead()}
+    >
+      <Dropdown.Toggle
+        variant="link"
+        id="dropdown-notifications"
+        className="position-relative w-200 d-flex align-items-center justify-content-start px-3 py-2 border-0"
+        style={{ background: "transparent", color: "#000" }}
+      >
+        <FaBell size={20} className="me-2 text-dark" />
+        Notificaciones
+        {unreadCount > 0 && (
+          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            {unreadCount}
+            <span className="visually-hidden">notificaciones no leídas</span>
+          </span>
+        )}
+      </Dropdown.Toggle>
 
-  <Dropdown.Menu
-    style={{
-      background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
-      minWidth: "300px",
-      maxHeight: "400px",
-      overflowY: "auto",
-    }}
-  >
-    <Dropdown.Header className="d-flex justify-content-between align-items-center">
-      <span>Notificaciones</span>
-      {notificaciones.length > 0 && (
-        <button
-          className="btn btn-sm btn-outline-danger"
-          onClick={(e) => {
-            e.stopPropagation();
-            clearAllNotifications();
-          }}
-        >
-          Limpiar todas
-        </button>
-      )}
-    </Dropdown.Header>
-    <Dropdown.Divider />
+      <Dropdown.Menu
+        style={{
+          background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
+          minWidth: "300px",
+          maxHeight: "400px",
+          overflowY: "auto",
+        }}
+      >
+        <Dropdown.Header className="d-flex justify-content-between align-items-center">
+          <span>Notificaciones</span>
+          {notificaciones.length > 0 && (
+            <button
+              className="btn btn-sm btn-outline-danger"
+              onClick={(e) => {
+                e.stopPropagation();
+                clearAllNotifications();
+              }}
+            >
+              Limpiar todas
+            </button>
+          )}
+        </Dropdown.Header>
+        <Dropdown.Divider />
 
-    {notificaciones.length > 0 ? (
-      notificaciones.map((noti) => (
-        <Dropdown.Item
-  key={noti.id}
-  onClick={() => {
-    if (noti.reserva?.estado === "Pendiente") {
-      navigate(`/actualizarEstado/${noti.reserva?.id}`);
-    } else {
-      navigate("/reservations");
-    }
-  }}
-  className={`d-flex justify-content-between align-items-start py-2 ${
-    noti.unread ? "bg-light" : ""
-  }`}
->
-  <div className="flex-grow-1">
-    <div className="fw-bold">
-      {noti.reserva?.user || "Estado de Reserva"}
-    </div>
-    <small>
-      Reserva en {noti.reserva?.aula} –{" "}
-      {new Date(noti.reserva?.fecha_reserva).toLocaleString()}
-    </small>
-    <div className="text-muted small">
-      Recibido: {new Date(noti.createdAt).toLocaleTimeString()}
-    </div>
-  </div>
-  <button
-    className="btn btn-sm btn-outline-danger ms-2"
-    onClick={(e) => {
-      e.stopPropagation();
-      removeNotification(noti.id);
-    }}
-    title="Eliminar notificación"
-    style={{ padding: "0.15rem 0.3rem" }}
-  >
-    <FaTimes size={12} />
-  </button>
-</Dropdown.Item>
-
-      ))
-    ) : (
-      <Dropdown.Item className="text-center py-2">
-        No hay notificaciones
-      </Dropdown.Item>
-    )}
-  </Dropdown.Menu>
-</Dropdown>
+        {notificaciones.length > 0 ? (
+          <>
+            {notificaciones.map((noti) => (
+              <Dropdown.Item
+                key={noti.id}
+                onClick={() => {
+                  if (noti.reserva?.estado === "Pendiente") {
+                    navigate(`/actualizarEstado/${noti.reserva?.id}`);
+                  } else {
+                    navigate("/reservations");
+                  }
+                }}
+                className={`d-flex justify-content-between align-items-start py-2 ${
+                  noti.unread ? "bg-light" : ""
+                }`}
+              >
+                <div className="flex-grow-1">
+                  <div className="fw-bold">
+                    {noti.reserva?.user || "Estado de Reserva"}
+                  </div>
+                  <small>
+                    Reserva en {noti.reserva?.aula} –{" "}
+                    {new Date(noti.reserva?.fecha_reserva).toLocaleString()}
+                  </small>
+                  <div className="text-muted small">
+                    Recibido: {new Date(noti.createdAt).toLocaleTimeString()}
+                  </div>
+                </div>
+                <button
+                  className="btn btn-sm btn-outline-danger ms-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeNotification(noti.id);
+                  }}
+                  title="Eliminar notificación"
+                  style={{ padding: "0.15rem 0.3rem" }}
+                >
+                  <FaTimes size={12} />
+                </button>
+              </Dropdown.Item>
+            ))}
+            
+            <Dropdown.Divider />
+            <Dropdown.Item 
+              onClick={() => navigate("/notifications")}
+              className="text-center py-2 fw-bold"
+              style={{ 
+                background: "rgba(255, 255, 255, 0.2)",
+                color: "#000",
+                cursor: "pointer",
+               
+              }}
+            >
+              Ver todas las notificaciones
+            </Dropdown.Item>
+          </>
+        ) : (
+          <>
+            <Dropdown.Item className="text-center py-2">
+              No hay notificaciones
+            </Dropdown.Item>
+            <Dropdown.Divider />
+            <Dropdown.Item 
+              onClick={() => navigate("/notifications")}
+              className="text-center py-2 fw-bold"
+              style={{ 
+                background: "rgba(255, 255, 255, 0.2)",
+                color: "#000",
+                cursor: "pointer"
+              }}
+            >
+              Ver todas las notificaciones
+            </Dropdown.Item>
+          </>
+        )}
+      </Dropdown.Menu>
+    </Dropdown>
 
 
             {/* 👤 Usuario */}

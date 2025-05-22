@@ -92,6 +92,34 @@ export default function EquipmentReservationForm() {
     fetchTipos();
   }, []);
 
+    useEffect(() => {
+    const fetchEquipmentsByTipoReserva = async () => {
+      if (!formData.tipoReserva) {
+        setEquipmentOptions([]);
+        return;
+      }
+
+      try {
+        setLoadingEquipments(true);
+        const response = await api.get(`/equiposPorTipo/${formData.tipoReserva.value}`);
+        const data = response.data;
+        const options = data.map((item: any) => ({
+          value: item.id,
+          label: item.nombre,
+        }));
+
+        setEquipmentOptions(options);
+      } catch (error) {
+        toast.error("Error cargando los equipos para este tipo de reserva.");
+      } finally {
+        setLoadingEquipments(false);
+      }
+    };
+
+    fetchEquipmentsByTipoReserva();
+  }, [formData.tipoReserva]);
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -164,37 +192,8 @@ export default function EquipmentReservationForm() {
       <h2 className="mb-4 text-center fw-bold">Reservación de Equipos</h2>
 
       <form onSubmit={handleSubmit}>
-        {/* Multiselect Equipos */}
-        <div className="mb-4">
-          <label className="form-label d-flex align-items-center">
-            <FaBoxes className="me-2" />
-            Equipos
-          </label>
-          {loadingEquipments ? (
-            <div className="d-flex justify-content-center">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
-            </div>
-          ) : (
-            <Select
-              isMulti
-              options={equipmentOptions}
-              value={formData.equipment}
-              onChange={(selected) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  equipment: selected,
-                }))
-              }
-              placeholder="Selecciona equipos"
-              className="react-select-container"
-              classNamePrefix="react-select"
-            />
-          )}
-        </div>
-
-        <div className="mb-4">
+          {/* TIPO RESERVA */}
+         <div className="mb-4">
           <label className="form-label d-flex align-items-center">
             <FaCalendarAlt className="me-2" />
             Tipo de Reserva
@@ -222,6 +221,41 @@ export default function EquipmentReservationForm() {
           )}
         </div>
 
+        {/* Multiselect Equipos */}
+        <div className="mb-4">
+          <label className="form-label d-flex align-items-center">
+            <FaBoxes className="me-2" />
+            Equipos
+          </label>
+          {loadingEquipments ? (
+            <div className="d-flex justify-content-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          ) : (
+           <Select
+              isMulti
+              options={equipmentOptions}
+              value={formData.equipment}
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  equipment: selected,
+                }))
+              }
+              isDisabled={!formData.tipoReserva}
+              placeholder={
+                !formData.tipoReserva
+                  ? "Selecciona un tipo de reserva primero"
+                  : "Selecciona equipos"
+              }
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
+
+          )}
+        </div>
 
 
         {/* Select Aula */}

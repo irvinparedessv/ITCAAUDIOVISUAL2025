@@ -5,6 +5,7 @@ import { BrowserMultiFormatReader } from "@zxing/library";
 import { useAuth } from "../hooks/AuthContext";
 import toast from "react-hot-toast";
 import { FaEye, FaQrcode } from "react-icons/fa";
+import type { TipoReserva } from "~/types/tipoReserva";
 
 type Role = {
   id: number;
@@ -61,6 +62,7 @@ type Reservation = {
   aula: string;
   equipos: Equipo[];
   codigo_qr: CodigoQR;
+  tipo_reserva: TipoReserva;
 };
 
 export default function ReservationList() {
@@ -109,6 +111,7 @@ export default function ReservationList() {
           <thead className="table-dark">
             <tr>
               <th className="rounded-top-start">Usuario</th>
+              <th>Tipo Reserva</th>
               <th>Equipos</th>
               <th>Aula</th>
               <th>Fecha Salida</th>
@@ -123,6 +126,7 @@ export default function ReservationList() {
                 <td className="fw-bold">
                   {reserva.user.first_name}-{reserva.user.last_name}
                 </td>
+                <td>{reserva.tipo_reserva?.nombre}</td>
                 <td>
                   {reserva.equipos
                     .slice(0, 2)
@@ -339,6 +343,18 @@ export default function ReservationList() {
                       >
                         {selectedReservation.estado}
                       </Badge>
+                    </div>
+                    <div className="d-flex align-items-center mb-3">
+                      <span
+                        className="d-inline-block text-nowrap me-3"
+                        style={{ width: "100px", fontWeight: "500" }}
+                      >
+                        <i className="bi bi-bookmark-star me-2 text-body-emphasis"></i>
+                        Tipo
+                      </span>
+                      <p className="mb-0 fw-semibold flex-grow-1">
+                        {selectedReservation.tipo_reserva?.nombre}
+                      </p>
                     </div>
                   </div>
                 </div>

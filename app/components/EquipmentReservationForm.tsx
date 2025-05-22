@@ -13,6 +13,7 @@ import {
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../api/axios";
+import { getTipoReservas } from "~/services/tipoReservaService";
 
 export default function EquipmentReservationForm() {
   type OptionType = { value: string; label: string };
@@ -23,6 +24,7 @@ export default function EquipmentReservationForm() {
     date: "",
     startTime: "",
     endTime: "",
+    tipoReserva: null as SingleValue<OptionType>,
   });
 
   const [equipmentOptions, setEquipmentOptions] = useState<OptionType[]>([]);
@@ -30,6 +32,8 @@ export default function EquipmentReservationForm() {
   const [loadingEquipments, setLoadingEquipments] = useState(true);
   const [loadingAulas, setLoadingAulas] = useState(true);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>([]);
+  const [loadingTipoReserva, setLoadingTipoReserva] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -70,6 +74,24 @@ export default function EquipmentReservationForm() {
     fetchAulas();
   }, []);
 
+  useEffect(() => {
+    const fetchTipos = async () => {
+      try {
+        const tipos = await getTipoReservas();
+        setTipoReservaOptions(tipos.map(tr => ({
+          value: tr.id.toString(),
+          label: tr.nombre
+        })));
+      } catch (error) {
+        toast.error("Error cargando tipos de reserva");
+      } finally {
+        setLoadingTipoReserva(false);
+      }
+    };
+
+    fetchTipos();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -82,6 +104,7 @@ export default function EquipmentReservationForm() {
       date: "",
       startTime: "",
       endTime: "",
+      tipoReserva: null,
     });
   };
 
@@ -120,6 +143,7 @@ export default function EquipmentReservationForm() {
       fecha_reserva: formData.date,
       startTime: formData.startTime,
       endTime: formData.endTime,
+      tipo_reserva_id: formData.tipoReserva?.value, 
     };
 
     try {
@@ -169,6 +193,36 @@ export default function EquipmentReservationForm() {
             />
           )}
         </div>
+
+        <div className="mb-4">
+          <label className="form-label d-flex align-items-center">
+            <FaCalendarAlt className="me-2" />
+            Tipo de Reserva
+          </label>
+          {loadingTipoReserva ? (
+            <div className="d-flex justify-content-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          ) : (
+            <Select
+              options={tipoReservaOptions}
+              value={formData.tipoReserva}
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  tipoReserva: selected,
+                }))
+              }
+              placeholder="Selecciona el tipo de reserva"
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
+          )}
+        </div>
+
+
 
         {/* Select Aula */}
         <div className="mb-4">

@@ -1,14 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '~/api/axios'
-
-interface Bitacora {
-  id: number;
-  created_at: string;
-  nombre_usuario: string;
-  modulo: string;
-  accion: string;
-  descripcion: string;
-}
+import type { Bitacora } from '~/types/bitacora';
 
 export default function BitacoraPage() {
   const [registros, setRegistros] = useState<Bitacora[]>([]);

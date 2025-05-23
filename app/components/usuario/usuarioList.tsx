@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { getUsuarios, deleteUsuario } from "~/services/userService";
+import { getUsuarios, deleteUsuario, resetPassword, forgotPassword } from "~/services/userService";
 import type { User } from "~/types/user";
-import { FaUserCircle, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
+import { FaUserCircle, FaEdit, FaTrash, FaSearch, FaKey } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const rolesMap: Record<number, string> = {
@@ -26,12 +26,13 @@ const UsuarioList = () => {
     setLoading(true);
     try {
       const response = await getUsuarios({ page });
-      setUsuarios(response.data);
-      setTotalPages(response.last_page);
-      setCurrentPage(response.current_page);
+      setUsuarios(response?.data || []);
+      setTotalPages(response?.last_page || 1);
+      setCurrentPage(response?.current_page || 1);
     } catch (error) {
       console.error("Error al cargar usuarios:", error);
       toast.error("Error al cargar usuarios");
+      setUsuarios([]);
     } finally {
       setLoading(false);
     }
@@ -55,11 +56,27 @@ const UsuarioList = () => {
     }
   };
 
-  const filteredUsuarios = usuarios.filter((u) => {
-    const fullName = `${u.first_name} ${u.last_name}`.toLowerCase();
+  const handleResetPassword = async (userId: number, email: string) => {
+    const confirmReset = window.confirm(
+      `¿Estás seguro que deseas restablecer la contraseña de ${email}? Se enviará un enlace al correo electrónico.`
+    );
+
+    if (confirmReset) {
+      try {
+        await forgotPassword(email);
+        toast.success(`Se ha enviado un enlace de restablecimiento a ${email}`);
+      } catch (error) {
+        toast.error("Error al enviar el enlace de restablecimiento");
+        console.error("Error al restablecer contraseña:", error);
+      }
+    }
+  };
+
+  const filteredUsuarios = (usuarios || []).filter((u) => {
+    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase();
     return (
       fullName.includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
+      (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -185,6 +202,24 @@ const UsuarioList = () => {
                         >
                           <FaEdit className="fs-5" />
                         </Link>
+                        <button
+                          className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+                          title="Restablecer contraseña"
+                          onClick={() => handleResetPassword(usuario.id, usuario.email)}
+                          style={{
+                            width: "44px",
+                            height: "44px",
+                            transition: "transform 0.2s ease-in-out",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.transform = "scale(1.15)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.transform = "scale(1)")
+                          }
+                        >
+                          <FaKey className="fs-5" />
+                        </button>
                         <button
                           className="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center"
                           title="Desactivar usuario"

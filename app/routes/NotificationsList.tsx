@@ -112,7 +112,7 @@ export default function NotificationsList() {
                   <ul>
                     {equipos.map((equipo: any, index: number) => (
                       <li key={index}>
-                        <strong>{equipo.nombre}</strong> ({equipo.tipo ?? 'Sin tipo'})
+                        <strong>{equipo.nombre}</strong> ({equipo.tipo_equipo ?? 'Sin tipo'})
                       </li>
                     ))}
                   </ul>
@@ -120,7 +120,7 @@ export default function NotificationsList() {
               );
             })()}
 
-            <p><strong>Tipo:</strong> {selectedNotification.data.reserva?.tipo ?? selectedNotification.data.tipo ?? 'No especificado'}</p>
+            <p><strong>Tipo Reserva:</strong> {selectedNotification.data.reserva?.tipo_reserva ?? selectedNotification.data.tipo_reserva ?? 'No especificado'}</p>
             <p><strong>Estado:</strong> {selectedNotification.data.estado ?? selectedNotification.data.reserva?.estado ?? 'No especificado'}</p>
 
             {selectedNotification.data.comentario && (

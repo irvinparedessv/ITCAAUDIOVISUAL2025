@@ -74,22 +74,34 @@ export default function ReservationList() {
   const [showModal, setShowModal] = useState(false);
   const qrBaseUrl = "https://midominio.com/qrcode/";
   const [historial, setHistorial] = useState<Bitacora[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
 
   const fetchHistorial = async (reservaId: number) => {
-    try {
-      const response = await api.get(`/bitacoras/reserva/${reservaId}`);
-      setHistorial(response.data);
-    } catch (error) {
-      console.error("Error al obtener historial:", error);
-    }
-  };
+  if (historialCache[reservaId]) {
+    setHistorial(historialCache[reservaId]);
+    return;
+  }
+
+  setLoadingHistorial(true);
+  try {
+    const response = await api.get(`/bitacoras/reserva/${reservaId}`);
+    setHistorial(response.data);
+    setHistorialCache(prev => ({...prev, [reservaId]: response.data}));
+  } catch (error) {
+    console.error("Error al obtener historial:", error);
+    toast.error("Error al cargar el historial de cambios");
+  } finally {
+    setLoadingHistorial(false);
+  }
+};
 
  // Llama esta función cuando abras el modal
   useEffect(() => {
-    if (selectedReservation) {
+    if (showModal && selectedReservation) {
       fetchHistorial(selectedReservation.id);
     }
-  }, [selectedReservation]);
+  }, [showModal, selectedReservation]);
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -108,6 +120,7 @@ export default function ReservationList() {
   }, [user]);
 
   const handleDetailClick = (reservation: Reservation) => {
+    setHistorial([]); // Resetear para mostrar carga limpia
     setSelectedReservation(reservation);
     setShowModal(true);
   };
@@ -375,23 +388,27 @@ export default function ReservationList() {
                       </p>
                     </div>
                   </div>
-                   <div className="mt-4">
+                  <div className="mt-4">
                     <h5>Historial de cambios</h5>
-                    {historial.length > 0 ? (
+                    {loadingHistorial ? (
+                      <div className="text-center my-3">
+                        <div className="spinner-border text-primary" role="status">
+                          <span className="visually-hidden">Cargando...</span>
+                        </div>
+                      </div>
+                    ) : historial.length > 0 ? (
                       <ul className="list-group">
-                        {historial.map((item) => {
-                          return (
-                            <li key={item.id} className="list-group-item">
-                              <div className="d-flex justify-content-between">
-                                <strong>{item.nombre_usuario}</strong>
-                                <span>{formatDate(item.created_at)}</span>
-                              </div>
-                              <div className="mt-2">
-                                <Badge bg="info">{item.accion}</Badge>
-                              </div>
-                            </li>
-                          );
-                        })}
+                        {historial.map((item) => (
+                          <li key={item.id} className="list-group-item">
+                            <div className="d-flex justify-content-between">
+                              <strong>{item.nombre_usuario}</strong>
+                              <span>{formatDate(item.created_at)}</span>
+                            </div>
+                            <div className="mt-2">
+                              <Badge bg="info">{item.accion}</Badge>
+                            </div>
+                          </li>
+                        ))}
                       </ul>
                     ) : (
                       <p className="text-muted">No hay registro de cambios</p>

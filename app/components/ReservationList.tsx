@@ -6,6 +6,7 @@ import { useAuth } from "../hooks/AuthContext";
 import toast from "react-hot-toast";
 import { FaEye, FaQrcode } from "react-icons/fa";
 import type { TipoReserva } from "~/types/tipoReserva";
+import type { Bitacora } from "~/types/bitacora";
 
 type Role = {
   id: number;
@@ -72,6 +73,23 @@ export default function ReservationList() {
     useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const qrBaseUrl = "https://midominio.com/qrcode/";
+  const [historial, setHistorial] = useState<Bitacora[]>([]);
+
+  const fetchHistorial = async (reservaId: number) => {
+    try {
+      const response = await api.get(`/bitacoras/reserva/${reservaId}`);
+      setHistorial(response.data);
+    } catch (error) {
+      console.error("Error al obtener historial:", error);
+    }
+  };
+
+ // Llama esta función cuando abras el modal
+  useEffect(() => {
+    if (selectedReservation) {
+      fetchHistorial(selectedReservation.id);
+    }
+  }, [selectedReservation]);
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -356,6 +374,28 @@ export default function ReservationList() {
                         {selectedReservation.tipo_reserva?.nombre}
                       </p>
                     </div>
+                  </div>
+                   <div className="mt-4">
+                    <h5>Historial de cambios</h5>
+                    {historial.length > 0 ? (
+                      <ul className="list-group">
+                        {historial.map((item) => {
+                          return (
+                            <li key={item.id} className="list-group-item">
+                              <div className="d-flex justify-content-between">
+                                <strong>{item.nombre_usuario}</strong>
+                                <span>{formatDate(item.created_at)}</span>
+                              </div>
+                              <div className="mt-2">
+                                <Badge bg="info">{item.accion}</Badge>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="text-muted">No hay registro de cambios</p>
+                    )}
                   </div>
                 </div>
               </div>

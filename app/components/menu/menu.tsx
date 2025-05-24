@@ -1,16 +1,18 @@
-import { Navbar, Nav, Container, Dropdown } from "react-bootstrap";
+import { Navbar, Nav, Container, Dropdown, Offcanvas } from "react-bootstrap";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   FaHome, FaPlus, FaList, FaUserCircle, FaMoon, FaSun, 
-  FaCalendarAlt, FaTimes 
+  FaCalendarAlt, FaTimes, FaBars 
 } from "react-icons/fa";
 import { FaBell, FaComputer } from "react-icons/fa6";
 import { Role } from "../../types/roles";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../hooks/AuthContext";
 import { useNotificaciones } from "~/hooks/useNotificaciones";
+import React from 'react';
 
-// Definición de tipos mejorada
+// Estilos CSS integrados
+
 interface EquipoNotification {
   nombre: string;
   tipo_equipo?: string;
@@ -44,7 +46,6 @@ interface Notificacion {
   type: string;
 }
 
-// Componente de ítem de notificación
 const NotificationItem = ({ 
   noti, 
   userRole, 
@@ -66,7 +67,6 @@ const NotificationItem = ({
   const estadoStyle = getEstadoStyle(estado);
 
   const handleClick = () => {
-    // Marcar como leído solo si no está leído
     if (noti.unread) {
       markAsRead(noti.id);
     }
@@ -131,11 +131,26 @@ const NotificationItem = ({
   );
 };
 
+const CustomToggle = React.forwardRef(({ children, onClick }: any, ref: any) => (
+  <a
+    href=""
+    ref={ref}
+    onClick={(e) => {
+      e.preventDefault();
+      onClick(e);
+    }}
+    className="d-flex align-items-center w-100 px-3 py-2 text-dark border-0 bg-transparent"
+  >
+    {children}
+  </a>
+));
+
 const NavbarMenu = () => {
   const { user, logout, checkAccess } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const {
     notificaciones,
     unreadCount,
@@ -145,7 +160,17 @@ const NavbarMenu = () => {
     refreshNotifications,
   } = useNotificaciones();
 
-  // Manejo del tema oscuro
+  useEffect(() => {
+    // Agregar estilos al head del documento
+    const styleElement = document.createElement('style');
+    
+    document.head.appendChild(styleElement);
+
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
   useEffect(() => {
     const savedMode = localStorage.getItem("darkMode");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -182,194 +207,481 @@ const NavbarMenu = () => {
 
   if (!shouldShowNavbar) return null;
 
-  return (
-    <Navbar
-      expand="xxl"
-      className="px-4 border-bottom"
-      style={{
-        background: "linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92))",
-      }}
-    >
-      <Container fluid>
-        <Navbar.Brand as={Link} to="/" className="fw-bold">
-          <img
-            src="/images/logo.png"
-            alt="Logo ReservasTI"
-            style={{ height: "50px" }}
-          />
-        </Navbar.Brand>
+  const handleCloseSidebar = () => setShowSidebar(false);
+  const handleShowSidebar = () => setShowSidebar(true);
 
-        <Navbar.Toggle aria-controls="basic-navbar-nav" className="custom-toggler">
-          <span className="navbar-toggler-icon">
-            <div />
-          </span>
-        </Navbar.Toggle>
+  const renderMainMenu = () => (
+    <>
+      <Nav.Link 
+        as={Link} 
+        to="/" 
+        className="px-3 py-2 rounded text-dark" 
+        onClick={handleCloseSidebar}
+      >
+        <FaHome className="me-1" /> Inicio
+      </Nav.Link>
 
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="ms-auto align-items-center gap-2 flex-column flex-lg-row">
-            {/* Inicio */}
-            <Nav.Link as={Link} to="/" className="px-3 py-2 rounded w-200">
-              <FaHome className="me-1" /> Inicio
-            </Nav.Link>
-
-            {/* ADMINISTRADOR */}
-            {user?.role === Role.Administrador && (
-              <>
-                {checkAccess("/reservations") && (
-                  <Nav.Link
-                    as={Link}
-                    to="/reservations"
-                    className="px-3 py-2 rounded nav-hover-white w-200"
-                  >
-                    <FaList className="me-1" /> Reservas
-                  </Nav.Link>
-                )}
-
-                {checkAccess("/equipo") && (
-                  <Dropdown className="w-200">
-                    <Dropdown.Toggle
-                      variant="link"
-                      id="dropdown-equipo"
-                      className="nav-dropdown-toggle px-3 py-2 rounded w-200 d-flex align-items-center"
-                    >
-                      <FaComputer className="me-1" /> Equipos
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu
-                      style={{
-                        background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
-                        minWidth: "300px",
-                      }}
-                    >
-                      <Dropdown.Item
-                        as={Link}
-                        to="/equipo"
-                        className="d-flex align-items-start py-2"
-                      >
-                        <FaList className="me-2" />
-                        <div>
-                          <div className="fw-bold">Listado de Equipos</div>
-                          <small>Ver todos los equipos</small>
-                        </div>
-                      </Dropdown.Item>
-                      <Dropdown.Item
-                        as={Link}
-                        to="/formEquipo"
-                        className="d-flex align-items-start py-2"
-                      >
-                        <FaPlus className="me-2" />
-                        <div>
-                          <div className="fw-bold">Nuevo Equipo</div>
-                          <small>Agregar un nuevo equipo</small>
-                        </div>
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                )}
-
-                {checkAccess("/formEspacio") && (
-                  <Nav.Link
-                    as={Link}
-                    to="/formEspacio"
-                    className="px-3 py-2 rounded nav-hover-white w-200"
-                  >
-                    <FaList className="me-1" /> Espacios
-                  </Nav.Link>
-                )}
-              </>
-            )}
-
-            {/* ENCARGADO */}
-            {user?.role === Role.Encargado && (
-              <>
-                {checkAccess("/formEquipo") && (
-                  <Nav.Link
-                    as={Link}
-                    to="/formEquipo"
-                    className="px-3 py-2 rounded nav-hover-white w-200"
-                  >
-                    <FaPlus className="me-1" /> Equipos
-                  </Nav.Link>
-                )}
-                {checkAccess("/formEspacio") && (
-                  <Nav.Link
-                    as={Link}
-                    to="/formEspacio"
-                    className="px-3 py-2 rounded nav-hover-white w-200"
-                  >
-                    <FaList className="me-1" /> Reservas
-                  </Nav.Link>
-                )}
-              </>
-            )}
-
-            {/* PRESTAMISTA */}
-            {user?.role === Role.Prestamista && (
-              <>
-                {checkAccess("/addreservation") && (
-                  <Nav.Link
-                    as={Link}
-                    to="/addreservation"
-                    className="px-3 py-2 rounded nav-hover-white w-200"
-                  >
-                    <FaPlus className="me-1" /> Reservar
-                  </Nav.Link>
-                )}
-                {checkAccess("/reservations") && (
-                  <Dropdown className="w-200">
-                    <Dropdown.Toggle
-                      variant="link"
-                      id="dropdown-reservas"
-                      className="nav-dropdown-toggle px-3 py-2 rounded w-200 d-flex align-items-center"
-                    >
-                      <FaList className="me-1" /> Mis Reservas
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu
-                      style={{
-                        background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
-                        minWidth: "300px",
-                      }}
-                    >
-                      <Dropdown.Item
-                        as={Link}
-                        to="/reservations-room"
-                        className="d-flex align-items-start py-2"
-                      >
-                        <FaCalendarAlt className="me-2" />
-                        <div>
-                          <div className="fw-bold">Reservas de Aulas</div>
-                          <small>Ver o gestionar aulas reservadas</small>
-                        </div>
-                      </Dropdown.Item>
-                      <Dropdown.Item
-                        as={Link}
-                        to="/reservations"
-                        className="d-flex align-items-start py-2"
-                      >
-                        <FaComputer className="me-2" />
-                        <div>
-                          <div className="fw-bold">Reservas de Equipos</div>
-                          <small>Ver o gestionar equipos reservados</small>
-                        </div>
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                )}
-              </>
-            )}
-
-            {/* Menú de notificaciones */}
-            <Dropdown
-              align="end"
-              className="w-200"
+      {user?.role === Role.Administrador && (
+        <>
+          {checkAccess("/reservations") && (
+            <Nav.Link
+              as={Link}
+              to="/reservations"
+              className="px-3 py-2 rounded text-dark"
+              onClick={handleCloseSidebar}
             >
+              <FaList className="me-1" /> Reservas
+            </Nav.Link>
+          )}
+
+          {checkAccess("/equipo") && (
+            <Dropdown className="mb-2 offcanvas-dropdown">
+              <Dropdown.Toggle
+                as={CustomToggle}
+                id="dropdown-equipo-sidebar"
+                className="d-flex align-items-center w-100 px-3 py-2 text-dark border-0 bg-transparent"
+              >
+                <FaComputer className="me-1" /> Equipos
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="w-100">
+                <Dropdown.Item
+                  as={Link}
+                  to="/equipo"
+                  className="d-flex align-items-center gap-2 text-dark"
+                  onClick={handleCloseSidebar}
+                >
+                  <FaList className="me-2" />
+                  Listado de Equipos
+                </Dropdown.Item>
+                <Dropdown.Item
+                  as={Link}
+                  to="/formEquipo"
+                  className="d-flex align-items-center gap-2 text-dark"
+                  onClick={handleCloseSidebar}
+                >
+                  <FaPlus className="me-2" />
+                  Nuevo Equipo
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          )}
+
+          {checkAccess("/formEspacio") && (
+            <Nav.Link
+              as={Link}
+              to="/formEspacio"
+              className="px-3 py-2 rounded text-dark"
+              onClick={handleCloseSidebar}
+            >
+              <FaList className="me-1" /> Espacios
+            </Nav.Link>
+          )}
+        </>
+      )}
+
+      {user?.role === Role.Encargado && (
+        <>
+          {checkAccess("/formEquipo") && (
+            <Nav.Link
+              as={Link}
+              to="/formEquipo"
+              className="px-3 py-2 rounded text-dark"
+              onClick={handleCloseSidebar}
+            >
+              <FaPlus className="me-1" /> Equipos
+            </Nav.Link>
+          )}
+          {checkAccess("/formEspacio") && (
+            <Nav.Link
+              as={Link}
+              to="/formEspacio"
+              className="px-3 py-2 rounded text-dark"
+              onClick={handleCloseSidebar}
+            >
+              <FaList className="me-1" /> Reservas
+            </Nav.Link>
+          )}
+        </>
+      )}
+
+      {user?.role === Role.Prestamista && (
+        <>
+          {checkAccess("/addreservation") && (
+            <Nav.Link
+              as={Link}
+              to="/addreservation"
+              className="px-3 py-2 rounded text-dark"
+              onClick={handleCloseSidebar}
+            >
+              <FaPlus className="me-1" /> Reservar
+            </Nav.Link>
+          )}
+          {checkAccess("/reservations") && (
+            <Dropdown className="mb-2 offcanvas-dropdown">
+              <Dropdown.Toggle
+                as={CustomToggle}
+                id="dropdown-reservas-sidebar"
+                className="d-flex align-items-center w-100 px-3 py-2 text-dark border-0 bg-transparent"
+              >
+                <FaList className="me-1" /> Mis Reservas
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="w-100">
+                <Dropdown.Item
+                  as={Link}
+                  to="/reservations-room"
+                  className="d-flex align-items-center gap-2 text-dark"
+                  onClick={handleCloseSidebar}
+                >
+                  <FaCalendarAlt className="me-2" />
+                  Reservas de Aulas
+                </Dropdown.Item>
+                <Dropdown.Item
+                  as={Link}
+                  to="/reservations"
+                  className="d-flex align-items-center gap-2 text-dark"
+                  onClick={handleCloseSidebar}
+                >
+                  <FaComputer className="me-2" />
+                  Reservas de Equipos
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          )}
+        </>
+      )}
+    </>
+  );
+
+  const renderNotificationsDropdown = () => (
+    <Dropdown className="mb-3 offcanvas-dropdown">
+      <Dropdown.Toggle 
+        as={CustomToggle}
+        id="dropdown-notifications-sidebar"
+        className="d-flex align-items-center w-100 px-3 py-2 text-dark border-0 bg-transparent"
+      >
+        <FaBell className="me-2" />
+        <span>Notificaciones</span>
+        {unreadCount > 0 && (
+          <span className="badge rounded-pill bg-danger ms-2">
+            {unreadCount}
+          </span>
+        )}
+      </Dropdown.Toggle>
+      <Dropdown.Menu className="w-100">
+        <Dropdown.Header className="d-flex justify-content-between align-items-center fw-bold">
+          <span>Notificaciones ({notificaciones.length})</span>
+          <div>
+            {notificaciones.length > 0 && (
+              <>
+                <button
+                  className="btn btn-sm btn-outline-danger me-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearAllNotifications();
+                  }}
+                >
+                  Limpiar
+                </button>
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/notifications");
+                  }}
+                >
+                  Ver todas
+                </button>
+              </>
+            )}
+          </div>
+        </Dropdown.Header>
+        
+        {notificaciones.length > 0 ? (
+          <>
+            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+              {notificaciones.slice(0, 5).map((noti) => (
+                <NotificationItem
+                  key={noti.id}
+                  noti={noti}
+                  userRole={user?.role || Role.Prestamista}
+                  navigate={navigate}
+                  removeNotification={removeNotification}
+                  markAsRead={markAsRead}
+                />
+              ))}
+            </div>
+            <Dropdown.Item 
+              className="text-center py-3 border-top"
+              onClick={() => navigate("/notifications")}
+            >
+              <button className="btn btn-sm btn-notification-link">
+                Ver todas las notificaciones
+              </button>
+            </Dropdown.Item>
+          </>
+        ) : (
+          <Dropdown.Item className="text-center py-3">
+            No hay notificaciones
+          </Dropdown.Item>
+        )}
+      </Dropdown.Menu>
+    </Dropdown>
+  );
+
+  const renderUserDropdown = () => (
+    <Dropdown className="mb-3 offcanvas-dropdown">
+      <Dropdown.Toggle
+        as={CustomToggle}
+        id="dropdown-user-sidebar"
+        className="d-flex align-items-center w-100 px-3 py-2 text-dark border-0 bg-transparent"
+      >
+        {user?.image ? (
+          <img
+            src={`http://localhost:8000/storage/${user.image}`}
+            alt="User"
+            className="rounded-circle me-2"
+            style={{
+              width: "30px",
+              height: "30px",
+              objectFit: "cover",
+            }}
+          />
+        ) : (
+          <FaUserCircle className="me-2" />
+        )}
+        <span>{user?.first_name} {user?.last_name}</span>
+      </Dropdown.Toggle>
+      <Dropdown.Menu className="w-100">
+        <Dropdown.Item
+          as={Link}
+          to="/perfil"
+          className="d-flex align-items-center gap-2 text-dark"
+          onClick={handleCloseSidebar}
+        >
+          Ver Perfil
+        </Dropdown.Item>
+
+        <Dropdown.ItemText className="px-3 py-2 text-dark">
+          <div className="fw-bold">
+            {user?.first_name} {user?.last_name}
+          </div>
+          <small>{user?.email}</small>
+        </Dropdown.ItemText>
+        <Dropdown.Divider />
+
+        <Dropdown.Item
+          onClick={() => {
+            toggleDarkMode();
+            handleCloseSidebar();
+          }}
+          className="d-flex align-items-center gap-2 text-dark"
+        >
+          {darkMode ? <FaSun /> : <FaMoon />}
+          {darkMode ? "Modo Claro" : "Modo Oscuro"}
+        </Dropdown.Item>
+
+        <Dropdown.Item 
+          onClick={() => {
+            handleLogout();
+            handleCloseSidebar();
+          }}
+          className="text-dark"
+        >
+          Cerrar Sesión
+        </Dropdown.Item>
+      </Dropdown.Menu>
+    </Dropdown>
+  );
+
+  return (
+    <>
+      <Navbar
+        expand="xxl"
+        className="px-4 border-bottom"
+        style={{
+          background: "linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92))",
+        }}
+      >
+        <Container fluid>
+          <div className="d-flex align-items-center">
+            <button 
+              className="navbar-toggler me-2 border-0" 
+              onClick={handleShowSidebar}
+              style={{ background: 'transparent' }}
+            >
+              <FaBars size={24} className="text-dark" />
+            </button>
+            
+            <Navbar.Brand as={Link} to="/" className="fw-bold">
+              <img
+                src="/images/logo.png"
+                alt="Logo ReservasTI"
+                style={{ height: "50px" }}
+              />
+            </Navbar.Brand>
+          </div>
+
+          <Navbar.Collapse id="navbar-main-menu" className="justify-content-center">
+            <Nav className="ms-auto align-items-center gap-2 flex-column flex-lg-row navbar-nav">
+              <Nav.Link 
+                as={Link} 
+                to="/" 
+                className="px-3 py-2 rounded text-dark" 
+              >
+                <FaHome className="me-1" /> Inicio
+              </Nav.Link>
+
+              {user?.role === Role.Administrador && (
+                <>
+                  {checkAccess("/reservations") && (
+                    <Nav.Link
+                      as={Link}
+                      to="/reservations"
+                      className="px-3 py-2 rounded text-dark"
+                    >
+                      <FaList className="me-1" /> Reservas
+                    </Nav.Link>
+                  )}
+
+                  {checkAccess("/equipo") && (
+                    <Dropdown className="mx-1">
+                      <Dropdown.Toggle
+                        variant="link"
+                        id="dropdown-equipo"
+                        className="nav-dropdown-toggle px-3 py-2 rounded text-dark d-flex align-items-center"
+                      >
+                        <FaComputer className="me-1" /> Equipos
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu
+                        style={{
+                          background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
+                        }}
+                      >
+                        <Dropdown.Item
+                          as={Link}
+                          to="/equipo"
+                          className="d-flex align-items-start py-2 text-dark"
+                        >
+                          <FaList className="me-2" />
+                          <div>
+                            <div className="fw-bold">Listado de Equipos</div>
+                            <small>Ver todos los equipos</small>
+                          </div>
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                          as={Link}
+                          to="/formEquipo"
+                          className="d-flex align-items-start py-2 text-dark"
+                        >
+                          <FaPlus className="me-2" />
+                          <div>
+                            <div className="fw-bold">Nuevo Equipo</div>
+                            <small>Agregar un nuevo equipo</small>
+                          </div>
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  )}
+
+                  {checkAccess("/formEspacio") && (
+                    <Nav.Link
+                      as={Link}
+                      to="/formEspacio"
+                      className="px-3 py-2 rounded text-dark"
+                    >
+                      <FaList className="me-1" /> Espacios
+                    </Nav.Link>
+                  )}
+                </>
+              )}
+
+              {user?.role === Role.Encargado && (
+                <>
+                  {checkAccess("/formEquipo") && (
+                    <Nav.Link
+                      as={Link}
+                      to="/formEquipo"
+                      className="px-3 py-2 rounded text-dark"
+                    >
+                      <FaPlus className="me-1" /> Equipos
+                    </Nav.Link>
+                  )}
+                  {checkAccess("/formEspacio") && (
+                    <Nav.Link
+                      as={Link}
+                      to="/formEspacio"
+                      className="px-3 py-2 rounded text-dark"
+                    >
+                      <FaList className="me-1" /> Reservas
+                    </Nav.Link>
+                  )}
+                </>
+              )}
+
+              {user?.role === Role.Prestamista && (
+                <>
+                  {checkAccess("/addreservation") && (
+                    <Nav.Link
+                      as={Link}
+                      to="/addreservation"
+                      className="px-3 py-2 rounded text-dark"
+                    >
+                      <FaPlus className="me-1" /> Reservar
+                    </Nav.Link>
+                  )}
+                  {checkAccess("/reservations") && (
+                    <Dropdown className="mx-1">
+                      <Dropdown.Toggle
+                        variant="link"
+                        id="dropdown-reservas"
+                        className="nav-dropdown-toggle px-3 py-2 rounded text-dark d-flex align-items-center"
+                      >
+                        <FaList className="me-1" /> Mis Reservas
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu
+                        style={{
+                          background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
+                        }}
+                      >
+                        <Dropdown.Item
+                          as={Link}
+                          to="/reservations-room"
+                          className="d-flex align-items-start py-2 text-dark"
+                        >
+                          <FaCalendarAlt className="me-2" />
+                          <div>
+                            <div className="fw-bold">Reservas de Aulas</div>
+                            <small>Ver o gestionar aulas reservadas</small>
+                          </div>
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                          as={Link}
+                          to="/reservations"
+                          className="d-flex align-items-start py-2 text-dark"
+                        >
+                          <FaComputer className="me-2" />
+                          <div>
+                            <div className="fw-bold">Reservas de Equipos</div>
+                            <small>Ver o gestionar equipos reservados</small>
+                          </div>
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  )}
+                </>
+              )}
+            </Nav>
+          </Navbar.Collapse>
+
+          <div className="d-flex align-items-center ms-auto">
+            <Dropdown align="end" className="me-2 d-none d-xxl-block">
               <Dropdown.Toggle
                 variant="link"
-                id="dropdown-notifications"
-                className="position-relative w-200 d-flex align-items-center justify-content-start px-3 py-2 border-0"
-                style={{ background: "transparent", color: "#000" }}
+                id="dropdown-notifications-desktop"
+                className="position-relative d-flex align-items-center justify-content-start px-3 py-2 border-0 text-dark"
+                style={{ background: "transparent" }}
               >
-                <FaBell size={20} className="me-2 text-dark" />
-                Notificaciones
+                <FaBell size={20} className="me-2" />
                 {unreadCount > 0 && (
                   <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                     {unreadCount}
@@ -429,16 +741,13 @@ const NavbarMenu = () => {
                     ))}
                     
                     <Dropdown.Item 
-  className="text-center py-3 border-top notification-footer"
-  onClick={() => navigate("/notifications")}
->
-  <button className="btn btn-sm btn-notification-link">
-    Ver todas las notificaciones
-  </button>
-</Dropdown.Item>
-
-
-
+                      className="text-center py-3 border-top notification-footer"
+                      onClick={() => navigate("/notifications")}
+                    >
+                      <button className="btn btn-sm btn-notification-link">
+                        Ver todas las notificaciones
+                      </button>
+                    </Dropdown.Item>
                   </>
                 ) : (
                   <Dropdown.Item className="text-center py-3">
@@ -454,15 +763,13 @@ const NavbarMenu = () => {
               </Dropdown.Menu>
             </Dropdown>
 
-            {/* Menú de usuario */}
-            <Dropdown align="end" className="w-200">
+            <Dropdown align="end" className="d-none d-xxl-block">
               <Dropdown.Toggle
-                id="dropdown-user"
-                className="w-200 d-flex align-items-center justify-content-start gap-2 px-3 py-2"
+                id="dropdown-user-desktop"
+                className="d-flex align-items-center justify-content-start gap-2 px-3 py-2 text-dark"
                 style={{
                   background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
                   border: "none",
-                  color: "#000",
                 }}
               >
                 {user?.image ? (
@@ -486,46 +793,69 @@ const NavbarMenu = () => {
               <Dropdown.Menu
                 style={{
                   background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
-                  color: "#000",
                 }}
               >
                 <Dropdown.Item
                   as={Link}
                   to="/perfil"
-                  className="px-3 py-2 d-flex align-items-center gap-2"
+                  className="px-3 py-2 d-flex align-items-center gap-2 text-dark"
                 >
                   Ver Perfil
                 </Dropdown.Item>
 
-                <Dropdown.ItemText className="px-3 py-2" style={{ color: "#000" }}>
+                <Dropdown.ItemText className="px-3 py-2 text-dark">
                   <div className="fw-bold">
                     {user?.first_name} {user?.last_name}
                   </div>
-                  <small style={{ color: "#000" }}>{user?.email}</small>
+                  <small>{user?.email}</small>
                 </Dropdown.ItemText>
                 <Dropdown.Divider />
 
                 <Dropdown.Item
                   onClick={toggleDarkMode}
-                  className="px-3 py-2 d-flex align-items-center gap-2"
+                  className="px-3 py-2 d-flex align-items-center gap-2 text-dark"
                 >
                   {darkMode ? <FaSun /> : <FaMoon />}
                   {darkMode ? "Modo Claro" : "Modo Oscuro"}
                 </Dropdown.Item>
 
-                <Dropdown.Item onClick={handleLogout} className="px-3 py-2">
+                <Dropdown.Item onClick={handleLogout} className="px-3 py-2 text-dark">
                   Cerrar Sesión
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
-          </Nav>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
+          </div>
+        </Container>
+      </Navbar>
+
+      <Offcanvas 
+        show={showSidebar} 
+        onHide={handleCloseSidebar}
+        placement="start"
+        style={{
+          width: '280px',
+          background: "linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92))",
+        }}
+      >
+        <Offcanvas.Header closeButton closeVariant="black">
+          <Offcanvas.Title>
+            <img
+              src="/images/logo.png"
+              alt="Logo ReservasTI"
+              style={{ height: "40px" }}
+            />
+          </Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
+          {renderNotificationsDropdown()}
+          {renderMainMenu()}
+          {renderUserDropdown()}
+        </Offcanvas.Body>
+      </Offcanvas>
+    </>
   );
 };
 
-// Función auxiliar para estilizar el estado
 function getEstadoStyle(estado: string): { className: string, displayText: string } {
   const estadoLower = estado.toLowerCase();
   

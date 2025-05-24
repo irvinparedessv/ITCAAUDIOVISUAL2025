@@ -1,59 +1,161 @@
 import { Navbar, Nav, Container, Dropdown } from "react-bootstrap";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  FaHome,
-  FaPlus,
-  FaList,
-  FaUserCircle,
-  FaMoon,
-  FaSun,
-  FaCalendarAlt,
-  FaTimes,
+import { 
+  FaHome, FaPlus, FaList, FaUserCircle, FaMoon, FaSun, 
+  FaCalendarAlt, FaTimes 
 } from "react-icons/fa";
 import { FaBell, FaComputer } from "react-icons/fa6";
 import { Role } from "../../types/roles";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../hooks/AuthContext";
 import { useNotificaciones } from "~/hooks/useNotificaciones";
-//import Notifications from "../../utils/Notifications"; // Asegúrate de importar el componente Notifications
 
-interface Reserva {
-  id: number;
-  usuario: { nombre: string };
-  equipo: { nombre: string }[];
-  dia: string;
+// Definición de tipos mejorada
+interface EquipoNotification {
+  nombre: string;
+  tipo_equipo?: string;
 }
+
+interface ReservaNotification {
+  id: number;
+  user?: string;
+  aula: string;
+  fecha_reserva: string;
+  fecha_entrega: string;
+  estado: string;
+  tipo_reserva?: string;
+  equipos?: EquipoNotification[];
+  comentario?: string;
+}
+
+interface NotificacionData {
+  type: 'nueva_reserva' | 'estado_reserva';
+  title: string;
+  message: string;
+  reserva: ReservaNotification;
+}
+
+interface Notificacion {
+  id: string;
+  data: NotificacionData;
+  createdAt: Date;
+  readAt: Date | null;
+  unread: boolean;
+  type: string;
+}
+
+// Componente de ítem de notificación
+const NotificationItem = ({ 
+  noti, 
+  userRole, 
+  navigate, 
+  removeNotification,
+  markAsRead
+}: {
+  noti: Notificacion;
+  userRole: Role;
+  navigate: (path: string, options?: { state?: any }) => void;
+  removeNotification: (id: string) => void;
+  markAsRead: (id: string) => void;
+}) => {
+  const reservaData = noti.data.reserva || {};
+  const estado = reservaData.estado?.toLowerCase() || '';
+  const isPending = estado === 'pendiente';
+  const isAdminOrManager = [Role.Administrador, Role.Encargado].includes(userRole);
+  const reservaId = reservaData.id;
+  const estadoStyle = getEstadoStyle(estado);
+
+  const handleClick = () => {
+    // Marcar como leído solo si no está leído
+    if (noti.unread) {
+      markAsRead(noti.id);
+    }
+
+    if (!reservaId) {
+      console.error('Error: ID de reserva no definido');
+      navigate("/reservations");
+      return;
+    }
+
+    if (noti.data.type === 'nueva_reserva' && isPending && isAdminOrManager) {
+      navigate(`/actualizarEstado/${reservaId}`);
+    } else {
+      navigate("/reservations", { 
+        state: { highlightReservaId: reservaId } 
+      });
+    }
+  };
+
+  return (
+    <Dropdown.Item
+      onClick={handleClick}
+      className={`d-flex justify-content-between align-items-start py-2 ${
+        noti.unread ? "bg-light" : ""
+      }`}
+    >
+      <div className="flex-grow-1">
+        <div className="fw-bold">{noti.data.title}</div>
+        <div className="small">{noti.data.message}</div>
+        {reservaData && (
+          <>
+            <small className="d-block">
+              Aula: {reservaData.aula || 'No especificada'}
+              {userRole === Role.Prestamista && (
+                <> - Estado: <span className={estadoStyle.className}>{estadoStyle.displayText}</span></>
+              )}
+            </small>
+            {reservaData.equipos && (
+              <small className="d-block">
+                Equipos:{" "}
+                {reservaData.equipos.map(e => e.nombre).join(", ")}
+              </small>
+            )}
+          </>
+        )}
+        <div className="text-muted small mt-1">
+          {noti.createdAt.toLocaleString()}
+        </div>
+      </div>
+      <button
+        className="btn btn-sm btn-outline-danger ms-2"
+        onClick={(e) => {
+          e.stopPropagation();
+          removeNotification(noti.id);
+        }}
+        title="Eliminar notificación"
+        style={{ padding: "0.15rem 0.3rem" }}
+      >
+        <FaTimes size={12} />
+      </button>
+    </Dropdown.Item>
+  );
+};
 
 const NavbarMenu = () => {
   const { user, logout, checkAccess } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
-  // const [notificaciones, setNotificaciones] = useState<Reserva[]>([]);
   const {
     notificaciones,
     unreadCount,
     markAsRead,
     removeNotification,
     clearAllNotifications,
+    refreshNotifications,
   } = useNotificaciones();
 
+  // Manejo del tema oscuro
   useEffect(() => {
     const savedMode = localStorage.getItem("darkMode");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const isDark = savedMode ? JSON.parse(savedMode) : prefersDark;
-
     setDarkMode(isDark);
     updateTheme(isDark);
   }, []);
 
   const updateTheme = (isDark: boolean) => {
-    document.documentElement.setAttribute(
-      "data-bs-theme",
-      isDark ? "dark" : "light"
-    );
+    document.documentElement.setAttribute("data-bs-theme", isDark ? "dark" : "light");
     document.body.classList.toggle("dark", isDark);
     document.body.classList.toggle("light", !isDark);
   };
@@ -76,16 +178,7 @@ const NavbarMenu = () => {
     "/forbidden",
   ];
 
-  const shouldShowNavbar =
-    user && !hideNavbarRoutes.includes(location.pathname);
-
-  // Función para manejar nuevas notificaciones
-  // const handleNewNotification = (notification: Reserva) => {
-  //   setNotificaciones((prevNotificaciones) => [
-  //     ...prevNotificaciones,
-  //     notification,
-  //   ]);
-  // };
+  const shouldShowNavbar = user && !hideNavbarRoutes.includes(location.pathname);
 
   if (!shouldShowNavbar) return null;
 
@@ -106,10 +199,7 @@ const NavbarMenu = () => {
           />
         </Navbar.Brand>
 
-        <Navbar.Toggle
-          aria-controls="basic-navbar-nav"
-          className="custom-toggler"
-        >
+        <Navbar.Toggle aria-controls="basic-navbar-nav" className="custom-toggler">
           <span className="navbar-toggler-icon">
             <div />
           </span>
@@ -146,8 +236,7 @@ const NavbarMenu = () => {
                     </Dropdown.Toggle>
                     <Dropdown.Menu
                       style={{
-                        background:
-                          "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
+                        background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
                         minWidth: "300px",
                       }}
                     >
@@ -236,8 +325,7 @@ const NavbarMenu = () => {
                     </Dropdown.Toggle>
                     <Dropdown.Menu
                       style={{
-                        background:
-                          "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
+                        background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
                         minWidth: "300px",
                       }}
                     >
@@ -269,138 +357,107 @@ const NavbarMenu = () => {
               </>
             )}
 
-    <Dropdown
-      align="end"
-      className="w-200"
-      onToggle={(isOpen) => isOpen && markAsRead()}
-    >
-      <Dropdown.Toggle
-        variant="link"
-        id="dropdown-notifications"
-        className="position-relative w-200 d-flex align-items-center justify-content-start px-3 py-2 border-0"
-        style={{ background: "transparent", color: "#000" }}
-      >
-        <FaBell size={20} className="me-2 text-dark" />
-        Notificaciones
-        {unreadCount > 0 && (
-          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-            {unreadCount}
-            <span className="visually-hidden">notificaciones no leídas</span>
-          </span>
-        )}
-      </Dropdown.Toggle>
-
-      <Dropdown.Menu
-        style={{
-          background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
-          minWidth: "300px",
-          maxHeight: "400px",
-          overflowY: "auto",
-        }}
-      >
-        <Dropdown.Header className="d-flex justify-content-between align-items-center">
-          <span>Notificaciones</span>
-          {notificaciones.length > 0 && (
-            <button
-              className="btn btn-sm btn-outline-danger"
-              onClick={(e) => {
-                e.stopPropagation();
-                clearAllNotifications();
-              }}
+            {/* Menú de notificaciones */}
+            <Dropdown
+              align="end"
+              className="w-200"
             >
-              Limpiar todas
-            </button>
-          )}
-        </Dropdown.Header>
-        <Dropdown.Divider />
-
-        {notificaciones.length > 0 ? (
-          <>
-            {notificaciones.map((noti) => (
-              <Dropdown.Item
-                key={noti.id}
-                onClick={() => {
-                  if (noti.reserva?.estado === "Pendiente") {
-                    navigate(`/actualizarEstado/${noti.reserva?.id}`);
-                  } else {
-                    navigate("/reservations");
-                  }
-                }}
-                className={`d-flex justify-content-between align-items-start py-2 ${
-                  noti.unread ? "bg-light" : ""
-                }`}
+              <Dropdown.Toggle
+                variant="link"
+                id="dropdown-notifications"
+                className="position-relative w-200 d-flex align-items-center justify-content-start px-3 py-2 border-0"
+                style={{ background: "transparent", color: "#000" }}
               >
-                <div className="flex-grow-1">
-                  <div className="fw-bold">
-                    {noti.reserva?.user || "Estado de Reserva"}
-                  </div>
-                  <small>
-                    Reserva en {noti.reserva?.aula} –{" "}
-                    {new Date(noti.reserva?.fecha_reserva).toLocaleString()}
-                  </small>
-                  <div className="text-muted small">
-                    Recibido: {new Date(noti.createdAt).toLocaleTimeString()}
-                  </div>
-                </div>
-                <button
-                  className="btn btn-sm btn-outline-danger ms-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeNotification(noti.id);
-                  }}
-                  title="Eliminar notificación"
-                  style={{ padding: "0.15rem 0.3rem" }}
-                >
-                  <FaTimes size={12} />
-                </button>
-              </Dropdown.Item>
-            ))}
-            
-            <Dropdown.Divider />
-            <Dropdown.Item 
-              onClick={() => navigate("/notifications")}
-              className="text-center py-2 fw-bold"
-              style={{ 
-                background: "rgba(255, 255, 255, 0.2)",
-                color: "#000",
-                cursor: "pointer",
-               
-              }}
-            >
-              Ver todas las notificaciones
-            </Dropdown.Item>
-          </>
-        ) : (
-          <>
-            <Dropdown.Item className="text-center py-2">
-              No hay notificaciones
-            </Dropdown.Item>
-            <Dropdown.Divider />
-            <Dropdown.Item 
-              onClick={() => navigate("/notifications")}
-              className="text-center py-2 fw-bold"
-              style={{ 
-                background: "rgba(255, 255, 255, 0.2)",
-                color: "#000",
-                cursor: "pointer"
-              }}
-            >
-              Ver todas las notificaciones
-            </Dropdown.Item>
-          </>
-        )}
-      </Dropdown.Menu>
-    </Dropdown>
+                <FaBell size={20} className="me-2 text-dark" />
+                Notificaciones
+                {unreadCount > 0 && (
+                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {unreadCount}
+                    <span className="visually-hidden">notificaciones no leídas</span>
+                  </span>
+                )}
+              </Dropdown.Toggle>
 
+              <Dropdown.Menu
+                style={{
+                  background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
+                  minWidth: "300px",
+                  maxHeight: "400px",
+                  overflowY: "auto",
+                }}
+              >
+                <Dropdown.Header className="d-flex justify-content-between align-items-center">
+                  <span>Notificaciones ({notificaciones.length})</span>
+                  <div>
+                    {notificaciones.length > 0 && (
+                      <>
+                        <button
+                          className="btn btn-sm btn-outline-danger me-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearAllNotifications();
+                          }}
+                        >
+                          Limpiar todas
+                        </button>
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/notifications");
+                          }}
+                        >
+                          Ver todas
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </Dropdown.Header>
+                <Dropdown.Divider />
 
-            {/* 👤 Usuario */}
+                {notificaciones.length > 0 ? (
+                  <>
+                    {notificaciones.slice(0, 5).map((noti) => (
+                      <NotificationItem
+                        key={noti.id}
+                        noti={noti}
+                        userRole={user?.role || Role.Prestamista}
+                        navigate={navigate}
+                        removeNotification={removeNotification}
+                        markAsRead={markAsRead}
+                      />
+                    ))}
+                    
+                    <Dropdown.Item 
+                      className="text-center py-2 bg-light border-top"
+                      onClick={() => navigate("/notifications")}
+                    >
+                      <button className="btn btn-sm btn-outline-primary">
+                        Ver todas las notificaciones
+                      </button>
+                    </Dropdown.Item>
+                  </>
+                ) : (
+                  <Dropdown.Item className="text-center py-3">
+                    No hay notificaciones
+                    <button
+                      className="btn btn-sm btn-primary mt-2 w-100"
+                      onClick={() => navigate("/notifications")}
+                    >
+                      Ir a notificaciones
+                    </button>
+                  </Dropdown.Item>
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
+
+            {/* Menú de usuario */}
             <Dropdown align="end" className="w-200">
               <Dropdown.Toggle
                 id="dropdown-user"
                 className="w-200 d-flex align-items-center justify-content-start gap-2 px-3 py-2"
                 style={{
-                  background:
-                    "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
+                  background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
                   border: "none",
                   color: "#000",
                 }}
@@ -425,8 +482,7 @@ const NavbarMenu = () => {
               </Dropdown.Toggle>
               <Dropdown.Menu
                 style={{
-                  background:
-                    "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
+                  background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
                   color: "#000",
                 }}
               >
@@ -438,10 +494,7 @@ const NavbarMenu = () => {
                   Ver Perfil
                 </Dropdown.Item>
 
-                <Dropdown.ItemText
-                  className="px-3 py-2"
-                  style={{ color: "#000" }}
-                >
+                <Dropdown.ItemText className="px-3 py-2" style={{ color: "#000" }}>
                   <div className="fw-bold">
                     {user?.first_name} {user?.last_name}
                   </div>
@@ -465,10 +518,44 @@ const NavbarMenu = () => {
           </Nav>
         </Navbar.Collapse>
       </Container>
-      {/* Notificaciones en tiempo real */}
-      {/* <Notifications onNewNotification={handleNewNotification} /> */}
     </Navbar>
   );
 };
+
+// Función auxiliar para estilizar el estado
+function getEstadoStyle(estado: string): { className: string, displayText: string } {
+  const estadoLower = estado.toLowerCase();
+  
+  switch(estadoLower) {
+    case 'pendiente':
+      return { 
+        className: 'text-warning', 
+        displayText: 'Pendiente' 
+      };
+    case 'approved':
+    case 'aprobado':
+      return { 
+        className: 'text-success', 
+        displayText: 'Aprobado' 
+      };
+    case 'rejected':
+    case 'rechazado':
+      return { 
+        className: 'text-danger', 
+        displayText: 'Rechazado' 
+      };
+    case 'returned':
+    case 'devuelto':
+      return { 
+        className: 'text-info', 
+        displayText: 'Devuelto' 
+      };
+    default:
+      return { 
+        className: '', 
+        displayText: estado 
+      };
+  }
+}
 
 export default NavbarMenu;

@@ -90,7 +90,7 @@ const NotificationItem = ({
     <Dropdown.Item
       onClick={handleClick}
       className={`d-flex justify-content-between align-items-start py-2 ${
-        noti.unread ? "bg-light" : ""
+        noti.unread ? "bg-unreadnotification" : ""
       }`}
     >
       <div className="flex-grow-1">
@@ -112,7 +112,7 @@ const NotificationItem = ({
             )}
           </>
         )}
-        <div className="text-muted small mt-1">
+        <div className="small mt-1 notification-date">
           {noti.createdAt.toLocaleString()}
         </div>
       </div>
@@ -184,7 +184,7 @@ const NavbarMenu = () => {
 
   return (
     <Navbar
-      expand="lg"
+      expand="xxl"
       className="px-4 border-bottom"
       style={{
         background: "linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92))",
@@ -386,7 +386,7 @@ const NavbarMenu = () => {
                   overflowY: "auto",
                 }}
               >
-                <Dropdown.Header className="d-flex justify-content-between align-items-center">
+                <Dropdown.Header className="d-flex justify-content-between align-items-center fw-bold">
                   <span>Notificaciones ({notificaciones.length})</span>
                   <div>
                     {notificaciones.length > 0 && (
@@ -429,13 +429,16 @@ const NavbarMenu = () => {
                     ))}
                     
                     <Dropdown.Item 
-                      className="text-center py-2 bg-light border-top"
-                      onClick={() => navigate("/notifications")}
-                    >
-                      <button className="btn btn-sm btn-outline-primary">
-                        Ver todas las notificaciones
-                      </button>
-                    </Dropdown.Item>
+  className="text-center py-3 border-top notification-footer"
+  onClick={() => navigate("/notifications")}
+>
+  <button className="btn btn-sm btn-notification-link">
+    Ver todas las notificaciones
+  </button>
+</Dropdown.Item>
+
+
+
                   </>
                 ) : (
                   <Dropdown.Item className="text-center py-3">

@@ -71,6 +71,28 @@
   box-shadow: none !important;
 }
 
+.bg-unreadnotification {
+  background-color: rgb(255 189 36) !important;
+}
+
+.notification-date {
+  font-style: italic;
+  color: #3d0707; 
+}
+
+.btn-notification-link {
+  color: #000000 !important; /* Ocre oscuro */
+  font-weight: bold !important;
+
+}
+
+.btn-notification-link:hover {
+  color: #5c3202 !important; /* Ocre aún más oscuro */
+  text-decoration: none;
+}
+
+
+
 /* ==================== */
 /* ESTILOS GENERALES (NO AFECTAN AL NAVBAR) */
 /* ==================== */
@@ -752,3 +774,20 @@ input.form-control.border-color-login {
   background-color: white !important;
   color: black !important;
 }
+
+
+
+
+
+
+
+
+
+/* HACE QUE EL CORREO EN DETALLE DE RESERVA NO SE SOBREPONGA AL CODIGO QR */
+.word-break {
+  word-break: break-word; /* o break-all para mayor agresividad */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+/* FIN DE HACE QUE EL CORREO EN DETALLE DE RESERVA NO SE SOBREPONGA AL CODIGO QR */

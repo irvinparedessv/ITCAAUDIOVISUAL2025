@@ -271,10 +271,14 @@ export default function ReservationList() {
                         <i className="bi bi-envelope me-2 text-body-emphasis"></i>
                         Correo
                       </span>
-                      <p className="mb-0 fw-semibold flex-grow-1">
+                      <p
+                        className="mb-0 fw-semibold flex-grow-1 word-break"
+                        style={{ minWidth: 0 }}  // esto ayuda en flex layouts para permitir el wrap
+                      >
                         {selectedReservation.user.email}
                       </p>
                     </div>
+                    
                     <div className="d-flex align-items-center mb-3">
                       <span
                         className="d-inline-block text-nowrap me-3"
@@ -482,11 +486,17 @@ export default function ReservationList() {
                       {" "}
                       {/* Contenedor centrado para el QR */}
                       <div className="bg-body-secondary p-3 rounded-3 shadow-sm mb-3 d-inline-block">
-                        <img
+                        {/* <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.codigo_qr.id}&size=150x150`}
                           alt="Código QR de Reserva"
                           style={{ width: "160px", height: "160px" }}
+                        /> */}
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.codigo_qr.id}&size=300x300`}
+                          alt="Código QR de Reserva"
+                          style={{ maxWidth: "100%", height: "auto", display: "block" }}
                         />
+
                       </div>
                     </div>
 

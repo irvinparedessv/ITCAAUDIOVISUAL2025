@@ -17,6 +17,7 @@
   --dropdown-hover-bg: rgba(0, 0, 0, 0.1);
 }
 
+
 /* Estructura del navbar */
 .navbar {
   background: var(--navbar-bg) !important;
@@ -90,6 +91,55 @@
   color: #5c3202 !important; /* Ocre aún más oscuro */
   text-decoration: none;
 }
+
+
+
+
+
+/* INICIO DE Estilos para el sidebar en móvil */
+.offcanvas-dropdown .dropdown-menu {
+  position: static !important;
+  transform: none !important;
+  float: none;
+  width: 100%;
+  margin: 0.25rem 0;
+  border: none;
+  background-color: transparent !important;
+}
+
+.offcanvas-dropdown .dropdown-toggle::after {
+  display: inline-block;
+  margin-left: 0.255em;
+  vertical-align: 0.255em;
+  content: "";
+  border-top: 0.3em solid;
+  border-right: 0.3em solid transparent;
+  border-bottom: 0;
+  border-left: 0.3em solid transparent;
+}
+
+.offcanvas-dropdown .dropdown-item {
+  padding: 0.5rem 1.5rem;
+}
+
+/* Asegurar que los dropdowns en el navbar principal no se vean afectados */
+@media (min-width: 1200px) {
+  .offcanvas-dropdown .dropdown-menu {
+    position: absolute !important;
+  }
+}
+
+/* FIN DE Estilos para el sidebar en móvil */
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -791,3 +841,6 @@ input.form-control.border-color-login {
   hyphens: auto;
 }
 /* FIN DE HACE QUE EL CORREO EN DETALLE DE RESERVA NO SE SOBREPONGA AL CODIGO QR */
+
+
+

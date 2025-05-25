@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Container, Card, ListGroup, Badge, Row, Col } from 'react-bootstrap';
 import api from '~/api/axios';
 
 interface Notification {
@@ -14,21 +15,27 @@ interface Notification {
 export default function NotificationsList() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     api.get('/notifications')
       .then(res => {
         setNotifications(res.data.notifications);
+        setIsLoading(false);
       })
-      .catch(err => console.error('Error al cargar notificaciones', err));
+      .catch(err => {
+        console.error('Error al cargar notificaciones', err);
+        setIsLoading(false);
+      });
   }, []);
 
   const handleSelect = (id: string) => {
+    const notification = notifications.find(n => n.id === id);
+    if (notification) setSelectedNotification(notification);
+
     api.get(`/notifications/${id}`)
       .then(res => {
         setSelectedNotification(res.data.notification);
-
-        // Marcar como leída visualmente
         setNotifications(prev =>
           prev.map(n => n.id === id ? { ...n, read_at: res.data.notification.read_at } : n)
         );
@@ -38,7 +45,8 @@ export default function NotificationsList() {
 
   function formatDate(dateStr?: string) {
     if (!dateStr) return 'No disponible';
-    return new Date(dateStr).toLocaleString();
+    const date = new Date(dateStr);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
   // Dividir notificaciones en leídas y no leídas
@@ -46,95 +54,184 @@ export default function NotificationsList() {
   const readNotifications = notifications.filter(n => n.read_at);
 
   return (
-    <div className="container">
-      <h2 className="mb-3">Notificaciones</h2>
+    <Container className="my-5">
+      <Row className="justify-content-center">
+        <Col md={10}>
+          <Card className="shadow-sm">
+            <Card.Header style={{ backgroundColor: '#6b0000', color: 'white' }}>
+              <h4 className="mb-0">Notificaciones</h4>
+            </Card.Header>
 
-      {notifications.length === 0 && <p>No tienes notificaciones.</p>}
-
-      {unreadNotifications.length > 0 && (
-        <>
-          <h4>No leídas</h4>
-          <ul className="list-group mb-4">
-            {unreadNotifications.map(notification => (
-              <li
-                key={notification.id}
-                className="list-group-item d-flex justify-content-between align-items-center fw-bold bg-light"
-                onClick={() => handleSelect(notification.id)}
-                style={{ cursor: 'pointer' }}
-              >
-                <span>{notification.data.message ?? 'Notificación sin mensaje'}</span>
-                <small>{new Date(notification.created_at).toLocaleString()}</small>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-
-      {readNotifications.length > 0 && (
-        <>
-          <h4>Leídas</h4>
-          <ul className="list-group mb-4">
-            {readNotifications.map(notification => (
-              <li
-                key={notification.id}
-                className="list-group-item d-flex justify-content-between align-items-center text-muted"
-                onClick={() => handleSelect(notification.id)}
-                style={{ cursor: 'pointer' }}
-              >
-                <span>{notification.data.message ?? 'Notificación sin mensaje'}</span>
-                <small>{new Date(notification.created_at).toLocaleString()}</small>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-
-      {selectedNotification && (
-        <div className="card">
-          <div className="card-body">
-            <h5 className="card-title">Detalle</h5>
-
-            <p><strong>Título:</strong> {selectedNotification.data.title}</p>
-            <p><strong>Mensaje:</strong> {selectedNotification.data.message}</p>
-
-            {selectedNotification.data.reserva_id && (
-              <p><strong>ID de reserva:</strong> {selectedNotification.data.reserva_id}</p>
-            )}
-
-            <p><strong>Aula:</strong> {selectedNotification.data.reserva?.aula ?? selectedNotification.data.aula ?? 'No especificada'}</p>
-
-            {(() => {
-              const equipos = selectedNotification.data.reserva?.equipos ?? selectedNotification.data.equipos;
-              if (!equipos) return null;
-              return (
+            <Card.Body>
+              {isLoading ? (
+                <div className="text-center py-4">
+                  <div className="spinner-border" style={{ color: '#6b0000' }} role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                  </div>
+                </div>
+              ) : notifications.length === 0 ? (
+                <p className="text-center text-muted py-3">No tienes notificaciones.</p>
+              ) : (
                 <>
-                  <p><strong>Equipos reservados:</strong></p>
-                  <ul>
-                    {equipos.map((equipo: any, index: number) => (
-                      <li key={index}>
-                        <strong>{equipo.nombre}</strong> ({equipo.tipo_equipo ?? 'Sin tipo'})
-                      </li>
-                    ))}
-                  </ul>
+                  {unreadNotifications.length > 0 && (
+                    <div className="mb-4">
+                      <h5 className="d-flex align-items-center">
+                        No leídas
+                        <Badge className="ms-2 badge-custom-red" style={{ backgroundColor: 'var(--bs-primary)' }}>
+  {unreadNotifications.length}
+</Badge>
+
+                      </h5>
+                      <ListGroup variant="flush">
+                        {unreadNotifications.map(notification => (
+                          <ListGroup.Item
+                            key={notification.id}
+                            action
+                            className="d-flex justify-content-between align-items-center py-3"
+                            onClick={() => handleSelect(notification.id)}
+                            active={selectedNotification?.id === notification.id}
+                            style={selectedNotification?.id === notification.id ? 
+                              { backgroundColor: 'rgba(107, 0, 0, 0.1)', borderLeft: '3px solid #6b0000' } : 
+                              { borderLeft: '3px solid #6b0000' }}
+                          >
+                            <div className="d-flex align-items-center">
+                              <span className="fw-bold">{notification.data.message ?? 'Notificación sin mensaje'}</span>
+                            </div>
+                            <small className="text-muted">{formatDate(notification.created_at)}</small>
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    </div>
+                  )}
+
+                  {readNotifications.length > 0 && (
+                    <div className="mb-4">
+                      <h5 className="text-muted">Leídas</h5>
+                      <ListGroup variant="flush">
+                        {readNotifications.map(notification => (
+                          <ListGroup.Item
+                            key={notification.id}
+                            action
+                            className="d-flex justify-content-between align-items-center py-3"
+                            onClick={() => handleSelect(notification.id)}
+                            active={selectedNotification?.id === notification.id}
+                            style={selectedNotification?.id === notification.id ? 
+                              { backgroundColor: 'rgba(107, 0, 0, 0.1)' } : {}}
+                          >
+                            <div className="d-flex align-items-center">
+                              <span className="text-muted">{notification.data.message ?? 'Notificación sin mensaje'}</span>
+                            </div>
+                            <small className="text-muted">{formatDate(notification.created_at)}</small>
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    </div>
+                  )}
                 </>
-              );
-            })()}
+              )}
+            </Card.Body>
+          </Card>
 
-            <p><strong>Tipo Reserva:</strong> {selectedNotification.data.reserva?.tipo_reserva ?? selectedNotification.data.tipo_reserva ?? 'No especificado'}</p>
-            <p><strong>Estado:</strong> {selectedNotification.data.estado ?? selectedNotification.data.reserva?.estado ?? 'No especificado'}</p>
+          {selectedNotification && (
+            <Card className="mt-4 shadow-sm">
+              <Card.Header style={{ backgroundColor: '#f8f9fa' }}>
+                <h5 className="mb-0">Detalle de la notificación</h5>
+              </Card.Header>
+              <Card.Body>
+                <div className="mb-3">
+                  <h6 style={{ color: '#6b0000' }}>{selectedNotification.data.title}</h6>
+                  <p className="mb-0">{selectedNotification.data.message}</p>
+                </div>
 
-            {selectedNotification.data.comentario && (
-              <p><strong>Comentario:</strong> {selectedNotification.data.comentario}</p>
-            )}
+                <Row>
+                  {selectedNotification.data.reserva_id && (
+                    <Col md={6} className="mb-3">
+                      <strong>ID de reserva:</strong>
+                      <div className="text-muted">{selectedNotification.data.reserva_id}</div>
+                    </Col>
+                  )}
 
-            <p><strong>Fecha de reserva:</strong> {formatDate(selectedNotification.data.reserva?.fecha_reserva ?? selectedNotification.data.fecha_reserva)}</p>
-            <p><strong>Fecha de entrega:</strong> {formatDate(selectedNotification.data.reserva?.fecha_entrega ?? selectedNotification.data.fecha_entrega)}</p>
+                  <Col md={6} className="mb-3">
+                    <strong>Aula:</strong>
+                    <div className="text-muted">
+                      {selectedNotification.data.reserva?.aula ?? selectedNotification.data.aula ?? 'No especificada'}
+                    </div>
+                  </Col>
 
-            <p><strong>Recibida:</strong> {new Date(selectedNotification.created_at).toLocaleString()}</p>
-            <p><strong>Leída:</strong> {selectedNotification.read_at ? new Date(selectedNotification.read_at).toLocaleString() : 'No leída'}</p>
-          </div>
-        </div>
-      )}
-    </div>
+                  <Col md={6} className="mb-3">
+                    <strong>Tipo Reserva:</strong>
+                    <div className="text-muted">
+                      {selectedNotification.data.reserva?.tipo_reserva ?? selectedNotification.data.tipo_reserva ?? 'No especificado'}
+                    </div>
+                  </Col>
+
+                  <Col md={6} className="mb-3">
+                    <strong>Estado:</strong>
+                    <div className="text-muted">
+                      {selectedNotification.data.estado ?? selectedNotification.data.reserva?.estado ?? 'No especificado'}
+                    </div>
+                  </Col>
+
+                  {selectedNotification.data.comentario && (
+                    <Col xs={12} className="mb-3">
+                      <strong>Comentario:</strong>
+                      <div className="text-muted">{selectedNotification.data.comentario}</div>
+                    </Col>
+                  )}
+
+                  <Col md={6} className="mb-3">
+                    <strong>Fecha de reserva:</strong>
+                    <div className="text-muted">
+                      {formatDate(selectedNotification.data.reserva?.fecha_reserva ?? selectedNotification.data.fecha_reserva)}
+                    </div>
+                  </Col>
+
+                  <Col md={6} className="mb-3">
+                    <strong>Fecha de entrega:</strong>
+                    <div className="text-muted">
+                      {formatDate(selectedNotification.data.reserva?.fecha_entrega ?? selectedNotification.data.fecha_entrega)}
+                    </div>
+                  </Col>
+
+                  {(() => {
+                    const equipos = selectedNotification.data.reserva?.equipos ?? selectedNotification.data.equipos;
+                    if (equipos && equipos.length > 0) {
+                      return (
+                        <Col xs={12} className="mb-3">
+                          <strong>Equipos reservados:</strong>
+                          <ul className="list-unstyled mt-2">
+                            {equipos.map((equipo: any, index: number) => (
+                              <li key={index} className="mb-1">
+                                <Badge style={{ backgroundColor: '#6b0000' }} className="me-2">
+                                  {equipo.tipo_equipo ?? 'Sin tipo'}
+                                </Badge>
+                                {equipo.nombre}
+                              </li>
+                            ))}
+                          </ul>
+                        </Col>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  <Col md={6} className="mb-3">
+                    <strong>Recibida:</strong>
+                    <div className="text-muted">{formatDate(selectedNotification.created_at)}</div>
+                  </Col>
+
+                  <Col md={6} className="mb-3">
+                    <strong>Leída:</strong>
+                    <div className="text-muted">
+                      {selectedNotification.read_at ? formatDate(selectedNotification.read_at) : 'No leída'}
+                    </div>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          )}
+        </Col>
+      </Row>
+    </Container>
   );
 }

@@ -8,4 +8,7 @@ export default defineConfig({
     noExternal: ["react-datepicker", "react-360-view"],
   },
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+  server: {
+    host: '0.0.0.0'
+  }
 });

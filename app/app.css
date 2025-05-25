@@ -44,17 +44,6 @@
 }
 
 /* Dropdowns del navbar */
-.navbar .dropdown-menu {
-  background: var(--dropdown-bg) !important;
-}
-
-.navbar .dropdown-item {
-  color: var(--navbar-text) !important;
-}
-
-.navbar .dropdown-item:hover {
-  background-color: var(--dropdown-hover-bg) !important;
-}
 
 /* Toggler del navbar */
 .custom-toggler {
@@ -823,6 +812,155 @@ input.form-control.border-color-login {
 .nav-hover-white:hover {
   background-color: white !important;
   color: black !important;
+}
+
+
+/* Estilos para el Offcanvas y dropdowns */
+.offcanvas-dropdown .dropdown-menu {
+  border: none;
+  box-shadow: 0 2px 5px rgb(0, 0, 0);
+}
+
+/* Fondo amarillo claro para los menús desplegables */
+.bg-warning-subtle {
+  background-color: #fff8e1 !important;
+}
+
+/* Efecto hover amarillo para los items */
+.hover-bg-warning:hover {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+/* Estilos para las flechas de despliegue */
+.custom-toggle-arrow {
+  transition: transform 0.2s ease-in-out;
+}
+
+.custom-toggle-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Ajustes para los items del menú */
+.dropdown-item {
+  transition: all 0.2s;
+  padding: 0.5rem 1rem;
+}
+
+/* Estilos para el Offcanvas */
+.offcanvas {
+  background: linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92)) !important;
+}
+
+.offcanvas-header {
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.offcanvas-body {
+  padding: 0;
+}
+
+/* Estilos para el navbar principal */
+.navbar {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-dropdown-toggle::after {
+  display: none;
+}
+
+/* Ajustes para los badges de notificaciones */
+.notification-badge {
+  font-size: 0.7rem;
+  top: -5px;
+  right: -5px;
+}
+
+/* Estilo para notificaciones no leídas */
+.bg-unreadnotification {
+  background-color: rgba(255, 193, 7, 0.2) !important;
+}
+
+/* Estilo para el footer de notificaciones */
+.notification-footer {
+  background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+/* Estilo para los botones de notificaciones */
+.btn-notification-link {
+  color: #212529;
+  background-color: transparent;
+  border: 1px solid #ffc107;
+}
+
+.btn-notification-link:hover {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Estilos para el Offcanvas */
+.offcanvas-body .nav-link,
+.offcanvas-body .dropdown-toggle {
+  padding: 0.5rem 1rem !important;
+  margin: 0.25rem 0 !important;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  color: #212529 !important; /* Color de texto oscuro */
+  transition: background-color 0.2s;
+}
+
+/* Estilo hover para items */
+.offcanvas-body .nav-link:hover,
+.offcanvas-body .dropdown-toggle:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Ajustes para los dropdowns (submenús) */
+.offcanvas-dropdown .dropdown-menu {
+  width: 100%;
+  background: transparent !important;
+  border: none !important;
+  padding-left: 1rem !important; /* Sangría para subitems */
+  margin: 0 !important;
+}
+
+/* Items de submenú */
+.offcanvas-dropdown .dropdown-item {
+  padding: 0.5rem 1rem !important;
+  margin: 0.25rem 0 !important;
+  border-radius: 0.25rem;
+}
+
+/* Flechas de dropdown (chevron) */
+.offcanvas-dropdown .dropdown-toggle::after {
+  display: inline-block;
+  margin-left: auto; /* Alinea a la derecha */
+  border: none !important; /* Elimina el icono por defecto */
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  content: "\f078"; /* Icono de FontAwesome (chevron-down) */
+  font-size: 0.75rem;
+}
+
+.offcanvas-dropdown.show .dropdown-toggle::after {
+  content: "\f077"; /* Icono cuando está abierto (chevron-up) */
 }
 
 

@@ -907,6 +907,104 @@ input.form-control.border-color-login {
 
 
 
+/* DISENIO DE NOTIFICACIONES */
+
+/* Custom Burgundy Color Scheme */
+.notification-item {
+  transition: all 0.2s ease;
+}
+
+.notification-item:hover {
+  background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+  border-left: 3px solid #6b0000;
+  background-color: rgba(107, 0, 0, 0.05);
+}
+
+.notification-item.active {
+  background-color: rgba(107, 0, 0, 0.1);
+}
+
+.notification-time {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* Custom badge style */
+.custom-badge {
+  background-color: #6b0000;
+  color: white;
+}
+
+/* Header styles */
+.custom-header {
+  background-color: #6b0000;
+  color: white;
+}
+
+/* Spinner color */
+.custom-spinner {
+  color: #6b0000;
+}
+
+/* Title color */
+.custom-title {
+  color: #6b0000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .notification-item {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  
+  .notification-time {
+    margin-top: 0.5rem;
+    align-self: flex-end;
+  }
+}
+
+
+/* Asegurate que este CSS esté cargado después de Bootstrap */
+.list-group .list-group-item.active {
+  border-color: #6b0000;
+  color: #fff;
+}
+.notifications-wrapper {
+  --bs-list-group-active-bg: rgba(107, 0, 0, 0.1);
+  --bs-list-group-active-border-color: #6b0000;
+  --bs-list-group-active-color: #000;
+}
+
+/* en tu CSS global o módulo CSS */
+.badge-custom-red {
+  background-color: #6b0000 !important;
+  color: white !important;
+}
+
+.badge-custom-red {
+  background-color: unset !important;
+}
+
+/* Luego forzamos que bg-primary prevalezca */
+.badge-custom-red.bg-primary {
+  background-color: var(--bs-primary) !important;
+}
+
+
+/* FIN DE DISENIO DE NOTIFICACIONES */
+
+
+
+
+
+
+
+
+
 
 
 

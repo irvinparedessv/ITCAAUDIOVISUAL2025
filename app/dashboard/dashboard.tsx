@@ -140,6 +140,13 @@ export default function Dashboard() {
             description="Ver mis reservas activas"
             borderStyle={cardBorderStyle}
           />
+          <DashboardCard
+            title="Disponibilidad de Equipos"
+            icon={<FaClipboardList size={24} style={getIconStyle()} />}
+            link="/equipmentavailability"
+            description="Ver reporte completo del disponibilidad de equipos"
+            borderStyle={cardBorderStyle}
+          />
         </Row>
       )}
     </Container>

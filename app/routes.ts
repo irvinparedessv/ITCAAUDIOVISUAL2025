@@ -21,7 +21,7 @@ export default [
     route("formEquipo", "routes/formEquipo.tsx"),
     route("formEspacio", "routes/creacionEspacio.tsx"),
     route("formChat", "routes/formChat.tsx"),
-    route("inventario", "routes/inventario.tsx"),
+    route("equipmentavailability", "routes/EquipmentAvailabilityPage.tsx"),
     route("menu", "routes/optionsReservation.tsx"),
     route("reservationsroom", "routes/reservationRoom.tsx"),
     route("tipoequipo", "routes/tipoEquipos.tsx"),

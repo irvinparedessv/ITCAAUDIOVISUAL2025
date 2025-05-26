@@ -28,7 +28,7 @@ export default function ReservacionEstado({
 
     try {
       setLoading(true);
-      await api.post(`/reservas/${reservationId}/actualizar-estado`, {
+     await api.put(`/reservas-equipo/${reservationId}/estado`, {
         estado: newStatus,
         comentario: comment,
       });

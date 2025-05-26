@@ -56,7 +56,7 @@ export default function Dashboard() {
           <DashboardCard
             title="Gestión de Equipos"
             icon={<FaTools size={24} style={getIconStyle()} />}
-            link="/formEquipo"
+            link="/equipo"
             description="Administrar inventario de equipos"
             borderStyle={cardBorderStyle}
           />
@@ -68,10 +68,10 @@ export default function Dashboard() {
             borderStyle={cardBorderStyle}
           />
           <DashboardCard
-            title="Inventario"
+            title="Disponibilidad de Equipos"
             icon={<FaClipboardList size={24} style={getIconStyle()} />}
-            link="/inventario"
-            description="Ver reporte completo del inventario"
+            link="/equipmentavailability"
+            description="Ver reporte completo del disponibilidad de equipos"
             borderStyle={cardBorderStyle}
           />
           <DashboardCard

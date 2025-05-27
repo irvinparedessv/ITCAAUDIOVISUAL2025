@@ -2,6 +2,15 @@ import { useEffect, useState } from 'react';
 import { Container, Card, ListGroup, Badge, Row, Col } from 'react-bootstrap';
 import api from '~/api/axios';
 
+import {
+  SwipeableList,
+  SwipeableListItem,
+  LeadingActions,
+  TrailingActions,
+  SwipeAction
+} from 'react-swipeable-list';
+import 'react-swipeable-list/dist/styles.css';
+
 interface Notification {
   id: string;
   type: string;
@@ -31,11 +40,17 @@ export default function NotificationsList() {
 
   const handleSelect = (id: string) => {
     const notification = notifications.find(n => n.id === id);
-    if (notification) setSelectedNotification(notification);
+    if (notification) {
+      if (selectedNotification?.id === id) {
+        setSelectedNotification(null); // Toggle off if clicking the same notification
+      } else {
+        setSelectedNotification(notification);
+      }
+    }
 
     api.get(`/notifications/${id}`)
       .then(res => {
-        setSelectedNotification(res.data.notification);
+        setSelectedNotification(prev => prev?.id === id ? res.data.notification : prev);
         setNotifications(prev =>
           prev.map(n => n.id === id ? { ...n, read_at: res.data.notification.read_at } : n)
         );
@@ -43,29 +58,171 @@ export default function NotificationsList() {
       .catch(err => console.error('Error al cargar detalle de la notificación', err));
   };
 
+  function markAsRead(id: string) {
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n)
+    );
+
+    api.post(`/notifications/${id}/mark-as-read`)
+      .catch(err => console.error('Error al marcar como leída', err));
+  }
+
+  function deleteNotification(id: string) {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    if (selectedNotification?.id === id) setSelectedNotification(null);
+
+    api.delete(`/notifications/${id}`)
+      .catch(err => console.error('Error al eliminar notificación', err));
+  }
+
+  function leadingActions(id: string) {
+    return (
+      <LeadingActions>
+        <SwipeAction onClick={() => markAsRead(id)}>
+          <div style={{ padding: '0.75rem 1rem', background: '#d1e7dd', color: '#0f5132' }}>
+            Marcar como leída
+          </div>
+        </SwipeAction>
+      </LeadingActions>
+    );
+  }
+
+  function trailingActions(id: string) {
+    return (
+      <TrailingActions>
+        <SwipeAction
+          destructive={true}
+          onClick={() => deleteNotification(id)}
+        >
+          <div style={{ padding: '0.75rem 1rem', background: '#f8d7da', color: '#842029' }}>
+            Eliminar
+          </div>
+        </SwipeAction>
+      </TrailingActions>
+    );
+  }
+
   function formatDate(dateStr?: string) {
     if (!dateStr) return 'No disponible';
     const date = new Date(dateStr);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  // Dividir notificaciones en leídas y no leídas
   const unreadNotifications = notifications.filter(n => !n.read_at);
   const readNotifications = notifications.filter(n => n.read_at);
+
+  const renderNotificationDetail = (notification: Notification) => (
+    <Card className="mt-2 mb-3 shadow-sm border-0 rounded-4">
+      <Card.Header className="card-header-dark-red rounded-top-4">
+        <h5 className="mb-0">📄 Detalle de la notificación</h5>
+      </Card.Header>
+      <Card.Body>
+        <div className="mb-3">
+          <h6 className="text-primary">{notification.data.title}</h6>
+          <p>{notification.data.message}</p>
+        </div>
+
+        <Row>
+          {notification.data.reserva_id && (
+            <Col md={6} className="mb-3">
+              <strong>ID de reserva:</strong>
+              <div className="text-muted">{notification.data.reserva_id}</div>
+            </Col>
+          )}
+
+          <Col md={6} className="mb-3">
+            <strong>Aula:</strong>
+            <div className="text-muted">
+              {notification.data.reserva?.aula ?? notification.data.aula ?? 'No especificada'}
+            </div>
+          </Col>
+
+          <Col md={6} className="mb-3">
+            <strong>Tipo Reserva:</strong>
+            <div className="text-muted">
+              {notification.data.reserva?.tipo_reserva ?? notification.data.tipo_reserva ?? 'No especificado'}
+            </div>
+          </Col>
+
+          <Col md={6} className="mb-3">
+            <strong>Estado:</strong>
+            <div className="text-muted">
+              {notification.data.estado ?? notification.data.reserva?.estado ?? 'No especificado'}
+            </div>
+          </Col>
+
+          {notification.data.comentario && (
+            <Col xs={12} className="mb-3">
+              <strong>Comentario:</strong>
+              <div className="text-muted">{notification.data.comentario}</div>
+            </Col>
+          )}
+
+          <Col md={6} className="mb-3">
+            <strong>Fecha de reserva:</strong>
+            <div className="text-muted">
+              {formatDate(notification.data.reserva?.fecha_reserva ?? notification.data.fecha_reserva)}
+            </div>
+          </Col>
+
+          <Col md={6} className="mb-3">
+            <strong>Fecha de entrega:</strong>
+            <div className="text-muted">
+              {formatDate(notification.data.reserva?.fecha_entrega ?? notification.data.fecha_entrega)}
+            </div>
+          </Col>
+
+          {(() => {
+            const equipos = notification.data.reserva?.equipos ?? notification.data.equipos;
+            if (equipos && equipos.length > 0) {
+              return (
+                <Col xs={12} className="mb-3">
+                  <strong>Equipos reservados:</strong>
+                  <ul className="list-unstyled mt-2">
+                    {equipos.map((equipo: any, index: number) => (
+                      <li key={index} className="mb-1">
+                        <Badge bg="primary" className="me-2">
+                          {equipo.tipo_equipo ?? 'Sin tipo'}
+                        </Badge>
+                        {equipo.nombre}
+                      </li>
+                    ))}
+                  </ul>
+                </Col>
+              );
+            }
+            return null;
+          })()}
+
+          <Col md={6} className="mb-3">
+            <strong>Recibida:</strong>
+            <div className="text-muted">{formatDate(notification.created_at)}</div>
+          </Col>
+
+          <Col md={6} className="mb-3">
+            <strong>Leída:</strong>
+            <div className="text-muted">
+              {notification.read_at ? formatDate(notification.read_at) : 'No leída'}
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
+    </Card>
+  );
 
   return (
     <Container className="my-5">
       <Row className="justify-content-center">
         <Col md={10}>
-          <Card className="shadow-sm">
-            <Card.Header style={{ backgroundColor: '#6b0000', color: 'white' }}>
-              <h4 className="mb-0">Notificaciones</h4>
+          <Card className="shadow rounded-4 border-0">
+            <Card.Header className="card-header-dark-red rounded-top-4">
+              <h4 className="mb-0">📩 Notificaciones</h4>
             </Card.Header>
 
             <Card.Body>
               {isLoading ? (
                 <div className="text-center py-4">
-                  <div className="spinner-border" style={{ color: '#6b0000' }} role="status">
+                  <div className="spinner-border text-primary" role="status">
                     <span className="visually-hidden">Cargando...</span>
                   </div>
                 </div>
@@ -75,55 +232,77 @@ export default function NotificationsList() {
                 <>
                   {unreadNotifications.length > 0 && (
                     <div className="mb-4">
-                      <h5 className="d-flex align-items-center">
-                        No leídas
-                        <Badge className="ms-2 badge-custom-red" style={{ backgroundColor: 'var(--bs-primary)' }}>
-  {unreadNotifications.length}
-</Badge>
-
+                      <h5 className="d-flex align-items-center mb-3">
+                        🔔 No leídas
+                        <Badge bg="danger" className="ms-2">{unreadNotifications.length}</Badge>
                       </h5>
+
                       <ListGroup variant="flush">
-                        {unreadNotifications.map(notification => (
-                          <ListGroup.Item
-                            key={notification.id}
-                            action
-                            className="d-flex justify-content-between align-items-center py-3"
-                            onClick={() => handleSelect(notification.id)}
-                            active={selectedNotification?.id === notification.id}
-                            style={selectedNotification?.id === notification.id ? 
-                              { backgroundColor: 'rgba(107, 0, 0, 0.1)', borderLeft: '3px solid #6b0000' } : 
-                              { borderLeft: '3px solid #6b0000' }}
-                          >
-                            <div className="d-flex align-items-center">
-                              <span className="fw-bold">{notification.data.message ?? 'Notificación sin mensaje'}</span>
+                        <SwipeableList>
+                          {unreadNotifications.map(notification => (
+                            <div key={notification.id}>
+                              <SwipeableListItem
+                                leadingActions={leadingActions(notification.id)}
+                                trailingActions={trailingActions(notification.id)}
+                              >
+                                <ListGroup.Item
+                                  action
+                                  className="d-flex justify-content-between align-items-center py-3"
+                                  onClick={() => handleSelect(notification.id)}
+                                  active={selectedNotification?.id === notification.id}
+                                  style={selectedNotification?.id === notification.id
+                                    ? {
+                                      backgroundColor: '#f5f0f0',
+                                      borderLeft: '4px solid #0d6efd'
+                                    }
+                                    : {
+                                      borderLeft: '4px solid #0d6efd',
+                                      backgroundColor: '#fff'
+                                    }}
+                                >
+                                  <div>
+                                    <strong>{notification.data.message ?? 'Notificación sin mensaje'}</strong>
+                                  </div>
+                                  <small className="text-muted">{formatDate(notification.created_at)}</small>
+                                </ListGroup.Item>
+                              </SwipeableListItem>
+                              {selectedNotification?.id === notification.id && renderNotificationDetail(selectedNotification)}
                             </div>
-                            <small className="text-muted">{formatDate(notification.created_at)}</small>
-                          </ListGroup.Item>
-                        ))}
+                          ))}
+                        </SwipeableList>
                       </ListGroup>
                     </div>
                   )}
 
                   {readNotifications.length > 0 && (
                     <div className="mb-4">
-                      <h5 className="text-muted">Leídas</h5>
+                      <h5 className="text-muted mb-3">📘 Leídas</h5>
                       <ListGroup variant="flush">
-                        {readNotifications.map(notification => (
-                          <ListGroup.Item
-                            key={notification.id}
-                            action
-                            className="d-flex justify-content-between align-items-center py-3"
-                            onClick={() => handleSelect(notification.id)}
-                            active={selectedNotification?.id === notification.id}
-                            style={selectedNotification?.id === notification.id ? 
-                              { backgroundColor: 'rgba(107, 0, 0, 0.1)' } : {}}
-                          >
-                            <div className="d-flex align-items-center">
-                              <span className="text-muted">{notification.data.message ?? 'Notificación sin mensaje'}</span>
+                        <SwipeableList>
+                          {readNotifications.map(notification => (
+                            <div key={notification.id}>
+                              <SwipeableListItem
+                                trailingActions={trailingActions(notification.id)}
+                              >
+                                <ListGroup.Item
+                                  action
+                                  className="d-flex justify-content-between align-items-center py-3"
+                                  onClick={() => handleSelect(notification.id)}
+                                  active={selectedNotification?.id === notification.id}
+                                  style={selectedNotification?.id === notification.id
+                                    ? { backgroundColor: '#f5f0f0' }
+                                    : { backgroundColor: '#fdfdfd' }}
+                                >
+                                  <div>
+                                    <span className="text-muted">{notification.data.message ?? 'Notificación sin mensaje'}</span>
+                                  </div>
+                                  <small className="text-muted">{formatDate(notification.created_at)}</small>
+                                </ListGroup.Item>
+                              </SwipeableListItem>
+                              {selectedNotification?.id === notification.id && renderNotificationDetail(selectedNotification)}
                             </div>
-                            <small className="text-muted">{formatDate(notification.created_at)}</small>
-                          </ListGroup.Item>
-                        ))}
+                          ))}
+                        </SwipeableList>
                       </ListGroup>
                     </div>
                   )}
@@ -131,105 +310,6 @@ export default function NotificationsList() {
               )}
             </Card.Body>
           </Card>
-
-          {selectedNotification && (
-            <Card className="mt-4 shadow-sm">
-              <Card.Header style={{ backgroundColor: '#f8f9fa' }}>
-                <h5 className="mb-0">Detalle de la notificación</h5>
-              </Card.Header>
-              <Card.Body>
-                <div className="mb-3">
-                  <h6 style={{ color: '#6b0000' }}>{selectedNotification.data.title}</h6>
-                  <p className="mb-0">{selectedNotification.data.message}</p>
-                </div>
-
-                <Row>
-                  {selectedNotification.data.reserva_id && (
-                    <Col md={6} className="mb-3">
-                      <strong>ID de reserva:</strong>
-                      <div className="text-muted">{selectedNotification.data.reserva_id}</div>
-                    </Col>
-                  )}
-
-                  <Col md={6} className="mb-3">
-                    <strong>Aula:</strong>
-                    <div className="text-muted">
-                      {selectedNotification.data.reserva?.aula ?? selectedNotification.data.aula ?? 'No especificada'}
-                    </div>
-                  </Col>
-
-                  <Col md={6} className="mb-3">
-                    <strong>Tipo Reserva:</strong>
-                    <div className="text-muted">
-                      {selectedNotification.data.reserva?.tipo_reserva ?? selectedNotification.data.tipo_reserva ?? 'No especificado'}
-                    </div>
-                  </Col>
-
-                  <Col md={6} className="mb-3">
-                    <strong>Estado:</strong>
-                    <div className="text-muted">
-                      {selectedNotification.data.estado ?? selectedNotification.data.reserva?.estado ?? 'No especificado'}
-                    </div>
-                  </Col>
-
-                  {selectedNotification.data.comentario && (
-                    <Col xs={12} className="mb-3">
-                      <strong>Comentario:</strong>
-                      <div className="text-muted">{selectedNotification.data.comentario}</div>
-                    </Col>
-                  )}
-
-                  <Col md={6} className="mb-3">
-                    <strong>Fecha de reserva:</strong>
-                    <div className="text-muted">
-                      {formatDate(selectedNotification.data.reserva?.fecha_reserva ?? selectedNotification.data.fecha_reserva)}
-                    </div>
-                  </Col>
-
-                  <Col md={6} className="mb-3">
-                    <strong>Fecha de entrega:</strong>
-                    <div className="text-muted">
-                      {formatDate(selectedNotification.data.reserva?.fecha_entrega ?? selectedNotification.data.fecha_entrega)}
-                    </div>
-                  </Col>
-
-                  {(() => {
-                    const equipos = selectedNotification.data.reserva?.equipos ?? selectedNotification.data.equipos;
-                    if (equipos && equipos.length > 0) {
-                      return (
-                        <Col xs={12} className="mb-3">
-                          <strong>Equipos reservados:</strong>
-                          <ul className="list-unstyled mt-2">
-                            {equipos.map((equipo: any, index: number) => (
-                              <li key={index} className="mb-1">
-                                <Badge style={{ backgroundColor: '#6b0000' }} className="me-2">
-                                  {equipo.tipo_equipo ?? 'Sin tipo'}
-                                </Badge>
-                                {equipo.nombre}
-                              </li>
-                            ))}
-                          </ul>
-                        </Col>
-                      );
-                    }
-                    return null;
-                  })()}
-
-                  <Col md={6} className="mb-3">
-                    <strong>Recibida:</strong>
-                    <div className="text-muted">{formatDate(selectedNotification.created_at)}</div>
-                  </Col>
-
-                  <Col md={6} className="mb-3">
-                    <strong>Leída:</strong>
-                    <div className="text-muted">
-                      {selectedNotification.read_at ? formatDate(selectedNotification.read_at) : 'No leída'}
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          )}
         </Col>
       </Row>
     </Container>

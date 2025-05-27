@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import {
   FaCalendarAlt,
@@ -15,6 +15,7 @@ import { Role } from "~/types/roles";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Estilo para los iconos basado en el tema
   const getIconStyle = () => {
@@ -28,6 +29,18 @@ export default function Dashboard() {
     border: "2px solid",
     borderImage: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20)) 1",
     boxShadow: "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)",
+    cursor: "pointer",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.transform = "translateY(-5px)";
+    e.currentTarget.style.boxShadow = "0 0.5rem 1rem rgba(0, 0, 0, 0.15)";
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.transform = "translateY(0)";
+    e.currentTarget.style.boxShadow = "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)";
   };
 
   return (
@@ -45,6 +58,8 @@ export default function Dashboard() {
             link="/addreservation"
             description="Crear nueva reserva de equipos tecnológicos"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Todas las Reservas"
@@ -52,6 +67,8 @@ export default function Dashboard() {
             link="/reservations"
             description="Ver historial completo de reservaciones"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Gestión de Equipos"
@@ -59,6 +76,8 @@ export default function Dashboard() {
             link="/equipo"
             description="Administrar inventario de equipos"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Gestión de Espacios"
@@ -66,6 +85,8 @@ export default function Dashboard() {
             link="/formEspacio"
             description="Administrar espacios disponibles"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Disponibilidad de Equipos"
@@ -73,13 +94,17 @@ export default function Dashboard() {
             link="/equipmentavailability"
             description="Ver reporte completo del disponibilidad de equipos"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Administración"
             icon={<FaUserShield size={24} style={getIconStyle()} />}
-            link="/usuarios"
+            link="/administracion"
             description="Configuración del sistema"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
         </Row>
       )}
@@ -92,6 +117,8 @@ export default function Dashboard() {
             link="/approvereservations"
             description="Revisar y aprobar reservas pendientes"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Lector QR"
@@ -99,6 +126,8 @@ export default function Dashboard() {
             link="/qrScan"
             description="Leer Codigo QR"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Reservas de Espacios"
@@ -106,6 +135,8 @@ export default function Dashboard() {
             link="/reservationsroom"
             description="Gestionar reservas de espacios físicos"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Equipos Disponibles"
@@ -113,6 +144,8 @@ export default function Dashboard() {
             link="/formEquipo"
             description="Ver disponibilidad de equipos"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
         </Row>
       )}
@@ -125,6 +158,8 @@ export default function Dashboard() {
             link="/reservationsroom"
             description="Crear nueva reserva de espacio"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Nueva Reserva"
@@ -132,6 +167,8 @@ export default function Dashboard() {
             link="/addreservation"
             description="Solicitar préstamo de equipos"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Mis Reservas"
@@ -139,6 +176,8 @@ export default function Dashboard() {
             link="/reservations"
             description="Ver mis reservas activas"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
             title="Disponibilidad de Equipos"
@@ -146,6 +185,8 @@ export default function Dashboard() {
             link="/equipmentavailability"
             description="Ver reporte completo del disponibilidad de equipos"
             borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           />
         </Row>
       )}
@@ -159,6 +200,8 @@ interface DashboardCardProps {
   link: string;
   description: string;
   borderStyle: React.CSSProperties;
+  onMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 function DashboardCard({
@@ -167,14 +210,18 @@ function DashboardCard({
   link,
   description,
   borderStyle,
+  onMouseEnter,
+  onMouseLeave,
 }: DashboardCardProps) {
   return (
     <Col>
       <Card
         as={Link}
         to={link}
-        className="h-100 text-decoration-none hover-shadow"
+        className="h-100 text-decoration-none"
         style={borderStyle}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       >
         <Card.Body className="text-center py-4">
           <div className="mb-3">{icon}</div>

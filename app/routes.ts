@@ -40,5 +40,7 @@ export default [
     route("bitacora", "routes/BitacoraPage.tsx"),
     route("notifications", "routes/NotificationsList.tsx"),
     route("prediccion", "routes/PrediccionPage.tsx"),
+    route("administracion", "routes/OpcionesPanel.tsx"),
+    
   ]),
 ] satisfies RouteConfig;

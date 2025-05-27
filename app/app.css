@@ -1080,3 +1080,20 @@ input.form-control.border-color-login {
 
 
 
+.card-header-dark-red {
+  background-color: #8b0000 !important; /* Rojo oscuro */
+  color: white !important;
+  border-bottom: none !important;
+}
+
+.btn-custom-red {
+  background-color: #8b0000 !important;
+  border-color: #8b0000 !important;
+}
+
+.btn-custom-red:hover {
+  background-color: #6d0000 !important;
+  border-color: #6d0000 !important;
+}
+
+

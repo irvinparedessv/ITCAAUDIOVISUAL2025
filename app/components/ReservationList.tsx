@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react"; // Añade useEffect aquí
-import { Badge, Button, Modal } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import { Badge, Button, Modal, Form } from "react-bootstrap";
 import api from "../api/axios";
-import { BrowserMultiFormatReader } from "@zxing/library";
 import { useAuth } from "../hooks/AuthContext";
 import toast from "react-hot-toast";
-import { FaEye, FaQrcode } from "react-icons/fa";
+import { FaEye, FaFilter } from "react-icons/fa";
 import type { TipoReserva } from "~/types/tipoReserva";
 import type { Bitacora } from "~/types/bitacora";
 
@@ -69,34 +68,54 @@ type Reservation = {
 export default function ReservationList() {
   const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [selectedReservation, setSelectedReservation] =
-    useState<Reservation | null>(null);
+  const [filteredReservations, setFilteredReservations] = useState<Reservation[]>([]);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const qrBaseUrl = "https://midominio.com/qrcode/";
   const [historial, setHistorial] = useState<Bitacora[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
+  
+  // Estados para los filtros
+  const [statusFilter, setStatusFilter] = useState<string>("Todos");
+  const [typeFilter, setTypeFilter] = useState<string>("Todos");
+  const [showFilters, setShowFilters] = useState(false);
+  const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
+
+  // Obtener tipos de reserva para el filtro
+  useEffect(() => {
+    const fetchTipoReservas = async () => {
+      try {
+        const response = await api.get("/tipo-reservas");
+        setTipoReservas(response.data);
+      } catch (error) {
+        console.error("Error al obtener tipos de reserva:", error);
+        toast.error("Error al cargar tipos de reserva");
+      }
+    };
+    
+    fetchTipoReservas();
+  }, []);
 
   const fetchHistorial = async (reservaId: number) => {
-  if (historialCache[reservaId]) {
-    setHistorial(historialCache[reservaId]);
-    return;
-  }
+    if (historialCache[reservaId]) {
+      setHistorial(historialCache[reservaId]);
+      return;
+    }
 
-  setLoadingHistorial(true);
-  try {
-    const response = await api.get(`/bitacoras/reserva/${reservaId}`);
-    setHistorial(response.data);
-    setHistorialCache(prev => ({...prev, [reservaId]: response.data}));
-  } catch (error) {
-    console.error("Error al obtener historial:", error);
-    toast.error("Error al cargar el historial de cambios");
-  } finally {
-    setLoadingHistorial(false);
-  }
-};
+    setLoadingHistorial(true);
+    try {
+      const response = await api.get(`/bitacoras/reserva/${reservaId}`);
+      setHistorial(response.data);
+      setHistorialCache(prev => ({...prev, [reservaId]: response.data}));
+    } catch (error) {
+      console.error("Error al obtener historial:", error);
+      toast.error("Error al cargar el historial de cambios");
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };
 
- // Llama esta función cuando abras el modal
   useEffect(() => {
     if (showModal && selectedReservation) {
       fetchHistorial(selectedReservation.id);
@@ -108,6 +127,7 @@ export default function ReservationList() {
       try {
         const response = await api.get(`/reservas/${user?.id}`);
         setReservations(response.data);
+        setFilteredReservations(response.data);
       } catch (error) {
         console.error(error);
         toast.error("Error al cargar las reservas");
@@ -119,8 +139,27 @@ export default function ReservationList() {
     }
   }, [user]);
 
+  // Aplicar filtros cuando cambian los valores
+  useEffect(() => {
+    let result = [...reservations];
+    
+    // Filtrar por estado
+    if (statusFilter !== "Todos") {
+      result = result.filter(reserva => reserva.estado === statusFilter);
+    }
+    
+    // Filtrar por tipo
+    if (typeFilter !== "Todos") {
+      result = result.filter(reserva => 
+        reserva.tipo_reserva?.nombre === typeFilter
+      );
+    }
+    
+    setFilteredReservations(result);
+  }, [statusFilter, typeFilter, reservations]);
+
   const handleDetailClick = (reservation: Reservation) => {
-    setHistorial([]); // Resetear para mostrar carga limpia
+    setHistorial([]);
     setSelectedReservation(reservation);
     setShowModal(true);
   };
@@ -130,10 +169,74 @@ export default function ReservationList() {
     setSelectedReservation(null);
   };
 
+  const resetFilters = () => {
+    setStatusFilter("Todos");
+    setTypeFilter("Todos");
+  };
+
   return (
     <div className="container py-5">
       <div className="table-responsive rounded shadow p-3 mt-4">
-        <h4 className="mb-3 text-center">Listado de Reservas</h4>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h4 className="mb-0 text-center">Listado de Reservas</h4>
+          <Button 
+            variant="outline-secondary" 
+            onClick={() => setShowFilters(!showFilters)}
+            className="d-flex align-items-center gap-2"
+          >
+            <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+          </Button>
+        </div>
+
+        {/* Panel de filtros */}
+        {showFilters && (
+          <div className="bg-light p-3 rounded mb-4">
+            <div className="row g-3">
+              <div className="col-md-4">
+                <Form.Group>
+                  <Form.Label>Estado</Form.Label>
+                  <Form.Select 
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="Todos">Todos los estados</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="approved">Entregado</option>
+                    <option value="returned">Devuelto</option>
+                    <option value="rejected">Rechazado</option>                 
+                  </Form.Select>
+                </Form.Group>
+              </div>
+              
+              <div className="col-md-4">
+                <Form.Group>
+                  <Form.Label>Tipo de reserva</Form.Label>
+                  <Form.Select 
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                  >
+                    <option value="Todos">Todos los tipos</option>
+                    {tipoReservas.map(tipo => (
+                      <option key={tipo.id} value={tipo.nombre}>
+                        {tipo.nombre}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </div>
+              
+              <div className="col-md-4 d-flex align-items-end">
+                <Button 
+                  variant="outline-danger" 
+                  onClick={resetFilters}
+                  className="w-100"
+                >
+                  Limpiar filtros
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <table
           className="table table-hover align-middle text-center overflow-hidden"
@@ -152,7 +255,7 @@ export default function ReservationList() {
             </tr>
           </thead>
           <tbody>
-            {reservations.map((reserva) => (
+            {filteredReservations.map((reserva) => (
               <tr key={reserva.id}>
                 <td className="fw-bold">
                   {reserva.user.first_name}-{reserva.user.last_name}
@@ -201,10 +304,12 @@ export default function ReservationList() {
                 </td>
               </tr>
             ))}
-            {reservations.length === 0 && (
+            {filteredReservations.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center text-muted">
-                  No hay reservas registradas
+                <td colSpan={8} className="text-center text-muted">
+                  {reservations.length === 0 
+                    ? "No hay reservas registradas" 
+                    : "No hay reservas que coincidan con los filtros"}
                 </td>
               </tr>
             )}
@@ -273,7 +378,7 @@ export default function ReservationList() {
                       </span>
                       <p
                         className="mb-0 fw-semibold flex-grow-1 word-break"
-                        style={{ minWidth: 0 }}  // esto ayuda en flex layouts para permitir el wrap
+                        style={{ minWidth: 0 }}
                       >
                         {selectedReservation.user.email}
                       </p>
@@ -373,7 +478,7 @@ export default function ReservationList() {
                         className="px-3 py-1 d-flex justify-content-center align-items-center"
                         style={{
                           fontSize: "0.85rem",
-                          width: "100%", // Opcional: asegura que ocupe todo el ancho disponible
+                          width: "100%",
                         }}
                       >
                         {selectedReservation.estado}
@@ -483,26 +588,16 @@ export default function ReservationList() {
 
                   <div className="ps-5">
                     <div className="text-center">
-                      {" "}
-                      {/* Contenedor centrado para el QR */}
                       <div className="bg-body-secondary p-3 rounded-3 shadow-sm mb-3 d-inline-block">
-                        {/* <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.codigo_qr.id}&size=150x150`}
-                          alt="Código QR de Reserva"
-                          style={{ width: "160px", height: "160px" }}
-                        /> */}
                         <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.codigo_qr.id}&size=300x300`}
                           alt="Código QR de Reserva"
                           style={{ maxWidth: "100%", height: "auto", display: "block" }}
                         />
-
                       </div>
                     </div>
 
                     <div>
-                      {" "}
-                      {/* Mantenemos el texto alineado a la izquierda */}
                       <p className="small text-body-secondary mb-1">
                         Escanee este código para verificar la reserva
                       </p>

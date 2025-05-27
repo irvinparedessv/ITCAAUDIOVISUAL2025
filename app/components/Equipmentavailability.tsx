@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Container, Table, Badge, Button, Row, Col, Form, Alert, Spinner } from "react-bootstrap";
+import { Badge, Button, Container, Form, Alert, Spinner } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from '~/api/axios';
@@ -35,10 +35,8 @@ export default function EquipmentAvailabilityList() {
     startTime: "08:00",
     endTime: "17:00"
   });
-  const [refreshing, setRefreshing] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-  // Obtener la lista de equipos
   const fetchEquipment = async () => {
     try {
       const response = await api.get("/equipos");
@@ -48,16 +46,13 @@ export default function EquipmentAvailabilityList() {
       console.error(err);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
-  // Cargar datos iniciales
   useEffect(() => {
     fetchEquipment();
   }, []);
 
-  // Verificar disponibilidad para todos los equipos
   const checkAllAvailability = async () => {
     if (!availabilityData.fecha) {
       setError("Por favor seleccione una fecha");
@@ -68,7 +63,6 @@ export default function EquipmentAvailabilityList() {
     try {
       const fechaStr = availabilityData.fecha.toISOString().split('T')[0];
       
-      // Verificar disponibilidad para cada equipo
       const updatedEquipmentList = await Promise.all(
         equipmentList.map(async (equipo) => {
           try {
@@ -102,20 +96,12 @@ export default function EquipmentAvailabilityList() {
     }
   };
 
-  // Refrescar datos manualmente
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchEquipment();
-  };
-
-  // Limpiar filtros y disponibilidad
   const handleClearFilters = () => {
     setAvailabilityData({
       fecha: null,
       startTime: "08:00",
       endTime: "17:00"
     });
-    // Limpiar la disponibilidad mostrada
     setEquipmentList(prev => prev.map(equipo => ({
       ...equipo,
       disponibilidad: undefined
@@ -132,156 +118,139 @@ export default function EquipmentAvailabilityList() {
     <Container className="my-5">
       <Alert variant="danger" className="text-center">
         {error}
-        <Button variant="link" onClick={handleRefresh}>Reintentar</Button>
       </Alert>
     </Container>
   );
 
   return (
-    <Container className="my-5">
-      <Row className="justify-content-center">
-        <Col md={10} lg={8}>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h3 className="mb-0">Listado de Inventarios</h3>
-            <div>
-              <Button 
-                variant="outline-primary" 
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="me-2"
-              >
-                {refreshing ? (
-                  <>
-                    <Spinner as="span" size="sm" animation="border" />
-                    <span className="ms-2">Actualizar</span>
-                  </>
-                ) : 'Actualizar'}
-              </Button>
-              <Button 
-                variant="primary"
-                onClick={checkAllAvailability}
-                disabled={!availabilityData.fecha || checkingAvailability}
-                className="me-2"
-              >
-                {checkingAvailability ? (
-                  <>
-                    <Spinner as="span" size="sm" animation="border" />
-                    <span className="ms-2">Verificando...</span>
-                  </>
-                ) : 'Ver Disponibilidad'}
-              </Button>
-              <Button 
-                variant="outline-secondary"
-                onClick={handleClearFilters}
-              >
-                Limpiar Filtros
-              </Button>
+    <div className="container py-5">
+      <div className="table-responsive rounded shadow p-3 mt-4">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h4 className="mb-0 text-center">Listado de Equipos Disponibles</h4>
+          <div>
+            <Button 
+              variant="primary"
+              className="me-2 btn-custom-red"
+              onClick={checkAllAvailability}
+              disabled={!availabilityData.fecha || checkingAvailability}
+            >
+              {checkingAvailability ? (
+                <>
+                  <Spinner as="span" size="sm" animation="border" />
+                  <span className="ms-2">Verificando...</span>
+                </>
+              ) : 'Ver Disponibilidad'}
+            </Button>
+            <Button 
+              variant="outline-secondary"
+              onClick={handleClearFilters}
+            >
+              Limpiar Filtros
+            </Button>
+          </div>
+        </div>
+
+        <div className="mb-4 p-3 border rounded bg-light">
+          <h5>Seleccione fecha y horario</h5>
+          <div className="row">
+            <div className="col-md-4">
+              <Form.Group>
+                <Form.Label>Fecha</Form.Label>
+                <DatePicker
+                  selected={availabilityData.fecha}
+                  onChange={(date: Date | null) => setAvailabilityData({...availabilityData, fecha: date})}
+                  className="form-control"
+                  dateFormat="yyyy-MM-dd"
+                  minDate={new Date()}
+                  placeholderText="Seleccione una fecha"
+                  isClearable
+                />
+              </Form.Group>
+            </div>
+            <div className="col-md-4">
+              <Form.Group>
+                <Form.Label>Hora de inicio</Form.Label>
+                <Form.Control
+                  type="time"
+                  value={availabilityData.startTime}
+                  onChange={(e) => setAvailabilityData({...availabilityData, startTime: e.target.value})}
+                />
+              </Form.Group>
+            </div>
+            <div className="col-md-4">
+              <Form.Group>
+                <Form.Label>Hora de fin</Form.Label>
+                <Form.Control
+                  type="time"
+                  value={availabilityData.endTime}
+                  onChange={(e) => setAvailabilityData({...availabilityData, endTime: e.target.value})}
+                />
+              </Form.Group>
             </div>
           </div>
+          {availabilityData.fecha && (
+            <div className="mt-2 text-muted">
+              <small>
+                Mostrando disponibilidad para: {availabilityData.fecha.toLocaleDateString()} de {availabilityData.startTime} a {availabilityData.endTime}
+              </small>
+            </div>
+          )}
+        </div>
 
-          {/* Filtros de disponibilidad */}
-          <div className="mb-4 p-3 border rounded bg-light">
-            <h5>Seleccione fecha y horario</h5>
-            <Row>
-              <Col md={4}>
-                <Form.Group>
-                  <Form.Label>Fecha</Form.Label>
-                  <DatePicker
-                    selected={availabilityData.fecha}
-                    onChange={(date: Date | null) => setAvailabilityData({...availabilityData, fecha: date})}
-                    className="form-control"
-                    dateFormat="yyyy-MM-dd"
-                    minDate={new Date()}
-                    placeholderText="Seleccione una fecha"
-                    isClearable
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group>
-                  <Form.Label>Hora de inicio</Form.Label>
-                  <Form.Control
-                    type="time"
-                    value={availabilityData.startTime}
-                    onChange={(e) => setAvailabilityData({...availabilityData, startTime: e.target.value})}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group>
-                  <Form.Label>Hora de fin</Form.Label>
-                  <Form.Control
-                    type="time"
-                    value={availabilityData.endTime}
-                    onChange={(e) => setAvailabilityData({...availabilityData, endTime: e.target.value})}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-            {availabilityData.fecha && (
-              <div className="mt-2 text-muted">
-                <small>
-                  Mostrando disponibilidad para: {availabilityData.fecha.toLocaleDateString()} de {availabilityData.startTime} a {availabilityData.endTime}
-                </small>
-              </div>
-            )}
-          </div>
+        {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
 
-          {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
-
-          <div className="table-responsive">
-            <Table striped bordered hover>
-              <thead className="table-primary">
-                <tr>
-                  <th>Nombre</th>
-                  <th>Total</th>
-                  <th>Disponible</th>
-                  <th>En Reserva</th>
-                  <th>Entregado</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {equipmentList.map((equipment) => (
-                  <tr key={equipment.id}>
-                    <td>{equipment.nombre}</td>
-                    <td>{equipment.cantidad}</td>
-                    <td>
-                      {equipment.disponibilidad ? (
-                        <>
-                          {equipment.disponibilidad.cantidad_disponible}
-                          {equipment.disponibilidad.cantidad_disponible === equipment.cantidad}
-                        </>
-                      ) : (
-                        equipment.cantidad
-                      )}
-                    </td>
-                    <td>{equipment.disponibilidad?.cantidad_en_reserva ?? 0}</td>
-                    <td>{equipment.disponibilidad?.cantidad_entregada ?? 0}</td>
-                    <td>
-                      <Badge
-                        bg={
-                          (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
-                            ? "danger"
-                            : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) < equipment.cantidad
-                            ? "warning"
-                            : "success"
-                        }
-                      >
-                        {(equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
-                          ? "Agotado"
-                          : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) < equipment.cantidad
-                          ? "Limitado"
-                          : "Disponible"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        </Col>
-      </Row>
-    </Container>
+        <table className="table table-hover align-middle text-center overflow-hidden" style={{ borderRadius: "0.8rem" }}>
+          <thead className="table-dark">
+            <tr>
+              <th className="rounded-top-start">Nombre</th>
+              <th>Total</th>
+              <th>Disponible</th>
+              <th>En Reserva</th>
+              <th>Entregado</th>
+              <th className="rounded-top-end">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {equipmentList.map((equipment) => (
+              <tr key={equipment.id}>
+                <td className="fw-bold">{equipment.nombre}</td>
+                <td>{equipment.cantidad}</td>
+                <td>
+                  {equipment.disponibilidad ? (
+                    <>
+                      {equipment.disponibilidad.cantidad_disponible}
+                      {equipment.disponibilidad.cantidad_disponible === equipment.cantidad}
+                    </>
+                  ) : (
+                    equipment.cantidad
+                  )}
+                </td>
+                <td>{equipment.disponibilidad?.cantidad_en_reserva ?? 0}</td>
+                <td>{equipment.disponibilidad?.cantidad_entregada ?? 0}</td>
+                <td>
+                  <Badge
+                    bg={
+                      (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
+                        ? "danger"
+                        : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) < equipment.cantidad
+                        ? "warning"
+                        : "success"
+                    }
+                    className="px-3 py-2"
+                    style={{ fontSize: "0.9rem" }}
+                  >
+                    {(equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
+                      ? "Agotado"
+                      : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) < equipment.cantidad
+                      ? "Limitado"
+                      : "Disponible"}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }

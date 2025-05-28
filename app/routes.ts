@@ -21,7 +21,7 @@ export default [
     route("formEquipo", "routes/formEquipo.tsx"),
     route("formEspacio", "routes/creacionEspacio.tsx"),
     route("formChat", "routes/formChat.tsx"),
-    route("inventario", "routes/inventario.tsx"),
+    route("equipmentavailability", "routes/EquipmentAvailabilityPage.tsx"),
     route("menu", "routes/optionsReservation.tsx"),
     route("reservationsroom", "routes/reservationRoom.tsx"),
     route("tipoequipo", "routes/tipoEquipos.tsx"),
@@ -37,5 +37,10 @@ export default [
     route("editarPerfil", "routes/editPerfil.tsx"),
     route("actualizarEstado/:id", "routes/ReservacionEstado.tsx"),
     route("actualizarEstadoAula/:id", "routes/ReservacionEstadoAula.tsx"),
+
+    route("bitacora", "routes/BitacoraPage.tsx"),
+    route("notifications", "routes/NotificationsList.tsx"),
+    route("prediccion", "routes/PrediccionPage.tsx"),
+    route("administracion", "routes/OpcionesPanel.tsx"),
   ]),
 ] satisfies RouteConfig;

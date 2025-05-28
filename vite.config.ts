@@ -5,7 +5,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   ssr: {
-    noExternal: ["react-datepicker", "react-360-view"],
+    noExternal: ["react-datepicker", "react-360-view", "pannellum"],
   },
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
 });

@@ -30,7 +30,6 @@ const EditUsuario = () => {
     address: "",
     role_id: 1,
     estado: 1,
-    password: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -130,7 +129,6 @@ const EditUsuario = () => {
         address: formData.address || "",
         role_id: formData.role_id,
         estado: formData.estado,
-        ...(formData.password && { password: formData.password }),
       };
 
       try {
@@ -206,17 +204,6 @@ const EditUsuario = () => {
               required
             />
             <Form.Control.Feedback type="invalid">{errors.email}</Form.Control.Feedback>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Contraseña (opcional)</Form.Label>
-            <Form.Control
-              type="password"
-              name="password"
-              value={formData.password || ""}
-              onChange={handleChange}
-              placeholder="Deja en blanco para no cambiarla"
-            />
           </Form.Group>
 
           <Form.Group className="mb-3">

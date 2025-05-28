@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useDropzone } from "react-dropzone";
 import Select from "react-select";
 import type { MultiValue, SingleValue } from "react-select";
 import { useAuth } from "../hooks/AuthContext";
@@ -13,24 +12,33 @@ import {
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../api/axios";
+import { getTipoReservas } from "~/services/tipoReservaService";
 
 export default function EquipmentReservationForm() {
   type OptionType = { value: string; label: string };
 
   const [formData, setFormData] = useState({
-    equipment: [] as MultiValue<OptionType>,
-    aula: null as SingleValue<OptionType>,
     date: "",
     startTime: "",
     endTime: "",
+    tipoReserva: null as SingleValue<OptionType>,
+    equipment: [] as MultiValue<OptionType>,
+    aula: null as SingleValue<OptionType>,
   });
 
-  const [equipmentOptions, setEquipmentOptions] = useState<OptionType[]>([]);
+  const [allEquipmentOptions, setAllEquipmentOptions] = useState<OptionType[]>([]);
+  const [availableEquipmentOptions, setAvailableEquipmentOptions] = useState<OptionType[]>([]);
   const [aulaOptions, setAulaOptions] = useState<OptionType[]>([]);
   const [loadingEquipments, setLoadingEquipments] = useState(true);
   const [loadingAulas, setLoadingAulas] = useState(true);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>([]);
+  const [loadingTipoReserva, setLoadingTipoReserva] = useState(true);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
   const { user } = useAuth();
+
+  // Verifica si fecha y horas están completas
+  const isDateTimeComplete = formData.date && formData.startTime && formData.endTime;
 
   useEffect(() => {
     const fetchEquipments = async () => {
@@ -42,7 +50,7 @@ export default function EquipmentReservationForm() {
           label: item.nombre,
         }));
 
-        setEquipmentOptions(options);
+        setAllEquipmentOptions(options);
       } catch (error) {
         toast.error("Error cargando los equipos. Intente nuevamente.");
       } finally {
@@ -70,6 +78,117 @@ export default function EquipmentReservationForm() {
     fetchAulas();
   }, []);
 
+  useEffect(() => {
+    const fetchTipos = async () => {
+      try {
+        const tipos = await getTipoReservas();
+        setTipoReservaOptions(tipos.map(tr => ({
+          value: tr.id.toString(),
+          label: tr.nombre
+        })));
+      } catch (error) {
+        toast.error("Error cargando tipos de reserva");
+      } finally {
+        setLoadingTipoReserva(false);
+      }
+    };
+
+    fetchTipos();
+  }, []);
+
+  useEffect(() => {
+    const fetchEquipmentsByTipoReserva = async () => {
+      if (!formData.tipoReserva) {
+        setAvailableEquipmentOptions([]);
+        return;
+      }
+
+      try {
+        setLoadingEquipments(true);
+        const response = await api.get(`/equiposPorTipo/${formData.tipoReserva.value}`);
+        const data = response.data;
+        const options = data.map((item: any) => ({
+          value: item.id,
+          label: item.nombre,
+        }));
+
+        setAllEquipmentOptions(options);
+        
+        if (isDateTimeComplete) {
+          checkEquipmentAvailability(options);
+        } else {
+          setAvailableEquipmentOptions(options);
+        }
+      } catch (error) {
+        toast.error("Error cargando los equipos para este tipo de reserva.");
+      } finally {
+        setLoadingEquipments(false);
+      }
+    };
+
+    fetchEquipmentsByTipoReserva();
+  }, [formData.tipoReserva]);
+
+  // Verificar disponibilidad de equipos cuando cambia la fecha/hora
+  useEffect(() => {
+    if (isDateTimeComplete && formData.tipoReserva && allEquipmentOptions.length > 0) {
+      checkEquipmentAvailability(allEquipmentOptions);
+    }
+  }, [formData.date, formData.startTime, formData.endTime]);
+
+  const checkEquipmentAvailability = async (equipments: OptionType[]) => {
+    try {
+      setCheckingAvailability(true);
+      
+      const availabilityChecks = equipments.map(async (equipo) => {
+        try {
+          const response = await api.get(`/equipos/${equipo.value}/disponibilidad`, {
+            params: {
+              fecha: formData.date,
+              startTime: formData.startTime,
+              endTime: formData.endTime
+            }
+          });
+          
+          return {
+            ...equipo,
+            available: response.data.disponibilidad.cantidad_disponible > 0
+          };
+        } catch (error) {
+          console.error(`Error verificando disponibilidad para equipo ${equipo.value}`, error);
+          return {
+            ...equipo,
+            available: false
+          };
+        }
+      });
+
+      const results = await Promise.all(availabilityChecks);
+      const availableOptions = results.filter(equipo => equipo.available).map(equipo => ({
+        value: equipo.value,
+        label: equipo.label
+      }));
+      
+      setAvailableEquipmentOptions(availableOptions);
+      
+      const currentSelected = formData.equipment.filter(eq => 
+        availableOptions.some(opt => opt.value === eq.value)
+      );
+      
+      if (currentSelected.length !== formData.equipment.length) {
+        setFormData(prev => ({ ...prev, equipment: currentSelected }));
+        toast.error("Algunos equipos seleccionados ya no están disponibles");
+      }
+      
+    } catch (error) {
+      console.error("Error verificando disponibilidad:", error);
+      toast.error("Error al verificar disponibilidad de equipos");
+      setAvailableEquipmentOptions(equipments);
+    } finally {
+      setCheckingAvailability(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -77,12 +196,14 @@ export default function EquipmentReservationForm() {
 
   const handleClear = () => {
     setFormData({
-      equipment: [],
-      aula: null,
       date: "",
       startTime: "",
       endTime: "",
+      tipoReserva: null,
+      equipment: [],
+      aula: null,
     });
+    setAvailableEquipmentOptions([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,21 +236,25 @@ export default function EquipmentReservationForm() {
 
     const payload = {
       user_id: user.id,
-      equipo: formData.equipment.map((eq) => eq.value),
+      equipo: formData.equipment.map((eq) => ({
+        id: eq.value,
+        cantidad: 1
+      })),
       aula: formData.aula.value,
       fecha_reserva: formData.date,
       startTime: formData.startTime,
       endTime: formData.endTime,
+      tipo_reserva_id: formData.tipoReserva?.value,
     };
 
     try {
       setLoadingSubmit(true);
-      await api.post("/reservas", payload);
-      toast.success("¡Reserva guardada exitosamente!");
+      const response = await api.post("/reservas", payload);
+      toast.success("¡Reserva creada exitosamente!");
       handleClear();
     } catch (error) {
       console.error(error);
-      toast.error("Error al guardar la reserva. Intenta nuevamente.");
+      toast.error("Error al crear la reserva. Intenta nuevamente.");
     } finally {
       setLoadingSubmit(false);
     }
@@ -140,65 +265,6 @@ export default function EquipmentReservationForm() {
       <h2 className="mb-4 text-center fw-bold">Reservación de Equipos</h2>
 
       <form onSubmit={handleSubmit}>
-        {/* Multiselect Equipos */}
-        <div className="mb-4">
-          <label className="form-label d-flex align-items-center">
-            <FaBoxes className="me-2" />
-            Equipos
-          </label>
-          {loadingEquipments ? (
-            <div className="d-flex justify-content-center">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
-            </div>
-          ) : (
-            <Select
-              isMulti
-              options={equipmentOptions}
-              value={formData.equipment}
-              onChange={(selected) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  equipment: selected,
-                }))
-              }
-              placeholder="Selecciona equipos"
-              className="react-select-container"
-              classNamePrefix="react-select"
-            />
-          )}
-        </div>
-
-        {/* Select Aula */}
-        <div className="mb-4">
-          <label className="form-label d-flex align-items-center">
-            <FaSchool className="me-2" />
-            Aula
-          </label>
-          {loadingAulas ? (
-            <div className="d-flex justify-content-center">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
-            </div>
-          ) : (
-            <Select
-              options={aulaOptions}
-              value={formData.aula}
-              onChange={(selected) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  aula: selected,
-                }))
-              }
-              placeholder="Selecciona aula"
-              className="react-select-container"
-              classNamePrefix="react-select"
-            />
-          )}
-        </div>
-
         {/* Fecha */}
         <div className="mb-4">
           <label className="form-label d-flex align-items-center">
@@ -248,11 +314,114 @@ export default function EquipmentReservationForm() {
           </div>
         </div>
 
+        {/* TIPO RESERVA */}
+        <div className="mb-4">
+          <label className="form-label d-flex align-items-center">
+            <FaCalendarAlt className="me-2" />
+            Tipo de Reserva
+          </label>
+          {loadingTipoReserva ? (
+            <div className="d-flex justify-content-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          ) : (
+            <Select
+              options={tipoReservaOptions}
+              value={formData.tipoReserva}
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  tipoReserva: selected,
+                  equipment: []
+                }))
+              }
+              placeholder="Selecciona el tipo de reserva"
+              className="react-select-container"
+              classNamePrefix="react-select"
+              isDisabled={!isDateTimeComplete}
+            />
+          )}
+        </div>
+
+        {/* Multiselect Equipos */}
+        <div className="mb-4">
+          <label className="form-label d-flex align-items-center">
+            <FaBoxes className="me-2" />
+            Equipos Disponibles
+            {checkingAvailability && (
+              <span className="ms-2 spinner-border spinner-border-sm text-primary"></span>
+            )}
+          </label>
+          {loadingEquipments ? (
+            <div className="d-flex justify-content-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          ) : (
+            <Select
+              isMulti
+              options={availableEquipmentOptions}
+              value={formData.equipment}
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  equipment: selected,
+                }))
+              }
+              isDisabled={!formData.tipoReserva || checkingAvailability || !isDateTimeComplete}
+              placeholder={
+                !isDateTimeComplete
+                  ? "Selecciona fecha y hora primero"
+                  : !formData.tipoReserva
+                    ? "Selecciona un tipo de reserva primero"
+                    : checkingAvailability
+                      ? "Verificando disponibilidad..."
+                      : "Selecciona equipos disponibles"
+              }
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
+          )}
+        </div>
+
+        {/* Select Aula */}
+        <div className="mb-4">
+          <label className="form-label d-flex align-items-center">
+            <FaSchool className="me-2" />
+            Aula
+          </label>
+          {loadingAulas ? (
+            <div className="d-flex justify-content-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          ) : (
+            <Select
+              options={aulaOptions}
+              value={formData.aula}
+              onChange={(selected) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  aula: selected,
+                }))
+              }
+              placeholder="Selecciona aula"
+              className="react-select-container"
+              classNamePrefix="react-select"
+              isDisabled={!isDateTimeComplete || !formData.tipoReserva || formData.equipment.length === 0}
+            />
+          )}
+        </div>
+
         <div className="form-actions">
           <button
             type="submit"
             className="btn primary-btn"
-            disabled={loadingSubmit}
+            disabled={loadingSubmit || checkingAvailability || !isDateTimeComplete || !formData.tipoReserva || formData.equipment.length === 0 || !formData.aula}
           >
             {loadingSubmit ? (
               <>
@@ -273,6 +442,7 @@ export default function EquipmentReservationForm() {
             type="button"
             className="btn secondary-btn"
             onClick={handleClear}
+            disabled={checkingAvailability}
           >
             <FaBroom className="me-2" />
             Limpiar

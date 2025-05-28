@@ -38,6 +38,7 @@ export const createEquipo = async (equipo: EquipoCreateDTO) => {
   formData.append('estado', equipo.estado ? '1' : '0')
   formData.append('cantidad', equipo.cantidad.toString())
   formData.append('tipo_equipo_id', equipo.tipo_equipo_id.toString())
+   formData.append('tipo_reserva_id', equipo.tipo_reserva_id.toString())
   formData.append('is_deleted', '0') // ← Esto soluciona el 422
 
   if ((equipo as any).imagen) {
@@ -69,6 +70,7 @@ export const updateEquipo = async (id: number, equipo: EquipoUpdateDTO) => {
   if (equipo.estado !== undefined) formData.append('estado', equipo.estado ? '1' : '0')
   if (equipo.cantidad !== undefined) formData.append('cantidad', equipo.cantidad.toString())
   if (equipo.tipo_equipo_id !== undefined) formData.append('tipo_equipo_id', equipo.tipo_equipo_id.toString())
+    if (equipo.tipo_reserva_id !== undefined) formData.append('tipo_reserva_id', equipo.tipo_reserva_id.toString())
 
   if ((equipo as any).imagen) {
     formData.append('imagen', (equipo as any).imagen)

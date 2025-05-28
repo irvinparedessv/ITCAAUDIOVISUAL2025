@@ -4,6 +4,9 @@ import toast from 'react-hot-toast';
 import type { Equipo, EquipoCreateDTO } from '~/types/equipo';
 import type { TipoEquipo } from '~/types/tipoEquipo';
 import { getTipoEquipos } from '~/services/tipoEquipoService';
+import { getTipoReservas } from '~/services/tipoReservaService';
+import type { TipoReserva } from '~/types/tipoReserva';
+
 import { FaSave, FaTimes, FaPlus, FaBroom, FaUpload, FaTrash } from 'react-icons/fa';
 
 interface Props {
@@ -21,12 +24,15 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
     estado: true,
     cantidad: 0,
     tipo_equipo_id: 0,
+    tipo_reserva_id: 0,
     imagen: null,
   });
 
   const [tipos, setTipos] = useState<TipoEquipo[]>([]);
   const [loading, setLoading] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
+
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -104,21 +110,26 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
     });
   };
 
-  useEffect(() => {
-    const loadTipos = async () => {
-      try {
-        const data = await getTipoEquipos();
-        setTipos(data);
-      } catch (err) {
-        console.error('Error cargando tipos de equipo:', err);
-        toast.error('Error al cargar tipos de equipo');
-      } finally {
-        setLoading(false);
-      }
-    };
+ useEffect(() => {
+  const loadTipos = async () => {
+    try {
+      const [tiposEquipoData, tiposReservaData] = await Promise.all([
+        getTipoEquipos(),
+        getTipoReservas()
+      ]);
 
-    loadTipos();
-  }, []);
+      setTipos(tiposEquipoData);
+      setTipoReservas(tiposReservaData);
+    } catch (err) {
+      console.error('Error cargando tipos:', err);
+      toast.error('Error al cargar tipos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadTipos();
+}, []);
 
   useEffect(() => {
     if (equipoEditando) {
@@ -128,6 +139,7 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
         estado: equipoEditando.estado,
         cantidad: equipoEditando.cantidad,
         tipo_equipo_id: equipoEditando.tipo_equipo_id,
+        tipo_reserva_id: equipoEditando.tipo_reserva_id,
         imagen: null,
       });
       setImagePreview(equipoEditando.imagen_url || null);
@@ -187,6 +199,7 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
       estado: true,
       cantidad: 0,
       tipo_equipo_id: 0,
+      tipo_reserva_id: 0,
       imagen: null
     });
     setImagePreview(null);
@@ -316,6 +329,25 @@ export default function EquipoForm({ onSubmit, equipoEditando, resetEdit, onCanc
             ))}
           </select>
         </div>
+
+        <div className="mb-4">
+          <label htmlFor="tipo_reserva" className="form-label">Tipo de reserva</label>
+          <select
+            id="tipo_reserva"
+            value={form.tipo_reserva_id || ''}
+            onChange={e => setForm({ ...form, tipo_reserva_id: Number(e.target.value) })}
+            className="form-select"
+            disabled={loading}
+          >
+            <option value="">{loading ? 'Cargando tipos de reserva...' : 'Seleccione un tipo'}</option>
+            {tipoReservas.map(tipo => (
+              <option key={tipo.id} value={tipo.id}>
+                {tipo.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
 
         <div className="form-actions">
           {equipoEditando ? (

@@ -2,25 +2,50 @@ import { useEffect, useState } from "react";
 import echo from "../utils/pusher";
 import { useAuth } from "./AuthContext";
 import { Role } from "~/types/roles";
+import api from '~/api/axios';
 
-interface ReservaNotification {
+// Tipos mejorados para las notificaciones
+type NotificationType = 'nueva_reserva' | 'estado_reserva';
+
+interface EquipoNotification {
+  nombre: string;
+  tipo_equipo?: string;
+}
+
+interface ReservaBase {
   id: number;
-  user: string;
   aula: string;
   fecha_reserva: string;
   fecha_entrega: string;
   estado: string;
+  tipo_reserva?: string;
+  equipos?: EquipoNotification[];
+  comentario?: string;
+}
+
+interface ReservaNotification extends ReservaBase {
+  user?: string; // Opcional porque no todas las notificaciones incluyen usuario
+}
+
+interface NotificacionData {
+  type: NotificationType;
+  title: string;
+  message: string;
+  reserva: ReservaNotification;
 }
 
 interface NotificacionStorage {
   id: string;
-  reserva: ReservaNotification;
-  unread: boolean;
-  createdAt: string;
+  data: NotificacionData;
+  read_at: string | null;
+  created_at: string;
+  type: string;
 }
 
-interface Notificacion extends Omit<NotificacionStorage, "createdAt"> {
+interface Notificacion extends Omit<NotificacionStorage, "created_at" | "read_at"> {
   createdAt: Date;
+  readAt: Date | null;
+  unread: boolean;
 }
 
 export function useNotificaciones() {
@@ -29,106 +54,148 @@ export function useNotificaciones() {
   const [loaded, setLoaded] = useState(false);
   const { user } = useAuth();
 
-  // Cargar notificaciones del localStorage
-  useEffect(() => {
-    const savedNotifications = localStorage.getItem("notifications");
-    if (savedNotifications) {
-      try {
-        const parsed = JSON.parse(savedNotifications);
-        const loadedNotifications = parsed.notifications.map(
-          (n: NotificacionStorage) => ({
-            ...n,
-            createdAt: new Date(n.createdAt),
-          })
-        );
-        setNotificaciones(loadedNotifications);
-        setUnreadCount(parsed.unreadCount);
-      } catch (error) {
-        console.error("Error loading notifications:", error);
-        localStorage.removeItem("notifications");
-      }
-    }
-    setLoaded(true);
-  }, []);
-
-  // Guardar notificaciones en localStorage cuando cambian
-  useEffect(() => {
-    if (!loaded) return;
-
-    const notificationsToSave: NotificacionStorage[] = notificaciones.map((n) => ({
-      ...n,
-      createdAt: n.createdAt.toISOString(),
+  // Normalizar notificaciones del servidor
+  const normalizeNotifications = (notifications: NotificacionStorage[]): Notificacion[] => {
+    return notifications.map(n => ({
+      id: n.id,
+      data: {
+        ...n.data,
+        // Asegurar que la reserva siempre tenga un estado
+        reserva: {
+          ...n.data.reserva,
+          estado: n.data.reserva?.estado || 'pendiente'
+        }
+      },
+      type: n.type,
+      createdAt: new Date(n.created_at),
+      readAt: n.read_at ? new Date(n.read_at) : null,
+      unread: !n.read_at,
     }));
+  };
 
-    localStorage.setItem(
-      "notifications",
-      JSON.stringify({
-        notifications: notificationsToSave,
-        unreadCount,
-      })
-    );
-  }, [notificaciones, unreadCount, loaded]);
+  // Cargar notificaciones persistentes del servidor
+  const fetchNotifications = async () => {
+    try {
+      const response = await api.get<NotificacionStorage[]>('/notificaciones');
+      const normalizedNotifications = normalizeNotifications(response.data);
+      
+      setNotificaciones(normalizedNotifications);
+      setUnreadCount(normalizedNotifications.filter(n => n.unread).length);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      // Podrías añadir un manejo de errores más sofisticado aquí
+    }
+  };
 
-  // Escuchar nuevas notificaciones
-    useEffect(() => {
+  // Cargar notificaciones al montar el componente
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadInitialData = async () => {
+      await fetchNotifications();
+      setLoaded(true);
+    };
+    
+    loadInitialData();
+  }, [user]);
+
+  // Manejar nueva notificación recibida
+  const handleNewNotification = (data: any) => {
+    console.log("Nueva notificación recibida:", data);
+    setUnreadCount(prev => prev + 1);
+    fetchNotifications(); // Refrescar la lista completa
+  };
+
+  // Escuchar nuevas notificaciones en tiempo real
+  useEffect(() => {
     if (!echo || !loaded || !user) return;
-    console.log('Subscripción a notificaciones creada');
 
     const channelName = `notifications.user.${user.id}`;
     const channel = echo.private(channelName);
 
-    const handler = (data: any) => {
-      console.log("Datos recibidos en notificación:", data);
-      const nuevaNotificacion: Notificacion = {
-        id: Date.now().toString(),
-        reserva: data.reserva,
-        unread: true,
-        createdAt: new Date(),
-      };
+    console.log('Suscribiendo a canal de notificaciones:', channelName);
 
-      setNotificaciones(prev => [nuevaNotificacion, ...prev]);
-      setUnreadCount(prev => prev + 1);
-    };
-
-    // Admins y encargados escuchan nuevas reservas
+    // Configurar listeners basados en el rol del usuario
     if ([Role.Administrador, Role.Encargado].includes(user.role)) {
-      channel.listen('.nueva.reserva', handler);
+      channel.listen('.nueva.reserva', handleNewNotification);
+      console.log('Escuchando eventos de nueva reserva');
     }
 
-    // Prestamista escucha cambios de estado
     if (user.role === Role.Prestamista) {
-       channel.listen('.reserva.estado.actualizado', handler);
-
+      channel.listen('.reserva.estado.actualizado', handleNewNotification);
+      console.log('Escuchando eventos de cambio de estado');
     }
 
+    // Limpieza al desmontar
     return () => {
-      channel.stopListening('.nueva.reserva', handler);
-      channel.stopListening('.reserva.estado.actualizado', handler);
+      if ([Role.Administrador, Role.Encargado].includes(user.role)) {
+        channel.stopListening('.nueva.reserva', handleNewNotification);
+      }
+      if (user.role === Role.Prestamista) {
+        channel.stopListening('.reserva.estado.actualizado', handleNewNotification);
+      }
       echo!.leave(channelName);
+      console.log('Dejando canal de notificaciones');
     };
   }, [echo, loaded, user]);
 
-
   // Marcar como leídas
-  const markAsRead = () => {
-    setNotificaciones((prev) => prev.map((n) => ({ ...n, unread: false })));
-    setUnreadCount(0);
+ // En tu hook useNotificaciones
+  const markAsRead = async (notificationId: string | null = null) => {
+  try {
+    if (notificationId) {
+      // Marcar solo una notificación como leída
+      await api.post(`/notificaciones/${notificationId}/marcar-leida`);
+      setNotificaciones(prev => prev.map(n => 
+        n.id === notificationId ? { ...n, unread: false } : n
+      ));
+      setUnreadCount(prev => prev - 1);
+    } else {
+      // Marcar todas como leídas
+      await api.post('/notificaciones/marcar-leidas');
+      setNotificaciones(prev => prev.map(n => ({ ...n, unread: false })));
+      setUnreadCount(0);
+    }
+  } catch (error) {
+    console.error("Error marking notifications as read:", error);
+  }
+};
+
+  // Eliminar notificación individual
+  const removeNotification = async (id: string) => {
+    try {
+      // Primero optimista
+      setNotificaciones(prev => {
+        const updated = prev.filter(n => n.id !== id);
+        setUnreadCount(updated.filter(n => n.unread).length);
+        return updated;
+      });
+
+      // Luego intentar en el backend
+      await api.delete(`/notificaciones/${id}`);
+    } catch (error) {
+      console.error("Error removing notification:", error);
+      // Revertir si falla
+      fetchNotifications();
+    }
   };
 
-  // Eliminar notificación
-  const removeNotification = (id: string) => {
-    setNotificaciones((prev) => {
-      const updated = prev.filter((n) => n.id !== id);
-      const newUnreadCount = updated.filter((n) => n.unread).length;
-      setUnreadCount(newUnreadCount);
-      return updated;
-    });
-  };
+  // Limpiar todas las notificaciones
+  const clearAllNotifications = async () => {
+    if (notificaciones.length === 0) return;
 
-  // Limpiar todas
-  const clearAllNotifications = () => {
-    setNotificaciones([]);
-    setUnreadCount(0);
+    try {
+      // Primero optimista
+      setNotificaciones([]);
+      setUnreadCount(0);
+
+      // Luego intentar en el backend
+      await api.delete('/notificaciones/clear-all');
+    } catch (error) {
+      console.error("Error clearing all notifications:", error);
+      // Revertir si falla
+      fetchNotifications();
+    }
   };
 
   return {
@@ -137,5 +204,6 @@ export function useNotificaciones() {
     markAsRead,
     removeNotification,
     clearAllNotifications,
+    refreshNotifications: fetchNotifications,
   };
 }

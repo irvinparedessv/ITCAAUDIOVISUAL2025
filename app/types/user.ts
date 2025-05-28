@@ -41,7 +41,6 @@ export type UserUpdateDTO = {
   address?: string;
   role_id: number;
   estado?: number;
-  password?: string;
 };
 
 // Para identificar el usuario a actualizar (id requerido)

@@ -17,6 +17,7 @@
   --dropdown-hover-bg: rgba(0, 0, 0, 0.1);
 }
 
+
 /* Estructura del navbar */
 .navbar {
   background: var(--navbar-bg) !important;
@@ -43,17 +44,6 @@
 }
 
 /* Dropdowns del navbar */
-.navbar .dropdown-menu {
-  background: var(--dropdown-bg) !important;
-}
-
-.navbar .dropdown-item {
-  color: var(--navbar-text) !important;
-}
-
-.navbar .dropdown-item:hover {
-  background-color: var(--dropdown-hover-bg) !important;
-}
 
 /* Toggler del navbar */
 .custom-toggler {
@@ -70,6 +60,77 @@
   outline: none;
   box-shadow: none !important;
 }
+
+.bg-unreadnotification {
+  background-color: rgb(255 189 36) !important;
+}
+
+.notification-date {
+  font-style: italic;
+  color: #3d0707; 
+}
+
+.btn-notification-link {
+  color: #000000 !important; /* Ocre oscuro */
+  font-weight: bold !important;
+
+}
+
+.btn-notification-link:hover {
+  color: #5c3202 !important; /* Ocre aún más oscuro */
+  text-decoration: none;
+}
+
+
+
+
+
+/* INICIO DE Estilos para el sidebar en móvil */
+.offcanvas-dropdown .dropdown-menu {
+  position: static !important;
+  transform: none !important;
+  float: none;
+  width: 100%;
+  margin: 0.25rem 0;
+  border: none;
+  background-color: transparent !important;
+}
+
+.offcanvas-dropdown .dropdown-toggle::after {
+  display: inline-block;
+  margin-left: 0.255em;
+  vertical-align: 0.255em;
+  content: "";
+  border-top: 0.3em solid;
+  border-right: 0.3em solid transparent;
+  border-bottom: 0;
+  border-left: 0.3em solid transparent;
+}
+
+.offcanvas-dropdown .dropdown-item {
+  padding: 0.5rem 1.5rem;
+}
+
+/* Asegurar que los dropdowns en el navbar principal no se vean afectados */
+@media (min-width: 1200px) {
+  .offcanvas-dropdown .dropdown-menu {
+    position: absolute !important;
+  }
+}
+
+/* FIN DE Estilos para el sidebar en móvil */
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ==================== */
 /* ESTILOS GENERALES (NO AFECTAN AL NAVBAR) */
@@ -752,3 +813,287 @@ input.form-control.border-color-login {
   background-color: white !important;
   color: black !important;
 }
+
+
+/* Estilos para el Offcanvas y dropdowns */
+.offcanvas-dropdown .dropdown-menu {
+  border: none;
+  box-shadow: 0 2px 5px rgb(0, 0, 0);
+}
+
+/* Fondo amarillo claro para los menús desplegables */
+.bg-warning-subtle {
+  background-color: #fff8e1 !important;
+}
+
+/* Efecto hover amarillo para los items */
+.hover-bg-warning:hover {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+/* Estilos para las flechas de despliegue */
+.custom-toggle-arrow {
+  transition: transform 0.2s ease-in-out;
+}
+
+.custom-toggle-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Ajustes para los items del menú */
+.dropdown-item {
+  transition: all 0.2s;
+  padding: 0.5rem 1rem;
+}
+
+/* Estilos para el Offcanvas */
+.offcanvas {
+  background: linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92)) !important;
+}
+
+.offcanvas-header {
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.offcanvas-body {
+  padding: 0;
+}
+
+/* Estilos para el navbar principal */
+.navbar {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-dropdown-toggle::after {
+  display: none;
+}
+
+/* Ajustes para los badges de notificaciones */
+.notification-badge {
+  font-size: 0.7rem;
+  top: -5px;
+  right: -5px;
+}
+
+/* Estilo para notificaciones no leídas */
+.bg-unreadnotification {
+  background-color: rgba(255, 193, 7, 0.2) !important;
+}
+
+/* Estilo para el footer de notificaciones */
+.notification-footer {
+  background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+/* Estilo para los botones de notificaciones */
+.btn-notification-link {
+  color: #212529;
+  background-color: transparent;
+  border: 1px solid #ffc107;
+}
+
+.btn-notification-link:hover {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+
+
+
+
+
+
+
+
+
+/* DISENIO DE NOTIFICACIONES */
+
+/* Custom Burgundy Color Scheme */
+.notification-item {
+  transition: all 0.2s ease;
+}
+
+.notification-item:hover {
+  background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+  border-left: 3px solid #6b0000;
+  background-color: rgba(107, 0, 0, 0.05);
+}
+
+.notification-item.active {
+  background-color: rgba(107, 0, 0, 0.1);
+}
+
+.notification-time {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* Custom badge style */
+.custom-badge {
+  background-color: #6b0000;
+  color: white;
+}
+
+/* Header styles */
+.custom-header {
+  background-color: #6b0000;
+  color: white;
+}
+
+/* Spinner color */
+.custom-spinner {
+  color: #6b0000;
+}
+
+/* Title color */
+.custom-title {
+  color: #6b0000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .notification-item {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  
+  .notification-time {
+    margin-top: 0.5rem;
+    align-self: flex-end;
+  }
+}
+
+
+/* Asegurate que este CSS esté cargado después de Bootstrap */
+.list-group .list-group-item.active {
+  border-color: #6b0000;
+  color: #fff;
+}
+.notifications-wrapper {
+  --bs-list-group-active-bg: rgba(107, 0, 0, 0.1);
+  --bs-list-group-active-border-color: #6b0000;
+  --bs-list-group-active-color: #000;
+}
+
+/* en tu CSS global o módulo CSS */
+.badge-custom-red {
+  background-color: #6b0000 !important;
+  color: white !important;
+}
+
+.badge-custom-red {
+  background-color: unset !important;
+}
+
+/* Luego forzamos que bg-primary prevalezca */
+.badge-custom-red.bg-primary {
+  background-color: var(--bs-primary) !important;
+}
+
+
+/* FIN DE DISENIO DE NOTIFICACIONES */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Estilos para el Offcanvas */
+.offcanvas-body .nav-link,
+.offcanvas-body .dropdown-toggle {
+  padding: 0.5rem 1rem !important;
+  margin: 0.25rem 0 !important;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  color: #212529 !important; /* Color de texto oscuro */
+  transition: background-color 0.2s;
+}
+
+/* Estilo hover para items */
+.offcanvas-body .nav-link:hover,
+.offcanvas-body .dropdown-toggle:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Ajustes para los dropdowns (submenús) */
+.offcanvas-dropdown .dropdown-menu {
+  width: 100%;
+  background: transparent !important;
+  border: none !important;
+  padding-left: 1rem !important; /* Sangría para subitems */
+  margin: 0 !important;
+}
+
+/* Items de submenú */
+.offcanvas-dropdown .dropdown-item {
+  padding: 0.5rem 1rem !important;
+  margin: 0.25rem 0 !important;
+  border-radius: 0.25rem;
+}
+
+/* Flechas de dropdown (chevron) */
+.offcanvas-dropdown .dropdown-toggle::after {
+  display: inline-block;
+  margin-left: auto; /* Alinea a la derecha */
+  border: none !important; /* Elimina el icono por defecto */
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  content: "\f078"; /* Icono de FontAwesome (chevron-down) */
+  font-size: 0.75rem;
+}
+
+.offcanvas-dropdown.show .dropdown-toggle::after {
+  content: "\f077"; /* Icono cuando está abierto (chevron-up) */
+}
+
+
+
+
+
+
+
+
+
+/* HACE QUE EL CORREO EN DETALLE DE RESERVA NO SE SOBREPONGA AL CODIGO QR */
+.word-break {
+  word-break: break-word; /* o break-all para mayor agresividad */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+/* FIN DE HACE QUE EL CORREO EN DETALLE DE RESERVA NO SE SOBREPONGA AL CODIGO QR */
+
+
+
+.card-header-dark-red {
+  background-color: #8b0000 !important; /* Rojo oscuro */
+  color: white !important;
+  border-bottom: none !important;
+}
+
+.btn-custom-red {
+  background-color: #8b0000 !important;
+  border-color: #8b0000 !important;
+}
+
+.btn-custom-red:hover {
+  background-color: #6d0000 !important;
+  border-color: #6d0000 !important;
+}
+
+

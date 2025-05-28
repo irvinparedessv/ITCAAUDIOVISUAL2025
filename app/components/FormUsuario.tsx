@@ -19,7 +19,6 @@ export default function FormUsuario() {
     first_name: "",
     last_name: "",
     email: "",
-    password: "",
     role_id: "",
     phone: "",
     address: "",
@@ -33,7 +32,6 @@ export default function FormUsuario() {
   // Validation regex patterns
   const nameRegex = /^[a-zA-Z\s]{2,}$/;
   const emailRegex = /^[a-zA-Z0-9._%+-]+@itca\.edu\.sv$/; //Permitir correo institucional (JOSUE)
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
   const phoneRegex = /^[0-9]{4}-[0-9]{4}$/;
   const imageTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
   const maxImageSize = 2 * 1024 * 1024;
@@ -76,7 +74,7 @@ export default function FormUsuario() {
 
   const validateField = (name: string, value: any): string => {
     if (
-      ["first_name", "last_name", "email", "password", "role_id"].includes(
+      ["first_name", "last_name", "email", "role_id"].includes(
         name
       ) &&
       (!value || value.trim() === "")
@@ -188,7 +186,6 @@ export default function FormUsuario() {
       first_name: "",
       last_name: "",
       email: "",
-      password: "",
       role_id: "",
       phone: "",
       address: "",
@@ -271,29 +268,6 @@ export default function FormUsuario() {
             )}
           </div>
 
-          <div className="col-md-6">
-            <label htmlFor="password" className="form-label">
-              Contraseña
-            </label>
-            <input
-              id="password"
-              type="password"
-              name="password"
-              placeholder="Contraseña"
-              value={formData.password}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`form-control ${
-                formErrors.password ? "is-invalid" : ""
-              }`}
-            />
-            {formErrors.password && (
-              <div className="invalid-feedback">{formErrors.password}</div>
-            )}
-          </div>
-        </div>
-
-        <div className="row mb-4">
           <div className="col-md-6 mb-3 mb-md-0">
             <label htmlFor="phone" className="form-label">
               Teléfono (Opcional)
@@ -311,7 +285,9 @@ export default function FormUsuario() {
               <div className="invalid-feedback">{formErrors.phone}</div>
             )}
           </div>
+        </div>
 
+        <div className="row mb-4">
           <div className="col-md-6">
             <label htmlFor="address" className="form-label">
               Dirección (Opcional)

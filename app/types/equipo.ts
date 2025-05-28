@@ -6,11 +6,13 @@ export interface Equipo {
   cantidad: number
   is_deleted: boolean
   tipo_equipo_id: number
+  tipo_reserva_id: number
   imagen: string
   imagen_url?: string
 }
   
 export type EquipoCreateDTO = Omit<Equipo, 'id' | 'is_deleted' | 'imagen' | 'imagen_url'> & {
-  imagen?: File | null
-}
+  imagen?: File | null;
+};
+
   export type EquipoUpdateDTO = Partial<EquipoCreateDTO>

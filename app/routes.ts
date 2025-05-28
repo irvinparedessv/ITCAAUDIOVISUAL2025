@@ -36,11 +36,11 @@ export default [
     route("perfil", "routes/verPerfil.tsx"),
     route("editarPerfil", "routes/editPerfil.tsx"),
     route("actualizarEstado/:id", "routes/ReservacionEstado.tsx"),
+    route("actualizarEstadoAula/:id", "routes/ReservacionEstadoAula.tsx"),
 
     route("bitacora", "routes/BitacoraPage.tsx"),
     route("notifications", "routes/NotificationsList.tsx"),
     route("prediccion", "routes/PrediccionPage.tsx"),
     route("administracion", "routes/OpcionesPanel.tsx"),
-    
   ]),
 ] satisfies RouteConfig;

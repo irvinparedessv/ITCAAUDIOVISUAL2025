@@ -1,12 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import ThreeSixty from "react-360-view";
+import myImage from "../../public/images/milan.jpg";
 import api from "../api/axios";
+import "pannellum/build/pannellum.css";
+import PanoramaViewer from "./PanoramaViewer";
+
+declare global {
+  interface Window {
+    pannellum: any;
+  }
+}
 type Aula = {
   id: number;
   name: string;
+  image_path?: string; // si tienes ruta a las imágenes 360
 };
 
 const availableTimes = [
@@ -30,6 +39,7 @@ export default function ReserveClassroom() {
     const fetchAulas = async () => {
       try {
         const response = await api.get("/aulas");
+        console.log(response.data);
         setAvailableClassrooms(response.data);
       } catch (error) {
         console.error("Error al cargar aulas", error);
@@ -39,8 +49,7 @@ export default function ReserveClassroom() {
     fetchAulas();
   }, []);
 
-  // Simulación de usuario logueado (reemplaza por auth real)
-  const userId = 1;
+  const userId = 1; // simulado
 
   const selectedClassroomData = availableClassrooms.find(
     (classroom) => classroom.name === selectedClassroom
@@ -66,9 +75,9 @@ export default function ReserveClassroom() {
     }
 
     try {
-      const response = await api.post("/reservas", {
+      await api.post("/reservas", {
         aula_id: aula.id,
-        fecha: selectedDate.toISOString().split("T")[0], // yyyy-mm-dd
+        fecha: selectedDate.toISOString().split("T")[0],
         horario: selectedTime,
         user_id: userId,
         estado: "pendiente",
@@ -78,7 +87,10 @@ export default function ReserveClassroom() {
       setSelectedDate(null);
       setSelectedTime("");
       setSelectedClassroom("");
-    } catch (error: any) {
+
+      // Ocultar mensaje después de 3 segundos
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
       console.error(error);
       setFormError("Error al enviar la reserva. Intenta nuevamente.");
     }
@@ -98,8 +110,7 @@ export default function ReserveClassroom() {
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="classroom">
               <Form.Label>Aula</Form.Label>
-              <Form.Control
-                as="select"
+              <Form.Select
                 value={selectedClassroom}
                 onChange={(e) => setSelectedClassroom(e.target.value)}
                 required
@@ -110,7 +121,7 @@ export default function ReserveClassroom() {
                     {classroom.name}
                   </option>
                 ))}
-              </Form.Control>
+              </Form.Select>
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="date">
@@ -127,8 +138,7 @@ export default function ReserveClassroom() {
 
             <Form.Group className="mb-3" controlId="time">
               <Form.Label>Horario</Form.Label>
-              <Form.Control
-                as="select"
+              <Form.Select
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
                 required
@@ -139,7 +149,7 @@ export default function ReserveClassroom() {
                     {time}
                   </option>
                 ))}
-              </Form.Control>
+              </Form.Select>
             </Form.Group>
 
             <Button variant="primary" type="submit" className="w-100">
@@ -148,16 +158,16 @@ export default function ReserveClassroom() {
           </Form>
         </Col>
       </Row>
-
-      {selectedClassroomData && (
+      <Row>{selectedClassroomData?.image_path}</Row>
+      {selectedClassroomData?.image_path && (
         <Row className="justify-content-center mt-4">
           <Col xs={12} md={8} lg={6}>
             <h4 className="text-center">Vista del Aula</h4>
-            <ThreeSixty
-              amount={36}
-              imagePath="https://scaleflex.airstore.io/demo/chair-360-36"
-              fileName="chair_{index}.jpg?v1"
-              spinReverse
+            <PanoramaViewer
+              image={selectedClassroomData.image_path}
+              pitch={10}
+              yaw={180}
+              hfov={110}
             />
           </Col>
         </Row>

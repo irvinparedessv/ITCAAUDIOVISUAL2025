@@ -6,10 +6,12 @@ import { FaEdit, FaTrash } from 'react-icons/fa'
 import { getEquipos } from '~/services/equipoService'
 
 interface Props {
+  equipos: Equipo[]
   tipos: TipoEquipo[]
   onEdit: (equipo: Equipo) => void
   onDelete: (id: number) => void
 }
+
 
 export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
   const [equipos, setEquipos] = useState<Equipo[]>([])

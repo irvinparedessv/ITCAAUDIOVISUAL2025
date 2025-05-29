@@ -28,7 +28,7 @@ export default function AulaReservaEstado({
 
     try {
       setLoading(true);
-      await api.post(`/reservas-aulas/${reservationId}/actualizar-estado`, {
+      await api.put(`/reservas-aula/${reservationId}/estado`, {
         estado: newStatus,
         comentario: comment,
       });

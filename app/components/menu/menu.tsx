@@ -12,9 +12,21 @@ import { useNotificaciones } from "~/hooks/useNotificaciones";
 import React from 'react';
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
+// Definición de tipos
+type NotificationType = 'nueva_reserva' | 'estado_reserva' | 'nueva_reserva_aula' | 'estado_reserva_aula';
+
 interface EquipoNotification {
   nombre: string;
   tipo_equipo?: string;
+}
+
+interface AulaNotification {
+  id: number;
+  aula: string;
+  fecha: string;
+  horario: string;
+  estado: string;
+  comentario?: string;
 }
 
 interface ReservaNotification {
@@ -30,10 +42,10 @@ interface ReservaNotification {
 }
 
 interface NotificacionData {
-  type: 'nueva_reserva' | 'estado_reserva';
+  type: NotificationType;
   title: string;
   message: string;
-  reserva: ReservaNotification;
+  reserva: ReservaNotification | AulaNotification;
 }
 
 interface Notificacion {
@@ -45,6 +57,7 @@ interface Notificacion {
   type: string;
 }
 
+// Componente NotificationItem
 const NotificationItem = ({ 
   noti, 
   userRole, 
@@ -58,14 +71,24 @@ const NotificationItem = ({
   removeNotification: (id: string) => void;
   markAsRead: (id: string) => void;
 }) => {
+  // Verificación segura de la existencia de noti.data
+  if (!noti || !noti.data) {
+    console.error('Notificación inválida:', noti);
+    return null;
+  }
+
   const reservaData = noti.data.reserva || {};
-  const estado = reservaData.estado?.toLowerCase() || '';
+  const estado = reservaData?.estado?.toLowerCase() || '';
   const isPending = estado === 'pendiente';
   const isAdminOrManager = [Role.Administrador, Role.Encargado].includes(userRole);
-  const reservaId = reservaData.id;
+  const reservaId = reservaData?.id;
+  
+  // Verificación segura del tipo de notificación
+  const isAulaNotification = noti.data.type?.includes('aula') || false;
+  const isNuevaReserva = noti.data.type?.includes('nueva') || false;
   const estadoStyle = getEstadoStyle(estado);
 
-  const handleClick = () => {
+   const handleClick = () => {
     if (noti.unread) {
       markAsRead(noti.id);
     }
@@ -76,10 +99,14 @@ const NotificationItem = ({
       return;
     }
 
-    if (noti.data.type === 'nueva_reserva' && isPending && isAdminOrManager) {
-      navigate(`/actualizarEstado/${reservaId}`);
+    if (isNuevaReserva && isPending && isAdminOrManager) {
+      // Redirigir a la página de actualización según el tipo
+      const route = isAulaNotification ? 'actualizarEstadoAula' : 'actualizarEstado';
+      navigate(`/${route}/${reservaId}`);
     } else {
-      navigate("/reservations", { 
+      // Redirigir a la página de listado según el tipo
+      const targetRoute = isAulaNotification ? "/reservations-room" : "/reservations";
+      navigate(targetRoute, { 
         state: { highlightReservaId: reservaId } 
       });
     }
@@ -93,21 +120,38 @@ const NotificationItem = ({
       <div className="flex-grow-1">
         <div className="fw-bold">{noti.data.title}</div>
         <div className="small">{noti.data.message}</div>
-        {reservaData && (
+        
+        {isAulaNotification ? (
           <>
             <small className="d-block">
-              Aula: {reservaData.aula || 'No especificada'}
+              Aula: {(reservaData as AulaNotification).aula || 'No especificada'}
               {userRole === Role.Prestamista && (
                 <> - Estado: <span className={estadoStyle.className}>{estadoStyle.displayText}</span></>
               )}
             </small>
-            {reservaData.equipos && (
+            <small className="d-block">
+              Fecha: {(reservaData as AulaNotification).fecha || 'No especificada'}
+            </small>
+            <small className="d-block">
+              Horario: {(reservaData as AulaNotification).horario || 'No especificado'}
+            </small>
+          </>
+        ) : (
+          <>
+            <small className="d-block">
+              Aula: {(reservaData as ReservaNotification).aula || 'No especificada'}
+              {userRole === Role.Prestamista && (
+                <> - Estado: <span className={estadoStyle.className}>{estadoStyle.displayText}</span></>
+              )}
+            </small>
+            {(reservaData as ReservaNotification).equipos && (
               <small className="d-block">
-                Equipos: {reservaData.equipos.map(e => e.nombre).join(", ")}
+                Equipos: {(reservaData as ReservaNotification).equipos?.map(e => e.nombre).join(", ")}
               </small>
             )}
           </>
         )}
+        
         <div className="small mt-1 notification-date">
           {noti.createdAt.toLocaleString()}
         </div>
@@ -127,13 +171,8 @@ const NotificationItem = ({
   );
 };
 
-interface CustomToggleProps {
-  children: React.ReactNode;
-  show?: boolean;
-  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-}
-
-const CustomToggle = React.forwardRef<HTMLButtonElement, CustomToggleProps>(
+// Componentes CustomToggle
+const CustomToggle = React.forwardRef<HTMLButtonElement, { children: React.ReactNode, show?: boolean, onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void }>(
   ({ children, onClick, show }, ref) => (
     <button
       ref={ref}
@@ -151,12 +190,7 @@ const CustomToggle = React.forwardRef<HTMLButtonElement, CustomToggleProps>(
   )
 );
 
-interface DesktopToggleProps {
-  children: React.ReactNode;
-  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
-}
-
-const DesktopToggle = React.forwardRef<HTMLDivElement, DesktopToggleProps>(
+const DesktopToggle = React.forwardRef<HTMLDivElement, { children: React.ReactNode, onClick?: (e: React.MouseEvent<HTMLDivElement>) => void }>(
   ({ children, onClick }, ref) => (
     <div 
       ref={ref}
@@ -173,6 +207,7 @@ const DesktopToggle = React.forwardRef<HTMLDivElement, DesktopToggleProps>(
   )
 );
 
+// Componente principal NavbarMenu
 const NavbarMenu = () => {
   const { user, logout, checkAccess } = useAuth();
   const location = useLocation();
@@ -231,69 +266,39 @@ const NavbarMenu = () => {
     });
   };
 
+  // Funciones de renderizado
   const renderMainMenu = () => (
     <>
-      <Nav.Link 
-        as={Link} 
-        to="/" 
-        className="px-3 py-2 rounded text-dark" 
-        onClick={handleCloseSidebar}
-      >
+      <Nav.Link as={Link} to="/" className="px-3 py-2 rounded text-dark" onClick={handleCloseSidebar}>
         <FaHome className="me-1" /> Inicio
       </Nav.Link>
 
       {user?.role === Role.Administrador && (
         <>
           {checkAccess("/reservations") && (
-            <Nav.Link
-              as={Link}
-              to="/reservations"
-              className="px-3 py-2 rounded text-dark"
-              onClick={handleCloseSidebar}
-            >
+            <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded text-dark" onClick={handleCloseSidebar}>
               <FaList className="me-1" /> Reservas
             </Nav.Link>
           )}
 
           {checkAccess("/equipo") && (
             <Dropdown className="mb-2 offcanvas-dropdown">
-              <Dropdown.Toggle
-                as={CustomToggle}
-                id="dropdown-equipo-sidebar"
-                className="d-flex align-items-center w-100 px-3 text-dark border-0 bg-transparent"
-              >
+              <Dropdown.Toggle as={CustomToggle} id="dropdown-equipo-sidebar">
                 <FaComputer className="me-1" /> Equipos
               </Dropdown.Toggle>
               <Dropdown.Menu className="w-100">
-                <Dropdown.Item
-                  as={Link}
-                  to="/equipo"
-                  className="d-flex align-items-center gap-2 text-dark"
-                  onClick={handleCloseSidebar}
-                >
-                  <FaList className="me-2" />
-                  Listado de Equipos
+                <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
+                  <FaList className="me-2" /> Listado de Equipos
                 </Dropdown.Item>
-                <Dropdown.Item
-                  as={Link}
-                  to="/equipo"
-                  className="d-flex align-items-center gap-2 text-dark"
-                  onClick={handleCloseSidebar}
-                >
-                  <FaPlus className="me-2" />
-                  Nuevo Equipo
+                <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
+                  <FaPlus className="me-2" /> Nuevo Equipo
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
           )}
 
           {checkAccess("/formEspacio") && (
-            <Nav.Link
-              as={Link}
-              to="/formEspacio"
-              className="px-3 py-2 rounded text-dark"
-              onClick={handleCloseSidebar}
-            >
+            <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded text-dark" onClick={handleCloseSidebar}>
               <FaList className="me-1" /> Espacios
             </Nav.Link>
           )}
@@ -303,22 +308,12 @@ const NavbarMenu = () => {
       {user?.role === Role.Encargado && (
         <>
           {checkAccess("/equipo") && (
-            <Nav.Link
-              as={Link}
-              to="/equipo"
-              className="px-3 py-2 rounded text-dark"
-              onClick={handleCloseSidebar}
-            >
+            <Nav.Link as={Link} to="/equipo" className="px-3 py-2 rounded text-dark" onClick={handleCloseSidebar}>
               <FaPlus className="me-1" /> Equipos
             </Nav.Link>
           )}
           {checkAccess("/formEspacio") && (
-            <Nav.Link
-              as={Link}
-              to="/formEspacio"
-              className="px-3 py-2 rounded text-dark"
-              onClick={handleCloseSidebar}
-            >
+            <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded text-dark" onClick={handleCloseSidebar}>
               <FaList className="me-1" /> Reservas
             </Nav.Link>
           )}
@@ -328,43 +323,32 @@ const NavbarMenu = () => {
       {user?.role === Role.Prestamista && (
         <>
           {checkAccess("/addreservation") && (
-            <Nav.Link
-              as={Link}
-              to="/addreservation"
-              className="px-3 py-2 rounded text-dark"
-              onClick={handleCloseSidebar}
-            >
-              <FaPlus className="me-1" /> Reservar
-            </Nav.Link>
+            <Dropdown className="mb-2 offcanvas-dropdown">
+              <Dropdown.Toggle as={CustomToggle} id="dropdown-nueva-reserva-sidebar">
+                <FaPlus className="me-1" /> Nueva Reserva
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="w-100">
+                <Dropdown.Item as={Link} to="/addreservation" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
+                  <FaComputer className="me-2" /> Reservar Equipos
+                </Dropdown.Item>
+                <Dropdown.Item as={Link} to="/addreservation-room" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
+                  <FaCalendarAlt className="me-2" /> Reservar Aula
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
           )}
           
           {checkAccess("/reservations") && (
             <Dropdown className="mb-2 offcanvas-dropdown">
-              <Dropdown.Toggle
-                as={CustomToggle}
-                id="dropdown-reservas-sidebar"
-                className="d-flex align-items-center w-100 px-3 text-dark border-0 bg-transparent"
-              >
+              <Dropdown.Toggle as={CustomToggle} id="dropdown-reservas-sidebar">
                 <FaList className="me-1" /> Mis Reservas
               </Dropdown.Toggle>
               <Dropdown.Menu className="w-100">
-                <Dropdown.Item
-                  as={Link}
-                  to="/reservations-room"
-                  className="d-flex align-items-center gap-2 text-dark"
-                  onClick={handleCloseSidebar}
-                >
-                  <FaCalendarAlt className="me-2" />
-                  Reservas de Aulas
+                <Dropdown.Item as={Link} to="/reservations-room" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
+                  <FaCalendarAlt className="me-2" /> Reservas de Aulas
                 </Dropdown.Item>
-                <Dropdown.Item
-                  as={Link}
-                  to="/reservations"
-                  className="d-flex align-items-center gap-2 text-dark"
-                  onClick={handleCloseSidebar}
-                >
-                  <FaComputer className="me-2" />
-                  Reservas de Equipos
+                <Dropdown.Item as={Link} to="/reservations" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
+                  <FaComputer className="me-2" /> Reservas de Equipos
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
@@ -378,10 +362,7 @@ const NavbarMenu = () => {
     if (isMobile) {
       return (
         <Dropdown className="mb-3 offcanvas-dropdown">
-          <Dropdown.Toggle 
-            as={CustomToggle}
-            id="dropdown-notifications-sidebar"
-          >
+          <Dropdown.Toggle as={CustomToggle} id="dropdown-notifications-sidebar">
             <div className="position-relative">
               <FaBell className="me-2" size={20} />
               {unreadCount > 0 && (
@@ -456,7 +437,6 @@ const NavbarMenu = () => {
       );
     }
 
-    // Desktop version with the new design
     return (
       <Dropdown align="end" className="w-200">
         <Dropdown.Toggle
@@ -554,20 +534,13 @@ const NavbarMenu = () => {
     if (isMobile) {
       return (
         <Dropdown className="mb-3 offcanvas-dropdown">
-          <Dropdown.Toggle
-            as={CustomToggle}
-            id="dropdown-user-sidebar"
-          >
+          <Dropdown.Toggle as={CustomToggle} id="dropdown-user-sidebar">
             {user?.image ? (
               <img
                 src={`http://localhost:8000/storage/${user.image}`}
                 alt="User"
                 className="rounded-circle me-2"
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  objectFit: "cover",
-                }}
+                style={{ width: "30px", height: "30px", objectFit: "cover" }}
               />
             ) : (
               <FaUserCircle size={20} />
@@ -577,12 +550,7 @@ const NavbarMenu = () => {
           <Dropdown.Menu className="w-100" style={{
             background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))"
           }}>
-            <Dropdown.Item
-              as={Link}
-              to="/perfil"
-              className="d-flex align-items-center gap-2 text-dark"
-              onClick={handleCloseSidebar}
-            >
+            <Dropdown.Item as={Link} to="/perfil" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
               Ver Perfil
             </Dropdown.Item>
 
@@ -619,7 +587,6 @@ const NavbarMenu = () => {
       );
     }
 
-    // Desktop version with the new design
     return (
       <Dropdown align="end" className="w-200">
         <Dropdown.Toggle
@@ -636,18 +603,12 @@ const NavbarMenu = () => {
               src={`http://localhost:8000/storage/${user.image}`}
               alt="User"
               className="rounded-circle"
-              style={{
-                width: "30px",
-                height: "30px",
-                objectFit: "cover",
-              }}
+              style={{ width: "30px", height: "30px", objectFit: "cover" }}
             />
           ) : (
             <FaUserCircle size={24} />
           )}
-          <span>
-            {user?.first_name} {user?.last_name}
-          </span>
+          <span>{user?.first_name} {user?.last_name}</span>
         </Dropdown.Toggle>
         <Dropdown.Menu
           style={{
@@ -655,11 +616,7 @@ const NavbarMenu = () => {
             color: "#000",
           }}
         >
-          <Dropdown.Item
-            as={Link}
-            to="/perfil"
-            className="px-3 py-2 d-flex align-items-center gap-2"
-          >
+          <Dropdown.Item as={Link} to="/perfil" className="px-3 py-2 d-flex align-items-center gap-2">
             Ver Perfil
           </Dropdown.Item>
 
@@ -671,10 +628,7 @@ const NavbarMenu = () => {
           </Dropdown.ItemText>
           <Dropdown.Divider />
 
-          <Dropdown.Item
-            onClick={toggleDarkMode}
-            className="px-3 py-2 d-flex align-items-center gap-2"
-          >
+          <Dropdown.Item onClick={toggleDarkMode} className="px-3 py-2 d-flex align-items-center gap-2">
             {darkMode ? <FaSun /> : <FaMoon />}
             {darkMode ? "Modo Claro" : "Modo Oscuro"}
           </Dropdown.Item>
@@ -689,53 +643,34 @@ const NavbarMenu = () => {
 
   const renderDesktopMenu = () => (
     <Nav className="ms-auto align-items-center gap-1 flex-row navbar-nav">
-      <Nav.Link 
-        as={Link} 
-        to="/" 
-        className="px-3 py-2 rounded text-dark" 
-      >
+      <Nav.Link as={Link} to="/" className="px-3 py-2 rounded text-dark">
         <FaHome className="me-1" /> Inicio
       </Nav.Link>
 
       {user?.role === Role.Administrador && (
         <>
           {checkAccess("/reservations") && (
-            <Nav.Link
-              as={Link}
-              to="/reservations"
-              className="px-3 py-2 rounded text-dark"
-            >
+            <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded text-dark">
               <FaList className="me-1" /> Reservas
             </Nav.Link>
           )}
 
           {checkAccess("/equipo") && (
             <Dropdown className="mx-1">
-              <Dropdown.Toggle
-                as={DesktopToggle}
-                id="dropdown-equipo"
-              >
+              <Dropdown.Toggle as={DesktopToggle} id="dropdown-equipo">
                 <FaComputer className="me-1" /> Equipos
               </Dropdown.Toggle>
               <Dropdown.Menu style={{
                 background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))"
               }}>
-                <Dropdown.Item
-                  as={Link}
-                  to="/equipo"
-                  className="d-flex align-items-start text-dark"
-                >
+                <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-start text-dark">
                   <FaList className="me-2" />
                   <div>
                     <div className="fw-bold">Listado de Equipos</div>
                     <small>Ver todos los equipos</small>
                   </div>
                 </Dropdown.Item>
-                <Dropdown.Item
-                  as={Link}
-                  to="/equipo"
-                  className="d-flex align-items-start text-dark"
-                >
+                <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-start text-dark">
                   <FaPlus className="me-2" />
                   <div>
                     <div className="fw-bold">Nuevo Equipo</div>
@@ -747,11 +682,7 @@ const NavbarMenu = () => {
           )}
 
           {checkAccess("/formEspacio") && (
-            <Nav.Link
-              as={Link}
-              to="/formEspacio"
-              className="px-3 py-2 rounded text-dark"
-            >
+            <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded text-dark">
               <FaList className="me-1" /> Espacios
             </Nav.Link>
           )}
@@ -761,20 +692,12 @@ const NavbarMenu = () => {
       {user?.role === Role.Encargado && (
         <>
           {checkAccess("/equipo") && (
-            <Nav.Link
-              as={Link}
-              to="/equipo"
-              className="px-3 py-2 rounded text-dark"
-            >
+            <Nav.Link as={Link} to="/equipo" className="px-3 py-2 rounded text-dark">
               <FaPlus className="me-1" /> Equipos
             </Nav.Link>
           )}
           {checkAccess("/formEspacio") && (
-            <Nav.Link
-              as={Link}
-              to="/formEspacio"
-              className="px-3 py-2 rounded text-dark"
-            >
+            <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded text-dark">
               <FaList className="me-1" /> Reservas
             </Nav.Link>
           )}
@@ -784,41 +707,47 @@ const NavbarMenu = () => {
       {user?.role === Role.Prestamista && (
         <>
           {checkAccess("/addreservation") && (
-            <Nav.Link
-              as={Link}
-              to="/addreservation"
-              className="px-3 py-2 rounded text-dark"
-            >
-              <FaPlus className="me-1" /> Reservar
-            </Nav.Link>
+            <Dropdown className="mx-1">
+              <Dropdown.Toggle as={DesktopToggle} id="dropdown-nueva-reserva">
+                <FaPlus className="me-1" /> Nueva Reserva
+              </Dropdown.Toggle>
+              <Dropdown.Menu style={{
+                background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))"
+              }}>
+                <Dropdown.Item as={Link} to="/addreservation" className="d-flex align-items-start text-dark">
+                  <FaComputer className="me-2" />
+                  <div>
+                    <div className="fw-bold">Reservar Equipos</div>
+                    <small>Solicitar equipos tecnológicos</small>
+                  </div>
+                </Dropdown.Item>
+                <Dropdown.Item as={Link} to="/addreservation-room" className="d-flex align-items-start text-dark">
+                  <FaCalendarAlt className="me-2" />
+                  <div>
+                    <div className="fw-bold">Reservar Aula</div>
+                    <small>Solicitar espacio físico</small>
+                  </div>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
           )}
+          
           {checkAccess("/reservations") && (
             <Dropdown className="mx-1">
-              <Dropdown.Toggle
-                as={DesktopToggle}
-                id="dropdown-reservas"
-              >
+              <Dropdown.Toggle as={DesktopToggle} id="dropdown-reservas">
                 <FaList className="me-1" /> Mis Reservas
               </Dropdown.Toggle>
               <Dropdown.Menu style={{
                 background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))"
               }}>
-                <Dropdown.Item
-                  as={Link}
-                  to="/reservations-room"
-                  className="d-flex align-items-start text-dark"
-                >
+                <Dropdown.Item as={Link} to="/reservations-room" className="d-flex align-items-start text-dark">
                   <FaCalendarAlt className="me-2" />
                   <div>
                     <div className="fw-bold">Reservas de Aulas</div>
                     <small>Ver o gestionar aulas reservadas</small>
                   </div>
                 </Dropdown.Item>
-                <Dropdown.Item
-                  as={Link}
-                  to="/reservations"
-                  className="d-flex align-items-start text-dark"
-                >
+                <Dropdown.Item as={Link} to="/reservations" className="d-flex align-items-start text-dark">
                   <FaComputer className="me-2" />
                   <div>
                     <div className="fw-bold">Reservas de Equipos</div>
@@ -899,6 +828,7 @@ const NavbarMenu = () => {
   );
 };
 
+// Función auxiliar para estilos de estado
 function getEstadoStyle(estado: string): { className: string, displayText: string } {
   const estadoLower = estado.toLowerCase();
   
@@ -910,21 +840,24 @@ function getEstadoStyle(estado: string): { className: string, displayText: strin
       };
     case 'approved':
     case 'aprobado':
+    case 'confirmada':
       return { 
         className: 'text-success', 
         displayText: 'Aprobado' 
       };
     case 'rejected':
     case 'rechazado':
+    case 'cancelada':
       return { 
         className: 'text-danger', 
         displayText: 'Rechazado' 
       };
     case 'returned':
     case 'devuelto':
+    case 'completada':
       return { 
         className: 'text-info', 
-        displayText: 'Devuelto' 
+        displayText: 'Completada' 
       };
     default:
       return { 

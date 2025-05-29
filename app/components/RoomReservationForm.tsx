@@ -6,6 +6,7 @@ import "pannellum/build/pannellum.css";
 import PanoramaViewer from "./PanoramaViewer";
 import toast from "react-hot-toast";
 import { FaCalendarAlt, FaClock, FaDoorOpen, FaCheck } from "react-icons/fa";
+import { useAuth } from "~/hooks/AuthContext";
 
 type Aula = {
   id: number;
@@ -27,8 +28,9 @@ export default function ReserveClassroom() {
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
   const [availableClassrooms, setAvailableClassrooms] = useState<Aula[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  const userId = 1; // simulado
+  const userId = user?.id; // simulado
 
   const selectedClassroomData = availableClassrooms.find(
     (classroom) => classroom.name === selectedClassroom
@@ -65,7 +67,7 @@ export default function ReserveClassroom() {
     }
 
     try {
-      await api.post("/reservas", {
+      await api.post("/reservasAula", {
         aula_id: aula.id,
         fecha: selectedDate.toISOString().split("T")[0],
         horario: selectedTime,

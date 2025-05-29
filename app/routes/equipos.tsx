@@ -17,7 +17,7 @@ export default function EquipoPage() {
     try {
       const [equiposData, tiposData] = await Promise.all([getEquipos(), getTipoEquipos()])
       // Filtrar los eliminados lógicamente
-      setEquipos(equiposData.filter(eq => !eq.is_deleted))
+      setEquipos(equiposData.data.filter(eq => !eq.is_deleted))
       setTipos(tiposData)
     } catch (error) {
       console.error('Error al cargar los datos:', error)
@@ -63,7 +63,7 @@ export default function EquipoPage() {
         <div className="max-w-3xl mx-auto mt-8 px-4">
           <h1 className="text-2xl font-bold mb-4">Gestión de Equipos</h1>
           <EquipoForm onSubmit={handleCreateOrUpdate} equipoEditando={editando} resetEdit={resetEdit} />
-        {/* <EquipoList equipos={equipos} tipos={tipos} onEdit={handleEdit} onDelete={handleDelete} /> */}
+          <EquipoList equipos={equipos} tipos={tipos} onEdit={handleEdit} onDelete={handleDelete} />
         </div>
 
     </>

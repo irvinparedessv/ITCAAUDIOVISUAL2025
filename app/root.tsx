@@ -81,12 +81,13 @@ export default function App() {
     isAuthenticated && !hideNavbarRoutes.includes(location.pathname);
 
   // Spinner global durante carga de sesión
-  if (isLoading) {
+ if (isLoading) {
     return (
       <div
         className="d-flex justify-content-center align-items-center vh-100"
         style={{
-          backgroundColor: "#f4f4f4",
+          backgroundColor: "var(--bs-body-bg)", // Fondo según el tema (claro/oscuro)
+          color: "var(--bs-body-color)", // Texto según el tema
           position: "fixed",
           top: 0,
           left: 0,
@@ -99,7 +100,11 @@ export default function App() {
           <Spinner
             animation="border"
             role="status"
-            style={{ width: "3rem", height: "3rem" }}
+            style={{ 
+              width: "3rem", 
+              height: "3rem",
+              color: "var(--bs-primary-bg)" // Usa el color primario del tema (rojo oscuro)
+            }}
           >
             <span className="visually-hidden">Cargando...</span>
           </Spinner>
@@ -108,7 +113,7 @@ export default function App() {
         </div>
       </div>
     );
-  }
+}
 
   return (
     <>

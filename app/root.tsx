@@ -29,6 +29,7 @@ import { Role } from "./types/roles";
 import { Offcanvas } from "react-bootstrap";
 import Chatbot from "./components/chatbot/Chatbot";
 import NavbarMenu from "./components/menu/menu";
+import { Toaster } from "react-hot-toast";
 
 // ---- HEAD Links ---- //
 export const links = () => [
@@ -111,6 +112,16 @@ export default function App() {
 
   return (
     <>
+    <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+        }}
+      />
       {shouldShowNavbar && <NavbarMenu />}
       <main className="container my-4">
         <Outlet />

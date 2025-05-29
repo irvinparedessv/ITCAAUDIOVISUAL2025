@@ -276,7 +276,7 @@ const NavbarMenu = () => {
                 </Dropdown.Item>
                 <Dropdown.Item
                   as={Link}
-                  to="/formEquipo"
+                  to="/equipo"
                   className="d-flex align-items-center gap-2 text-dark"
                   onClick={handleCloseSidebar}
                 >
@@ -302,10 +302,10 @@ const NavbarMenu = () => {
 
       {user?.role === Role.Encargado && (
         <>
-          {checkAccess("/formEquipo") && (
+          {checkAccess("/equipo") && (
             <Nav.Link
               as={Link}
-              to="/formEquipo"
+              to="/equipo"
               className="px-3 py-2 rounded text-dark"
               onClick={handleCloseSidebar}
             >
@@ -733,7 +733,7 @@ const NavbarMenu = () => {
                 </Dropdown.Item>
                 <Dropdown.Item
                   as={Link}
-                  to="/formEquipo"
+                  to="/equipo"
                   className="d-flex align-items-start text-dark"
                 >
                   <FaPlus className="me-2" />
@@ -760,10 +760,10 @@ const NavbarMenu = () => {
 
       {user?.role === Role.Encargado && (
         <>
-          {checkAccess("/formEquipo") && (
+          {checkAccess("/equipo") && (
             <Nav.Link
               as={Link}
-              to="/formEquipo"
+              to="/equipo"
               className="px-3 py-2 rounded text-dark"
             >
               <FaPlus className="me-1" /> Equipos

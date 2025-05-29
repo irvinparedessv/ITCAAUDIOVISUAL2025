@@ -276,7 +276,36 @@
   bottom: 6px;
 }
 
+
+/* CAMBIANDO COLOR DEL HOVER */
+.dropdown-item,
+.dropdown-item:focus,
+.dropdown-item:hover,
+.dropdown-item:active,
+.dropdown-item.active {
+  color: #000000 !important;
+  background-color: transparent;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus,
+.dropdown-item:active,
+.dropdown-item.active {
+  background-color: #f5c35c !important; /* Mostaza */
+  text-decoration: none;
+}
+/* FIN DE CAMBIANDO COLOR DEL HOVER */
+
+
+
 /* FIN DE DISENIO DE TOOGLE EN SIEMPRE OSCURO */
+
+
+
+
+
+
+
 
 /* INICIO DE DISENIO CHATBOT */
 

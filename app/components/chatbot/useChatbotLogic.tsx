@@ -379,7 +379,7 @@ export const useChatbotLogic = (user: any) => {
       user_id: user?.id,
       aula_id: reservaDataRoom.aula,
       fecha: reservaDataRoom.fecha,
-      horario: reservaDataRoom.horarioInicio + "-" + reservaData.horaFin,
+      horario: reservaDataRoom.horarioInicio + "-" + reservaDataRoom.horarioFin,
       estado: "pendiente",
     };
     try {

@@ -190,6 +190,16 @@ const CustomToggle = React.forwardRef<HTMLButtonElement, { children: React.React
   )
 );
 
+const CustomUserToggle = React.forwardRef<HTMLButtonElement, { children: React.ReactNode }>(
+  ({ children, ...props }, ref) => (
+    <button ref={ref} {...props} className="custom-user-toggle">
+      {children}
+    </button>
+  )
+);
+
+
+
 const DesktopToggle = React.forwardRef<HTMLDivElement, { children: React.ReactNode, onClick?: (e: React.MouseEvent<HTMLDivElement>) => void }>(
   ({ children, onClick }, ref) => (
     <div 
@@ -376,33 +386,33 @@ const NavbarMenu = () => {
           <Dropdown.Menu className="w-100" style={{ 
             background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))"
           }}>
-            <Dropdown.Header className="d-flex justify-content-between align-items-center fw-bold">
-              <span>Notificaciones ({notificaciones.length})</span>
-              <div>
-                {notificaciones.length > 0 && (
-                  <>
-                    <button
-                      className="btn btn-sm btn-outline-danger me-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearAllNotifications();
-                      }}
-                    >
-                      Limpiar
-                    </button>
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate("/notifications");
-                      }}
-                    >
-                      Ver todas
-                    </button>
-                  </>
-                )}
-              </div>
+            <Dropdown.Header className="fw-bold">
+              <div>Notificaciones ({notificaciones.length})</div>
+              
+              {notificaciones.length > 0 && (
+                <div className="mt-2 d-flex gap-2">
+                  <button
+                    className="btn btn-sm btn-outline-danger"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearAllNotifications();
+                    }}
+                  >
+                    Limpiar
+                  </button>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate("/notifications");
+                    }}
+                  >
+                    Ver todas
+                  </button>
+                </div>
+              )}
             </Dropdown.Header>
+
             
             {notificaciones.length > 0 ? (
               <>
@@ -516,7 +526,8 @@ const NavbarMenu = () => {
             </>
           ) : (
             <Dropdown.Item className="text-center py-3">
-              No hay notificaciones
+              No hay notificaciones 🔕
+              <br />
               <button
                 className="btn btn-sm btn-primary mt-2 w-100"
                 onClick={() => navigate("/notifications")}
@@ -545,7 +556,10 @@ const NavbarMenu = () => {
             ) : (
               <FaUserCircle size={20} />
             )}
-            <span>{user?.first_name} {user?.last_name}</span>
+            <span className="user-name-ellipsis">
+              {user?.first_name} {user?.last_name}
+            </span>
+
           </Dropdown.Toggle>
           <Dropdown.Menu className="w-100" style={{
             background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))"
@@ -587,17 +601,11 @@ const NavbarMenu = () => {
       );
     }
 
+    
     return (
-      <Dropdown align="end" className="w-200">
-        <Dropdown.Toggle
-          id="dropdown-user"
-          className="w-200 d-flex align-items-center justify-content-start gap-2 px-3 py-2"
-          style={{
-            background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
-            border: "none",
-            color: "#000",
-          }}
-        >
+      <Dropdown align="end" >
+        <Dropdown.Toggle as={CustomUserToggle} id="dropdown-user">
+        <div className="custom-user-icon">
           {user?.image ? (
             <img
               src={`http://localhost:8000/storage/${user.image}`}
@@ -606,10 +614,19 @@ const NavbarMenu = () => {
               style={{ width: "30px", height: "30px", objectFit: "cover" }}
             />
           ) : (
-            <FaUserCircle size={24} />
+            <FaUserCircle size={30} />
           )}
-          <span>{user?.first_name} {user?.last_name}</span>
-        </Dropdown.Toggle>
+        </div>
+
+        <span className="custom-user-name">
+          {user?.first_name} {user?.last_name}
+        </span>
+
+        <FaChevronDown size={14} style={{ transition: "transform 0.2s" }} />
+      </Dropdown.Toggle>
+
+
+
         <Dropdown.Menu
           style={{
             background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))",
@@ -693,6 +710,7 @@ const NavbarMenu = () => {
               <FaList className="me-1" /> Reserva de espacios
             </Nav.Link>
           )}
+          
         </>
       )}
 
@@ -775,7 +793,7 @@ const NavbarMenu = () => {
   return (
     <>
       <Navbar
-        expand="lg"
+        expand="xl"
         className="px-4 border-bottom"
         style={{
           background: "linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92))",
@@ -784,7 +802,7 @@ const NavbarMenu = () => {
         <Container fluid>
           <div className="d-flex align-items-center">
             <button 
-              className="navbar-toggler me-2 border-0 d-lg-none" 
+              className="navbar-toggler me-2 border-0 d-xl-none" 
               onClick={handleShowSidebar}
               style={{ background: 'transparent' }}
             >

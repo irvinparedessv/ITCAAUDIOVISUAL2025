@@ -72,6 +72,9 @@ export default function ReservationList() {
   >(null);
   const [comentario, setComentario] = useState("");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -132,6 +135,15 @@ export default function ReservationList() {
     setSelectedReservation(null);
   };
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentReservations = reservations.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
+  const totalPages = Math.ceil(reservations.length / itemsPerPage);
+
   return (
     <div className="container py-5">
       <div className="table-responsive rounded shadow p-3 mt-4">
@@ -153,7 +165,7 @@ export default function ReservationList() {
             </tr>
           </thead>
           <tbody>
-            {reservations.map((reserva) => (
+            {currentReservations.map((reserva) => (
               <tr key={reserva.id}>
                 <td className="fw-bold">
                   {reserva.user.first_name} - {reserva.user.last_name}{" "}
@@ -224,6 +236,51 @@ export default function ReservationList() {
             )}
           </tbody>
         </table>
+        <div className="d-flex justify-content-center mt-4">
+          <nav>
+            <ul className="pagination">
+              <li
+                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+              >
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Anterior
+                </button>
+              </li>
+
+              {Array.from({ length: totalPages }, (_, i) => (
+                <li
+                  key={i + 1}
+                  className={`page-item ${
+                    currentPage === i + 1 ? "active" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                </li>
+              ))}
+
+              <li
+                className={`page-item ${
+                  currentPage === totalPages ? "disabled" : ""
+                }`}
+              >
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Siguiente
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
       </div>
       <Modal
         show={showDecisionModal}

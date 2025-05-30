@@ -670,6 +670,7 @@ const NavbarMenu = () => {
                     <small>Ver todos los equipos</small>
                   </div>
                 </Dropdown.Item>
+                
                 <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-start text-dark">
                   <FaPlus className="me-2" />
                   <div>
@@ -684,6 +685,12 @@ const NavbarMenu = () => {
           {checkAccess("/formEspacio") && (
             <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded text-dark">
               <FaList className="me-1" /> Espacios
+            </Nav.Link>
+          )}
+
+          {checkAccess("/reservations-room") && (
+            <Nav.Link as={Link} to="/reservations-room" className="px-3 py-2 rounded text-dark">
+              <FaList className="me-1" /> Reserva de espacios
             </Nav.Link>
           )}
         </>

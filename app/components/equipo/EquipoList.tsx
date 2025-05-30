@@ -15,7 +15,7 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
   const [equipos, setEquipos] = useState<Equipo[]>([])
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [perPage] = useState(5)
+  const [perPage] = useState(10)
   const [total, setTotal] = useState(0)
   const totalPages = Math.ceil(total / perPage)
 

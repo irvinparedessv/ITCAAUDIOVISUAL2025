@@ -253,11 +253,10 @@ export default function NotificationsList() {
                                   style={selectedNotification?.id === notification.id
                                     ? {
                                       backgroundColor: '#f5f0f0',
-                                      borderLeft: '4px solid #0d6efd'
+                                      borderLeft: '4px solid rgb(206, 145, 20)'
                                     }
                                     : {
-                                      borderLeft: '4px solid #0d6efd',
-                                      backgroundColor: '#fff'
+                                      borderLeft: '4px solid rgb(206, 145, 20)',
                                     }}
                                 >
                                   <div>
@@ -290,8 +289,15 @@ export default function NotificationsList() {
                                   onClick={() => handleSelect(notification.id)}
                                   active={selectedNotification?.id === notification.id}
                                   style={selectedNotification?.id === notification.id
-                                    ? { backgroundColor: '#f5f0f0' }
-                                    : { backgroundColor: '#fdfdfd' }}
+                                    ? {
+                                      backgroundColor: '#f5f0f0',
+                                      borderLeft: '4px solid rgb(206, 145, 20)'
+                                    }
+                                    : {
+                                      borderLeft: '4px solid rgb(206, 145, 20)',
+                                    }}
+                                
+
                                 >
                                   <div>
                                     <span className="text-muted">{notification.data.message ?? 'Notificación sin mensaje'}</span>

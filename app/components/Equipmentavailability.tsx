@@ -153,7 +153,7 @@ const fetchEquipment = async () => {
           </div>
         </div>
 
-        <div className="mb-4 p-3 border rounded bg-light">
+        <div className="mb-4 p-3 border rounded">
           <h5>Seleccione fecha y horario</h5>
           <div className="row">
             <div className="col-md-4">

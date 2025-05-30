@@ -11,6 +11,7 @@ export type OptionType = {
 
 export type ReservaData = {
   fecha: string;
+  tipo: string;
   horaInicio: string;
   horaFin: string;
   ubicacion: string;

@@ -22,10 +22,15 @@ const Chatbot = () => {
     completarReserva,
     step,
     setStep,
+    setReservaData,
+    setMessages,
     aulaOptions,
+    tipoReservaOptions,
+    addBotMessage,
     handleUbicacionClick,
     handleOptionClick,
     handleAulaFechaClick,
+    handleTipoClick,
     handleAulaClick,
   } = useChatbotLogic(user);
 
@@ -49,10 +54,13 @@ const Chatbot = () => {
               handleUbicacionClick={handleUbicacionClick}
               handleEquipoClick={handleEquipoClick}
               handleAulaClick={handleAulaClick}
+              handleTipoClick={handleTipoClick}
               handleAulaFechaClick={handleAulaFechaClick}
               completarReserva={completarReserva}
+              setReservaData={setReservaData}
               ubicaciones={aulaOptions}
               equipos={equipmentOptions}
+              tipos={tipoReservaOptions}
               reservaData={reservaData}
               setStep={setStep}
             />{" "}
@@ -60,6 +68,12 @@ const Chatbot = () => {
               inputMessage={inputMessage}
               setInputMessage={setInputMessage}
               onSend={handleSendMessage}
+              step={step}
+              reservaData={reservaData}
+              setReservaData={setReservaData}
+              setStep={setStep}
+              setMessages={setMessages}
+              addBotMessage={addBotMessage}
             />
           </div>
         </>

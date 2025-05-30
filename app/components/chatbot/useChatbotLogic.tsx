@@ -2,11 +2,15 @@
 import { useEffect, useState, useRef } from "react";
 import api from "../../api/axios";
 import type { OptionType, Message, ReservaData } from "./types";
+import { getTipoReservas } from "~/services/tipoReservaService";
 
 export const useChatbotLogic = (user: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
+  const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>(
+    []
+  );
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -24,6 +28,7 @@ export const useChatbotLogic = (user: any) => {
     horaFin: "",
     ubicacion: "",
     equipos: [],
+    tipo: "",
   });
 
   const [reservaDataRoom, setReservaDataRoom] = useState({
@@ -41,7 +46,7 @@ export const useChatbotLogic = (user: any) => {
   }, [messages]);
   useEffect(() => {
     const fetchEquipments = async () => {
-      const response = await api.get("/Obtenerequipos");
+      const response = await api.get("/equiposReserva");
       const data = response.data;
       const options = data.map((item: any) => ({
         value: item.id,
@@ -80,7 +85,19 @@ export const useChatbotLogic = (user: any) => {
 
     return () => observer.disconnect();
   }, []);
+  useEffect(() => {
+    const fetchTipos = async () => {
+      const tipos = await getTipoReservas();
+      setTipoReservaOptions(
+        tipos.map((tr) => ({
+          value: tr.id.toString(),
+          label: tr.nombre,
+        }))
+      );
+    };
 
+    fetchTipos();
+  }, []);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -114,6 +131,7 @@ export const useChatbotLogic = (user: any) => {
       horaFin: "",
       ubicacion: "",
       equipos: [],
+      tipo: "",
     });
   };
 
@@ -197,7 +215,7 @@ export const useChatbotLogic = (user: any) => {
     ]);
     if (option === "Crear reserva equipo") {
       addBotMessage("Perfecto, ¿qué fecha deseas? (dd/mm/yyyy)");
-      setStep("fecha");
+      setStep("fechaEquipo");
     } else if (option === "Crear reserva aula") {
       addBotMessage("Perfecto, Seleccione el aula.");
       setStep("seleccionarAula");
@@ -218,6 +236,15 @@ export const useChatbotLogic = (user: any) => {
     setReservaData((prev) => ({ ...prev, ubicacion }));
     addBotMessage("Gracias. Ahora selecciona los equipos que deseas reservar:");
     setStep("mostrarEquipos");
+  };
+  const handleTipoClick = (tipo: string, label: string) => {
+    setMessages((prev) => [
+      ...prev,
+      { id: prev.length + 1, text: label, sender: "user" },
+    ]);
+    setReservaData((prev) => ({ ...prev, tipo }));
+    addBotMessage("Gracias. Ahora selecciona el aula:");
+    setStep("seleccionarUbicacion");
   };
 
   const handleAulaClick = (ubicacion: string) => {
@@ -278,11 +305,15 @@ export const useChatbotLogic = (user: any) => {
     addBotMessage("Procesando tu reserva...");
     const payload = {
       user_id: user?.id,
-      equipo: reservaData.equipos,
+      equipo: reservaData.equipos.map((id) => ({
+        id,
+        cantidad: 1,
+      })),
       aula: reservaData.ubicacion,
       fecha_reserva: reservaData.fecha,
       startTime: reservaData.horaInicio,
       endTime: reservaData.horaFin,
+      tipo_reserva_id: reservaData.tipo,
     };
 
     api
@@ -319,6 +350,7 @@ export const useChatbotLogic = (user: any) => {
     aulaOptions,
     reservaData,
     messagesEndRef,
+    tipoReservaOptions,
     chatRef, // <---
     // setters
     setIsOpen,
@@ -328,10 +360,12 @@ export const useChatbotLogic = (user: any) => {
     setStep,
 
     // funciones
+    addBotMessage,
     handleSendMessage,
     handleOptionClick,
     handleUbicacionClick,
     handleEquipoClick,
+    handleTipoClick,
     handleEliminarEquipo,
     handleAulaFechaClick,
     handleAulaClick,

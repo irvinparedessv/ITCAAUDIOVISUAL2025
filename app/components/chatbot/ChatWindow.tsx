@@ -1,5 +1,10 @@
 import Message from "./Message";
-import type { Message as MessageType, OptionType, ReservaData } from "./types";
+import type {
+  Message as MessageType,
+  OptionType,
+  ReservaData,
+  ReservaDataRoom,
+} from "./types";
 import React, { forwardRef } from "react";
 
 type Props = {
@@ -17,6 +22,7 @@ type Props = {
   equipos: OptionType[];
   tipos: OptionType[];
   reservaData: ReservaData;
+  reservaDataRoom: ReservaDataRoom;
   setStep: (step: string) => void;
 };
 
@@ -36,6 +42,7 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
       ubicaciones,
       equipos,
       reservaData,
+      reservaDataRoom,
       setReservaData,
       setStep,
     },
@@ -104,17 +111,6 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
             })}
           </ul>
         )}
-        <div style={{ marginTop: "10px" }}>
-          <button onClick={() => setStep("mostrarEquipos")}>
-            Volver a equipos
-          </button>{" "}
-          <button
-            onClick={completarReserva}
-            disabled={reservaData.equipos.length === 0}
-          >
-            Confirmar reserva
-          </button>
-        </div>
       </div>
     );
     const renderEquipos = () => (
@@ -131,21 +127,6 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
             {equipo.label}
           </button>
         ))}
-        <div className="acciones-reserva" style={{ marginTop: "10px" }}>
-          <button
-            onClick={() => setStep("resumen")}
-            disabled={reservaData.equipos.length === 0}
-          >
-            Ver resumen
-          </button>
-          <button
-            onClick={completarReserva}
-            disabled={reservaData.equipos.length === 0}
-            style={{ marginLeft: "10px" }}
-          >
-            Confirmar reserva
-          </button>
-        </div>
       </div>
     );
 
@@ -174,15 +155,11 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
     const renderResumenAula = () => (
       <div className="resumen-aula">
         <h4>Resumen de tu reserva de aula:</h4>
-        <p>📅 Fecha: {reservaData.fecha}</p>
+        <p>🏫 Aula: {reservaDataRoom.aula}</p>
+        <p>📅 Fecha: {reservaDataRoom.fecha}</p>
         <p>
-          🕒 De: {reservaData.horaInicio} a {reservaData.horaFin}
+          🕒 De: {reservaDataRoom.horarioInicio} a {reservaDataRoom.horarioFin}
         </p>
-        <p>🏫 Aula: {reservaData.ubicacion}</p>
-        <div style={{ marginTop: "10px" }}>
-          <button onClick={() => setStep("seleccionarAula")}>Volver</button>{" "}
-          <button onClick={completarReserva}>Confirmar reserva</button>
-        </div>
       </div>
     );
 

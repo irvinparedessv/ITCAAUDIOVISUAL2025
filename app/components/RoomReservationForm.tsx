@@ -6,6 +6,7 @@ import myImage from "../../public/images/milan.jpg";
 import api from "../api/axios";
 import "pannellum/build/pannellum.css";
 import PanoramaViewer from "./PanoramaViewer";
+import toast from "react-hot-toast";
 
 declare global {
   interface Window {
@@ -75,7 +76,7 @@ export default function ReserveClassroom() {
     }
 
     try {
-      await api.post("/reservas", {
+      await api.post("/reservasAula", {
         aula_id: aula.id,
         fecha: selectedDate.toISOString().split("T")[0],
         horario: selectedTime,
@@ -83,7 +84,7 @@ export default function ReserveClassroom() {
         estado: "pendiente",
       });
 
-      setSuccessMessage("Reserva realizada con éxito");
+      toast.success(`Reserva realizada con éxito`);
       setSelectedDate(null);
       setSelectedTime("");
       setSelectedClassroom("");

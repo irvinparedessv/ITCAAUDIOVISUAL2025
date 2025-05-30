@@ -1,8 +1,14 @@
 // useChatbotLogic.ts
 import { useEffect, useState, useRef } from "react";
 import api from "../../api/axios";
-import type { OptionType, Message, ReservaData } from "./types";
+import type {
+  OptionType,
+  Message,
+  ReservaData,
+  ReservaDataRoom,
+} from "./types";
 import { getTipoReservas } from "~/services/tipoReservaService";
+import { Steps } from "./steps";
 
 export const useChatbotLogic = (user: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,11 +37,11 @@ export const useChatbotLogic = (user: any) => {
     tipo: "",
   });
 
-  const [reservaDataRoom, setReservaDataRoom] = useState({
+  const [reservaDataRoom, setReservaDataRoom] = useState<ReservaDataRoom>({
     aula: "",
-    fecha: null as Date | null,
-    horario: "",
-    user_id: user?.id,
+    fecha: "",
+    horarioInicio: "",
+    horarioFin: "",
   });
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -58,7 +64,7 @@ export const useChatbotLogic = (user: any) => {
       const responsex = await api.get("/aulasEquipos");
       const datax = responsex.data;
       const optionsx = datax.map((item: any) => ({
-        value: item.name,
+        value: item.id,
         label: item.name,
       }));
       setAulaOptions(optionsx);
@@ -133,9 +139,18 @@ export const useChatbotLogic = (user: any) => {
       equipos: [],
       tipo: "",
     });
+    setReservaDataRoom({
+      aula: "",
+      fecha: "",
+      horarioInicio: "",
+      horarioFin: "",
+    });
   };
 
-  const toggleChat = () => setIsOpen(!isOpen);
+  const toggleChat = () => {
+    resetChat();
+    setIsOpen(!isOpen);
+  };
 
   const addBotMessage = (text: string) => {
     setMessages((prev) => [
@@ -247,14 +262,16 @@ export const useChatbotLogic = (user: any) => {
     setStep("seleccionarUbicacion");
   };
 
-  const handleAulaClick = (ubicacion: string) => {
+  const handleAulaClick = (aula: string) => {
+    const aulaSeleccionada = aulaOptions.find((x) => x.value == aula);
+    const message = aulaSeleccionada?.label ?? "";
     setMessages((prev) => [
       ...prev,
-      { id: prev.length + 1, text: ubicacion, sender: "user" },
+      { id: prev.length + 1, text: message, sender: "user" },
     ]);
-    setReservaData((prev) => ({ ...prev, ubicacion }));
+    setReservaDataRoom((prev) => ({ ...prev, aula }));
     addBotMessage("Gracias. Ahora selecciona una fecha disponible:");
-    setStep("fechaAula");
+    setStep(Steps.SeleccionarFechaAula);
   };
   const handleAulaFechaClick = (ubicacion: string) => {
     setMessages((prev) => [
@@ -326,19 +343,62 @@ export const useChatbotLogic = (user: any) => {
       });
 
     setTimeout(() => {
+      const equiposSeleccionados = reservaData.equipos
+        .map((id) => {
+          const equipo = equipmentOptions.find((e) => e.value === id);
+          return equipo?.label || id;
+        })
+        .join(", ");
+
       addBotMessage(
-        `✅ ¡Reserva creada con éxito!\n\n📅 Fecha: ${
-          reservaData.fecha
-        }\n🕒 Hora: ${reservaData.horaInicio} - ${
-          reservaData.horaFin
-        }\n📍 Ubicación: ${
-          reservaData.ubicacion
-        }\n🎥 Equipos: ${reservaData.equipos.join(", ")}`
+        `✅ ¡Reserva creada con éxito!\n\n📅 Fecha: ${reservaData.fecha}\n🕒 Hora: ${reservaData.horaInicio} - ${reservaData.horaFin}\n📍 Ubicación: ${reservaData.ubicacion}\n🎥 Equipos: ${equiposSeleccionados}`
       );
-      setStep("finalizado");
+      addBotMessage(
+        `¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?`
+      );
+      setStep(Steps.Initial);
     }, 1000);
   };
 
+  const completarReservaAula = async () => {
+    if (
+      !reservaDataRoom.fecha ||
+      !reservaDataRoom.horarioInicio ||
+      !reservaDataRoom.horarioInicio ||
+      !reservaDataRoom.aula
+    ) {
+      addBotMessage(
+        "Faltan datos de la reserva, por favor reinicia el proceso."
+      );
+      setStep("initial");
+      return;
+    }
+    // Aquí podrías llamar a un API para guardar la reserva.
+    addBotMessage("Procesando tu reserva...");
+    const payload = {
+      user_id: user?.id,
+      aula_id: reservaDataRoom.aula,
+      fecha: reservaDataRoom.fecha,
+      horario: reservaDataRoom.horarioInicio + "-" + reservaData.horaFin,
+      estado: "pendiente",
+    };
+    try {
+      await api.post("/reservasAula", payload);
+    } catch (error) {
+      console.error(error);
+    }
+    const aula = aulaOptions.find((e) => e.value === reservaDataRoom.aula);
+
+    setTimeout(() => {
+      addBotMessage(
+        `✅ ¡Reserva creada con éxito!\n📍 Ubicación: ${aula?.value}\n\n📅 Fecha: ${reservaDataRoom.fecha}\n🕒 Hora: ${reservaDataRoom.horarioInicio} - ${reservaDataRoom.horarioFin}\n`
+      );
+      addBotMessage(
+        `¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?`
+      );
+      setStep(Steps.Initial);
+    }, 1000);
+  };
   return {
     // estados
     isOpen,
@@ -349,6 +409,7 @@ export const useChatbotLogic = (user: any) => {
     equipmentOptions,
     aulaOptions,
     reservaData,
+    reservaDataRoom,
     messagesEndRef,
     tipoReservaOptions,
     chatRef, // <---
@@ -357,6 +418,7 @@ export const useChatbotLogic = (user: any) => {
     setInputMessage,
     setMessages,
     setReservaData,
+    setReservaDataRoom,
     setStep,
 
     // funciones
@@ -370,6 +432,8 @@ export const useChatbotLogic = (user: any) => {
     handleAulaFechaClick,
     handleAulaClick,
     completarReserva,
+    completarReservaAula,
     resetChat,
+    toggleChat,
   };
 };

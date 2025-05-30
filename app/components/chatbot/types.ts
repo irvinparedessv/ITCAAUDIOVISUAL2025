@@ -17,3 +17,9 @@ export type ReservaData = {
   ubicacion: string;
   equipos: string[];
 };
+export type ReservaDataRoom = {
+  aula: string;
+  fecha: string;
+  horarioInicio: string;
+  horarioFin: string;
+};

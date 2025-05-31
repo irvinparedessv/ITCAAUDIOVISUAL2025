@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Container, Card, ListGroup, Badge, Row, Col } from 'react-bootstrap';
+import { Container, Card, ListGroup, Badge, Row, Col, Modal } from 'react-bootstrap';
 import api from '~/api/axios';
 
 import {
@@ -25,6 +25,7 @@ export default function NotificationsList() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     api.get('/notifications')
@@ -41,16 +42,12 @@ export default function NotificationsList() {
   const handleSelect = (id: string) => {
     const notification = notifications.find(n => n.id === id);
     if (notification) {
-      if (selectedNotification?.id === id) {
-        setSelectedNotification(null); // Toggle off if clicking the same notification
-      } else {
-        setSelectedNotification(notification);
-      }
+      setSelectedNotification(notification);
+      setShowModal(true);
     }
 
     api.get(`/notifications/${id}`)
       .then(res => {
-        setSelectedNotification(prev => prev?.id === id ? res.data.notification : prev);
         setNotifications(prev =>
           prev.map(n => n.id === id ? { ...n, read_at: res.data.notification.read_at } : n)
         );
@@ -69,7 +66,10 @@ export default function NotificationsList() {
 
   function deleteNotification(id: string) {
     setNotifications(prev => prev.filter(n => n.id !== id));
-    if (selectedNotification?.id === id) setSelectedNotification(null);
+    if (selectedNotification?.id === id) {
+      setSelectedNotification(null);
+      setShowModal(false);
+    }
 
     api.delete(`/notifications/${id}`)
       .catch(err => console.error('Error al eliminar notificación', err));
@@ -112,11 +112,11 @@ export default function NotificationsList() {
   const readNotifications = notifications.filter(n => n.read_at);
 
   const renderNotificationDetail = (notification: Notification) => (
-    <Card className="mt-2 mb-3 shadow-sm border-0 rounded-4">
-      <Card.Header className="card-header-dark-red rounded-top-4">
-        <h5 className="mb-0">📄 Detalle de la notificación</h5>
-      </Card.Header>
-      <Card.Body>
+    <>
+      <Modal.Header closeButton className="card-header-dark-red">
+        <Modal.Title>📄 Detalle de la notificación</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
         <div className="mb-3">
           <h6 className="text-primary">{notification.data.title}</h6>
           <p>{notification.data.message}</p>
@@ -206,8 +206,8 @@ export default function NotificationsList() {
             </div>
           </Col>
         </Row>
-      </Card.Body>
-    </Card>
+      </Modal.Body>
+    </>
   );
 
   return (
@@ -240,33 +240,25 @@ export default function NotificationsList() {
                       <ListGroup variant="flush">
                         <SwipeableList>
                           {unreadNotifications.map(notification => (
-                            <div key={notification.id}>
-                              <SwipeableListItem
-                                leadingActions={leadingActions(notification.id)}
-                                trailingActions={trailingActions(notification.id)}
+                            <SwipeableListItem
+                              key={notification.id}
+                              leadingActions={leadingActions(notification.id)}
+                              trailingActions={trailingActions(notification.id)}
+                            >
+                              <ListGroup.Item
+                                action
+                                className="d-flex justify-content-between align-items-center py-3"
+                                onClick={() => handleSelect(notification.id)}
+                                style={{
+                                  borderLeft: '4px solid rgb(206, 145, 20)'
+                                }}
                               >
-                                <ListGroup.Item
-                                  action
-                                  className="d-flex justify-content-between align-items-center py-3"
-                                  onClick={() => handleSelect(notification.id)}
-                                  active={selectedNotification?.id === notification.id}
-                                  style={selectedNotification?.id === notification.id
-                                    ? {
-                                      backgroundColor: '#f5f0f0',
-                                      borderLeft: '4px solid rgb(206, 145, 20)'
-                                    }
-                                    : {
-                                      borderLeft: '4px solid rgb(206, 145, 20)',
-                                    }}
-                                >
-                                  <div>
-                                    <strong>{notification.data.message ?? 'Notificación sin mensaje'}</strong>
-                                  </div>
-                                  <small className="text-muted">{formatDate(notification.created_at)}</small>
-                                </ListGroup.Item>
-                              </SwipeableListItem>
-                              {selectedNotification?.id === notification.id && renderNotificationDetail(selectedNotification)}
-                            </div>
+                                <div>
+                                  <strong>{notification.data.message ?? 'Notificación sin mensaje'}</strong>
+                                </div>
+                                <small className="text-muted">{formatDate(notification.created_at)}</small>
+                              </ListGroup.Item>
+                            </SwipeableListItem>
                           ))}
                         </SwipeableList>
                       </ListGroup>
@@ -279,34 +271,24 @@ export default function NotificationsList() {
                       <ListGroup variant="flush">
                         <SwipeableList>
                           {readNotifications.map(notification => (
-                            <div key={notification.id}>
-                              <SwipeableListItem
-                                trailingActions={trailingActions(notification.id)}
+                            <SwipeableListItem
+                              key={notification.id}
+                              trailingActions={trailingActions(notification.id)}
+                            >
+                              <ListGroup.Item
+                                action
+                                className="d-flex justify-content-between align-items-center py-3"
+                                onClick={() => handleSelect(notification.id)}
+                                style={{
+                                  borderLeft: '4px solid rgb(206, 145, 20)',
+                                }}
                               >
-                                <ListGroup.Item
-                                  action
-                                  className="d-flex justify-content-between align-items-center py-3"
-                                  onClick={() => handleSelect(notification.id)}
-                                  active={selectedNotification?.id === notification.id}
-                                  style={selectedNotification?.id === notification.id
-                                    ? {
-                                      backgroundColor: '#f5f0f0',
-                                      borderLeft: '4px solid rgb(206, 145, 20)'
-                                    }
-                                    : {
-                                      borderLeft: '4px solid rgb(206, 145, 20)',
-                                    }}
-                                
-
-                                >
-                                  <div>
-                                    <span className="text-muted">{notification.data.message ?? 'Notificación sin mensaje'}</span>
-                                  </div>
-                                  <small className="text-muted">{formatDate(notification.created_at)}</small>
-                                </ListGroup.Item>
-                              </SwipeableListItem>
-                              {selectedNotification?.id === notification.id && renderNotificationDetail(selectedNotification)}
-                            </div>
+                                <div>
+                                  <span className="text-muted">{notification.data.message ?? 'Notificación sin mensaje'}</span>
+                                </div>
+                                <small className="text-muted">{formatDate(notification.created_at)}</small>
+                              </ListGroup.Item>
+                            </SwipeableListItem>
                           ))}
                         </SwipeableList>
                       </ListGroup>
@@ -318,6 +300,10 @@ export default function NotificationsList() {
           </Card>
         </Col>
       </Row>
+
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
+        {selectedNotification && renderNotificationDetail(selectedNotification)}
+      </Modal>
     </Container>
   );
 }

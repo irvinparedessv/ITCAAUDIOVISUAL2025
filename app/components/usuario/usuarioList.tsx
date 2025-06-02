@@ -1,15 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { getUsuarios, deleteUsuario, resetPassword, forgotPassword } from "~/services/userService";
+import {
+  getUsuarios,
+  deleteUsuario,
+  resetPassword,
+  forgotPassword,
+} from "~/services/userService";
 import type { User } from "~/types/user";
 import { FaUserCircle, FaEdit, FaTrash, FaSearch, FaKey } from "react-icons/fa";
 import { Link } from "react-router-dom";
+
 
 const rolesMap: Record<number, string> = {
   1: "Administrador",
   2: "Encargado",
   3: "Prestamista",
 };
+
 
 const UsuarioList = () => {
   const [usuarios, setUsuarios] = useState<User[]>([]);
@@ -18,9 +25,11 @@ const UsuarioList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
 
+
   useEffect(() => {
     cargarUsuarios(currentPage);
   }, [currentPage]);
+
 
   const cargarUsuarios = async (page = 1) => {
     setLoading(true);
@@ -38,10 +47,12 @@ const UsuarioList = () => {
     }
   };
 
+
   const eliminarUsuario = async (id: number) => {
     const confirmDelete = window.confirm(
       "¿Estás seguro de que deseas desactivar a este usuario? Esta acción es irreversible."
     );
+
 
     if (confirmDelete) {
       try {
@@ -56,10 +67,12 @@ const UsuarioList = () => {
     }
   };
 
+
   const handleResetPassword = async (userId: number, email: string) => {
     const confirmReset = window.confirm(
       `¿Estás seguro que deseas restablecer la contraseña de ${email}? Se enviará un enlace al correo electrónico.`
     );
+
 
     if (confirmReset) {
       try {
@@ -72,43 +85,46 @@ const UsuarioList = () => {
     }
   };
 
+
   const filteredUsuarios = (usuarios || []).filter((u) => {
-    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase();
+    const fullName = `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase();
     return (
       fullName.includes(searchTerm.toLowerCase()) ||
-      (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (u.email || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
+
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
       <h4 className="mb-3 text-center">Listado de Usuarios</h4>
 
-      <div className="flex justify-between items-center mb-3">
-        {/* Buscador */}
-        <div className="relative w-full max-w-xs">
-          <input
-            type="text"
-            placeholder="Buscar por nombre o correo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-        </div>
 
-        <Link
-          to="/formUsuario"
-          className="ml-3 btn btn-primary"
-          style={{ transition: "transform 0.2s ease-in-out" }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.transform = "scale(1.05)")
-          }
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-        >
-          Crear Usuario
-        </Link>
-      </div>
+      <div className="flex flex-col items-start mb-4">
+  {/* Buscador */}
+  <div className="w-full sm:w-80">
+    <input
+      type="text"
+      placeholder="Buscar..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+
+
+  {/* Botón debajo del buscador con margen */}
+  <Link
+    to="/formUsuario"
+    className="btn btn-primary mt-4"
+    style={{ transition: "transform 0.2s ease-in-out" }}
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
+  >
+    Crear Usuario
+  </Link>
+</div>
+
 
       {loading ? (
         <p className="text-center">Cargando usuarios...</p>
@@ -116,7 +132,7 @@ const UsuarioList = () => {
         <>
           <table
             className="table table-hover align-middle text-center overflow-hidden"
-            style={{ borderRadius: "0.8rem" }}
+            style={{ borderRadius: "0.8rem", fontSize: "0.9rem" }}
           >
             <thead className="table-dark">
               <tr>
@@ -162,9 +178,7 @@ const UsuarioList = () => {
                     <td>{usuario.email}</td>
                     <td>{usuario.phone || "N/A"}</td>
                     <td>{usuario.address || "N/A"}</td>
-                    <td>
-                      <em>{rolesMap[usuario.role_id] || "Desconocido"}</em>
-                    </td>
+                    <td>{rolesMap[usuario.role_id] || "Desconocido"}</td>
                     <td>
                       <span
                         className={`badge ${
@@ -205,7 +219,9 @@ const UsuarioList = () => {
                         <button
                           className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                           title="Restablecer contraseña"
-                          onClick={() => handleResetPassword(usuario.id, usuario.email)}
+                          onClick={() =>
+                            handleResetPassword(usuario.id, usuario.email)
+                          }
                           style={{
                             width: "44px",
                             height: "44px",
@@ -246,6 +262,7 @@ const UsuarioList = () => {
             </tbody>
           </table>
 
+
           {/* Paginación */}
           <div className="d-flex justify-content-center align-items-center mt-3 gap-2">
             <button
@@ -256,9 +273,11 @@ const UsuarioList = () => {
               Anterior
             </button>
 
+
             <button className="btn btn-primary" disabled>
               {currentPage}
             </button>
+
 
             <button
               className="btn btn-outline-secondary"
@@ -275,5 +294,6 @@ const UsuarioList = () => {
     </div>
   );
 };
+
 
 export default UsuarioList;

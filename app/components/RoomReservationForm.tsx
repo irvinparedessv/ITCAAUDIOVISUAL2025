@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import myImage from "../../public/images/milan.jpg";
 import api from "../api/axios";
 import "pannellum/build/pannellum.css";
 import PanoramaViewer from "./PanoramaViewer";
@@ -13,34 +12,35 @@ declare global {
     pannellum: any;
   }
 }
+
+type Horario = {
+  start_date: string;
+  end_date: string;
+  start_time: string;
+  end_time: string;
+  days: string[];
+};
+
 type Aula = {
   id: number;
   name: string;
-  image_path?: string; // si tienes ruta a las imágenes 360
+  image_path?: string;
+  horarios: Horario[];
 };
-
-const availableTimes = [
-  "08:00 AM - 10:00 AM",
-  "10:00 AM - 12:00 PM",
-  "12:00 PM - 02:00 PM",
-  "02:00 PM - 04:00 PM",
-  "04:00 PM - 06:00 PM",
-];
 
 export default function ReserveClassroom() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
   const [formError, setFormError] = useState<string>("");
-  const [successMessage, setSuccessMessage] = useState<string>("");
-
   const [availableClassrooms, setAvailableClassrooms] = useState<Aula[]>([]);
+
+  const userId = 1; // Simulado
 
   useEffect(() => {
     const fetchAulas = async () => {
       try {
         const response = await api.get("/aulas");
-        console.log(response.data);
         setAvailableClassrooms(response.data);
       } catch (error) {
         console.error("Error al cargar aulas", error);
@@ -50,22 +50,80 @@ export default function ReserveClassroom() {
     fetchAulas();
   }, []);
 
-  const userId = 1; // simulado
-
   const selectedClassroomData = availableClassrooms.find(
-    (classroom) => classroom.name === selectedClassroom
+    (c) => c.name === selectedClassroom
   );
 
-  useEffect(() => {
-    setFormError("");
-    setSuccessMessage("");
-  }, [selectedDate, selectedTime, selectedClassroom]);
+  const parseTime = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    return { hours, minutes };
+  };
+
+  const generateTimeSlots = (start: string, end: string): string[] => {
+    const result: string[] = [];
+    const { hours: startH, minutes: startM } = parseTime(start);
+    const { hours: endH, minutes: endM } = parseTime(end);
+
+    let current = new Date();
+    current.setHours(startH, startM, 0, 0);
+
+    const endTime = new Date();
+    endTime.setHours(endH, endM, 0, 0);
+
+    while (current < endTime) {
+      const next = new Date(current);
+      next.setHours(current.getHours() + 2);
+
+      if (next > endTime) break;
+
+      result.push(
+        `${current.toTimeString().slice(0, 5)} - ${next
+          .toTimeString()
+          .slice(0, 5)}`
+      );
+      current = next;
+    }
+
+    return result;
+  };
+
+  const isDateEnabled = (date: Date): boolean => {
+    if (!selectedClassroomData) return false;
+
+    return selectedClassroomData.horarios.some((h) => {
+      const day = date.toLocaleDateString("en-US", { weekday: "long" });
+      const current = date.toISOString().split("T")[0];
+      return (
+        h.days.includes(day) && current >= h.start_date && current <= h.end_date
+      );
+    });
+  };
+
+  const getTimeOptions = (): string[] => {
+    if (!selectedDate || !selectedClassroomData) return [];
+
+    const selectedDay = selectedDate.toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+
+    const horario = selectedClassroomData.horarios.find((h) => {
+      const current = selectedDate.toISOString().split("T")[0];
+      return (
+        h.days.includes(selectedDay) &&
+        current >= h.start_date &&
+        current <= h.end_date
+      );
+    });
+
+    if (!horario) return [];
+
+    return generateTimeSlots(horario.start_time, horario.end_time);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!selectedDate || !selectedTime || !selectedClassroom) {
-      setFormError("Por favor, selecciona una fecha, una hora y un aula.");
+      setFormError("Por favor, completa todos los campos.");
       return;
     }
 
@@ -84,42 +142,39 @@ export default function ReserveClassroom() {
         estado: "pendiente",
       });
 
-      toast.success(`Reserva realizada con éxito`);
+      toast.success("Reserva realizada con éxito");
       setSelectedDate(null);
       setSelectedTime("");
       setSelectedClassroom("");
-
-      // Ocultar mensaje después de 3 segundos
-      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       console.error(error);
-      setFormError("Error al enviar la reserva. Intenta nuevamente.");
+      setFormError("Error al enviar la reserva.");
     }
   };
 
   return (
     <Container className="my-5">
       <Row className="justify-content-center">
-        <Col xs={12} md={6} lg={4}>
+        <Col xs={12} md={6} lg={5}>
           <h2 className="text-center mb-4">Reserva de Aula</h2>
-
           {formError && <div className="alert alert-danger">{formError}</div>}
-          {successMessage && (
-            <div className="alert alert-success">{successMessage}</div>
-          )}
 
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="classroom">
               <Form.Label>Aula</Form.Label>
               <Form.Select
                 value={selectedClassroom}
-                onChange={(e) => setSelectedClassroom(e.target.value)}
+                onChange={(e) => {
+                  setSelectedClassroom(e.target.value);
+                  setSelectedDate(null);
+                  setSelectedTime("");
+                }}
                 required
               >
                 <option value="">Selecciona un aula</option>
-                {availableClassrooms.map((classroom) => (
-                  <option key={classroom.id} value={classroom.name}>
-                    {classroom.name}
+                {availableClassrooms.map((aula) => (
+                  <option key={aula.id} value={aula.name}>
+                    {aula.name}
                   </option>
                 ))}
               </Form.Select>
@@ -129,11 +184,16 @@ export default function ReserveClassroom() {
               <Form.Label>Fecha</Form.Label>
               <DatePicker
                 selected={selectedDate}
-                onChange={(date: Date | null) => setSelectedDate(date)}
+                onChange={(date) => {
+                  setSelectedDate(date);
+                  setSelectedTime("");
+                }}
                 className="form-control"
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Selecciona la fecha"
                 required
+                disabled={!selectedClassroom}
+                filterDate={isDateEnabled}
               />
             </Form.Group>
 
@@ -143,11 +203,12 @@ export default function ReserveClassroom() {
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
                 required
+                disabled={!selectedDate}
               >
                 <option value="">Selecciona un horario</option>
-                {availableTimes.map((time, index) => (
-                  <option key={index} value={time}>
-                    {time}
+                {getTimeOptions().map((slot, idx) => (
+                  <option key={idx} value={slot}>
+                    {slot}
                   </option>
                 ))}
               </Form.Select>
@@ -159,7 +220,7 @@ export default function ReserveClassroom() {
           </Form>
         </Col>
       </Row>
-      <Row>{selectedClassroomData?.image_path}</Row>
+
       {selectedClassroomData?.image_path && (
         <Row className="justify-content-center mt-4">
           <Col xs={12} md={8} lg={6}>

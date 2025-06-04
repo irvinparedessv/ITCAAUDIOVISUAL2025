@@ -29,7 +29,7 @@ export default function EquipmentReservationForm() {
   const [allEquipmentOptions, setAllEquipmentOptions] = useState<OptionType[]>([]);
   const [availableEquipmentOptions, setAvailableEquipmentOptions] = useState<OptionType[]>([]);
   const [aulaOptions, setAulaOptions] = useState<OptionType[]>([]);
-  const [loadingEquipments, setLoadingEquipments] = useState(true);
+  const [loadingEquipments, setLoadingEquipments] = useState(false); // Cambia a false inicial
   const [loadingAulas, setLoadingAulas] = useState(true);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>([]);
@@ -41,23 +41,6 @@ export default function EquipmentReservationForm() {
   const isDateTimeComplete = formData.date && formData.startTime && formData.endTime;
 
   useEffect(() => {
-    const fetchEquipments = async () => {
-      try {
-        const response = await api.get("/Obtenerequipos");
-        const data = response.data;
-        const options = data.map((item: any) => ({
-          value: item.id,
-          label: item.nombre,
-        }));
-
-        setAllEquipmentOptions(options);
-      } catch (error) {
-        toast.error("Error cargando los equipos. Intente nuevamente.");
-      } finally {
-        setLoadingEquipments(false);
-      }
-    };
-
     const fetchAulas = async () => {
       try {
         const response = await api.get("/aulasEquipos");
@@ -74,7 +57,6 @@ export default function EquipmentReservationForm() {
       }
     };
 
-    fetchEquipments();
     fetchAulas();
   }, []);
 
@@ -97,37 +79,38 @@ export default function EquipmentReservationForm() {
   }, []);
 
   useEffect(() => {
-    const fetchEquipmentsByTipoReserva = async () => {
-      if (!formData.tipoReserva) {
-        setAvailableEquipmentOptions([]);
-        return;
+  const fetchEquipmentsByTipoReserva = async () => {
+    if (!formData.tipoReserva) {
+      setAvailableEquipmentOptions([]);
+      return;
+    }
+
+    try {
+      setLoadingEquipments(true);
+      const response = await api.get(`/equiposPorTipo/${formData.tipoReserva.value}`);
+      const data = response.data;
+      const options = data.map((item: any) => ({
+        value: item.id,
+        label: item.nombre,
+      }));
+
+      setAllEquipmentOptions(options);
+      
+      if (isDateTimeComplete) {
+        await checkEquipmentAvailability(options);
+      } else {
+        setAvailableEquipmentOptions(options);
       }
+    } catch (error) {
+      console.error("Error:", error);
+      setAvailableEquipmentOptions([]);
+    } finally {
+      setLoadingEquipments(false);
+    }
+  };
 
-      try {
-        setLoadingEquipments(true);
-        const response = await api.get(`/equiposPorTipo/${formData.tipoReserva.value}`);
-        const data = response.data;
-        const options = data.map((item: any) => ({
-          value: item.id,
-          label: item.nombre,
-        }));
-
-        setAllEquipmentOptions(options);
-        
-        if (isDateTimeComplete) {
-          checkEquipmentAvailability(options);
-        } else {
-          setAvailableEquipmentOptions(options);
-        }
-      } catch (error) {
-        toast.error("Error cargando los equipos para este tipo de reserva.");
-      } finally {
-        setLoadingEquipments(false);
-      }
-    };
-
-    fetchEquipmentsByTipoReserva();
-  }, [formData.tipoReserva]);
+  fetchEquipmentsByTipoReserva();
+}, [formData.tipoReserva]);
 
   // Verificar disponibilidad de equipos cuando cambia la fecha/hora
   useEffect(() => {
@@ -379,10 +362,13 @@ export default function EquipmentReservationForm() {
                     ? "Selecciona un tipo de reserva primero"
                     : checkingAvailability
                       ? "Verificando disponibilidad..."
-                      : "Selecciona equipos disponibles"
+                      : availableEquipmentOptions.length === 0
+                        ? "No hay equipos disponibles para este tipo"
+                        : "Selecciona equipos disponibles"
               }
               className="react-select-container"
               classNamePrefix="react-select"
+              noOptionsMessage={() => "No hay opciones disponibles"}
             />
           )}
         </div>

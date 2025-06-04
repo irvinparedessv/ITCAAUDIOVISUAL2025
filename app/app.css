@@ -16,7 +16,15 @@
   --navbar-hover-bg-dark: rgba(0, 0, 0, 0.2); /* Modo oscuro */
   --dropdown-hover-bg: rgba(0, 0, 0, 0.1);
 }
-
+input[type="time"] {
+  -webkit-appearance: none; /* En algunos navegadores como Safari */
+  appearance: none; /* Elimina el estilo nativo */
+  width: 100%;
+  padding: 5px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
 
 /* Estructura del navbar */
 .navbar {
@@ -67,13 +75,12 @@
 
 .notification-date {
   font-style: italic;
-  color: #3d0707; 
+  color: #3d0707;
 }
 
 .btn-notification-link {
   color: #000000 !important; /* Ocre oscuro */
   font-weight: bold !important;
-
 }
 
 .btn-notification-link:hover {
@@ -81,9 +88,61 @@
   text-decoration: none;
 }
 
+/* CODIGO DE PERSONALIZACION DEL Dropdown.Toggle DE MENU */
+.custom-user-toggle {
+  all: unset;
+  &:hover,
+  &:focus {
+    background: linear-gradient(
+      rgb(245, 195, 92),
+      rgb(206, 145, 20)
+    ) !important;
+    color: #000 !important;
+    text-decoration: none;
+  }
+}
 
+/* Estilos para el botón personalizado */
+.custom-user-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20));
+  border: none;
+  color: #000;
+  cursor: pointer;
+}
 
+/* Contenedor del ícono */
+.custom-user-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
+/* Nombre del usuario con texto cortado si es muy largo */
+.custom-user-name {
+  max-width: 120px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* Nombre del usuario con texto cortado si es muy largo MOBILE */
+.user-name-ellipsis {
+  max-width: 120px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px; /* Espacio entre icono y texto */
+}
+
+/* FIN DE CODIGO DE PERSONALIZACION DEL Dropdown.Toggle DE MENU */
 
 /* INICIO DE Estilos para el sidebar en móvil */
 .offcanvas-dropdown .dropdown-menu {
@@ -119,18 +178,6 @@
 }
 
 /* FIN DE Estilos para el sidebar en móvil */
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* ==================== */
 /* ESTILOS GENERALES (NO AFECTAN AL NAVBAR) */
@@ -275,6 +322,25 @@
 .custom-toggler .navbar-toggler-icon::after {
   bottom: 6px;
 }
+
+/* CAMBIANDO COLOR DEL HOVER */
+.dropdown-item,
+.dropdown-item:focus,
+.dropdown-item:hover,
+.dropdown-item:active,
+.dropdown-item.active {
+  color: #000000 !important;
+  background-color: transparent;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus,
+.dropdown-item:active,
+.dropdown-item.active {
+  background-color: #f5c35c !important; /* Mostaza */
+  text-decoration: none;
+}
+/* FIN DE CAMBIANDO COLOR DEL HOVER */
 
 /* FIN DE DISENIO DE TOOGLE EN SIEMPRE OSCURO */
 
@@ -814,7 +880,6 @@ input.form-control.border-color-login {
   color: black !important;
 }
 
-
 /* Estilos para el Offcanvas y dropdowns */
 .offcanvas-dropdown .dropdown-menu {
   border: none;
@@ -853,7 +918,7 @@ input.form-control.border-color-login {
 }
 
 .offcanvas-header {
-  border-bottom: 1px solid rgba(0,0,0,0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .offcanvas-body {
@@ -862,7 +927,7 @@ input.form-control.border-color-login {
 
 /* Estilos para el navbar principal */
 .navbar {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .nav-dropdown-toggle::after {
@@ -897,15 +962,6 @@ input.form-control.border-color-login {
   background-color: #ffc107;
   color: #212529;
 }
-
-
-
-
-
-
-
-
-
 
 /* DISENIO DE NOTIFICACIONES */
 
@@ -960,13 +1016,12 @@ input.form-control.border-color-login {
     flex-direction: column;
     align-items: flex-start !important;
   }
-  
+
   .notification-time {
     margin-top: 0.5rem;
     align-self: flex-end;
   }
 }
-
 
 /* Asegurate que este CSS esté cargado después de Bootstrap */
 .list-group .list-group-item.active {
@@ -994,21 +1049,7 @@ input.form-control.border-color-login {
   background-color: var(--bs-primary) !important;
 }
 
-
 /* FIN DE DISENIO DE NOTIFICACIONES */
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Estilos para el Offcanvas */
 .offcanvas-body .nav-link,
@@ -1061,14 +1102,6 @@ input.form-control.border-color-login {
   content: "\f077"; /* Icono cuando está abierto (chevron-up) */
 }
 
-
-
-
-
-
-
-
-
 /* HACE QUE EL CORREO EN DETALLE DE RESERVA NO SE SOBREPONGA AL CODIGO QR */
 .word-break {
   word-break: break-word; /* o break-all para mayor agresividad */
@@ -1077,8 +1110,6 @@ input.form-control.border-color-login {
   hyphens: auto;
 }
 /* FIN DE HACE QUE EL CORREO EN DETALLE DE RESERVA NO SE SOBREPONGA AL CODIGO QR */
-
-
 
 .card-header-dark-red {
   background-color: #8b0000 !important; /* Rojo oscuro */
@@ -1095,5 +1126,3 @@ input.form-control.border-color-login {
   background-color: #6d0000 !important;
   border-color: #6d0000 !important;
 }
-
-

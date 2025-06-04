@@ -11,8 +11,15 @@ export type OptionType = {
 
 export type ReservaData = {
   fecha: string;
+  tipo: string;
   horaInicio: string;
   horaFin: string;
   ubicacion: string;
   equipos: string[];
+};
+export type ReservaDataRoom = {
+  aula: string;
+  fecha: string;
+  horarioInicio: string;
+  horarioFin: string;
 };

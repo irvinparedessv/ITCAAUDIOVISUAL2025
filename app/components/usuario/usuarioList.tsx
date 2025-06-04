@@ -10,13 +10,11 @@ import type { User } from "~/types/user";
 import { FaUserCircle, FaEdit, FaTrash, FaSearch, FaKey } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
-
 const rolesMap: Record<number, string> = {
   1: "Administrador",
   2: "Encargado",
   3: "Prestamista",
 };
-
 
 const UsuarioList = () => {
   const [usuarios, setUsuarios] = useState<User[]>([]);
@@ -25,11 +23,9 @@ const UsuarioList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
 
-
   useEffect(() => {
     cargarUsuarios(currentPage);
   }, [currentPage]);
-
 
   const cargarUsuarios = async (page = 1) => {
     setLoading(true);
@@ -47,44 +43,85 @@ const UsuarioList = () => {
     }
   };
 
-
   const eliminarUsuario = async (id: number) => {
-    const confirmDelete = window.confirm(
-      "¿Estás seguro de que deseas desactivar a este usuario? Esta acción es irreversible."
-    );
-
-
-    if (confirmDelete) {
-      try {
-        await deleteUsuario(id);
-        setUsuarios((prevUsuarios) =>
-          prevUsuarios.map((u) => (u.id === id ? { ...u, estado: 0 } : u))
-        );
-        toast.success("Usuario desactivado correctamente");
-      } catch (error) {
-        toast.error("Error al desactivar el usuario");
+    toast(
+      (t) => (
+        <div>
+          <p>¿Estás seguro de que deseas desactivar a este usuario?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={async () => {
+                try {
+                  await deleteUsuario(id);
+                  setUsuarios((prevUsuarios) =>
+                    prevUsuarios.map((u) =>
+                      u.id === id ? { ...u, estado: 0 } : u
+                    )
+                  );
+                  toast.success("Usuario desactivado correctamente");
+                  toast.dismiss(t.id);
+                } catch (error) {
+                  toast.error("Error al desactivar el usuario");
+                  toast.dismiss(t.id);
+                }
+              }}
+            >
+              Sí, desactivar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 10000,
       }
-    }
+    );
   };
-
 
   const handleResetPassword = async (userId: number, email: string) => {
-    const confirmReset = window.confirm(
-      `¿Estás seguro que deseas restablecer la contraseña de ${email}? Se enviará un enlace al correo electrónico.`
-    );
-
-
-    if (confirmReset) {
-      try {
-        await forgotPassword(email);
-        toast.success(`Se ha enviado un enlace de restablecimiento a ${email}`);
-      } catch (error) {
-        toast.error("Error al enviar el enlace de restablecimiento");
-        console.error("Error al restablecer contraseña:", error);
+    toast(
+      (t) => (
+        <div>
+          <p>¿Estás seguro que deseas restablecer la contraseña de {email}?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={async () => {
+                try {
+                  await forgotPassword(email);
+                  toast.success(
+                    `Se ha enviado un enlace de restablecimiento a ${email}`
+                  );
+                  toast.dismiss(t.id);
+                } catch (error) {
+                  toast.error("Error al enviar el enlace de restablecimiento");
+                  console.error("Error al restablecer contraseña:", error);
+                  toast.dismiss(t.id);
+                }
+              }}
+            >
+              Sí, restablecer
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 10000,
       }
-    }
+    );
   };
-
 
   const filteredUsuarios = (usuarios || []).filter((u) => {
     const fullName = `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase();
@@ -94,37 +131,35 @@ const UsuarioList = () => {
     );
   });
 
-
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
       <h4 className="mb-3 text-center">Listado de Usuarios</h4>
 
-
       <div className="flex flex-col items-start mb-4">
-  {/* Buscador */}
-  <div className="w-full sm:w-80">
-    <input
-      type="text"
-      placeholder="Buscar..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
+        {/* Buscador */}
+        <div className="w-full sm:w-80">
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-
-  {/* Botón debajo del buscador con margen */}
-  <Link
-    to="/formUsuario"
-    className="btn btn-primary mt-4"
-    style={{ transition: "transform 0.2s ease-in-out" }}
-    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
-  >
-    Crear Usuario
-  </Link>
-</div>
-
+        {/* Botón debajo del buscador con margen */}
+        <Link
+          to="/formUsuario"
+          className="btn btn-primary mt-4"
+          style={{ transition: "transform 0.2s ease-in-out" }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.transform = "scale(1.05)")
+          }
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
+        >
+          Crear Usuario
+        </Link>
+      </div>
 
       {loading ? (
         <p className="text-center">Cargando usuarios...</p>
@@ -262,7 +297,6 @@ const UsuarioList = () => {
             </tbody>
           </table>
 
-
           {/* Paginación */}
           <div className="d-flex justify-content-center align-items-center mt-3 gap-2">
             <button
@@ -273,11 +307,9 @@ const UsuarioList = () => {
               Anterior
             </button>
 
-
             <button className="btn btn-primary" disabled>
               {currentPage}
             </button>
-
 
             <button
               className="btn btn-outline-secondary"
@@ -294,6 +326,5 @@ const UsuarioList = () => {
     </div>
   );
 };
-
 
 export default UsuarioList;

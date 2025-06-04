@@ -135,11 +135,12 @@ const VerPerfil = () => {
             <hr />
 
             <div className="text-center mt-4 d-flex justify-content-center gap-3">
-              <Button variant="secondary" onClick={() => navigate(-1)}>
+              <Button variant="secondary" className="btn secondary-btn" onClick={() => navigate(-1)}>
                 Regresar
               </Button>
               <Button
                 variant="primary"
+                className="btn secondary-btn"
                 onClick={() => navigate("/editarPerfil")}
               >
                 Editar Perfil

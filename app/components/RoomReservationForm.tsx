@@ -6,6 +6,8 @@ import api from "../api/axios";
 import "pannellum/build/pannellum.css";
 import PanoramaViewer from "./PanoramaViewer";
 import toast from "react-hot-toast";
+import { FaCalendarAlt, FaClock, FaDoorOpen, FaCheck } from "react-icons/fa";
+import { useAuth } from "~/hooks/AuthContext";
 
 declare global {
   interface Window {
@@ -32,10 +34,11 @@ export default function ReserveClassroom() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
-  const [formError, setFormError] = useState<string>("");
   const [availableClassrooms, setAvailableClassrooms] = useState<Aula[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  const userId = 1; // Simulado
+  const userId = user?.id; // simulado
 
   useEffect(() => {
     const fetchAulas = async () => {
@@ -44,6 +47,9 @@ export default function ReserveClassroom() {
         setAvailableClassrooms(response.data);
       } catch (error) {
         console.error("Error al cargar aulas", error);
+        toast.error("Error al cargar las aulas");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -123,13 +129,13 @@ export default function ReserveClassroom() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !selectedTime || !selectedClassroom) {
-      setFormError("Por favor, completa todos los campos.");
+      toast.error("Por favor, completa todos los campos");
       return;
     }
 
     const aula = availableClassrooms.find((c) => c.name === selectedClassroom);
     if (!aula) {
-      setFormError("Aula no válida.");
+      toast.error("Aula no válida");
       return;
     }
 
@@ -148,8 +154,14 @@ export default function ReserveClassroom() {
       setSelectedClassroom("");
     } catch (error) {
       console.error(error);
-      setFormError("Error al enviar la reserva.");
+      toast.error("Error al enviar la reserva. Intenta nuevamente.");
     }
+  };
+
+  const handleClear = () => {
+    setSelectedDate(null);
+    setSelectedTime("");
+    setSelectedClassroom("");
   };
 
   return (
@@ -157,7 +169,6 @@ export default function ReserveClassroom() {
       <Row className="justify-content-center">
         <Col xs={12} md={6} lg={5}>
           <h2 className="text-center mb-4">Reserva de Aula</h2>
-          {formError && <div className="alert alert-danger">{formError}</div>}
 
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="classroom">

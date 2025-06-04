@@ -9,7 +9,7 @@ import {
   FaUserShield,
   FaQrcode,
 } from "react-icons/fa";
-import { FaComputer, FaRestroom } from "react-icons/fa6";
+import { FaComputer, FaBookmark } from "react-icons/fa6";
 import { Card, Container, Row, Col } from "react-bootstrap";
 import { Role } from "~/types/roles";
 
@@ -154,7 +154,7 @@ export default function Dashboard() {
         <Row xs={1} md={2} className="g-4">
           <DashboardCard
             title="Reservar Espacio"
-            icon={<FaRestroom size={24} />}
+            icon={<FaBookmark size={24} style={getIconStyle()} />}
             link="/reservationsroom"
             description="Crear nueva reserva de espacio"
             borderStyle={cardBorderStyle}

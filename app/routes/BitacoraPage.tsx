@@ -9,6 +9,8 @@ export default function BitacoraPage() {
   const [registros, setRegistros] = useState<Bitacora[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [moduloFiltro, setModuloFiltro] = useState<string>('todos');
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,19 +28,33 @@ export default function BitacoraPage() {
     fetchData();
   }, []);
 
-  const filteredRegistros = registros.filter(log => 
-    log.nombre_usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.modulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.accion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRegistros = registros.filter(log =>
+    (moduloFiltro === 'todos' || log.modulo === moduloFiltro) &&
+    (
+      log.nombre_usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.modulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.accion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
+
 
   return (
     <div className="container py-5">
       <div className="table-responsive rounded shadow p-3 mt-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h4 className="mb-0">Bitácora del Sistema</h4>
-          <div className="input-group" style={{ maxWidth: '300px' }}>
+          <div className="input-group" style={{ maxWidth: '600px' }}>
+            <select
+              className="form-select ms-3"
+              style={{ maxWidth: '200px' }}
+              value={moduloFiltro}
+              onChange={(e) => setModuloFiltro(e.target.value)}
+            >
+              <option value="todos">Todos los módulos</option>
+              <option value="Reserva Aula">Reserva Aula</option>
+              <option value="Reserva Equipo">Reserva Equipo</option>
+            </select>
             <span className="input-group-text">
               <FaSearch />
             </span>

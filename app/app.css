@@ -88,6 +88,62 @@ input[type="time"] {
   text-decoration: none;
 }
 
+/* CODIGO DE PERSONALIZACION DEL Dropdown.Toggle DE MENU */
+.custom-user-toggle {
+  all: unset;
+  &:hover,
+  &:focus {
+    background: linear-gradient(
+      rgb(245, 195, 92),
+      rgb(206, 145, 20)
+    ) !important;
+    color: #000 !important;
+    text-decoration: none;
+  }
+}
+
+/* Estilos para el botón personalizado */
+.custom-user-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20));
+  border: none;
+  color: #000;
+  cursor: pointer;
+}
+
+/* Contenedor del ícono */
+.custom-user-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Nombre del usuario con texto cortado si es muy largo */
+.custom-user-name {
+  max-width: 120px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* Nombre del usuario con texto cortado si es muy largo MOBILE */
+.user-name-ellipsis {
+  max-width: 120px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px; /* Espacio entre icono y texto */
+}
+
+/* FIN DE CODIGO DE PERSONALIZACION DEL Dropdown.Toggle DE MENU */
+
 /* INICIO DE Estilos para el sidebar en móvil */
 .offcanvas-dropdown .dropdown-menu {
   position: static !important;
@@ -266,6 +322,25 @@ input[type="time"] {
 .custom-toggler .navbar-toggler-icon::after {
   bottom: 6px;
 }
+
+/* CAMBIANDO COLOR DEL HOVER */
+.dropdown-item,
+.dropdown-item:focus,
+.dropdown-item:hover,
+.dropdown-item:active,
+.dropdown-item.active {
+  color: #000000 !important;
+  background-color: transparent;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus,
+.dropdown-item:active,
+.dropdown-item.active {
+  background-color: #f5c35c !important; /* Mostaza */
+  text-decoration: none;
+}
+/* FIN DE CAMBIANDO COLOR DEL HOVER */
 
 /* FIN DE DISENIO DE TOOGLE EN SIEMPRE OSCURO */
 

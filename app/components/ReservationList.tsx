@@ -190,7 +190,7 @@ export default function ReservationList() {
 
         {/* Panel de filtros */}
         {showFilters && (
-          <div className="bg-light p-3 rounded mb-4">
+          <div className="p-3 rounded mb-4">
             <div className="row g-3">
               <div className="col-md-4">
                 <Form.Group>

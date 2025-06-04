@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { getUsuarios, deleteUsuario, resetPassword, forgotPassword } from "~/services/userService";
+import {
+  getUsuarios,
+  deleteUsuario,
+  resetPassword,
+  forgotPassword,
+} from "~/services/userService";
 import type { User } from "~/types/user";
 import { FaUserCircle, FaEdit, FaTrash, FaSearch, FaKey } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -39,80 +44,90 @@ const UsuarioList = () => {
   };
 
   const eliminarUsuario = async (id: number) => {
-    toast((t) => (
-      <div>
-        <p>¿Estás seguro de que deseas desactivar a este usuario?</p>
-        <div className="d-flex justify-content-end gap-2 mt-2">
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={async () => {
-              try {
-                await deleteUsuario(id);
-                setUsuarios((prevUsuarios) =>
-                  prevUsuarios.map((u) => (u.id === id ? { ...u, estado: 0 } : u))
-                );
-                toast.success("Usuario desactivado correctamente");
-                toast.dismiss(t.id);
-              } catch (error) {
-                toast.error("Error al desactivar el usuario");
-                toast.dismiss(t.id);
-              }
-            }}
-          >
-            Sí, desactivar
-          </button>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
+    toast(
+      (t) => (
+        <div>
+          <p>¿Estás seguro de que deseas desactivar a este usuario?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={async () => {
+                try {
+                  await deleteUsuario(id);
+                  setUsuarios((prevUsuarios) =>
+                    prevUsuarios.map((u) =>
+                      u.id === id ? { ...u, estado: 0 } : u
+                    )
+                  );
+                  toast.success("Usuario desactivado correctamente");
+                  toast.dismiss(t.id);
+                } catch (error) {
+                  toast.error("Error al desactivar el usuario");
+                  toast.dismiss(t.id);
+                }
+              }}
+            >
+              Sí, desactivar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ), {
-      duration: 10000,
-    });
+      ),
+      {
+        duration: 10000,
+      }
+    );
   };
 
   const handleResetPassword = async (userId: number, email: string) => {
-    toast((t) => (
-      <div>
-        <p>¿Estás seguro que deseas restablecer la contraseña de {email}?</p>
-        <div className="d-flex justify-content-end gap-2 mt-2">
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={async () => {
-              try {
-                await forgotPassword(email);
-                toast.success(`Se ha enviado un enlace de restablecimiento a ${email}`);
-                toast.dismiss(t.id);
-              } catch (error) {
-                toast.error("Error al enviar el enlace de restablecimiento");
-                console.error("Error al restablecer contraseña:", error);
-                toast.dismiss(t.id);
-              }
-            }}
-          >
-            Sí, restablecer
-          </button>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
+    toast(
+      (t) => (
+        <div>
+          <p>¿Estás seguro que deseas restablecer la contraseña de {email}?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={async () => {
+                try {
+                  await forgotPassword(email);
+                  toast.success(
+                    `Se ha enviado un enlace de restablecimiento a ${email}`
+                  );
+                  toast.dismiss(t.id);
+                } catch (error) {
+                  toast.error("Error al enviar el enlace de restablecimiento");
+                  console.error("Error al restablecer contraseña:", error);
+                  toast.dismiss(t.id);
+                }
+              }}
+            >
+              Sí, restablecer
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ), {
-      duration: 10000,
-    });
+      ),
+      {
+        duration: 10000,
+      }
+    );
   };
 
   const filteredUsuarios = (usuarios || []).filter((u) => {
-    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase();
+    const fullName = `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase();
     return (
       fullName.includes(searchTerm.toLowerCase()) ||
-      (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (u.email || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -120,27 +135,27 @@ const UsuarioList = () => {
     <div className="table-responsive rounded shadow p-3 mt-4">
       <h4 className="mb-3 text-center">Listado de Usuarios</h4>
 
-      <div className="flex justify-between items-center mb-3">
+      <div className="flex flex-col items-start mb-4">
         {/* Buscador */}
-        <div className="relative w-full max-w-xs">
+        <div className="w-full sm:w-80">
           <input
             type="text"
-            placeholder="Buscar por nombre o correo..."
+            placeholder="Buscar..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         </div>
 
+        {/* Botón debajo del buscador con margen */}
         <Link
           to="/formUsuario"
-          className="ml-3 btn btn-primary"
+          className="btn btn-primary mt-4"
           style={{ transition: "transform 0.2s ease-in-out" }}
           onMouseEnter={(e) =>
             (e.currentTarget.style.transform = "scale(1.05)")
           }
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
         >
           Crear Usuario
         </Link>
@@ -152,7 +167,7 @@ const UsuarioList = () => {
         <>
           <table
             className="table table-hover align-middle text-center overflow-hidden"
-            style={{ borderRadius: "0.8rem" }}
+            style={{ borderRadius: "0.8rem", fontSize: "0.9rem" }}
           >
             <thead className="table-dark">
               <tr>
@@ -198,9 +213,7 @@ const UsuarioList = () => {
                     <td>{usuario.email}</td>
                     <td>{usuario.phone || "N/A"}</td>
                     <td>{usuario.address || "N/A"}</td>
-                    <td>
-                      <em>{rolesMap[usuario.role_id] || "Desconocido"}</em>
-                    </td>
+                    <td>{rolesMap[usuario.role_id] || "Desconocido"}</td>
                     <td>
                       <span
                         className={`badge ${
@@ -241,7 +254,9 @@ const UsuarioList = () => {
                         <button
                           className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                           title="Restablecer contraseña"
-                          onClick={() => handleResetPassword(usuario.id, usuario.email)}
+                          onClick={() =>
+                            handleResetPassword(usuario.id, usuario.email)
+                          }
                           style={{
                             width: "44px",
                             height: "44px",

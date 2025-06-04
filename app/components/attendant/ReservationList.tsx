@@ -6,10 +6,12 @@ import { useAuth } from "../../hooks/AuthContext";
 import toast from "react-hot-toast";
 import { FaEye, FaQrcode } from "react-icons/fa";
 
+
 type Role = {
   id: number;
   nombre: string;
 };
+
 
 type User = {
   id: number;
@@ -25,6 +27,7 @@ type User = {
   role_id: number;
   role: Role;
 };
+
 
 type Equipo = {
   id: number;
@@ -42,12 +45,14 @@ type Equipo = {
   };
 };
 
+
 type CodigoQR = {
   id: string; // GUID
   reserva_id: number;
   created_at: string;
   updated_at: string;
 };
+
 
 type Reservation = {
   id: number;
@@ -63,6 +68,7 @@ type Reservation = {
   codigo_qr: CodigoQR;
 };
 
+
 export default function ReservationList() {
   const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -72,10 +78,16 @@ export default function ReservationList() {
   >(null);
   const [comentario, setComentario] = useState("");
 
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
+
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const qrBaseUrl = "https://midominio.com/qrcode/";
+
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -88,15 +100,18 @@ export default function ReservationList() {
       }
     };
 
+
     if (user?.id) {
       fetchReservations();
     }
   }, [user]);
 
+
   const handleDetailClick = (reservation: Reservation) => {
     setSelectedReservation(reservation);
     setShowModal(true);
   };
+
 
   const handleDecisionClick = (type: "Aprobar" | "Rechazar") => {
     setDecisionType(type);
@@ -104,8 +119,10 @@ export default function ReservationList() {
     setShowDecisionModal(true);
   };
 
+
   const handleConfirmDecision = async () => {
     if (!selectedReservation || !decisionType) return;
+
 
     try {
       await api.post(`/reservas/${selectedReservation.id}/estado`, {
@@ -113,10 +130,12 @@ export default function ReservationList() {
         comentario,
       });
 
+
       toast.success(`Reserva ${decisionType.toLowerCase()}da con éxito`);
       setShowDecisionModal(false);
       setShowModal(false);
       setSelectedReservation(null);
+
 
       // Opcional: recargar reservas
       const res = await api.get("/reservas");
@@ -127,15 +146,61 @@ export default function ReservationList() {
     }
   };
 
+
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedReservation(null);
   };
 
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentReservations = reservations.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
+
+  const totalPages = Math.ceil(reservations.length / itemsPerPage);
+
+
+  // Función para paginación con puntos suspensivos
+  const getPageNumbers = () => {
+    const delta = 2; // páginas antes y después de la actual
+    const range: (number | string)[] = [];
+    const rangeWithDots: (number | string)[] = [];
+    let l: number | null = null;
+
+
+    for (
+      let i = Math.max(2, currentPage - delta);
+      i <= Math.min(totalPages - 1, currentPage + delta);
+      i++
+    ) {
+      range.push(i);
+    }
+
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || range.includes(i)) {
+        if (l !== null && i - (l as number) !== 1) {
+          rangeWithDots.push("...");
+        }
+        rangeWithDots.push(i);
+        l = i;
+      }
+    }
+
+
+    return rangeWithDots;
+  };
+
+
   return (
     <div className="container py-5">
       <div className="table-responsive rounded shadow p-3 mt-4">
         <h4 className="mb-3 text-center">Listado de Reservas</h4>
+
 
         <table
           className="table table-hover align-middle text-center overflow-hidden"
@@ -153,7 +218,7 @@ export default function ReservationList() {
             </tr>
           </thead>
           <tbody>
-            {reservations.map((reserva) => (
+            {currentReservations.map((reserva) => (
               <tr key={reserva.id}>
                 <td className="fw-bold">
                   {reserva.user.first_name} - {reserva.user.last_name}{" "}
@@ -224,6 +289,61 @@ export default function ReservationList() {
             )}
           </tbody>
         </table>
+        <div className="d-flex justify-content-center mt-4">
+          <nav>
+            <ul className="pagination">
+              <li
+                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+              >
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </button>
+              </li>
+
+
+              {getPageNumbers().map((page, index) =>
+                page === "..." ? (
+                  <li key={`dots-${index}`} className="page-item disabled">
+                    <span className="page-link">...</span>
+                  </li>
+                ) : (
+                  <li
+                    key={page}
+                    className={`page-item ${
+                      currentPage === page ? "active" : ""
+                    }`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => setCurrentPage(Number(page))}
+                    >
+                      {page}
+                    </button>
+                  </li>
+                )
+              )}
+
+
+              <li
+                className={`page-item ${
+                  currentPage === totalPages ? "disabled" : ""
+                }`}
+              >
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
       </div>
       <Modal
         show={showDecisionModal}
@@ -261,6 +381,7 @@ export default function ReservationList() {
         </Modal.Footer>
       </Modal>
 
+
       <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
         <Modal.Header
           closeButton
@@ -279,6 +400,7 @@ export default function ReservationList() {
             Detalles de Reserva #{selectedReservation?.id}
           </Modal.Title>
         </Modal.Header>
+
 
         <Modal.Body style={{ padding: "2rem" }}>
           {selectedReservation && (
@@ -355,6 +477,7 @@ export default function ReservationList() {
                   </div>
                 </div>
 
+
                 <div className="mb-4">
                   <div className="d-flex align-items-center mb-3">
                     <div
@@ -428,6 +551,7 @@ export default function ReservationList() {
                 </div>
               </div>
 
+
               {/* Sección derecha - Equipos y QR */}
               <div className="col-md-6">
                 <div className="mb-4">
@@ -474,6 +598,7 @@ export default function ReservationList() {
                   </div>
                 </div>
 
+
                 <div className="mt-4">
                   <div className="d-flex align-items-center mb-3">
                     <div
@@ -488,6 +613,7 @@ export default function ReservationList() {
                     <h5 className="fw-bold mb-0">Código QR</h5>
                   </div>
 
+
                   <div className="ps-5">
                     <div className="text-center">
                       {" "}
@@ -500,6 +626,7 @@ export default function ReservationList() {
                         />
                       </div>
                     </div>
+
 
                     <div>
                       {" "}
@@ -525,6 +652,7 @@ export default function ReservationList() {
   );
 }
 
+
 function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto") {
   switch (estado) {
     case "Pendiente":
@@ -538,6 +666,7 @@ function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto") {
   }
 }
 
+
 function formatDate(dateString: string) {
   const date = new Date(dateString);
   return date.toLocaleDateString("es-ES", {
@@ -548,3 +677,5 @@ function formatDate(dateString: string) {
     minute: "2-digit",
   });
 }
+
+

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../api/axios";
@@ -8,19 +9,26 @@ import toast from "react-hot-toast";
 import { FaCalendarAlt, FaClock, FaDoorOpen, FaCheck } from "react-icons/fa";
 import { useAuth } from "~/hooks/AuthContext";
 
+declare global {
+  interface Window {
+    pannellum: any;
+  }
+}
+
+type Horario = {
+  start_date: string;
+  end_date: string;
+  start_time: string;
+  end_time: string;
+  days: string[];
+};
+
 type Aula = {
   id: number;
   name: string;
   image_path?: string;
+  horarios: Horario[];
 };
-
-const availableTimes = [
-  "08:00 AM - 10:00 AM",
-  "10:00 AM - 12:00 PM",
-  "12:00 PM - 02:00 PM",
-  "02:00 PM - 04:00 PM",
-  "04:00 PM - 06:00 PM",
-];
 
 export default function ReserveClassroom() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -31,10 +39,6 @@ export default function ReserveClassroom() {
   const { user } = useAuth();
 
   const userId = user?.id; // simulado
-
-  const selectedClassroomData = availableClassrooms.find(
-    (classroom) => classroom.name === selectedClassroom
-  );
 
   useEffect(() => {
     const fetchAulas = async () => {
@@ -52,9 +56,78 @@ export default function ReserveClassroom() {
     fetchAulas();
   }, []);
 
+  const selectedClassroomData = availableClassrooms.find(
+    (c) => c.name === selectedClassroom
+  );
+
+  const parseTime = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    return { hours, minutes };
+  };
+
+  const generateTimeSlots = (start: string, end: string): string[] => {
+    const result: string[] = [];
+    const { hours: startH, minutes: startM } = parseTime(start);
+    const { hours: endH, minutes: endM } = parseTime(end);
+
+    let current = new Date();
+    current.setHours(startH, startM, 0, 0);
+
+    const endTime = new Date();
+    endTime.setHours(endH, endM, 0, 0);
+
+    while (current < endTime) {
+      const next = new Date(current);
+      next.setHours(current.getHours() + 2);
+
+      if (next > endTime) break;
+
+      result.push(
+        `${current.toTimeString().slice(0, 5)} - ${next
+          .toTimeString()
+          .slice(0, 5)}`
+      );
+      current = next;
+    }
+
+    return result;
+  };
+
+  const isDateEnabled = (date: Date): boolean => {
+    if (!selectedClassroomData) return false;
+
+    return selectedClassroomData.horarios.some((h) => {
+      const day = date.toLocaleDateString("en-US", { weekday: "long" });
+      const current = date.toISOString().split("T")[0];
+      return (
+        h.days.includes(day) && current >= h.start_date && current <= h.end_date
+      );
+    });
+  };
+
+  const getTimeOptions = (): string[] => {
+    if (!selectedDate || !selectedClassroomData) return [];
+
+    const selectedDay = selectedDate.toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+
+    const horario = selectedClassroomData.horarios.find((h) => {
+      const current = selectedDate.toISOString().split("T")[0];
+      return (
+        h.days.includes(selectedDay) &&
+        current >= h.start_date &&
+        current <= h.end_date
+      );
+    });
+
+    if (!horario) return [];
+
+    return generateTimeSlots(horario.start_time, horario.end_time);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!selectedDate || !selectedTime || !selectedClassroom) {
       toast.error("Por favor, completa todos los campos");
       return;
@@ -92,97 +165,86 @@ export default function ReserveClassroom() {
   };
 
   return (
-    <div className="form-container">
-      <h2 className="mb-4 text-center fw-bold">Reserva de Aula</h2>
+    <Container className="my-5">
+      <Row className="justify-content-center">
+        <Col xs={12} md={6} lg={5}>
+          <h2 className="text-center mb-4">Reserva de Aula</h2>
 
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label htmlFor="classroom" className="form-label">
-            <FaDoorOpen className="me-2" />
-            Aula
-          </label>
-          <select
-            id="classroom"
-            value={selectedClassroom}
-            onChange={(e) => setSelectedClassroom(e.target.value)}
-            className="form-select"
-            disabled={loading}
-          >
-            <option value="">{loading ? 'Cargando aulas...' : 'Selecciona un aula'}</option>
-            {availableClassrooms.map((classroom) => (
-              <option key={classroom.id} value={classroom.name}>
-                {classroom.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3" controlId="classroom">
+              <Form.Label>Aula</Form.Label>
+              <Form.Select
+                value={selectedClassroom}
+                onChange={(e) => {
+                  setSelectedClassroom(e.target.value);
+                  setSelectedDate(null);
+                  setSelectedTime("");
+                }}
+                required
+              >
+                <option value="">Selecciona un aula</option>
+                {availableClassrooms.map((aula) => (
+                  <option key={aula.id} value={aula.name}>
+                    {aula.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-        <div className="mb-4">
-          <label htmlFor="date" className="form-label">
-            <FaCalendarAlt className="me-2" />
-            Fecha
-          </label>
-          <DatePicker
-            selected={selectedDate}
-            onChange={(date: Date | null) => setSelectedDate(date)}
-            className="form-control"
-            dateFormat="dd/MM/yyyy"
-            placeholderText="Selecciona la fecha"
-            required
-          />
-        </div>
+            <Form.Group className="mb-3" controlId="date">
+              <Form.Label>Fecha</Form.Label>
+              <DatePicker
+                selected={selectedDate}
+                onChange={(date) => {
+                  setSelectedDate(date);
+                  setSelectedTime("");
+                }}
+                className="form-control"
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Selecciona la fecha"
+                required
+                disabled={!selectedClassroom}
+                filterDate={isDateEnabled}
+              />
+            </Form.Group>
 
-        <div className="mb-4">
-          <label htmlFor="time" className="form-label">
-            <FaClock className="me-2" />
-            Horario
-          </label>
-          <select
-            id="time"
-            value={selectedTime}
-            onChange={(e) => setSelectedTime(e.target.value)}
-            className="form-select"
-            required
-          >
-            <option value="">Selecciona un horario</option>
-            {availableTimes.map((time, index) => (
-              <option key={index} value={time}>
-                {time}
-              </option>
-            ))}
-          </select>
-        </div>
+            <Form.Group className="mb-3" controlId="time">
+              <Form.Label>Horario</Form.Label>
+              <Form.Select
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+                required
+                disabled={!selectedDate}
+              >
+                <option value="">Selecciona un horario</option>
+                {getTimeOptions().map((slot, idx) => (
+                  <option key={idx} value={slot}>
+                    {slot}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-        <div className="form-actions">
-          <button type="submit" className="btn primary-btn">
-            <FaCheck className="me-2" />
-            Reservar Aula
-          </button>
-          <button
-            type="button"
-            className="btn secondary-btn"
-            onClick={handleClear}
-          >
-            Limpiar
-          </button>
-        </div>
-      </form>
+            <Button variant="primary" type="submit" className="w-100">
+              Reservar Aula
+            </Button>
+          </Form>
+        </Col>
+      </Row>
 
       {selectedClassroomData?.image_path && (
-        <div className="mt-5">
-          <h4 className="text-center mb-4">Vista del Aula</h4>
-          <div className="d-flex justify-content-center">
-            <div style={{ width: '100%', maxWidth: '800px', height: '500px' }}>
-              <PanoramaViewer
-                image={selectedClassroomData.image_path}
-                pitch={10}
-                yaw={180}
-                hfov={110}
-              />
-            </div>
-          </div>
-        </div>
+        <Row className="justify-content-center mt-4">
+          <Col xs={12} md={8} lg={6}>
+            <h4 className="text-center">Vista del Aula</h4>
+            <PanoramaViewer
+              image={selectedClassroomData.image_path}
+              pitch={10}
+              yaw={180}
+              hfov={110}
+            />
+          </Col>
+        </Row>
       )}
-    </div>
+    </Container>
   );
 }

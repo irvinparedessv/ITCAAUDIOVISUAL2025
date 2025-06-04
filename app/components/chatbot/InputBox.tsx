@@ -268,7 +268,9 @@ const InputBox = ({
       </div>
     );
   }
-
+  if (step === Steps.Initial) {
+    return null;
+  }
   // Input tradicional
   return (
     <div className="chat-input">

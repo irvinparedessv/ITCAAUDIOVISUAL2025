@@ -213,7 +213,17 @@ export const useChatbotLogic = (user: any) => {
           if (response.data.error) {
             addBotMessage(response.data.error.message);
           } else {
-            addBotMessage(response.data.reply);
+            if (response.data.reply == "rEquipo") {
+              addBotMessage(
+                "Perfecto , te ayudare creando la reservacion de equipos sigue los pasos a continuacion, ¿qué fecha deseas? (dd/mm/yyyy)"
+              );
+              setStep(Steps.FechaEquipo);
+            } else if (response.data.reply == "rEspacio ") {
+              addBotMessage(
+                "Perfecto , te ayudare creando la reservacion de espacios sigue los pasos a continuacion"
+              );
+              setStep(Steps.SeleccionarAula);
+            } else addBotMessage(response.data.reply);
           }
         })
         .catch((error) => {

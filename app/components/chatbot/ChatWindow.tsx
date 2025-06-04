@@ -1,5 +1,10 @@
 import Message from "./Message";
-import type { Message as MessageType, OptionType } from "./types";
+import type {
+  Message as MessageType,
+  OptionType,
+  ReservaData,
+  ReservaDataRoom,
+} from "./types";
 import React, { forwardRef } from "react";
 
 type Props = {
@@ -7,19 +12,17 @@ type Props = {
   step: string;
   handleOptionClick: (option: string) => void;
   handleUbicacionClick: (ubicacion: string) => void;
+  handleTipoClick: (tipo: string, label: string) => void;
   handleEquipoClick: (equipo: string) => void;
   handleAulaClick: (aula: string) => void;
   handleAulaFechaClick: (fecha: string) => void;
   completarReserva: () => void;
+  setReservaData: React.Dispatch<React.SetStateAction<ReservaData>>;
   ubicaciones: OptionType[];
   equipos: OptionType[];
-  reservaData: {
-    ubicacion: string;
-    equipos: string[];
-    fecha: string;
-    horaInicio: string;
-    horaFin: string;
-  };
+  tipos: OptionType[];
+  reservaData: ReservaData;
+  reservaDataRoom: ReservaDataRoom;
   setStep: (step: string) => void;
 };
 
@@ -28,15 +31,19 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
     {
       messages,
       step,
+      tipos,
       handleOptionClick,
       handleUbicacionClick,
       handleAulaClick,
       handleEquipoClick,
       handleAulaFechaClick,
+      handleTipoClick,
       completarReserva,
       ubicaciones,
       equipos,
       reservaData,
+      reservaDataRoom,
+      setReservaData,
       setStep,
     },
     ref
@@ -57,12 +64,34 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
       </div>
     );
 
+    const renderTiposEventos = () => (
+      <div className="ubicacion-botones">
+        {tipos.map((tipo) => (
+          <button
+            key={tipo.value}
+            className={`ubicacion-btn ${
+              reservaData.ubicacion === tipo.label ? "seleccionado" : ""
+            }`}
+            onClick={() => handleTipoClick(tipo.value, tipo.label)}
+          >
+            {tipo.label}
+          </button>
+        ))}
+      </div>
+    );
     const renderResumen = () => (
       <div className="resumen-reserva">
         <h4>Resumen de tu reserva:</h4>
         <p>📅 Fecha: {reservaData.fecha}</p>
         <p>
           🕒 De: {reservaData.horaInicio} a {reservaData.horaFin}
+        </p>
+        <p>
+          Tipo de Evento:{" "}
+          {(() => {
+            const tipoEvento = tipos.find((t) => t.value === reservaData.tipo);
+            return tipoEvento?.label || reservaData.tipo;
+          })()}
         </p>
         <p>📍 Ubicación: {reservaData.ubicacion}</p>
         <p>🎥 Equipos seleccionados:</p>
@@ -82,17 +111,6 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
             })}
           </ul>
         )}
-        <div style={{ marginTop: "10px" }}>
-          <button onClick={() => setStep("mostrarEquipos")}>
-            Volver a equipos
-          </button>{" "}
-          <button
-            onClick={completarReserva}
-            disabled={reservaData.equipos.length === 0}
-          >
-            Confirmar reserva
-          </button>
-        </div>
       </div>
     );
     const renderEquipos = () => (
@@ -105,25 +123,10 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
             }`}
             onClick={() => handleEquipoClick(equipo.value)}
           >
-            {reservaData.equipos.includes(equipo.label) ? "✅ " : ""}
+            {reservaData.equipos.includes(equipo.value) ? "✅ " : ""}
             {equipo.label}
           </button>
         ))}
-        <div className="acciones-reserva" style={{ marginTop: "10px" }}>
-          <button
-            onClick={() => setStep("resumen")}
-            disabled={reservaData.equipos.length === 0}
-          >
-            Ver resumen
-          </button>
-          <button
-            onClick={completarReserva}
-            disabled={reservaData.equipos.length === 0}
-            style={{ marginLeft: "10px" }}
-          >
-            Confirmar reserva
-          </button>
-        </div>
       </div>
     );
 
@@ -149,57 +152,14 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
       </div>
     );
 
-    const renderSeleccionarFechaAula = () => (
-      <div className="fecha-aula">
-        <p>Selecciona una fecha:</p>
-        <input
-          type="date"
-          value={reservaData.fecha}
-          onChange={(e) => handleAulaFechaClick("fechaAula")}
-        />
-        <button
-          onClick={() => setStep("seleccionarHoraAula")}
-          disabled={!reservaData.fecha}
-        >
-          Siguiente
-        </button>
-      </div>
-    );
-
-    const renderSeleccionarHoraAula = () => (
-      <div className="hora-aula">
-        <p>Selecciona un horario:</p>
-        <input
-          type="time"
-          value={reservaData.horaInicio}
-          onChange={(e) => handleOptionClick("horaInicioAula")}
-        />
-        <input
-          type="time"
-          value={reservaData.horaFin}
-          onChange={(e) => handleOptionClick("horaFinAula")}
-        />
-        <button
-          onClick={() => setStep("resumenAula")}
-          disabled={!reservaData.horaInicio || !reservaData.horaFin}
-        >
-          Siguiente
-        </button>
-      </div>
-    );
-
     const renderResumenAula = () => (
       <div className="resumen-aula">
         <h4>Resumen de tu reserva de aula:</h4>
-        <p>📅 Fecha: {reservaData.fecha}</p>
+        <p>🏫 Aula: {reservaDataRoom.aula}</p>
+        <p>📅 Fecha: {reservaDataRoom.fecha}</p>
         <p>
-          🕒 De: {reservaData.horaInicio} a {reservaData.horaFin}
+          🕒 De: {reservaDataRoom.horarioInicio} a {reservaDataRoom.horarioFin}
         </p>
-        <p>🏫 Aula: {reservaData.ubicacion}</p>
-        <div style={{ marginTop: "10px" }}>
-          <button onClick={() => setStep("seleccionarAula")}>Volver</button>{" "}
-          <button onClick={completarReserva}>Confirmar reserva</button>
-        </div>
       </div>
     );
 
@@ -222,7 +182,6 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
         {messages.map((msg) => (
           <Message key={msg.id} {...msg} />
         ))}
-
         {step === "initial" && (
           <div className="bot-options">
             <button onClick={() => handleOptionClick("Crear reserva equipo")}>
@@ -236,16 +195,13 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
             </button>
           </div>
         )}
-
+        {step === "mostrarTipoEventos" && renderTiposEventos()}
         {step === "seleccionarUbicacion" && renderUbicaciones()}
         {step === "mostrarEquipos" && renderEquipos()}
+
         {step === "resumen" && renderResumen()}
-
         {step === "seleccionarAula" && renderSeleccionarAula()}
-        {step === "fechaAula" && renderSeleccionarFechaAula()}
-        {step === "seleccionarHoraAula" && renderSeleccionarHoraAula()}
         {step === "resumenAula" && renderResumenAula()}
-
         <div ref={ref}></div>
       </div>
     );

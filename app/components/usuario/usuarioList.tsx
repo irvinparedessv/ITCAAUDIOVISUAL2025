@@ -39,37 +39,73 @@ const UsuarioList = () => {
   };
 
   const eliminarUsuario = async (id: number) => {
-    const confirmDelete = window.confirm(
-      "¿Estás seguro de que deseas desactivar a este usuario? Esta acción es irreversible."
-    );
-
-    if (confirmDelete) {
-      try {
-        await deleteUsuario(id);
-        setUsuarios((prevUsuarios) =>
-          prevUsuarios.map((u) => (u.id === id ? { ...u, estado: 0 } : u))
-        );
-        toast.success("Usuario desactivado correctamente");
-      } catch (error) {
-        toast.error("Error al desactivar el usuario");
-      }
-    }
+    toast((t) => (
+      <div>
+        <p>¿Estás seguro de que deseas desactivar a este usuario?</p>
+        <div className="d-flex justify-content-end gap-2 mt-2">
+          <button
+            className="btn btn-sm btn-danger"
+            onClick={async () => {
+              try {
+                await deleteUsuario(id);
+                setUsuarios((prevUsuarios) =>
+                  prevUsuarios.map((u) => (u.id === id ? { ...u, estado: 0 } : u))
+                );
+                toast.success("Usuario desactivado correctamente");
+                toast.dismiss(t.id);
+              } catch (error) {
+                toast.error("Error al desactivar el usuario");
+                toast.dismiss(t.id);
+              }
+            }}
+          >
+            Sí, desactivar
+          </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 10000,
+    });
   };
 
   const handleResetPassword = async (userId: number, email: string) => {
-    const confirmReset = window.confirm(
-      `¿Estás seguro que deseas restablecer la contraseña de ${email}? Se enviará un enlace al correo electrónico.`
-    );
-
-    if (confirmReset) {
-      try {
-        await forgotPassword(email);
-        toast.success(`Se ha enviado un enlace de restablecimiento a ${email}`);
-      } catch (error) {
-        toast.error("Error al enviar el enlace de restablecimiento");
-        console.error("Error al restablecer contraseña:", error);
-      }
-    }
+    toast((t) => (
+      <div>
+        <p>¿Estás seguro que deseas restablecer la contraseña de {email}?</p>
+        <div className="d-flex justify-content-end gap-2 mt-2">
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={async () => {
+              try {
+                await forgotPassword(email);
+                toast.success(`Se ha enviado un enlace de restablecimiento a ${email}`);
+                toast.dismiss(t.id);
+              } catch (error) {
+                toast.error("Error al enviar el enlace de restablecimiento");
+                console.error("Error al restablecer contraseña:", error);
+                toast.dismiss(t.id);
+              }
+            }}
+          >
+            Sí, restablecer
+          </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 10000,
+    });
   };
 
   const filteredUsuarios = (usuarios || []).filter((u) => {

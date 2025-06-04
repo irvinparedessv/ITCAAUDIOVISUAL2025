@@ -37,17 +37,20 @@ export default function EquipmentAvailabilityList() {
   });
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-  const fetchEquipment = async () => {
-    try {
-      const response = await api.get("/equipos");
-      setEquipmentList(response.data);
-    } catch (err) {
-      setError("Error al cargar los equipos");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchEquipment = async () => {
+  try {
+    const response = await api.get("/equipos");
+    console.log('equipos:', response.data);
+    // Accede a response.data.data donde está el array real
+    setEquipmentList(response.data.data || []); // Usamos || [] como fallback por si es undefined
+  } catch (err) {
+    setError("Error al cargar los equipos");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchEquipment();
@@ -150,7 +153,7 @@ export default function EquipmentAvailabilityList() {
           </div>
         </div>
 
-        <div className="mb-4 p-3 border rounded bg-light">
+        <div className="mb-4 p-3 border rounded">
           <h5>Seleccione fecha y horario</h5>
           <div className="row">
             <div className="col-md-4">

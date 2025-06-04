@@ -19,15 +19,18 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
   const [total, setTotal] = useState(0)
   const totalPages = Math.ceil(total / perPage)
 
-  const fetchEquipos = async () => {
-    try {
-      const { data, total } = await getEquipos({ search, page, perPage })
-      setEquipos(data)
-      setTotal(total)
-    } catch (error) {
-      toast.error('Error al cargar los equipos')
-    }
+ const fetchEquipos = async () => {
+  try {
+    const res = await getEquipos({ search: '', page: 1, perPage: 5 })
+    console.log('Respuesta sin filtro:', res)
+    const data = Array.isArray(res.data) ? res.data : []
+    setEquipos(data)
+    setTotal(typeof res.total === 'number' ? res.total : 0)
+  } catch (error) {
+    toast.error('Error al cargar los equipos')
   }
+}
+
 
   useEffect(() => {
     fetchEquipos()
@@ -49,7 +52,7 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
               onDelete(id)
               toast.dismiss(t.id)
               toast.success('Equipo eliminado')
-              fetchEquipos() // Recargar lista
+              fetchEquipos()
             }}
           >
             Sí, eliminar
@@ -71,7 +74,6 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
     <div className="table-responsive rounded shadow p-3 mt-4">
       <h4 className="mb-3 text-center">Listado de Equipos</h4>
 
-      {/* Buscador */}
       <div className="mb-3 d-flex justify-content-end">
         <input
           type="text"
@@ -151,7 +153,6 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
         </tbody>
       </table>
 
-      {/* Paginación */}
       {totalPages >= 1 && (
         <nav className="mt-3 d-flex justify-content-center">
           <ul className="pagination">

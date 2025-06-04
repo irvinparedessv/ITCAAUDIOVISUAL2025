@@ -5,11 +5,19 @@ import { Role } from "~/types/roles";
 import api from '~/api/axios';
 
 // Tipos mejorados para las notificaciones
-type NotificationType = 'nueva_reserva' | 'estado_reserva';
+type NotificationType = 'nueva_reserva' | 'estado_reserva' | 'nueva_reserva_aula' | 'estado_reserva_aula';
 
 interface EquipoNotification {
   nombre: string;
   tipo_equipo?: string;
+}
+interface AulaNotification {
+  id: number;
+  aula: string;
+  fecha: string;
+  horario: string;
+  estado: string;
+  comentario?: string;
 }
 
 interface ReservaBase {
@@ -31,7 +39,7 @@ interface NotificacionData {
   type: NotificationType;
   title: string;
   message: string;
-  reserva: ReservaNotification;
+  reserva: ReservaNotification | AulaNotification;
 }
 
 interface NotificacionStorage {
@@ -107,7 +115,8 @@ export function useNotificaciones() {
   };
 
   // Escuchar nuevas notificaciones en tiempo real
-  useEffect(() => {
+  // En el useEffect que configura los listeners
+useEffect(() => {
     if (!echo || !loaded || !user) return;
 
     const channelName = `notifications.user.${user.id}`;
@@ -118,11 +127,13 @@ export function useNotificaciones() {
     // Configurar listeners basados en el rol del usuario
     if ([Role.Administrador, Role.Encargado].includes(user.role)) {
       channel.listen('.nueva.reserva', handleNewNotification);
-      console.log('Escuchando eventos de nueva reserva');
+      channel.listen('.nueva.reserva.aula', handleNewNotification);
+      console.log('Escuchando eventos de nueva reserva y nueva reserva de aula');
     }
 
     if (user.role === Role.Prestamista) {
       channel.listen('.reserva.estado.actualizado', handleNewNotification);
+      channel.listen('.reserva.aula.estado.actualizado', handleNewNotification);
       console.log('Escuchando eventos de cambio de estado');
     }
 
@@ -130,14 +141,16 @@ export function useNotificaciones() {
     return () => {
       if ([Role.Administrador, Role.Encargado].includes(user.role)) {
         channel.stopListening('.nueva.reserva', handleNewNotification);
+        channel.stopListening('.nueva.reserva.aula', handleNewNotification);
       }
       if (user.role === Role.Prestamista) {
         channel.stopListening('.reserva.estado.actualizado', handleNewNotification);
+        channel.stopListening('.reserva.aula.estado.actualizado', handleNewNotification);
       }
       echo!.leave(channelName);
       console.log('Dejando canal de notificaciones');
     };
-  }, [echo, loaded, user]);
+}, [echo, loaded, user]);
 
   // Marcar como leídas
  // En tu hook useNotificaciones

@@ -287,12 +287,11 @@ export default function FormUsuario() {
           </div>
         </div>
 
-        <div className="row mb-4">
-          <div className="col-md-6">
+        <div className="mb-4">
             <label htmlFor="address" className="form-label">
               Dirección (Opcional)
             </label>
-            <input
+            <textarea
               id="address"
               name="address"
               placeholder="Dirección"
@@ -306,8 +305,10 @@ export default function FormUsuario() {
             {formErrors.address && (
               <div className="invalid-feedback">{formErrors.address}</div>
             )}
-          </div>
         </div>
+
+
+        
 
         <div className="mb-4">
           <label htmlFor="role_id" className="form-label">

@@ -1,36 +1,36 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react";
 import {
   getEquipos,
   createEquipo,
   updateEquipo,
   deleteEquipo,
-} from '~/services/equipoService'
-import { getTipoEquipos } from '~/services/tipoEquipoService'
-import type { Equipo, EquipoCreateDTO } from '~/types/equipo'
-import type { TipoEquipo } from '~/types/tipoEquipo'
-import EquipoForm from '../components/equipo/EquipoForm'
-import EquipoList from '../components/equipo/EquipoList'
+} from "~/services/equipoService";
+import { getTipoEquipos } from "~/services/tipoEquipoService";
+import type { Equipo, EquipoCreateDTO } from "~/types/equipo";
+import type { TipoEquipo } from "~/types/tipoEquipo";
+import EquipoForm from "../components/equipo/EquipoForm";
+import EquipoList from "../components/equipo/EquipoList";
 
 export default function EquipoPage() {
-  const [tipos, setTipos] = useState<TipoEquipo[]>([])
-  const [editando, setEditando] = useState<Equipo | null>(null)
-  const [recargarLista, setRecargarLista] = useState(false)
+  const [tipos, setTipos] = useState<TipoEquipo[]>([]);
+  const [editando, setEditando] = useState<Equipo | null>(null);
+  const [recargarLista, setRecargarLista] = useState(false);
 
   const cargarTipos = async () => {
     try {
-      const tiposData = await getTipoEquipos()
-      setTipos(tiposData)
+      const tiposData = await getTipoEquipos();
+      setTipos(tiposData);
     } catch (error) {
-      console.error('Error al cargar los tipos:', error)
+      console.error("Error al cargar los tipos:", error);
     }
-  }
+  };
 
   useEffect(() => {
-    cargarTipos()
-  }, [])
+    cargarTipos();
+  }, []);
 
   // Para forzar recarga lista de equipos después de crear/editar/eliminar
-  const toggleRecarga = () => setRecargarLista((v) => !v)
+  const toggleRecarga = () => setRecargarLista((v) => !v);
 
   const handleCreateOrUpdate = async (
     data: EquipoCreateDTO,
@@ -39,29 +39,29 @@ export default function EquipoPage() {
   ) => {
     try {
       if (isEdit && id) {
-        await updateEquipo(id, data)
+        await updateEquipo(id, data);
       } else {
-        await createEquipo(data)
+        await createEquipo(data);
       }
-      setEditando(null)
-      toggleRecarga()
+      setEditando(null);
+      toggleRecarga();
     } catch (error) {
-      console.error('Error al guardar el equipo:', error)
+      console.error("Error al guardar el equipo:", error);
     }
-  }
+  };
 
   const handleDelete = async (id: number) => {
     try {
-      await deleteEquipo(id)
-      toggleRecarga()
+      await deleteEquipo(id);
+      toggleRecarga();
     } catch (error) {
-      console.error('Error al eliminar el equipo:', error)
+      console.error("Error al eliminar el equipo:", error);
     }
-  }
+  };
 
-  const handleEdit = (equipo: Equipo) => setEditando(equipo)
+  const handleEdit = (equipo: Equipo) => setEditando(equipo);
 
-  const resetEdit = () => setEditando(null)
+  const resetEdit = () => setEditando(null);
 
   return (
     <div className="max-w-3xl mx-auto mt-8 px-4">
@@ -77,8 +77,8 @@ export default function EquipoPage() {
         tipos={tipos}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        key={recargarLista ? 'reload' : 'stable'} // para forzar remount y recarga datos
+        key={recargarLista ? "reload" : "stable"} // para forzar remount y recarga datos
       />
     </div>
-  )
+  );
 }

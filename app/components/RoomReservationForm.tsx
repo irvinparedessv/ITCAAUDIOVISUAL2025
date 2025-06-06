@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Form, Button, Container, Row, Col } from "react-bootstrap";
+import { Container, Row, Col } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../api/axios";
 import "pannellum/build/pannellum.css";
 import PanoramaViewer from "./PanoramaViewer";
 import toast from "react-hot-toast";
-import { FaCalendarAlt, FaClock, FaDoorOpen, FaCheck } from "react-icons/fa";
+import { FaCalendarAlt, FaClock, FaDoorOpen, FaCheck, FaBroom } from "react-icons/fa";
 import { useAuth } from "~/hooks/AuthContext";
 
 declare global {
@@ -38,7 +38,7 @@ export default function ReserveClassroom() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  const userId = user?.id; // simulado
+  const userId = user?.id;
 
   useEffect(() => {
     const fetchAulas = async () => {
@@ -162,89 +162,118 @@ export default function ReserveClassroom() {
     setSelectedDate(null);
     setSelectedTime("");
     setSelectedClassroom("");
+    toast.success("Formulario limpiado");
   };
 
   return (
-    <Container className="my-5">
-      <Row className="justify-content-center">
-        <Col xs={12} md={6} lg={5}>
-          <h2 className="text-center mb-4">Reserva de Aula</h2>
+    <div className="form-container">
+      <h2 className="mb-4 text-center fw-bold">
+        <FaDoorOpen className="me-2" />
+        Reserva de Aula
+      </h2>
 
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="classroom">
-              <Form.Label>Aula</Form.Label>
-              <Form.Select
-                value={selectedClassroom}
-                onChange={(e) => {
-                  setSelectedClassroom(e.target.value);
-                  setSelectedDate(null);
-                  setSelectedTime("");
-                }}
-                required
-              >
-                <option value="">Selecciona un aula</option>
-                {availableClassrooms.map((aula) => (
-                  <option key={aula.id} value={aula.name}>
-                    {aula.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label htmlFor="classroom" className="form-label">
+            <FaDoorOpen className="me-2" />
+            Aula
+          </label>
+          <select
+            id="classroom"
+            className="form-select"
+            value={selectedClassroom}
+            onChange={(e) => {
+              setSelectedClassroom(e.target.value);
+              setSelectedDate(null);
+              setSelectedTime("");
+            }}
+            required
+          >
+            <option value="">Selecciona un aula</option>
+            {availableClassrooms.map((aula) => (
+              <option key={aula.id} value={aula.name}>
+                {aula.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <Form.Group className="mb-3" controlId="date">
-              <Form.Label>Fecha</Form.Label>
-              <DatePicker
-                selected={selectedDate}
-                onChange={(date) => {
-                  setSelectedDate(date);
-                  setSelectedTime("");
-                }}
-                className="form-control"
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Selecciona la fecha"
-                required
-                disabled={!selectedClassroom}
-                filterDate={isDateEnabled}
-              />
-            </Form.Group>
+        <div className="mb-4">
+          <label htmlFor="date" className="form-label">
+            <FaCalendarAlt className="me-2" />
+            Fecha
+          </label>
+          <DatePicker
+            id="date"
+            selected={selectedDate}
+            onChange={(date) => {
+              setSelectedDate(date);
+              setSelectedTime("");
+            }}
+            className="form-control"
+            dateFormat="dd/MM/yyyy"
+            placeholderText="Selecciona la fecha"
+            required
+            disabled={!selectedClassroom}
+            filterDate={isDateEnabled}
+          />
+        </div>
 
-            <Form.Group className="mb-3" controlId="time">
-              <Form.Label>Horario</Form.Label>
-              <Form.Select
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
-                required
-                disabled={!selectedDate}
-              >
-                <option value="">Selecciona un horario</option>
-                {getTimeOptions().map((slot, idx) => (
-                  <option key={idx} value={slot}>
-                    {slot}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+        <div className="mb-4">
+          <label htmlFor="time" className="form-label">
+            <FaClock className="me-2" />
+            Horario
+          </label>
+          <select
+            id="time"
+            className="form-select"
+            value={selectedTime}
+            onChange={(e) => setSelectedTime(e.target.value)}
+            required
+            disabled={!selectedDate}
+          >
+            <option value="">Selecciona un horario</option>
+            {getTimeOptions().map((slot, idx) => (
+              <option key={idx} value={slot}>
+                {slot}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <Button variant="primary" type="submit" className="w-100">
-              Reservar Aula
-            </Button>
-          </Form>
-        </Col>
-      </Row>
+        <div className="form-actions">
+          <button type="submit" className="btn primary-btn">
+            <FaCheck className="me-2" />
+            Reservar Aula
+          </button>
+          <button
+            type="button"
+            className="btn secondary-btn"
+            onClick={handleClear}
+          >
+            <FaBroom className="me-2" />
+            Limpiar
+          </button>
+        </div>
+      </form>
 
       {selectedClassroomData?.image_path && (
-        <Row className="justify-content-center mt-4">
-          <Col xs={12} md={8} lg={6}>
-            <h4 className="text-center">Vista del Aula</h4>
+        <div className="mt-5">
+          <h4 className="text-center mb-3">
+            Vista Panorámica del Aula {selectedClassroomData.name}
+          </h4>
+          <div className="panorama-container">
             <PanoramaViewer
               image={selectedClassroomData.image_path}
               pitch={10}
               yaw={180}
               hfov={110}
             />
-          </Col>
-        </Row>
+          </div>
+        </div>
       )}
-    </Container>
+
+     
+    </div>
   );
 }

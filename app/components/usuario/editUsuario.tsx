@@ -1,26 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Form, Button, Spinner } from "react-bootstrap";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 import { getUsuarioById, updateUsuario } from "~/services/userService";
 import type { UserUpdateDTO } from "~/types/user";
+import { FaSave, FaTimes, FaUserEdit, FaTrash } from "react-icons/fa";
 
-const rolesMap: Record<number, string> = {
-  1: "Administrador",
-  2: "Encargado",
-  3: "Prestamista",
-};
+const rolesMap = [
+  { id: 1, nombre: "Administrador" },
+  { id: 2, nombre: "Encargado" },
+  { id: 3, nombre: "Prestamista" },
+];
 
-const estadosMap: Record<number, string> = {
-  1: "Activo",
-  0: "Inactivo",
-  3: "Pendiente",
-};
+const estadosMap = [
+  { id: 1, nombre: "Activo" },
+  { id: 0, nombre: "Inactivo" },
+  { id: 3, nombre: "Pendiente" },
+];
 
 const EditUsuario = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState<UserUpdateDTO>({
     first_name: "",
@@ -32,58 +32,73 @@ const EditUsuario = () => {
     estado: 1,
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-
-  const phoneRegex = /^\d{4}-\d{4}$/;
-
   useEffect(() => {
     if (id) {
       getUsuarioById(id)
         .then((data) => {
           setFormData(data);
+          setLoading(false);
         })
-        .catch((error) => console.error("Error al obtener usuario:", error))
-        .finally(() => setLoading(false));
+        .catch((error) => {
+          console.error("Error al obtener usuario:", error);
+          toast.error("Error al cargar usuario");
+          setLoading(false);
+        });
     }
   }, [id]);
 
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
+  const validateForm = (): boolean => {
+    let isValid = true;
 
-    if (!formData.first_name.trim())
-      newErrors.first_name = "Nombres es requerido.";
-    else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.first_name))
-      newErrors.first_name = "Solo se permiten letras.";
+    // Validación de nombres
+    if (!formData.first_name.trim()) {
+      toast.error("El nombre es obligatorio");
+      isValid = false;
+    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.first_name)) {
+      toast.error("El nombre solo puede contener letras");
+      isValid = false;
+    }
 
-    if (!formData.last_name.trim())
-      newErrors.last_name = "Apellidos es requerido.";
-    else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.last_name))
-      newErrors.last_name = "Solo se permiten letras.";
+    // Validación de apellidos
+    if (!formData.last_name.trim()) {
+      toast.error("El apellido es obligatorio");
+      isValid = false;
+    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.last_name)) {
+      toast.error("El apellido solo puede contener letras");
+      isValid = false;
+    }
 
-    if (!formData.email.trim()) newErrors.email = "Correo es requerido.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      newErrors.email = "Formato de correo inválido.";
+    // Validación de email (correo institucional)
+    if (!formData.email.trim()) {
+      toast.error("El correo electrónico es obligatorio");
+      isValid = false;
+    } else if (!/^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)?(edu\.sv|esdu\.edu\.sv)$/.test(formData.email)) {
+      toast.error("Debe ingresar un correo institucional válido (terminado en .edu.sv o esdu.edu.sv)");
+      isValid = false;
+    }
 
-    if (formData.phone && !phoneRegex.test(formData.phone))
-      newErrors.phone = "Debe tener el formato 0000-0000.";
+    // Validación de teléfono
+    if (formData.phone && !/^\d{4}-\d{4}$/.test(formData.phone)) {
+      toast.error("El teléfono debe tener el formato 0000-0000");
+      isValid = false;
+    }
 
-    if (formData.address && formData.address.length < 5)
-      newErrors.address = "Debe tener al menos 5 caracteres.";
+    // Validación de dirección
+    if (formData.address && formData.address.length < 5) {
+      toast.error("La dirección debe tener al menos 5 caracteres");
+      isValid = false;
+    }
 
-    if (!formData.role_id) newErrors.role_id = "Rol es requerido.";
-    if (formData.estado === undefined) newErrors.estado = "Estado es requerido.";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    
+    // Formateo especial para teléfono
     let newValue = value;
-
     if (name === "phone") {
       const digitsOnly = value.replace(/\D/g, "").slice(0, 8);
       if (digitsOnly.length > 4) {
@@ -95,188 +110,195 @@ const EditUsuario = () => {
 
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "role_id" || name === "estado" ? parseInt(newValue) : newValue,
+      [name]: name === "role_id" || name === "estado" ? Number(newValue) : newValue,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    if (!id) return;
 
-    if (!validate()) return;
-
-    // Aquí se elimina el uso de SweetAlert y se usa solo Toastify
-    toast.info("Se actualizará la información del usuario", {
-      autoClose: 2500,
-      hideProgressBar: false,
+    toast((t) => (
+      <div className="text-center">
+        <p>¿Confirmas que deseas actualizar este usuario?</p>
+        <div className="d-flex justify-content-center gap-3 mt-3">
+          <button 
+            className="btn btn-sm btn-success"
+            onClick={() => {
+              submitUpdate();
+              toast.dismiss(t.id);
+            }}
+          >
+            Sí, actualizar
+          </button>
+          <button 
+            className="btn btn-sm btn-secondary"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 10000,
     });
+  };
 
-    const confirmUpdate = window.confirm("¿Guardar cambios?");
-
-    if (confirmUpdate) {
-      if (!id) return;
-
-      const numericId = Number(id);
-      if (isNaN(numericId)) {
-        console.error("ID no válido");
-        return;
-      }
-
-      const dataToSend: UserUpdateDTO = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        email: formData.email,
-        phone: formData.phone || "",
-        address: formData.address || "",
-        role_id: formData.role_id,
-        estado: formData.estado,
-      };
-
-      try {
-        await updateUsuario(numericId, dataToSend);
-        toast.success("Usuario actualizado correctamente", {
-          autoClose: 2500,
-          hideProgressBar: false,
-        });
-        setTimeout(() => navigate("/usuarios"), 3000);
-      } catch (error) {
-        console.error("Error al actualizar usuario:", error);
-        toast.error("Error al actualizar usuario", {
-          autoClose: 2500,
-          hideProgressBar: false,
-        });
-      }
-    } else {
-      toast.info("Acción cancelada por el usuario", {
-        autoClose: 2000,
-        hideProgressBar: false,
-      });
+  const submitUpdate = async () => {
+    try {
+      await updateUsuario(Number(id), formData);
+      toast.success("Usuario actualizado correctamente");
+      setTimeout(() => navigate("/usuarios"), 1500);
+    } catch (error) {
+      console.error("Error al actualizar usuario:", error);
+      toast.error("Error al actualizar usuario");
     }
   };
 
   const handleCancel = () => {
-    toast.info("Acción cancelada por el usuario", {
-      autoClose: 2000,
-    });
-    setTimeout(() => navigate("/usuarios"), 2200);
+    navigate("/usuarios");
   };
 
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center my-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4">Editar Usuario</h2>
-      {loading ? (
-        <Spinner animation="border" />
-      ) : (
-        <Form onSubmit={handleSubmit} noValidate>
-          <Form.Group className="mb-3">
-            <Form.Label>Nombres</Form.Label>
-            <Form.Control
-              type="text"
+    <div className="form-container">
+      <h2 className="mb-4 text-center fw-bold">
+        <FaUserEdit className="me-2" />
+        Editar Usuario
+      </h2>
+
+      <form onSubmit={handleSubmit}>
+        <div className="row mb-4">
+          <div className="col-md-6 mb-3 mb-md-0">
+            <label htmlFor="first_name" className="form-label">Nombres</label>
+            <input
+              id="first_name"
               name="first_name"
+              type="text"
+              className="form-control"
               value={formData.first_name}
               onChange={handleChange}
-              isInvalid={!!errors.first_name}
               required
             />
-            <Form.Control.Feedback type="invalid">{errors.first_name}</Form.Control.Feedback>
-          </Form.Group>
+          </div>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Apellidos</Form.Label>
-            <Form.Control
-              type="text"
+          <div className="col-md-6">
+            <label htmlFor="last_name" className="form-label">Apellidos</label>
+            <input
+              id="last_name"
               name="last_name"
+              type="text"
+              className="form-control"
               value={formData.last_name}
               onChange={handleChange}
-              isInvalid={!!errors.last_name}
               required
             />
-            <Form.Control.Feedback type="invalid">{errors.last_name}</Form.Control.Feedback>
-          </Form.Group>
+          </div>
+        </div>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Correo Electrónico</Form.Label>
-            <Form.Control
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              isInvalid={!!errors.email}
-              required
-            />
-            <Form.Control.Feedback type="invalid">{errors.email}</Form.Control.Feedback>
-          </Form.Group>
+        <div className="mb-4">
+          <label htmlFor="email" className="form-label">Correo Electrónico</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            className="form-control"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <small className="text-muted">El correo institucional no puede modificarse</small>
+        </div>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Teléfono</Form.Label>
-            <Form.Control
-              type="text"
+        <div className="row mb-4">
+          <div className="col-md-6 mb-3 mb-md-0">
+            <label htmlFor="phone" className="form-label">Teléfono</label>
+            <input
+              id="phone"
               name="phone"
+              type="text"
+              className="form-control"
               value={formData.phone || ""}
               onChange={handleChange}
-              isInvalid={!!errors.phone}
               placeholder="0000-0000"
             />
-            <Form.Control.Feedback type="invalid">{errors.phone}</Form.Control.Feedback>
-          </Form.Group>
+          </div>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Dirección</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={2}
-              name="address"
-              value={formData.address || ""}
-              onChange={handleChange}
-              isInvalid={!!errors.address}
-            />
-            <Form.Control.Feedback type="invalid">{errors.address}</Form.Control.Feedback>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Rol</Form.Label>
-            <Form.Select
+          <div className="col-md-6">
+            <label htmlFor="role_id" className="form-label">Rol</label>
+            <select
+              id="role_id"
               name="role_id"
+              className="form-select"
               value={formData.role_id}
               onChange={handleChange}
-              isInvalid={!!errors.role_id}
+              required
             >
-              {Object.entries(rolesMap).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
+              {rolesMap.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.nombre}
                 </option>
               ))}
-            </Form.Select>
-            <Form.Control.Feedback type="invalid">{errors.role_id}</Form.Control.Feedback>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Estado</Form.Label>
-            <Form.Select
-              name="estado"
-              value={formData.estado}
-              onChange={handleChange}
-              isInvalid={!!errors.estado}
-            >
-              {Object.entries(estadosMap).map(([key, label]) => (
-                <option key={key} value={Number(key)}>
-                  {label}
-                </option>
-              ))}
-            </Form.Select>
-            <Form.Control.Feedback type="invalid">{errors.estado}</Form.Control.Feedback>
-          </Form.Group>
-
-          <div className="d-flex justify-content-between">
-            <Button variant="secondary" onClick={handleCancel}>
-              Cancelar
-            </Button>
-            <Button variant="primary" type="submit">
-              Guardar Cambios
-            </Button>
+            </select>
           </div>
-        </Form>
-      )}
-      <ToastContainer />
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="address" className="form-label">Dirección</label>
+          <textarea
+            id="address"
+            name="address"
+            className="form-control"
+            rows={3}
+            value={formData.address || ""}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="estado" className="form-label">Estado</label>
+          <select
+            id="estado"
+            name="estado"
+            className="form-select"
+            value={formData.estado}
+            onChange={handleChange}
+            required
+          >
+            {estadosMap.map((estado) => (
+              <option key={estado.id} value={estado.id}>
+                {estado.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="btn primary-btn">
+            <FaSave className="me-2" />
+            Guardar Cambios
+          </button>
+          <button
+            type="button"
+            className="btn secondary-btn"
+            onClick={handleCancel}
+          >
+            <FaTimes className="me-2" />
+            Cancelar
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

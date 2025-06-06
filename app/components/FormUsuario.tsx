@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "react-hot-toast";
 import { createUsuario } from "~/services/userService";
@@ -10,7 +10,31 @@ import {
   FaBroom,
   FaUpload,
   FaTrash,
+  FaUserCircle,
 } from "react-icons/fa";
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import type { Crop, PixelCrop } from 'react-image-crop';
+import "react-image-crop/dist/ReactCrop.css";
+
+function centerAspectCrop(
+  mediaWidth: number,
+  mediaHeight: number,
+  aspect: number,
+) {
+  return centerCrop(
+    makeAspectCrop(
+      {
+        unit: '%',
+        width: 90,
+      },
+      aspect,
+      mediaWidth,
+      mediaHeight,
+    ),
+    mediaWidth,
+    mediaHeight,
+  );
+}
 
 export default function FormUsuario() {
   const navigate = useNavigate();
@@ -25,25 +49,42 @@ export default function FormUsuario() {
     image: null as File | null,
   });
 
+  // Image crop state
+  const [imgSrc, setImgSrc] = useState("");
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const [aspect, setAspect] = useState<number | undefined>(1);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Validation regex patterns
   const nameRegex = /^[a-zA-Z\s]{2,}$/;
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@itca\.edu\.sv$/; //Permitir correo institucional (JOSUE)
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@itca\.edu\.sv$/;
   const phoneRegex = /^[0-9]{4}-[0-9]{4}$/;
   const imageTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
   const maxImageSize = 2 * 1024 * 1024;
+
+  useEffect(() => {
+    if (completedCrop?.width && completedCrop?.height && imgRef.current && previewCanvasRef.current) {
+      canvasPreview(
+        imgRef.current,
+        previewCanvasRef.current,
+        completedCrop,
+      );
+    }
+  }, [completedCrop]);
 
   // Dropzone configuration
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
       if (!imageTypes.includes(file.type)) {
-        toast.error(
-          "Solo se permiten archivos de imagen (JPEG, PNG, JPG, GIF)"
-        );
+        toast.error("Solo se permiten archivos de imagen (JPEG, PNG, JPG, GIF)");
         return;
       }
 
@@ -52,9 +93,12 @@ export default function FormUsuario() {
         return;
       }
 
-      setFormData((prev) => ({ ...prev, image: file }));
-      setImagePreview(URL.createObjectURL(file));
-      setFormErrors((prev) => ({ ...prev, image: "" }));
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setImgSrc(reader.result?.toString() || '');
+        setShowCropModal(true);
+      });
+      reader.readAsDataURL(file);
     }
   }, []);
 
@@ -67,6 +111,26 @@ export default function FormUsuario() {
     multiple: false,
   });
 
+  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    if (aspect) {
+      const { width, height } = e.currentTarget;
+      setCrop(centerAspectCrop(width, height, aspect));
+    }
+  }
+
+  const handleSaveCroppedImage = () => {
+    if (previewCanvasRef.current) {
+      previewCanvasRef.current.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], "profile-image.jpg", { type: "image/jpeg" });
+          setFormData((prev) => ({ ...prev, image: file }));
+          setImagePreview(URL.createObjectURL(blob));
+          setShowCropModal(false);
+        }
+      }, "image/jpeg", 0.9);
+    }
+  };
+
   const removeImage = () => {
     setFormData((prev) => ({ ...prev, image: null }));
     setImagePreview(null);
@@ -74,9 +138,7 @@ export default function FormUsuario() {
 
   const validateField = (name: string, value: any): string => {
     if (
-      ["first_name", "last_name", "email", "role_id"].includes(
-        name
-      ) &&
+      ["first_name", "last_name", "email", "role_id"].includes(name) &&
       (!value || value.trim() === "")
     ) {
       return "Este campo es obligatorio";
@@ -90,7 +152,6 @@ export default function FormUsuario() {
         break;
       case "email":
         if (!emailRegex.test(value))
-          //JOSUE
           return "Solo se permiten correos institucionales (@itca.edu.sv).";
         break;
       case "role_id":
@@ -150,9 +211,7 @@ export default function FormUsuario() {
       return;
     }
 
-    toast.success("Creando usuario...", {
-     
-    });
+    toast.success("Creando usuario...");
 
     setIsLoading(true);
 
@@ -166,7 +225,6 @@ export default function FormUsuario() {
     });
     if (formData.image) formDataToSend.append("image", formData.image);
 
-    // ✅ JOSUE (ESTADO DE USUARIO AL SER CREADO 3-PENDIENTE)
     formDataToSend.append("estado", "0");
 
     try {
@@ -288,27 +346,24 @@ export default function FormUsuario() {
         </div>
 
         <div className="mb-4">
-            <label htmlFor="address" className="form-label">
-              Dirección (Opcional)
-            </label>
-            <textarea
-              id="address"
-              name="address"
-              placeholder="Dirección"
-              value={formData.address}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`form-control ${
-                formErrors.address ? "is-invalid" : ""
-              }`}
-            />
-            {formErrors.address && (
-              <div className="invalid-feedback">{formErrors.address}</div>
-            )}
+          <label htmlFor="address" className="form-label">
+            Dirección (Opcional)
+          </label>
+          <textarea
+            id="address"
+            name="address"
+            placeholder="Dirección"
+            value={formData.address}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            className={`form-control ${
+              formErrors.address ? "is-invalid" : ""
+            }`}
+          />
+          {formErrors.address && (
+            <div className="invalid-feedback">{formErrors.address}</div>
+          )}
         </div>
-
-
-        
 
         <div className="mb-4">
           <label htmlFor="role_id" className="form-label">
@@ -342,8 +397,8 @@ export default function FormUsuario() {
               <img
                 src={imagePreview}
                 alt="Vista previa"
-                className="img-fluid rounded border mb-2"
-                style={{ maxWidth: "220px" }}
+                className="img-fluid rounded-circle border mb-2"
+                style={{ width: "150px", height: "150px", objectFit: "cover" }}
               />
               <button
                 type="button"
@@ -363,7 +418,7 @@ export default function FormUsuario() {
             >
               <input {...getInputProps()} />
               <div className="d-flex flex-column align-items-center justify-content-center">
-                <FaUpload className="text-muted mb-2" />
+                <FaUserCircle size={50} className="text-muted mb-2" />
                 {isDragActive ? (
                   <p className="text-primary mb-0">Suelta la imagen aquí...</p>
                 ) : (
@@ -418,6 +473,118 @@ export default function FormUsuario() {
           </button>
         </div>
       </form>
+
+      {/* Modal para recortar imagen */}
+      <div className={`modal ${showCropModal ? 'd-block' : 'd-none'}`} tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="modal-dialog modal-lg">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Recortar Imagen</h5>
+              <button type="button" className="btn-close" onClick={() => setShowCropModal(false)}></button>
+            </div>
+            <div className="modal-body">
+              <div className="d-flex flex-column align-items-center">
+                {imgSrc && (
+                  <ReactCrop
+                    crop={crop}
+                    onChange={(c) => setCrop(c)}
+                    onComplete={(c) => setCompletedCrop(c)}
+                    aspect={aspect}
+                    className="img-fluid"
+                  >
+                    <img
+                      ref={imgRef}
+                      alt="Crop me"
+                      src={imgSrc}
+                      style={{ maxWidth: "100%", maxHeight: "70vh" }}
+                      onLoad={onImageLoad}
+                    />
+                  </ReactCrop>
+                )}
+                
+                <div className="mt-3">
+                  <h5>Vista previa:</h5>
+                  <canvas
+                    ref={previewCanvasRef}
+                    style={{
+                      display: "block",
+                      width: 150,
+                      height: 150,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setShowCropModal(false)}>
+                Cancelar
+              </button>
+              <button type="button" className="btn btn-primary" onClick={handleSaveCroppedImage}>
+                Guardar Recorte
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
+}
+
+// Función auxiliar para el preview del canvas
+function canvasPreview(
+  image: HTMLImageElement,
+  canvas: HTMLCanvasElement,
+  crop: PixelCrop,
+) {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('No 2d context');
+  }
+
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
+  const pixelRatio = window.devicePixelRatio;
+
+  canvas.width = Math.floor(crop.width * pixelRatio);
+  canvas.height = Math.floor(crop.height * pixelRatio);
+
+  ctx.scale(pixelRatio, pixelRatio);
+  ctx.imageSmoothingQuality = 'high';
+
+  const cropX = crop.x * scaleX;
+  const cropY = crop.y * scaleY;
+  const cropWidth = crop.width * scaleX;
+  const cropHeight = crop.height * scaleY;
+
+  const centerX = image.naturalWidth / 2;
+  const centerY = image.naturalHeight / 2;
+  const maxSquareHalf = Math.min(image.naturalWidth, image.naturalHeight) / 2;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(
+    canvas.width / 2 / pixelRatio,
+    canvas.height / 2 / pixelRatio,
+    Math.min(canvas.width, canvas.height) / 2 / pixelRatio,
+    0,
+    Math.PI * 2
+  );
+  ctx.closePath();
+  ctx.clip();
+
+  ctx.drawImage(
+    image,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+    0,
+    0,
+    canvas.width / pixelRatio,
+    canvas.height / pixelRatio
+  );
+
+  ctx.restore();
 }

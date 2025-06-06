@@ -8,6 +8,7 @@ import React, {
 import api from "../api/axios";
 import { routeRoles } from "~/types/routeRoles";
 import type { UserLogin } from "~/types/user";
+import { initializeEcho } from "~/utils/pusher";
 
 type AuthContextType = {
   token: string | null;
@@ -60,6 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               ? parsedUser
               : prev;
           });
+          initializeEcho(storedToken);
         } else {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
@@ -107,6 +109,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem("user", JSON.stringify(newUser));
       setToken(newToken);
       setUser(newUser);
+      initializeEcho(newToken);
     } catch (error) {
       throw error;
     } finally {

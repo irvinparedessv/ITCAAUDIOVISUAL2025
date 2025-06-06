@@ -828,7 +828,8 @@ const NavbarMenu = () => {
         show={showSidebar} 
         onHide={handleCloseSidebar}
         placement="start"
-        className="d-lg-none"
+        className="d-xl-none"
+        backdrop={false}  // ← Esto evita el fondo oscuro
         style={{
           width: '280px',
           background: "linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92))",

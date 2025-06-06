@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ForgotPassword from "./auth/ForgotPassword";
+import toast from "react-hot-toast";
 
 const MotionButton = motion(
   forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => (
@@ -47,11 +48,13 @@ const Login = () => {
       }
     } catch (err: any) {
       setIsLoading(false);
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
-      } else {
-        setError("Error al iniciar sesión");
-      }
+      if (err.response?.status === 401) {
+    toast.error("Credenciales incorrectas. Verifique su correo y contraseña.");
+  } else if (err.response?.data?.message) {
+    toast.error(err.response.data.message);
+  } else {
+    toast.error("Ocurrió un error inesperado al iniciar sesión.");
+  }
     }
   };
 

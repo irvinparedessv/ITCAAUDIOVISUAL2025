@@ -1,74 +1,76 @@
-import { useEffect, useState } from 'react'
-import type { Equipo } from '~/types/equipo'
-import type { TipoEquipo } from '~/types/tipoEquipo'
-import toast from 'react-hot-toast'
-import { FaEdit, FaTrash } from 'react-icons/fa'
-import { getEquipos } from '~/services/equipoService'
+import { useEffect, useState } from "react";
+import type { Equipo } from "app/types/equipo";
+import type { TipoEquipo } from "app/types/tipoEquipo";
+import toast from "react-hot-toast";
+import { FaEdit, FaTrash } from "react-icons/fa";
+import { getEquipos } from "../../services/equipoService";
 
 interface Props {
-  tipos: TipoEquipo[]
-  onEdit: (equipo: Equipo) => void
-  onDelete: (id: number) => void
+  tipos: TipoEquipo[];
+  onEdit: (equipo: Equipo) => void;
+  onDelete: (id: number) => void;
 }
 
 export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
-  const [equipos, setEquipos] = useState<Equipo[]>([])
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [perPage] = useState(5)
-  const [total, setTotal] = useState(0)
-  const totalPages = Math.ceil(total / perPage)
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage] = useState(5);
+  const [total, setTotal] = useState(0);
+  const totalPages = Math.ceil(total / perPage);
 
- const fetchEquipos = async () => {
-  try {
-    const res = await getEquipos({ search: '', page: 1, perPage: 5 })
-    console.log('Respuesta sin filtro:', res)
-    const data = Array.isArray(res.data) ? res.data : []
-    setEquipos(data)
-    setTotal(typeof res.total === 'number' ? res.total : 0)
-  } catch (error) {
-    toast.error('Error al cargar los equipos')
-  }
-}
-
+  const fetchEquipos = async () => {
+    try {
+      const res = await getEquipos({ search: "", page: 1, perPage: 5 });
+      console.log("Respuesta sin filtro:", res);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setEquipos(data);
+      setTotal(typeof res.total === "number" ? res.total : 0);
+    } catch (error) {
+      toast.error("Error al cargar los equipos");
+    }
+  };
 
   useEffect(() => {
-    fetchEquipos()
-  }, [search, page])
+    fetchEquipos();
+  }, [search, page]);
 
   const getTipoNombre = (id: number) => {
-    const tipo = tipos.find(t => t.id === id)
-    return tipo ? tipo.nombre : 'Desconocido'
-  }
+    const tipo = tipos.find((t) => t.id === id);
+    return tipo ? tipo.nombre : "Desconocido";
+  };
 
   const confirmarEliminacion = (id: number) => {
-    toast(t => (
-      <div>
-        <p>¿Seguro que deseas eliminar este equipo?</p>
-        <div className="d-flex justify-content-end gap-2 mt-2">
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={() => {
-              onDelete(id)
-              toast.dismiss(t.id)
-              toast.success('Equipo eliminado')
-              fetchEquipos()
-            }}
-          >
-            Sí, eliminar
-          </button>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
+    toast(
+      (t) => (
+        <div>
+          <p>¿Seguro que deseas eliminar este equipo?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={() => {
+                onDelete(id);
+                toast.dismiss(t.id);
+                toast.success("Equipo eliminado");
+                fetchEquipos();
+              }}
+            >
+              Sí, eliminar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ), {
-      duration: 5000,
-    })
-  }
+      ),
+      {
+        duration: 5000,
+      }
+    );
+  };
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
@@ -80,14 +82,17 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
           className="form-control w-auto"
           placeholder="Buscar por nombre o descripción"
           value={search}
-          onChange={e => {
-            setPage(1)
-            setSearch(e.target.value)
+          onChange={(e) => {
+            setPage(1);
+            setSearch(e.target.value);
           }}
         />
       </div>
 
-      <table className="table table-hover align-middle text-center overflow-hidden" style={{ borderRadius: '0.8rem' }}>
+      <table
+        className="table table-hover align-middle text-center overflow-hidden"
+        style={{ borderRadius: "0.8rem" }}
+      >
         <thead className="table-dark">
           <tr>
             <th className="rounded-top-start">Nombre</th>
@@ -101,23 +106,34 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
         </thead>
         <tbody>
           {equipos.length > 0 ? (
-            equipos.map(equipo => (
+            equipos.map((equipo) => (
               <tr key={equipo.id}>
                 <td className="fw-bold">{equipo.nombre}</td>
                 <td>{equipo.descripcion}</td>
                 <td>
-                  <span className={`badge ${equipo.estado ? 'bg-success' : 'bg-danger'}`}>
-                    {equipo.estado ? 'Disponible' : 'No disponible'}
+                  <span
+                    className={`badge ${
+                      equipo.estado ? "bg-success" : "bg-danger"
+                    }`}
+                  >
+                    {equipo.estado ? "Disponible" : "No disponible"}
                   </span>
                 </td>
                 <td>{equipo.cantidad}</td>
-                <td><em>{getTipoNombre(equipo.tipo_equipo_id)}</em></td>
+                <td>
+                  <em>{getTipoNombre(equipo.tipo_equipo_id)}</em>
+                </td>
                 <td>
                   {equipo.imagen_url ? (
                     <img
                       src={equipo.imagen_url}
                       alt={equipo.nombre}
-                      style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }}
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                      }}
                     />
                   ) : (
                     <span className="text-muted">Sin imagen</span>
@@ -129,7 +145,7 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
                       className="btn btn-outline-primary rounded-circle"
                       title="Editar equipo"
                       onClick={() => onEdit(equipo)}
-                      style={{ width: '44px', height: '44px' }}
+                      style={{ width: "44px", height: "44px" }}
                     >
                       <FaEdit />
                     </button>
@@ -137,7 +153,7 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
                       className="btn btn-outline-danger rounded-circle"
                       title="Eliminar equipo"
                       onClick={() => confirmarEliminacion(equipo.id)}
-                      style={{ width: '44px', height: '44px' }}
+                      style={{ width: "44px", height: "44px" }}
                     >
                       <FaTrash />
                     </button>
@@ -147,7 +163,9 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
             ))
           ) : (
             <tr>
-              <td colSpan={7} className="text-center text-muted">No se encontraron equipos</td>
+              <td colSpan={7} className="text-center text-muted">
+                No se encontraron equipos
+              </td>
             </tr>
           )}
         </tbody>
@@ -156,20 +174,36 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
       {totalPages >= 1 && (
         <nav className="mt-3 d-flex justify-content-center">
           <ul className="pagination">
-            <li className={`page-item ${page === 1 ? 'disabled' : ''}`}>
-              <button className="page-link" onClick={() => setPage(prev => Math.max(1, prev - 1))}>
+            <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              >
                 Anterior
               </button>
             </li>
             {[...Array(totalPages)].map((_, index) => (
-              <li key={index} className={`page-item ${page === index + 1 ? 'active' : ''}`}>
-                <button className="page-link" onClick={() => setPage(index + 1)}>
+              <li
+                key={index}
+                className={`page-item ${page === index + 1 ? "active" : ""}`}
+              >
+                <button
+                  className="page-link"
+                  onClick={() => setPage(index + 1)}
+                >
                   {index + 1}
                 </button>
               </li>
             ))}
-            <li className={`page-item ${page === totalPages ? 'disabled' : ''}`}>
-              <button className="page-link" onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}>
+            <li
+              className={`page-item ${page === totalPages ? "disabled" : ""}`}
+            >
+              <button
+                className="page-link"
+                onClick={() =>
+                  setPage((prev) => Math.min(totalPages, prev + 1))
+                }
+              >
                 Siguiente
               </button>
             </li>
@@ -177,5 +211,5 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
         </nav>
       )}
     </div>
-  )
+  );
 }

@@ -1,14 +1,14 @@
-import type { TipoEquipo } from '~/types/tipoEquipo'
-import TipoEquipoForm from './TipoEquipoForm'
-import toast from 'react-hot-toast'
-import { FaEdit, FaTrash } from 'react-icons/fa'
-import { useState } from 'react'
+import type { TipoEquipo } from "app/types/tipoEquipo";
+import TipoEquipoForm from "./TipoEquipoForm";
+import toast from "react-hot-toast";
+import { FaEdit, FaTrash } from "react-icons/fa";
+import { useState } from "react";
 
 interface Props {
-  tipos: TipoEquipo[]
-  onEdit: (tipo: TipoEquipo) => void
-  onDelete: (id: number) => void
-  onSuccess: () => void
+  tipos: TipoEquipo[];
+  onEdit: (tipo: TipoEquipo) => void;
+  onDelete: (id: number) => void;
+  onSuccess: () => void;
 }
 
 export default function TipoEquipoList({
@@ -17,52 +17,57 @@ export default function TipoEquipoList({
   onDelete,
   onSuccess,
 }: Props) {
-  const [tipoEditado, setTipoEditado] = useState<TipoEquipo | undefined>(undefined)
+  const [tipoEditado, setTipoEditado] = useState<TipoEquipo | undefined>(
+    undefined
+  );
 
   const handleEdit = (tipo: TipoEquipo) => {
-    setTipoEditado(tipo)
-    onEdit(tipo)
-  }
+    setTipoEditado(tipo);
+    onEdit(tipo);
+  };
 
   const handleCancel = () => {
-    setTipoEditado(undefined)
-  }
+    setTipoEditado(undefined);
+  };
 
   const confirmarEliminacion = (id: number) => {
-    toast((t) => (
-      <div>
-        <p>¿Seguro que deseas eliminar este tipo de equipo?</p>
-        <div className="d-flex justify-content-end gap-2 mt-2">
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={() => {
-              onDelete(id)
-              toast.dismiss(t.id)
-              toast.success('Tipo de equipo eliminado')
-            }}
-          >
-            Sí, eliminar
-          </button>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
+    toast(
+      (t) => (
+        <div>
+          <p>¿Seguro que deseas eliminar este tipo de equipo?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={() => {
+                onDelete(id);
+                toast.dismiss(t.id);
+                toast.success("Tipo de equipo eliminado");
+              }}
+            >
+              Sí, eliminar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ), {
-      duration: 5000,
-    })
-  }
+      ),
+      {
+        duration: 5000,
+      }
+    );
+  };
 
   return (
     <div className="container py-5">
-      <TipoEquipoForm 
-        tipoEditado={tipoEditado} 
+      <TipoEquipoForm
+        tipoEditado={tipoEditado}
         onSuccess={() => {
-          setTipoEditado(undefined)
-          onSuccess()
+          setTipoEditado(undefined);
+          onSuccess();
         }}
         onCancel={handleCancel}
       />
@@ -71,7 +76,7 @@ export default function TipoEquipoList({
         <h4 className="mb-3 text-center">Listado de Tipos de Equipo</h4>
         <table
           className="table table-hover align-middle text-center overflow-hidden"
-          style={{ borderRadius: '0.8rem' }}
+          style={{ borderRadius: "0.8rem" }}
         >
           <thead className="table-dark">
             <tr>
@@ -80,7 +85,7 @@ export default function TipoEquipoList({
             </tr>
           </thead>
           <tbody>
-            {tipos.map(tipo => (
+            {tipos.map((tipo) => (
               <tr key={tipo.id}>
                 <td className="fw-bold">{tipo.nombre}</td>
                 <td>
@@ -90,12 +95,16 @@ export default function TipoEquipoList({
                       title="Editar tipo de equipo"
                       onClick={() => handleEdit(tipo)}
                       style={{
-                        width: '44px',
-                        height: '44px',
-                        transition: 'transform 0.2s ease-in-out',
+                        width: "44px",
+                        height: "44px",
+                        transition: "transform 0.2s ease-in-out",
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.15)')}
-                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.15)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
                     >
                       <FaEdit className="fs-5" />
                     </button>
@@ -104,12 +113,16 @@ export default function TipoEquipoList({
                       title="Eliminar tipo de equipo"
                       onClick={() => confirmarEliminacion(tipo.id)}
                       style={{
-                        width: '44px',
-                        height: '44px',
-                        transition: 'transform 0.2s ease-in-out',
+                        width: "44px",
+                        height: "44px",
+                        transition: "transform 0.2s ease-in-out",
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.15)')}
-                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.15)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
                     >
                       <FaTrash className="fs-5" />
                     </button>
@@ -128,5 +141,5 @@ export default function TipoEquipoList({
         </table>
       </div>
     </div>
-  )
+  );
 }

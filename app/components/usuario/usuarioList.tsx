@@ -5,9 +5,16 @@ import {
   deleteUsuario,
   resetPassword,
   forgotPassword,
-} from "~/services/userService";
-import type { User } from "~/types/user";
-import { FaUserCircle, FaEdit, FaTrash, FaSearch, FaKey, FaPlus } from "react-icons/fa";
+} from "../services/userService";
+import type { User } from "app/types/user";
+import {
+  FaUserCircle,
+  FaEdit,
+  FaTrash,
+  FaSearch,
+  FaKey,
+  FaPlus,
+} from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const rolesMap: Record<number, string> = {
@@ -138,59 +145,56 @@ const UsuarioList = () => {
       </div>
 
       {/* Sección mejorada de búsqueda y creación */}
-<div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3 mb-4">
-  {/* Buscador con lupa perfectamente integrada */}
-  <div className="position-relative flex-grow-1 w-100">
-    <div className="input-group" style={{ height: "42px" }}>
-      <span className="input-group-text bg-transparent border-end-0 pe-2 ps-3">
-        <FaSearch 
-          size={16} 
-          className="text-body-secondary" 
-        />
-      </span>
-      <input
-        type="text"
-        placeholder="Buscar por nombre o correo..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="form-control border-start-0 ps-0 py-2 bg-transparent"
-        style={{
-          borderColor: 'var(--bs-border-color)',
-          boxShadow: 'none',
-          borderRadius: '0 0.375rem 0.375rem 0'
-        }}
-      />
-      {searchTerm && (
-        <button
-          className="btn btn-link text-body-secondary d-flex align-items-center justify-content-center px-3"
-          type="button"
-          onClick={() => setSearchTerm('')}
-          style={{
-            borderLeft: '1px solid var(--bs-border-color)',
-            borderRadius: '0 0.375rem 0.375rem 0'
-          }}
-        >
-          ×
-        </button>
-      )}
-    </div>
-  </div>
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3 mb-4">
+        {/* Buscador con lupa perfectamente integrada */}
+        <div className="position-relative flex-grow-1 w-100">
+          <div className="input-group" style={{ height: "42px" }}>
+            <span className="input-group-text bg-transparent border-end-0 pe-2 ps-3">
+              <FaSearch size={16} className="text-body-secondary" />
+            </span>
+            <input
+              type="text"
+              placeholder="Buscar por nombre o correo..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="form-control border-start-0 ps-0 py-2 bg-transparent"
+              style={{
+                borderColor: "var(--bs-border-color)",
+                boxShadow: "none",
+                borderRadius: "0 0.375rem 0.375rem 0",
+              }}
+            />
+            {searchTerm && (
+              <button
+                className="btn btn-link text-body-secondary d-flex align-items-center justify-content-center px-3"
+                type="button"
+                onClick={() => setSearchTerm("")}
+                style={{
+                  borderLeft: "1px solid var(--bs-border-color)",
+                  borderRadius: "0 0.375rem 0.375rem 0",
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
 
-  {/* Botón de creación */}
-  <div className="d-flex justify-content-center justify-content-md-end w-100 w-md-auto">
-    <Link
-      to="/formUsuario"
-      className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
-      style={{
-        borderRadius: "8px",
-        height: "42px"
-      }}
-    >
-      <FaPlus className="fs-6" />
-      <span>Crear Usuario</span>
-    </Link>
-  </div>
-</div>
+        {/* Botón de creación */}
+        <div className="d-flex justify-content-center justify-content-md-end w-100 w-md-auto">
+          <Link
+            to="/formUsuario"
+            className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
+            style={{
+              borderRadius: "8px",
+              height: "42px",
+            }}
+          >
+            <FaPlus className="fs-6" />
+            <span>Crear Usuario</span>
+          </Link>
+        </div>
+      </div>
 
       {loading ? (
         <p className="text-center">Cargando usuarios...</p>

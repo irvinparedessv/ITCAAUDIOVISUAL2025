@@ -1,24 +1,24 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Form, Button, Container } from "react-bootstrap";
-import { useAuth } from "~/hooks/AuthContext";
-import api from '~/api/axios';
+import { useAuth } from "app/hooks/AuthContext";
+import api from "../../api/axios";
 
 const ChangePassword = () => {
   const navigate = useNavigate();
   const { user, login } = useAuth(); // Obtén el usuario del contexto
-  const [password, setPassword] = useState(''); // Contraseña nueva
-  const [confirmPassword, setConfirmPassword] = useState(''); // Confirmar nueva contraseña
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [password, setPassword] = useState(""); // Contraseña nueva
+  const [confirmPassword, setConfirmPassword] = useState(""); // Confirmar nueva contraseña
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const location = useLocation();
   const email = location.state?.email;
   const pass = location.state.password;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     // Verificar si las contraseñas coinciden
     if (password !== confirmPassword) {
@@ -34,9 +34,9 @@ const ChangePassword = () => {
       }
 
       // Cambiar contraseña en el backend
-      const response = await api.post('/change-password', {
+      const response = await api.post("/change-password", {
         email,
-        current_password: pass, // Aquí usamos la contraseña del usuario 
+        current_password: pass, // Aquí usamos la contraseña del usuario
         new_password: password, // Nueva contraseña
         new_password_confirmation: confirmPassword, // Confirmación de la nueva contraseña
       });
@@ -45,11 +45,14 @@ const ChangePassword = () => {
       await login(email, password); // Reintenta el login con la nueva contraseña
 
       setSuccess("Contraseña cambiada y sesión iniciada correctamente.");
-      navigate('/'); // Redirige a la página principal después de un cambio exitoso
+      navigate("/"); // Redirige a la página principal después de un cambio exitoso
     } catch (error: any) {
       // Si ocurre un error, muestra el mensaje correspondiente
       if (error.response) {
-        setError(error.response.data.message || "Hubo un error al cambiar la contraseña.");
+        setError(
+          error.response.data.message ||
+            "Hubo un error al cambiar la contraseña."
+        );
       } else {
         setError("Hubo un error desconocido.");
       }

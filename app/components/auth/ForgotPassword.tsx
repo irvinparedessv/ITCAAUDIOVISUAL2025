@@ -1,25 +1,27 @@
-import React, { useState } from 'react';
-import api from '~/api/axios';
-import { Button, Form, Spinner } from 'react-bootstrap';
+import React, { useState } from "react";
+import api from "../../api/axios";
+import { Button, Form, Spinner } from "react-bootstrap";
 
 const ForgotPassword: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
-  const [message, setMessage] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);  // Nuevo estado para controlar el loading
+  const [email, setEmail] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false); // Nuevo estado para controlar el loading
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);  // Activar el spinner
+    setIsLoading(true); // Activar el spinner
     try {
-      const response = await api.post('/forgot-password', { email });
+      const response = await api.post("/forgot-password", { email });
       setMessage(response.data.message);
-      setError('');
+      setError("");
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Hubo un problema, intenta de nuevo.');
-      setMessage('');
+      setError(
+        err.response?.data?.message || "Hubo un problema, intenta de nuevo."
+      );
+      setMessage("");
     } finally {
-      setIsLoading(false);  // Desactivar el spinner una vez completada la solicitud
+      setIsLoading(false); // Desactivar el spinner una vez completada la solicitud
     }
   };
 
@@ -38,11 +40,15 @@ const ForgotPassword: React.FC = () => {
           />
         </Form.Group>
 
-        <Button type="submit" className="w-100 btn primary-btn border-0" disabled={isLoading || !email}>
+        <Button
+          type="submit"
+          className="w-100 btn primary-btn border-0"
+          disabled={isLoading || !email}
+        >
           {isLoading ? (
-            <Spinner animation="border" size="sm" />  // Spinner de carga
+            <Spinner animation="border" size="sm" /> // Spinner de carga
           ) : (
-            'Enviar enlace de restablecimiento'
+            "Enviar enlace de restablecimiento"
           )}
         </Button>
       </Form>

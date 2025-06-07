@@ -6,8 +6,14 @@ import api from "../api/axios";
 import "pannellum/build/pannellum.css";
 import PanoramaViewer from "./PanoramaViewer";
 import toast from "react-hot-toast";
-import { FaCalendarAlt, FaClock, FaDoorOpen, FaCheck, FaBroom } from "react-icons/fa";
-import { useAuth } from "~/hooks/AuthContext";
+import {
+  FaCalendarAlt,
+  FaClock,
+  FaDoorOpen,
+  FaCheck,
+  FaBroom,
+} from "react-icons/fa";
+import { useAuth } from "app/hooks/AuthContext";
 
 declare global {
   interface Window {
@@ -272,8 +278,6 @@ export default function ReserveClassroom() {
           </div>
         </div>
       )}
-
-     
     </div>
   );
 }

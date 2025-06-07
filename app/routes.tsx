@@ -38,6 +38,7 @@ import BitacoraPage from "./routes/BitacoraPage";
 import NotificationsList from "./routes/NotificationsList";
 import PrediccionPage from "./routes/PrediccionPage";
 import OpcionesPanel from "./routes/OpcionesPanel";
+import App from "./root";
 
 const router = createBrowserRouter([
   {
@@ -66,115 +67,121 @@ const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: <ProtectedLayout />,
+    element: <App />, // ← App ahora es el layout principal
     children: [
       {
-        index: true,
-        element: <Home />,
-      },
-      {
-        path: "addreservation",
-        element: <AddReservation />,
-      },
-      {
-        path: "reservations",
-        element: <ReservationList />,
-      },
-      {
-        path: "reservationdetail/:idQr",
-        element: <ReservationDetail />,
-      },
-      {
-        path: "reservationdetailAdmin",
-        element: <ReservationDetailAdmin />,
-      },
-      {
-        path: "formEquipo",
-        element: <FormEquipo />,
-      },
-      {
-        path: "formEspacio",
-        element: <CreacionEspacio />,
-      },
-      {
-        path: "formChat",
-        element: <FormChat />,
-      },
-      {
-        path: "equipmentavailability",
-        element: <EquipmentAvailabilityPage />,
-      },
-      {
-        path: "menu",
-        element: <OptionsReservation />,
-      },
-      {
-        path: "reservationsroom",
-        element: <ReservationRoom />,
-      },
-      {
-        path: "tipoequipo",
-        element: <TipoEquipos />,
-      },
-      {
-        path: "equipo",
-        element: <Equipos />,
-      },
-      {
-        path: "formUsuario",
-        element: <FormUsuario />,
-      },
-      {
-        path: "editarUsuario/:id",
-        element: <EditUsuario />,
-      },
-      {
-        path: "qrScan",
-        element: <QrScan />,
-      },
-      {
-        path: "espacioList",
-        element: <EspacioList />,
-      },
-      {
-        path: "reservations-room",
-        element: <ReservationRoomList />,
-      },
-      {
-        path: "approvereservations",
-        element: <ApproveReservations />,
-      },
-      {
-        path: "perfil",
-        element: <VerPerfil />,
-      },
-      {
-        path: "editarPerfil",
-        element: <EditPerfil />,
-      },
-      {
-        path: "actualizarEstado/:id",
-        element: <ReservacionEstado />,
-      },
-      {
-        path: "actualizarEstadoAula/:id",
-        element: <ReservacionEstadoAula />,
-      },
-      {
-        path: "bitacora",
-        element: <BitacoraPage />,
-      },
-      {
-        path: "notifications",
-        element: <NotificationsList />,
-      },
-      {
-        path: "prediccion",
-        element: <PrediccionPage />,
-      },
-      {
-        path: "administracion",
-        element: <OpcionesPanel />,
+        path: "/",
+        element: <ProtectedLayout />, // ← layout adicional si querés
+        children: [
+          {
+            index: true,
+            element: <Home />,
+          },
+          {
+            path: "addreservation",
+            element: <AddReservation />,
+          },
+          {
+            path: "reservations",
+            element: <ReservationList />,
+          },
+          {
+            path: "reservationdetail/:idQr",
+            element: <ReservationDetail />,
+          },
+          {
+            path: "reservationdetailAdmin",
+            element: <ReservationDetailAdmin />,
+          },
+          {
+            path: "formEquipo",
+            element: <FormEquipo />,
+          },
+          {
+            path: "formEspacio",
+            element: <CreacionEspacio />,
+          },
+          {
+            path: "formChat",
+            element: <FormChat />,
+          },
+          {
+            path: "equipmentavailability",
+            element: <EquipmentAvailabilityPage />,
+          },
+          {
+            path: "menu",
+            element: <OptionsReservation />,
+          },
+          {
+            path: "reservationsroom",
+            element: <ReservationRoom />,
+          },
+          {
+            path: "tipoequipo",
+            element: <TipoEquipos />,
+          },
+          {
+            path: "equipo",
+            element: <Equipos />,
+          },
+          {
+            path: "formUsuario",
+            element: <FormUsuario />,
+          },
+          {
+            path: "editarUsuario/:id",
+            element: <EditUsuario />,
+          },
+          {
+            path: "qrScan",
+            element: <QrScan />,
+          },
+          {
+            path: "espacioList",
+            element: <EspacioList />,
+          },
+          {
+            path: "reservations-room",
+            element: <ReservationRoomList />,
+          },
+          {
+            path: "approvereservations",
+            element: <ApproveReservations />,
+          },
+          {
+            path: "perfil",
+            element: <VerPerfil />,
+          },
+          {
+            path: "editarPerfil",
+            element: <EditPerfil />,
+          },
+          {
+            path: "actualizarEstado/:id",
+            element: <ReservacionEstado />,
+          },
+          {
+            path: "actualizarEstadoAula/:id",
+            element: <ReservacionEstadoAula />,
+          },
+          {
+            path: "bitacora",
+            element: <BitacoraPage />,
+          },
+          {
+            path: "notifications",
+            element: <NotificationsList />,
+          },
+          {
+            path: "prediccion",
+            element: <PrediccionPage />,
+          },
+          {
+            path: "administracion",
+            element: <OpcionesPanel />,
+          },
+        ],
       },
     ],
   },

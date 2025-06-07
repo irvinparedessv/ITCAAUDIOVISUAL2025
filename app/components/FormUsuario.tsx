@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "react-hot-toast";
-import { createUsuario } from "~/services/userService";
+import { createUsuario } from "../services/userService";
 import { useNavigate } from "react-router-dom";
 import {
   FaSave,
@@ -12,27 +12,27 @@ import {
   FaTrash,
   FaUserCircle,
 } from "react-icons/fa";
-import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
-import type { Crop, PixelCrop } from 'react-image-crop';
+import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
+import type { Crop, PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 
 function centerAspectCrop(
   mediaWidth: number,
   mediaHeight: number,
-  aspect: number,
+  aspect: number
 ) {
   return centerCrop(
     makeAspectCrop(
       {
-        unit: '%',
+        unit: "%",
         width: 90,
       },
       aspect,
       mediaWidth,
-      mediaHeight,
+      mediaHeight
     ),
     mediaWidth,
-    mediaHeight,
+    mediaHeight
   );
 }
 
@@ -70,12 +70,13 @@ export default function FormUsuario() {
   const maxImageSize = 2 * 1024 * 1024;
 
   useEffect(() => {
-    if (completedCrop?.width && completedCrop?.height && imgRef.current && previewCanvasRef.current) {
-      canvasPreview(
-        imgRef.current,
-        previewCanvasRef.current,
-        completedCrop,
-      );
+    if (
+      completedCrop?.width &&
+      completedCrop?.height &&
+      imgRef.current &&
+      previewCanvasRef.current
+    ) {
+      canvasPreview(imgRef.current, previewCanvasRef.current, completedCrop);
     }
   }, [completedCrop]);
 
@@ -84,7 +85,9 @@ export default function FormUsuario() {
     const file = acceptedFiles[0];
     if (file) {
       if (!imageTypes.includes(file.type)) {
-        toast.error("Solo se permiten archivos de imagen (JPEG, PNG, JPG, GIF)");
+        toast.error(
+          "Solo se permiten archivos de imagen (JPEG, PNG, JPG, GIF)"
+        );
         return;
       }
 
@@ -94,8 +97,8 @@ export default function FormUsuario() {
       }
 
       const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setImgSrc(reader.result?.toString() || '');
+      reader.addEventListener("load", () => {
+        setImgSrc(reader.result?.toString() || "");
         setShowCropModal(true);
       });
       reader.readAsDataURL(file);
@@ -120,14 +123,20 @@ export default function FormUsuario() {
 
   const handleSaveCroppedImage = () => {
     if (previewCanvasRef.current) {
-      previewCanvasRef.current.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], "profile-image.jpg", { type: "image/jpeg" });
-          setFormData((prev) => ({ ...prev, image: file }));
-          setImagePreview(URL.createObjectURL(blob));
-          setShowCropModal(false);
-        }
-      }, "image/jpeg", 0.9);
+      previewCanvasRef.current.toBlob(
+        (blob) => {
+          if (blob) {
+            const file = new File([blob], "profile-image.jpg", {
+              type: "image/jpeg",
+            });
+            setFormData((prev) => ({ ...prev, image: file }));
+            setImagePreview(URL.createObjectURL(blob));
+            setShowCropModal(false);
+          }
+        },
+        "image/jpeg",
+        0.9
+      );
     }
   };
 
@@ -356,9 +365,7 @@ export default function FormUsuario() {
             value={formData.address}
             onChange={handleChange}
             onBlur={handleBlur}
-            className={`form-control ${
-              formErrors.address ? "is-invalid" : ""
-            }`}
+            className={`form-control ${formErrors.address ? "is-invalid" : ""}`}
           />
           {formErrors.address && (
             <div className="invalid-feedback">{formErrors.address}</div>
@@ -475,12 +482,20 @@ export default function FormUsuario() {
       </form>
 
       {/* Modal para recortar imagen */}
-      <div className={`modal ${showCropModal ? 'd-block' : 'd-none'}`} tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div
+        className={`modal ${showCropModal ? "d-block" : "d-none"}`}
+        tabIndex={-1}
+        style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+      >
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">Recortar Imagen</h5>
-              <button type="button" className="btn-close" onClick={() => setShowCropModal(false)}></button>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setShowCropModal(false)}
+              ></button>
             </div>
             <div className="modal-body">
               <div className="d-flex flex-column align-items-center">
@@ -501,7 +516,7 @@ export default function FormUsuario() {
                     />
                   </ReactCrop>
                 )}
-                
+
                 <div className="mt-3">
                   <h5>Vista previa:</h5>
                   <canvas
@@ -518,10 +533,18 @@ export default function FormUsuario() {
               </div>
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowCropModal(false)}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowCropModal(false)}
+              >
                 Cancelar
               </button>
-              <button type="button" className="btn btn-primary" onClick={handleSaveCroppedImage}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSaveCroppedImage}
+              >
                 Guardar Recorte
               </button>
             </div>
@@ -536,11 +559,11 @@ export default function FormUsuario() {
 function canvasPreview(
   image: HTMLImageElement,
   canvas: HTMLCanvasElement,
-  crop: PixelCrop,
+  crop: PixelCrop
 ) {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   if (!ctx) {
-    throw new Error('No 2d context');
+    throw new Error("No 2d context");
   }
 
   const scaleX = image.naturalWidth / image.width;
@@ -551,7 +574,7 @@ function canvasPreview(
   canvas.height = Math.floor(crop.height * pixelRatio);
 
   ctx.scale(pixelRatio, pixelRatio);
-  ctx.imageSmoothingQuality = 'high';
+  ctx.imageSmoothingQuality = "high";
 
   const cropX = crop.x * scaleX;
   const cropY = crop.y * scaleY;

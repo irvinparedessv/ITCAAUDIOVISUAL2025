@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { getUsuarioById, updateUsuario } from "~/services/userService";
-import type { UserUpdateDTO } from "~/types/user";
+import { getUsuarioById, updateUsuario } from "../../services/userService";
+import type { UserUpdateDTO } from "app/types/user";
 import { FaSave, FaTimes, FaUserEdit, FaTrash } from "react-icons/fa";
 
 const rolesMap = [
@@ -72,8 +72,14 @@ const EditUsuario = () => {
     if (!formData.email.trim()) {
       toast.error("El correo electrónico es obligatorio");
       isValid = false;
-    } else if (!/^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)?(edu\.sv|esdu\.edu\.sv)$/.test(formData.email)) {
-      toast.error("Debe ingresar un correo institucional válido (terminado en .edu.sv o esdu.edu.sv)");
+    } else if (
+      !/^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)?(edu\.sv|esdu\.edu\.sv)$/.test(
+        formData.email
+      )
+    ) {
+      toast.error(
+        "Debe ingresar un correo institucional válido (terminado en .edu.sv o esdu.edu.sv)"
+      );
       isValid = false;
     }
 
@@ -93,10 +99,12 @@ const EditUsuario = () => {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
-    
+
     // Formateo especial para teléfono
     let newValue = value;
     if (name === "phone") {
@@ -110,40 +118,44 @@ const EditUsuario = () => {
 
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "role_id" || name === "estado" ? Number(newValue) : newValue,
+      [name]:
+        name === "role_id" || name === "estado" ? Number(newValue) : newValue,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
     if (!id) return;
 
-    toast((t) => (
-      <div className="text-center">
-        <p>¿Confirmas que deseas actualizar este usuario?</p>
-        <div className="d-flex justify-content-center gap-3 mt-3">
-          <button 
-            className="btn btn-sm btn-success"
-            onClick={() => {
-              submitUpdate();
-              toast.dismiss(t.id);
-            }}
-          >
-            Sí, actualizar
-          </button>
-          <button 
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
+    toast(
+      (t) => (
+        <div className="text-center">
+          <p>¿Confirmas que deseas actualizar este usuario?</p>
+          <div className="d-flex justify-content-center gap-3 mt-3">
+            <button
+              className="btn btn-sm btn-success"
+              onClick={() => {
+                submitUpdate();
+                toast.dismiss(t.id);
+              }}
+            >
+              Sí, actualizar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ), {
-      duration: 10000,
-    });
+      ),
+      {
+        duration: 10000,
+      }
+    );
   };
 
   const submitUpdate = async () => {
@@ -181,7 +193,9 @@ const EditUsuario = () => {
       <form onSubmit={handleSubmit}>
         <div className="row mb-4">
           <div className="col-md-6 mb-3 mb-md-0">
-            <label htmlFor="first_name" className="form-label">Nombres</label>
+            <label htmlFor="first_name" className="form-label">
+              Nombres
+            </label>
             <input
               id="first_name"
               name="first_name"
@@ -194,7 +208,9 @@ const EditUsuario = () => {
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="last_name" className="form-label">Apellidos</label>
+            <label htmlFor="last_name" className="form-label">
+              Apellidos
+            </label>
             <input
               id="last_name"
               name="last_name"
@@ -208,7 +224,9 @@ const EditUsuario = () => {
         </div>
 
         <div className="mb-4">
-          <label htmlFor="email" className="form-label">Correo Electrónico</label>
+          <label htmlFor="email" className="form-label">
+            Correo Electrónico
+          </label>
           <input
             id="email"
             name="email"
@@ -218,12 +236,16 @@ const EditUsuario = () => {
             onChange={handleChange}
             required
           />
-          <small className="text-muted">El correo institucional no puede modificarse</small>
+          <small className="text-muted">
+            El correo institucional no puede modificarse
+          </small>
         </div>
 
         <div className="row mb-4">
           <div className="col-md-6 mb-3 mb-md-0">
-            <label htmlFor="phone" className="form-label">Teléfono</label>
+            <label htmlFor="phone" className="form-label">
+              Teléfono
+            </label>
             <input
               id="phone"
               name="phone"
@@ -236,7 +258,9 @@ const EditUsuario = () => {
           </div>
 
           <div className="col-md-6">
-            <label htmlFor="role_id" className="form-label">Rol</label>
+            <label htmlFor="role_id" className="form-label">
+              Rol
+            </label>
             <select
               id="role_id"
               name="role_id"
@@ -255,7 +279,9 @@ const EditUsuario = () => {
         </div>
 
         <div className="mb-4">
-          <label htmlFor="address" className="form-label">Dirección</label>
+          <label htmlFor="address" className="form-label">
+            Dirección
+          </label>
           <textarea
             id="address"
             name="address"
@@ -267,7 +293,9 @@ const EditUsuario = () => {
         </div>
 
         <div className="mb-4">
-          <label htmlFor="estado" className="form-label">Estado</label>
+          <label htmlFor="estado" className="form-label">
+            Estado
+          </label>
           <select
             id="estado"
             name="estado"

@@ -3,29 +3,29 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDropzone } from "react-dropzone";
 import { FaSave, FaTimes, FaUserCircle, FaTrash } from "react-icons/fa";
-import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
-import type { Crop, PixelCrop } from 'react-image-crop';
-import { getPerfil, updateProfile } from "~/services/userService";
-import type { UserProfileUpdateDTO } from "~/types/user";
+import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
+import type { Crop, PixelCrop } from "react-image-crop";
+import { getPerfil, updateProfile } from "../../services/userService";
+import type { UserProfileUpdateDTO } from "app/types/user";
 import "react-image-crop/dist/ReactCrop.css";
 
 function centerAspectCrop(
   mediaWidth: number,
   mediaHeight: number,
-  aspect: number,
+  aspect: number
 ) {
   return centerCrop(
     makeAspectCrop(
       {
-        unit: '%',
+        unit: "%",
         width: 90,
       },
       aspect,
       mediaWidth,
-      mediaHeight,
+      mediaHeight
     ),
     mediaWidth,
-    mediaHeight,
+    mediaHeight
   );
 }
 
@@ -44,7 +44,7 @@ const EditPerfil = () => {
     image: "",
     image_url: "",
   });
-  
+
   // Image crop state
   const [imgSrc, setImgSrc] = useState("");
   const [crop, setCrop] = useState<Crop>();
@@ -79,17 +79,21 @@ const EditPerfil = () => {
   }, []);
 
   useEffect(() => {
-    if (completedCrop?.width && completedCrop?.height && imgRef.current && previewCanvasRef.current) {
-      canvasPreview(
-        imgRef.current,
-        previewCanvasRef.current,
-        completedCrop,
-      );
+    if (
+      completedCrop?.width &&
+      completedCrop?.height &&
+      imgRef.current &&
+      previewCanvasRef.current
+    ) {
+      canvasPreview(imgRef.current, previewCanvasRef.current, completedCrop);
     }
   }, [completedCrop]);
 
   const validateField = (name: string, value: any): string => {
-    if (["first_name", "last_name"].includes(name) && (!value || value.trim() === "")) {
+    if (
+      ["first_name", "last_name"].includes(name) &&
+      (!value || value.trim() === "")
+    ) {
       return "Este campo es obligatorio";
     }
 
@@ -150,8 +154,8 @@ const EditPerfil = () => {
     const file = acceptedFiles[0];
     if (file) {
       const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setImgSrc(reader.result?.toString() || '');
+      reader.addEventListener("load", () => {
+        setImgSrc(reader.result?.toString() || "");
         setShowCropModal(true);
       });
       reader.readAsDataURL(file);
@@ -176,13 +180,23 @@ const EditPerfil = () => {
 
   const handleSaveCroppedImage = () => {
     if (previewCanvasRef.current) {
-      previewCanvasRef.current.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], "profile-image.jpg", { type: "image/jpeg" });
-          setFormData((prev) => ({ ...prev, image: file, image_url: URL.createObjectURL(blob) }));
-          setShowCropModal(false);
-        }
-      }, "image/jpeg", 0.9);
+      previewCanvasRef.current.toBlob(
+        (blob) => {
+          if (blob) {
+            const file = new File([blob], "profile-image.jpg", {
+              type: "image/jpeg",
+            });
+            setFormData((prev) => ({
+              ...prev,
+              image: file,
+              image_url: URL.createObjectURL(blob),
+            }));
+            setShowCropModal(false);
+          }
+        },
+        "image/jpeg",
+        0.9
+      );
     }
   };
 
@@ -327,9 +341,7 @@ const EditPerfil = () => {
             value={formData.address}
             onChange={handleChange}
             onBlur={handleBlur}
-            className={`form-control ${
-              formErrors.address ? "is-invalid" : ""
-            }`}
+            className={`form-control ${formErrors.address ? "is-invalid" : ""}`}
           />
           {formErrors.address && (
             <div className="invalid-feedback">{formErrors.address}</div>
@@ -385,12 +397,10 @@ const EditPerfil = () => {
         </div>
 
         <div className="form-actions">
-          <button
-            type="submit"
-            className="btn primary-btn"
-            disabled={saving}
-          >
-            {saving ? "Guardando..." : (
+          <button type="submit" className="btn primary-btn" disabled={saving}>
+            {saving ? (
+              "Guardando..."
+            ) : (
               <>
                 <FaSave className="me-2" />
                 Guardar Cambios
@@ -409,12 +419,20 @@ const EditPerfil = () => {
       </form>
 
       {/* Modal para recortar imagen */}
-      <div className={`modal ${showCropModal ? 'd-block' : 'd-none'}`} tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div
+        className={`modal ${showCropModal ? "d-block" : "d-none"}`}
+        tabIndex={-1}
+        style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+      >
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">Recortar Imagen</h5>
-              <button type="button" className="btn-close" onClick={() => setShowCropModal(false)}></button>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setShowCropModal(false)}
+              ></button>
             </div>
             <div className="modal-body">
               <div className="d-flex flex-column align-items-center">
@@ -435,7 +453,7 @@ const EditPerfil = () => {
                     />
                   </ReactCrop>
                 )}
-                
+
                 <div className="mt-3">
                   <h5>Vista previa:</h5>
                   <canvas
@@ -452,10 +470,18 @@ const EditPerfil = () => {
               </div>
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowCropModal(false)}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowCropModal(false)}
+              >
                 Cancelar
               </button>
-              <button type="button" className="btn btn-primary" onClick={handleSaveCroppedImage}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSaveCroppedImage}
+              >
                 Guardar Recorte
               </button>
             </div>
@@ -472,11 +498,11 @@ export default EditPerfil;
 function canvasPreview(
   image: HTMLImageElement,
   canvas: HTMLCanvasElement,
-  crop: PixelCrop,
+  crop: PixelCrop
 ) {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   if (!ctx) {
-    throw new Error('No 2d context');
+    throw new Error("No 2d context");
   }
 
   const scaleX = image.naturalWidth / image.width;
@@ -487,7 +513,7 @@ function canvasPreview(
   canvas.height = Math.floor(crop.height * pixelRatio);
 
   ctx.scale(pixelRatio, pixelRatio);
-  ctx.imageSmoothingQuality = 'high';
+  ctx.imageSmoothingQuality = "high";
 
   const cropX = crop.x * scaleX;
   const cropY = crop.y * scaleY;

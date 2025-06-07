@@ -7,7 +7,7 @@ import type {
   ReservaData,
   ReservaDataRoom,
 } from "./types";
-import { getTipoReservas } from "~/services/tipoReservaService";
+import { getTipoReservas } from "../../services/tipoReservaService";
 import { Steps } from "./steps";
 
 export const useChatbotLogic = (user: any) => {

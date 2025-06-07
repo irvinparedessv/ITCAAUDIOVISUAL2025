@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from "react";
 import {
   LineChart,
   Line,
@@ -9,16 +9,21 @@ import {
   Legend,
   ResponsiveContainer,
   Brush,
-} from 'recharts';
-import html2canvas from 'html2canvas';
-import { getPrediccion, getPrediccionesPorTipo } from '~/services/prediccionService';
-import type { PrediccionData } from '~/types/predict';
-import type { TipoEquipo } from '~/types/tipoEquipo';
+} from "recharts";
+import html2canvas from "html2canvas";
+import {
+  getPrediccion,
+  getPrediccionesPorTipo,
+} from "../services/prediccionService";
+import type { PrediccionData } from "app/types/predict";
+import type { TipoEquipo } from "app/types/tipoEquipo";
 
 export default function PrediccionPage() {
   const [data, setData] = useState<PrediccionData[]>([]);
   const [tipos, setTipos] = useState<TipoEquipo[]>([]);
-  const [tipoSeleccionado, setTipoSeleccionado] = useState<number | undefined>();
+  const [tipoSeleccionado, setTipoSeleccionado] = useState<
+    number | undefined
+  >();
   const [precision, setPrecision] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [showRL, setShowRL] = useState(true);
@@ -29,10 +34,14 @@ export default function PrediccionPage() {
     setLoading(true);
     try {
       const result = await getPrediccion(tipo);
-      setData([...result.historico, ...result.predicciones].sort((a, b) => a.mes_numero - b.mes_numero));
+      setData(
+        [...result.historico, ...result.predicciones].sort(
+          (a, b) => a.mes_numero - b.mes_numero
+        )
+      );
       setPrecision(result.precision);
     } catch (error) {
-      console.error('Error al cargar predicciones:', error);
+      console.error("Error al cargar predicciones:", error);
     } finally {
       setLoading(false);
     }
@@ -43,7 +52,7 @@ export default function PrediccionPage() {
       const result = await getPrediccionesPorTipo();
       setTipos(result.map((item: any) => item.tipo_equipo));
     } catch (error) {
-      console.error('Error al cargar tipos:', error);
+      console.error("Error al cargar tipos:", error);
     }
   };
 
@@ -53,21 +62,24 @@ export default function PrediccionPage() {
   }, []);
 
   const exportarCSV = () => {
-    const encabezados = ['Mes', 'Cantidad', 'Tipo', 'Regresión Lineal', 'SVR'];
+    const encabezados = ["Mes", "Cantidad", "Tipo", "Regresión Lineal", "SVR"];
     const filas = data.map((d) => [
       d.mes,
       d.cantidad,
       d.tipo,
-      d.detalle?.regresion_lineal ?? '',
-      d.detalle?.svr ?? '',
+      d.detalle?.regresion_lineal ?? "",
+      d.detalle?.svr ?? "",
     ]);
-    const contenido = [encabezados.join(','), ...filas.map((fila) => fila.join(','))].join('\n');
-    const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
+    const contenido = [
+      encabezados.join(","),
+      ...filas.map((fila) => fila.join(",")),
+    ].join("\n");
+    const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
 
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'prediccion_reservas.csv';
+    a.download = "prediccion_reservas.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -75,9 +87,9 @@ export default function PrediccionPage() {
   const exportarImagen = async () => {
     if (!chartRef.current) return;
     const canvas = await html2canvas(chartRef.current);
-    const link = document.createElement('a');
-    link.download = 'grafico_prediccion.png';
-    link.href = canvas.toDataURL('image/png');
+    const link = document.createElement("a");
+    link.download = "grafico_prediccion.png";
+    link.href = canvas.toDataURL("image/png");
     link.click();
   };
 
@@ -90,7 +102,7 @@ export default function PrediccionPage() {
         <select
           className="form-select"
           style={{ maxWidth: 250 }}
-          value={tipoSeleccionado ?? ''}
+          value={tipoSeleccionado ?? ""}
           onChange={(e) => {
             const tipo = e.target.value ? parseInt(e.target.value) : undefined;
             setTipoSeleccionado(tipo);
@@ -113,7 +125,9 @@ export default function PrediccionPage() {
             onChange={() => setShowRL(!showRL)}
             id="rlCheckbox"
           />
-          <label className="form-check-label" htmlFor="rlCheckbox">Regresión Lineal</label>
+          <label className="form-check-label" htmlFor="rlCheckbox">
+            Regresión Lineal
+          </label>
         </div>
         <div className="form-check">
           <input
@@ -123,7 +137,9 @@ export default function PrediccionPage() {
             onChange={() => setShowSVR(!showSVR)}
             id="svrCheckbox"
           />
-          <label className="form-check-label" htmlFor="svrCheckbox">SVR</label>
+          <label className="form-check-label" htmlFor="svrCheckbox">
+            SVR
+          </label>
         </div>
       </div>
 
@@ -140,15 +156,23 @@ export default function PrediccionPage() {
         <p>Cargando datos...</p>
       ) : (
         <>
-          <div ref={chartRef} style={{ width: '100%', height: 400 }}>
+          <div ref={chartRef} style={{ width: "100%", height: 400 }}>
             <ResponsiveContainer>
-              <LineChart data={data} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
+              <LineChart
+                data={data}
+                margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="cantidad" stroke="#007bff" name="Reservas" />
+                <Line
+                  type="monotone"
+                  dataKey="cantidad"
+                  stroke="#007bff"
+                  name="Reservas"
+                />
                 {showRL && (
                   <Line
                     type="monotone"
@@ -179,7 +203,9 @@ export default function PrediccionPage() {
               Precisión del modelo: <strong>{precision.toFixed(2)}%</strong>
             </p>
           )}
-  <h2 className="text-lg font-semibold mb-2 text-gray-800">📄 Detalle de Datos</h2>
+          <h2 className="text-lg font-semibold mb-2 text-gray-800">
+            📄 Detalle de Datos
+          </h2>
           <div className="mt-5 d-flex justify-content-center">
             <div className="table-responsive" style={{ maxHeight: 400 }}>
               <table className="table table-bordered table-striped table-sm text-center align-middle">
@@ -198,8 +224,8 @@ export default function PrediccionPage() {
                       <td>{item.mes}</td>
                       <td>{item.cantidad}</td>
                       <td>{item.tipo}</td>
-                      <td>{item.detalle?.regresion_lineal ?? '-'}</td>
-                      <td>{item.detalle?.svr ?? '-'}</td>
+                      <td>{item.detalle?.regresion_lineal ?? "-"}</td>
+                      <td>{item.detalle?.svr ?? "-"}</td>
                     </tr>
                   ))}
                 </tbody>

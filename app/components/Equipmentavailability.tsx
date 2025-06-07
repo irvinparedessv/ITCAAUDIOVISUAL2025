@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
-import { Badge, Button, Container, Form, Alert, Spinner } from "react-bootstrap";
+import {
+  Badge,
+  Button,
+  Container,
+  Form,
+  Alert,
+  Spinner,
+} from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import api from '~/api/axios';
+import api from "../api/axios";
 
 type Equipment = {
   id: number;
@@ -33,24 +40,23 @@ export default function EquipmentAvailabilityList() {
   const [availabilityData, setAvailabilityData] = useState<AvailabilityData>({
     fecha: null,
     startTime: "08:00",
-    endTime: "17:00"
+    endTime: "17:00",
   });
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-const fetchEquipment = async () => {
-  try {
-    const response = await api.get("/equipos");
-    console.log('equipos:', response.data);
-    // Accede a response.data.data donde está el array real
-    setEquipmentList(response.data.data || []); // Usamos || [] como fallback por si es undefined
-  } catch (err) {
-    setError("Error al cargar los equipos");
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  const fetchEquipment = async () => {
+    try {
+      const response = await api.get("/equipos");
+      console.log("equipos:", response.data);
+      // Accede a response.data.data donde está el array real
+      setEquipmentList(response.data.data || []); // Usamos || [] como fallback por si es undefined
+    } catch (err) {
+      setError("Error al cargar los equipos");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchEquipment();
@@ -64,27 +70,33 @@ const fetchEquipment = async () => {
 
     setCheckingAvailability(true);
     try {
-      const fechaStr = availabilityData.fecha.toISOString().split('T')[0];
-      
+      const fechaStr = availabilityData.fecha.toISOString().split("T")[0];
+
       const updatedEquipmentList = await Promise.all(
         equipmentList.map(async (equipo) => {
           try {
-            const response = await api.get(`/equipos/${equipo.id}/disponibilidad`, {
-              params: {
-                fecha: fechaStr,
-                startTime: availabilityData.startTime,
-                endTime: availabilityData.endTime
+            const response = await api.get(
+              `/equipos/${equipo.id}/disponibilidad`,
+              {
+                params: {
+                  fecha: fechaStr,
+                  startTime: availabilityData.startTime,
+                  endTime: availabilityData.endTime,
+                },
               }
-            });
+            );
             return {
               ...equipo,
-              disponibilidad: response.data.disponibilidad
+              disponibilidad: response.data.disponibilidad,
             };
           } catch (err) {
-            console.error(`Error verificando disponibilidad para equipo ${equipo.id}:`, err);
+            console.error(
+              `Error verificando disponibilidad para equipo ${equipo.id}:`,
+              err
+            );
             return {
               ...equipo,
-              disponibilidad: undefined
+              disponibilidad: undefined,
             };
           }
         })
@@ -103,27 +115,34 @@ const fetchEquipment = async () => {
     setAvailabilityData({
       fecha: null,
       startTime: "08:00",
-      endTime: "17:00"
+      endTime: "17:00",
     });
-    setEquipmentList(prev => prev.map(equipo => ({
-      ...equipo,
-      disponibilidad: undefined
-    })));
+    setEquipmentList((prev) =>
+      prev.map((equipo) => ({
+        ...equipo,
+        disponibilidad: undefined,
+      }))
+    );
   };
 
-  if (loading) return (
-    <Container className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
-      <Spinner animation="border" variant="primary" />
-    </Container>
-  );
+  if (loading)
+    return (
+      <Container
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "80vh" }}
+      >
+        <Spinner animation="border" variant="primary" />
+      </Container>
+    );
 
-  if (error) return (
-    <Container className="my-5">
-      <Alert variant="danger" className="text-center">
-        {error}
-      </Alert>
-    </Container>
-  );
+  if (error)
+    return (
+      <Container className="my-5">
+        <Alert variant="danger" className="text-center">
+          {error}
+        </Alert>
+      </Container>
+    );
 
   return (
     <div className="container py-5">
@@ -131,7 +150,7 @@ const fetchEquipment = async () => {
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h4 className="mb-0 text-center">Listado de Equipos Disponibles</h4>
           <div>
-            <Button 
+            <Button
               variant="primary"
               className="me-2 btn-custom-red"
               onClick={checkAllAvailability}
@@ -142,12 +161,11 @@ const fetchEquipment = async () => {
                   <Spinner as="span" size="sm" animation="border" />
                   <span className="ms-2">Verificando...</span>
                 </>
-              ) : 'Ver Disponibilidad'}
+              ) : (
+                "Ver Disponibilidad"
+              )}
             </Button>
-            <Button 
-              variant="outline-secondary"
-              onClick={handleClearFilters}
-            >
+            <Button variant="outline-secondary" onClick={handleClearFilters}>
               Limpiar Filtros
             </Button>
           </div>
@@ -161,7 +179,9 @@ const fetchEquipment = async () => {
                 <Form.Label>Fecha</Form.Label>
                 <DatePicker
                   selected={availabilityData.fecha}
-                  onChange={(date: Date | null) => setAvailabilityData({...availabilityData, fecha: date})}
+                  onChange={(date: Date | null) =>
+                    setAvailabilityData({ ...availabilityData, fecha: date })
+                  }
                   className="form-control"
                   dateFormat="yyyy-MM-dd"
                   minDate={new Date()}
@@ -176,7 +196,12 @@ const fetchEquipment = async () => {
                 <Form.Control
                   type="time"
                   value={availabilityData.startTime}
-                  onChange={(e) => setAvailabilityData({...availabilityData, startTime: e.target.value})}
+                  onChange={(e) =>
+                    setAvailabilityData({
+                      ...availabilityData,
+                      startTime: e.target.value,
+                    })
+                  }
                 />
               </Form.Group>
             </div>
@@ -186,7 +211,12 @@ const fetchEquipment = async () => {
                 <Form.Control
                   type="time"
                   value={availabilityData.endTime}
-                  onChange={(e) => setAvailabilityData({...availabilityData, endTime: e.target.value})}
+                  onChange={(e) =>
+                    setAvailabilityData({
+                      ...availabilityData,
+                      endTime: e.target.value,
+                    })
+                  }
                 />
               </Form.Group>
             </div>
@@ -194,15 +224,24 @@ const fetchEquipment = async () => {
           {availabilityData.fecha && (
             <div className="mt-2 text-muted">
               <small>
-                Mostrando disponibilidad para: {availabilityData.fecha.toLocaleDateString()} de {availabilityData.startTime} a {availabilityData.endTime}
+                Mostrando disponibilidad para:{" "}
+                {availabilityData.fecha.toLocaleDateString()} de{" "}
+                {availabilityData.startTime} a {availabilityData.endTime}
               </small>
             </div>
           )}
         </div>
 
-        {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+        {error && (
+          <Alert variant="danger" className="mb-4">
+            {error}
+          </Alert>
+        )}
 
-        <table className="table table-hover align-middle text-center overflow-hidden" style={{ borderRadius: "0.8rem" }}>
+        <table
+          className="table table-hover align-middle text-center overflow-hidden"
+          style={{ borderRadius: "0.8rem" }}
+        >
           <thead className="table-dark">
             <tr>
               <th className="rounded-top-start">Nombre</th>
@@ -222,7 +261,8 @@ const fetchEquipment = async () => {
                   {equipment.disponibilidad ? (
                     <>
                       {equipment.disponibilidad.cantidad_disponible}
-                      {equipment.disponibilidad.cantidad_disponible === equipment.cantidad}
+                      {equipment.disponibilidad.cantidad_disponible ===
+                        equipment.cantidad}
                     </>
                   ) : (
                     equipment.cantidad
@@ -233,18 +273,22 @@ const fetchEquipment = async () => {
                 <td>
                   <Badge
                     bg={
-                      (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
+                      (equipment.disponibilidad?.cantidad_disponible ??
+                        equipment.cantidad) === 0
                         ? "danger"
-                        : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) < equipment.cantidad
+                        : (equipment.disponibilidad?.cantidad_disponible ??
+                            equipment.cantidad) < equipment.cantidad
                         ? "warning"
                         : "success"
                     }
                     className="px-3 py-2"
                     style={{ fontSize: "0.9rem" }}
                   >
-                    {(equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
+                    {(equipment.disponibilidad?.cantidad_disponible ??
+                      equipment.cantidad) === 0
                       ? "Agotado"
-                      : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) < equipment.cantidad
+                      : (equipment.disponibilidad?.cantidad_disponible ??
+                          equipment.cantidad) < equipment.cantidad
                       ? "Limitado"
                       : "Disponible"}
                   </Badge>

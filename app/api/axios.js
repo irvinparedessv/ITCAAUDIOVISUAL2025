@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api", // la URL de tu backend Laravel
+  baseURL: "https://apiv2.prestamod612.online/api", // la URL de tu backend Laravel
   withCredentials: true, // necesario para que envíe cookies (Sanctum)
 });
 

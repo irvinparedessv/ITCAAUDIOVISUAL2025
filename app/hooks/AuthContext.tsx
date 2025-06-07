@@ -6,9 +6,9 @@ import React, {
   useMemo,
 } from "react";
 import api from "../api/axios";
-import { routeRoles } from "~/types/routeRoles";
-import type { UserLogin } from "~/types/user";
-import { initializeEcho } from "~/utils/pusher";
+import { routeRoles } from "../types/routeRoles";
+import type { UserLogin } from "../types/user";
+import { initializeEcho } from "../utils/pusher";
 
 type AuthContextType = {
   token: string | null;
@@ -151,6 +151,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth debe usarse dentro de AuthProvider");
+  console.log("useAuth context:", context);
+  if (!context) {
+    console.log(context);
+    throw new Error("useAuth debe usarse dentro de AuthProvider");
+  }
   return context;
 };

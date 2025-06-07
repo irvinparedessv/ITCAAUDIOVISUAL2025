@@ -4,15 +4,13 @@ import api from "../api/axios";
 import { useAuth } from "../hooks/AuthContext";
 import toast from "react-hot-toast";
 import { FaEye, FaFilter } from "react-icons/fa";
-import type { TipoReserva } from "~/types/tipoReserva";
-import type { Bitacora } from "~/types/bitacora";
-
+import type { TipoReserva } from "app/types/tipoReserva";
+import type { Bitacora } from "app/types/bitacora";
 
 type Role = {
   id: number;
   nombre: string;
 };
-
 
 type User = {
   id: number;
@@ -28,7 +26,6 @@ type User = {
   role_id: number;
   role: Role;
 };
-
 
 type Equipo = {
   id: number;
@@ -46,14 +43,12 @@ type Equipo = {
   };
 };
 
-
 type CodigoQR = {
   id: string; // GUID
   reserva_id: number;
   created_at: string;
   updated_at: string;
 };
-
 
 type Reservation = {
   id: number;
@@ -70,26 +65,29 @@ type Reservation = {
   tipo_reserva: TipoReserva;
 };
 
-
 export default function ReservationList() {
   const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [filteredReservations, setFilteredReservations] = useState<Reservation[]>([]);
-  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [filteredReservations, setFilteredReservations] = useState<
+    Reservation[]
+  >([]);
+  const [selectedReservation, setSelectedReservation] =
+    useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const qrBaseUrl = "https://midominio.com/qrcode/";
   const [historial, setHistorial] = useState<Bitacora[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
-  const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
+  const [historialCache, setHistorialCache] = useState<
+    Record<number, Bitacora[]>
+  >({});
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
- 
+
   // Estados para los filtros
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [typeFilter, setTypeFilter] = useState<string>("Todos");
   const [showFilters, setShowFilters] = useState(false);
   const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
-
 
   // Obtener tipos de reserva para el filtro
   useEffect(() => {
@@ -102,10 +100,9 @@ export default function ReservationList() {
         toast.error("Error al cargar tipos de reserva");
       }
     };
-   
+
     fetchTipoReservas();
   }, []);
-
 
   const fetchHistorial = async (reservaId: number) => {
     if (historialCache[reservaId]) {
@@ -113,12 +110,11 @@ export default function ReservationList() {
       return;
     }
 
-
     setLoadingHistorial(true);
     try {
       const response = await api.get(`/bitacoras/reserva/${reservaId}`);
       setHistorial(response.data);
-      setHistorialCache(prev => ({...prev, [reservaId]: response.data}));
+      setHistorialCache((prev) => ({ ...prev, [reservaId]: response.data }));
     } catch (error) {
       console.error("Error al obtener historial:", error);
       toast.error("Error al cargar el historial de cambios");
@@ -127,13 +123,11 @@ export default function ReservationList() {
     }
   };
 
-
   useEffect(() => {
     if (showModal && selectedReservation) {
       fetchHistorial(selectedReservation.id);
     }
   }, [showModal, selectedReservation]);
-
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -147,32 +141,29 @@ export default function ReservationList() {
       }
     };
 
-
     if (user?.id) {
       fetchReservations();
     }
   }, [user]);
 
-
   // Aplicar filtros cuando cambian los valores
   useEffect(() => {
     let result = [...reservations];
-   
+
     // Filtrar por estado
     if (statusFilter !== "Todos") {
-      result = result.filter(reserva => reserva.estado === statusFilter);
+      result = result.filter((reserva) => reserva.estado === statusFilter);
     }
-   
+
     // Filtrar por tipo
     if (typeFilter !== "Todos") {
-      result = result.filter(reserva =>
-        reserva.tipo_reserva?.nombre === typeFilter
+      result = result.filter(
+        (reserva) => reserva.tipo_reserva?.nombre === typeFilter
       );
     }
-   
+
     setFilteredReservations(result);
   }, [statusFilter, typeFilter, reservations]);
-
 
   const handleDetailClick = (reservation: Reservation) => {
     setHistorial([]);
@@ -180,18 +171,15 @@ export default function ReservationList() {
     setShowModal(true);
   };
 
-
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedReservation(null);
   };
 
-
   const resetFilters = () => {
     setStatusFilter("Todos");
     setTypeFilter("Todos");
   };
-
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -199,11 +187,8 @@ export default function ReservationList() {
     indexOfFirstItem,
     indexOfLastItem
   );
- 
-
 
   const totalPages = Math.ceil(reservations.length / itemsPerPage);
-
 
   // Función para paginación con puntos suspensivos
   const getPageNumbers = () => {
@@ -212,7 +197,6 @@ export default function ReservationList() {
     const rangeWithDots: (number | string)[] = [];
     let l: number | null = null;
 
-
     for (
       let i = Math.max(2, currentPage - delta);
       i <= Math.min(totalPages - 1, currentPage + delta);
@@ -220,7 +204,6 @@ export default function ReservationList() {
     ) {
       range.push(i);
     }
-
 
     for (let i = 1; i <= totalPages; i++) {
       if (i === 1 || i === totalPages || range.includes(i)) {
@@ -232,10 +215,8 @@ export default function ReservationList() {
       }
     }
 
-
     return rangeWithDots;
   };
-
 
   return (
     <div className="container py-5">
@@ -250,7 +231,6 @@ export default function ReservationList() {
             <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
           </Button>
         </div>
-
 
         {/* Panel de filtros */}
         {showFilters && (
@@ -267,11 +247,11 @@ export default function ReservationList() {
                     <option value="Pendiente">Pendiente</option>
                     <option value="approved">Entregado</option>
                     <option value="returned">Devuelto</option>
-                    <option value="rejected">Rechazado</option>                
+                    <option value="rejected">Rechazado</option>
                   </Form.Select>
                 </Form.Group>
               </div>
-             
+
               <div className="col-md-4">
                 <Form.Group>
                   <Form.Label>Tipo de reserva</Form.Label>
@@ -280,7 +260,7 @@ export default function ReservationList() {
                     onChange={(e) => setTypeFilter(e.target.value)}
                   >
                     <option value="Todos">Todos los tipos</option>
-                    {tipoReservas.map(tipo => (
+                    {tipoReservas.map((tipo) => (
                       <option key={tipo.id} value={tipo.nombre}>
                         {tipo.nombre}
                       </option>
@@ -288,7 +268,7 @@ export default function ReservationList() {
                   </Form.Select>
                 </Form.Group>
               </div>
-             
+
               <div className="col-md-4 d-flex align-items-end">
                 <Button
                   variant="outline-danger"
@@ -301,7 +281,6 @@ export default function ReservationList() {
             </div>
           </div>
         )}
-
 
         <table
           className="table table-hover align-middle text-center overflow-hidden"
@@ -381,53 +360,56 @@ export default function ReservationList() {
           </tbody>
         </table>
         {/* Paginación */}
-      <nav className="d-flex justify-content-center mt-4">
-        <ul className="pagination">
-          <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-            <button
-              className="page-link"
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Anterior
-            </button>
-          </li>
-
-
-          {getPageNumbers().map((page, index) =>
-            page === "..." ? (
-              <li key={`dots-${index}`} className="page-item disabled">
-                <span className="page-link">...</span>
-              </li>
-            ) : (
-              <li
-                key={page}
-                className={`page-item ${currentPage === page ? "active" : ""}`}
+        <nav className="d-flex justify-content-center mt-4">
+          <ul className="pagination">
+            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
               >
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(Number(page))}
+                Anterior
+              </button>
+            </li>
+
+            {getPageNumbers().map((page, index) =>
+              page === "..." ? (
+                <li key={`dots-${index}`} className="page-item disabled">
+                  <span className="page-link">...</span>
+                </li>
+              ) : (
+                <li
+                  key={page}
+                  className={`page-item ${
+                    currentPage === page ? "active" : ""
+                  }`}
                 >
-                  {page}
-                </button>
-              </li>
-            )
-          )}
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(Number(page))}
+                  >
+                    {page}
+                  </button>
+                </li>
+              )
+            )}
 
-
-          <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-            <button
-              className="page-link"
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
+            <li
+              className={`page-item ${
+                currentPage === totalPages ? "disabled" : ""
+              }`}
             >
-              Siguiente
-            </button>
-          </li>
-        </ul>
-      </nav>
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente
+              </button>
+            </li>
+          </ul>
+        </nav>
       </div>
-
 
       <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
         <Modal.Header
@@ -447,7 +429,6 @@ export default function ReservationList() {
             Detalles de Reserva #{selectedReservation?.id}
           </Modal.Title>
         </Modal.Header>
-
 
         <Modal.Body style={{ padding: "2rem" }}>
           {selectedReservation && (
@@ -496,7 +477,7 @@ export default function ReservationList() {
                         {selectedReservation.user.email}
                       </p>
                     </div>
-                   
+
                     <div className="d-flex align-items-center mb-3">
                       <span
                         className="d-inline-block text-nowrap me-3"
@@ -527,7 +508,6 @@ export default function ReservationList() {
                     </div>
                   </div>
                 </div>
-
 
                 <div className="mb-4">
                   <div className="d-flex align-items-center mb-3">
@@ -615,7 +595,10 @@ export default function ReservationList() {
                     <h5>Historial de cambios</h5>
                     {loadingHistorial ? (
                       <div className="text-center my-3">
-                        <div className="spinner-border text-primary" role="status">
+                        <div
+                          className="spinner-border text-primary"
+                          role="status"
+                        >
                           <span className="visually-hidden">Cargando...</span>
                         </div>
                       </div>
@@ -639,7 +622,6 @@ export default function ReservationList() {
                   </div>
                 </div>
               </div>
-
 
               {/* Sección derecha - Equipos y QR */}
               <div className="col-md-6">
@@ -687,7 +669,6 @@ export default function ReservationList() {
                   </div>
                 </div>
 
-
                 <div className="mt-4">
                   <div className="d-flex align-items-center mb-3">
                     <div
@@ -702,18 +683,20 @@ export default function ReservationList() {
                     <h5 className="fw-bold mb-0">Código QR</h5>
                   </div>
 
-
                   <div className="ps-5">
                     <div className="text-center">
                       <div className="bg-body-secondary p-3 rounded-3 shadow-sm mb-3 d-inline-block">
                         <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.codigo_qr.id}&size=300x300`}
                           alt="Código QR de Reserva"
-                          style={{ maxWidth: "100%", height: "auto", display: "block" }}
+                          style={{
+                            maxWidth: "100%",
+                            height: "auto",
+                            display: "block",
+                          }}
                         />
                       </div>
                     </div>
-
 
                     <div>
                       <p className="small text-body-secondary mb-1">
@@ -737,7 +720,6 @@ export default function ReservationList() {
   );
 }
 
-
 function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto") {
   switch (estado) {
     case "Pendiente":
@@ -750,7 +732,6 @@ function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto") {
       return "secondary";
   }
 }
-
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);

@@ -1,36 +1,38 @@
-import { useEffect, useState } from 'react'
-import { deleteTipoEquipo, getTipoEquipos } from '~/services/tipoEquipoService'
-import type { TipoEquipo } from '~/types/tipoEquipo'
-import TipoEquipoList from '../components/tipoEquipo/TipoEquipoList'
-import { Toaster } from 'react-hot-toast'
+import { useEffect, useState } from "react";
+import {
+  deleteTipoEquipo,
+  getTipoEquipos,
+} from "../services/tipoEquipoService";
+import type { TipoEquipo } from "app/types/tipoEquipo";
+import TipoEquipoList from "../components/tipoEquipo/TipoEquipoList";
+import { Toaster } from "react-hot-toast";
 
 export default function TipoEquiposPage() {
-  const [tipos, setTipos] = useState<TipoEquipo[]>([])
-  const [tipoEditado, setTipoEditado] = useState<TipoEquipo | undefined>()
+  const [tipos, setTipos] = useState<TipoEquipo[]>([]);
+  const [tipoEditado, setTipoEditado] = useState<TipoEquipo | undefined>();
 
   const cargarTipos = async () => {
-    const data = await getTipoEquipos()
-    setTipos(data)
-    setTipoEditado(undefined)
-  }
+    const data = await getTipoEquipos();
+    setTipos(data);
+    setTipoEditado(undefined);
+  };
 
   useEffect(() => {
-    cargarTipos()
-  }, [])
+    cargarTipos();
+  }, []);
 
   return (
     <>
       <Toaster position="top-right" />
-        <TipoEquipoList
-          tipos={tipos}
-          onEdit={(tipo) => setTipoEditado(tipo)}
-          onDelete={async (id) => {
-            await deleteTipoEquipo(id)
-            cargarTipos()
-          }}
-          onSuccess={cargarTipos}
-        />
+      <TipoEquipoList
+        tipos={tipos}
+        onEdit={(tipo) => setTipoEditado(tipo)}
+        onDelete={async (id) => {
+          await deleteTipoEquipo(id);
+          cargarTipos();
+        }}
+        onSuccess={cargarTipos}
+      />
     </>
-    
-  )
+  );
 }

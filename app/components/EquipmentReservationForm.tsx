@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../api/axios";
-import { getTipoReservas } from "~/services/tipoReservaService";
+import { getTipoReservas } from "../services/tipoReservaService";
 
 export default function EquipmentReservationForm() {
   type OptionType = { value: string; label: string };
@@ -26,19 +26,26 @@ export default function EquipmentReservationForm() {
     aula: null as SingleValue<OptionType>,
   });
 
-  const [allEquipmentOptions, setAllEquipmentOptions] = useState<OptionType[]>([]);
-  const [availableEquipmentOptions, setAvailableEquipmentOptions] = useState<OptionType[]>([]);
+  const [allEquipmentOptions, setAllEquipmentOptions] = useState<OptionType[]>(
+    []
+  );
+  const [availableEquipmentOptions, setAvailableEquipmentOptions] = useState<
+    OptionType[]
+  >([]);
   const [aulaOptions, setAulaOptions] = useState<OptionType[]>([]);
   const [loadingEquipments, setLoadingEquipments] = useState(false); // Cambia a false inicial
   const [loadingAulas, setLoadingAulas] = useState(true);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
-  const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>([]);
+  const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>(
+    []
+  );
   const [loadingTipoReserva, setLoadingTipoReserva] = useState(true);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const { user } = useAuth();
 
   // Verifica si fecha y horas están completas
-  const isDateTimeComplete = formData.date && formData.startTime && formData.endTime;
+  const isDateTimeComplete =
+    formData.date && formData.startTime && formData.endTime;
 
   useEffect(() => {
     const fetchAulas = async () => {
@@ -64,10 +71,12 @@ export default function EquipmentReservationForm() {
     const fetchTipos = async () => {
       try {
         const tipos = await getTipoReservas();
-        setTipoReservaOptions(tipos.map(tr => ({
-          value: tr.id.toString(),
-          label: tr.nombre
-        })));
+        setTipoReservaOptions(
+          tipos.map((tr) => ({
+            value: tr.id.toString(),
+            label: tr.nombre,
+          }))
+        );
       } catch (error) {
         toast.error("Error cargando tipos de reserva");
       } finally {
@@ -79,42 +88,48 @@ export default function EquipmentReservationForm() {
   }, []);
 
   useEffect(() => {
-  const fetchEquipmentsByTipoReserva = async () => {
-    if (!formData.tipoReserva) {
-      setAvailableEquipmentOptions([]);
-      return;
-    }
-
-    try {
-      setLoadingEquipments(true);
-      const response = await api.get(`/equiposPorTipo/${formData.tipoReserva.value}`);
-      const data = response.data;
-      const options = data.map((item: any) => ({
-        value: item.id,
-        label: item.nombre,
-      }));
-
-      setAllEquipmentOptions(options);
-      
-      if (isDateTimeComplete) {
-        await checkEquipmentAvailability(options);
-      } else {
-        setAvailableEquipmentOptions(options);
+    const fetchEquipmentsByTipoReserva = async () => {
+      if (!formData.tipoReserva) {
+        setAvailableEquipmentOptions([]);
+        return;
       }
-    } catch (error) {
-      console.error("Error:", error);
-      setAvailableEquipmentOptions([]);
-    } finally {
-      setLoadingEquipments(false);
-    }
-  };
 
-  fetchEquipmentsByTipoReserva();
-}, [formData.tipoReserva]);
+      try {
+        setLoadingEquipments(true);
+        const response = await api.get(
+          `/equiposPorTipo/${formData.tipoReserva.value}`
+        );
+        const data = response.data;
+        const options = data.map((item: any) => ({
+          value: item.id,
+          label: item.nombre,
+        }));
+
+        setAllEquipmentOptions(options);
+
+        if (isDateTimeComplete) {
+          await checkEquipmentAvailability(options);
+        } else {
+          setAvailableEquipmentOptions(options);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        setAvailableEquipmentOptions([]);
+      } finally {
+        setLoadingEquipments(false);
+      }
+    };
+
+    fetchEquipmentsByTipoReserva();
+  }, [formData.tipoReserva]);
 
   // Verificar disponibilidad de equipos cuando cambia la fecha/hora
   useEffect(() => {
-    if (isDateTimeComplete && formData.tipoReserva && allEquipmentOptions.length > 0) {
+    if (
+      isDateTimeComplete &&
+      formData.tipoReserva &&
+      allEquipmentOptions.length > 0
+    ) {
       checkEquipmentAvailability(allEquipmentOptions);
     }
   }, [formData.date, formData.startTime, formData.endTime]);
@@ -122,47 +137,54 @@ export default function EquipmentReservationForm() {
   const checkEquipmentAvailability = async (equipments: OptionType[]) => {
     try {
       setCheckingAvailability(true);
-      
+
       const availabilityChecks = equipments.map(async (equipo) => {
         try {
-          const response = await api.get(`/equipos/${equipo.value}/disponibilidad`, {
-            params: {
-              fecha: formData.date,
-              startTime: formData.startTime,
-              endTime: formData.endTime
+          const response = await api.get(
+            `/equipos/${equipo.value}/disponibilidad`,
+            {
+              params: {
+                fecha: formData.date,
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+              },
             }
-          });
-          
+          );
+
           return {
             ...equipo,
-            available: response.data.disponibilidad.cantidad_disponible > 0
+            available: response.data.disponibilidad.cantidad_disponible > 0,
           };
         } catch (error) {
-          console.error(`Error verificando disponibilidad para equipo ${equipo.value}`, error);
+          console.error(
+            `Error verificando disponibilidad para equipo ${equipo.value}`,
+            error
+          );
           return {
             ...equipo,
-            available: false
+            available: false,
           };
         }
       });
 
       const results = await Promise.all(availabilityChecks);
-      const availableOptions = results.filter(equipo => equipo.available).map(equipo => ({
-        value: equipo.value,
-        label: equipo.label
-      }));
-      
+      const availableOptions = results
+        .filter((equipo) => equipo.available)
+        .map((equipo) => ({
+          value: equipo.value,
+          label: equipo.label,
+        }));
+
       setAvailableEquipmentOptions(availableOptions);
-      
-      const currentSelected = formData.equipment.filter(eq => 
-        availableOptions.some(opt => opt.value === eq.value)
+
+      const currentSelected = formData.equipment.filter((eq) =>
+        availableOptions.some((opt) => opt.value === eq.value)
       );
-      
+
       if (currentSelected.length !== formData.equipment.length) {
-        setFormData(prev => ({ ...prev, equipment: currentSelected }));
+        setFormData((prev) => ({ ...prev, equipment: currentSelected }));
         toast.error("Algunos equipos seleccionados ya no están disponibles");
       }
-      
     } catch (error) {
       console.error("Error verificando disponibilidad:", error);
       toast.error("Error al verificar disponibilidad de equipos");
@@ -221,7 +243,7 @@ export default function EquipmentReservationForm() {
       user_id: user.id,
       equipo: formData.equipment.map((eq) => ({
         id: eq.value,
-        cantidad: 1
+        cantidad: 1,
       })),
       aula: formData.aula.value,
       fecha_reserva: formData.date,
@@ -317,7 +339,7 @@ export default function EquipmentReservationForm() {
                 setFormData((prev) => ({
                   ...prev,
                   tipoReserva: selected,
-                  equipment: []
+                  equipment: [],
                 }))
               }
               placeholder="Selecciona el tipo de reserva"
@@ -354,17 +376,21 @@ export default function EquipmentReservationForm() {
                   equipment: selected,
                 }))
               }
-              isDisabled={!formData.tipoReserva || checkingAvailability || !isDateTimeComplete}
+              isDisabled={
+                !formData.tipoReserva ||
+                checkingAvailability ||
+                !isDateTimeComplete
+              }
               placeholder={
                 !isDateTimeComplete
                   ? "Selecciona fecha y hora primero"
                   : !formData.tipoReserva
-                    ? "Selecciona un tipo de reserva primero"
-                    : checkingAvailability
-                      ? "Verificando disponibilidad..."
-                      : availableEquipmentOptions.length === 0
-                        ? "No hay equipos disponibles para este tipo"
-                        : "Selecciona equipos disponibles"
+                  ? "Selecciona un tipo de reserva primero"
+                  : checkingAvailability
+                  ? "Verificando disponibilidad..."
+                  : availableEquipmentOptions.length === 0
+                  ? "No hay equipos disponibles para este tipo"
+                  : "Selecciona equipos disponibles"
               }
               className="react-select-container"
               classNamePrefix="react-select"
@@ -398,7 +424,11 @@ export default function EquipmentReservationForm() {
               placeholder="Selecciona aula"
               className="react-select-container"
               classNamePrefix="react-select"
-              isDisabled={!isDateTimeComplete || !formData.tipoReserva || formData.equipment.length === 0}
+              isDisabled={
+                !isDateTimeComplete ||
+                !formData.tipoReserva ||
+                formData.equipment.length === 0
+              }
             />
           )}
         </div>
@@ -407,7 +437,14 @@ export default function EquipmentReservationForm() {
           <button
             type="submit"
             className="btn primary-btn"
-            disabled={loadingSubmit || checkingAvailability || !isDateTimeComplete || !formData.tipoReserva || formData.equipment.length === 0 || !formData.aula}
+            disabled={
+              loadingSubmit ||
+              checkingAvailability ||
+              !isDateTimeComplete ||
+              !formData.tipoReserva ||
+              formData.equipment.length === 0 ||
+              !formData.aula
+            }
           >
             {loadingSubmit ? (
               <>

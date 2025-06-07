@@ -1,6 +1,6 @@
 import axios from "axios";
 import { toast } from "react-toastify";
-import type { User, UserUpdateDTO } from "~/types/user";
+import type { User, UserUpdateDTO } from "app/types/user";
 import api from "../api/axios";
 //const API_URL = 'http://localhost:8000/api/users';
 

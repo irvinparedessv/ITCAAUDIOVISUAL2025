@@ -4,10 +4,10 @@ import {
   createEquipo,
   updateEquipo,
   deleteEquipo,
-} from "~/services/equipoService";
-import { getTipoEquipos } from "~/services/tipoEquipoService";
-import type { Equipo, EquipoCreateDTO } from "~/types/equipo";
-import type { TipoEquipo } from "~/types/tipoEquipo";
+} from "../services/equipoService";
+import { getTipoEquipos } from "../services/tipoEquipoService";
+import type { Equipo, EquipoCreateDTO } from "app/types/equipo";
+import type { TipoEquipo } from "app/types/tipoEquipo";
 import EquipoForm from "../components/equipo/EquipoForm";
 import EquipoList from "../components/equipo/EquipoList";
 

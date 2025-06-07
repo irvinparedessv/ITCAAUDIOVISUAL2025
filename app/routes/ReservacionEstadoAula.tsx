@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import ReservacionEstadoAula from "~/components/ReservacionEstadoAula";
+import ReservacionEstadoAula from "app/components/ReservacionEstadoAula";
 
 export default function ReservationStatusAulaFormPage() {
   const { id } = useParams();

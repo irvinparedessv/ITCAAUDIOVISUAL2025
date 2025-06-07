@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import { FaComputer, FaBookmark } from "react-icons/fa6";
 import { Card, Container, Row, Col } from "react-bootstrap";
-import { Role } from "~/types/roles";
+import { Role } from "../types/roles";
 
 export default function Dashboard() {
   const { user } = useAuth();

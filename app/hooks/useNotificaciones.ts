@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { initializeEcho } from "../utils/pusher";
 import { useAuth } from "./AuthContext";
-import { Role } from "~/types/roles";
-import api from '~/api/axios';
+import { Role } from "app/types/roles";
+import api from "../api/axios";
 
 // Tipos mejorados para las notificaciones
-type NotificationType = 'nueva_reserva' | 'estado_reserva' | 'nueva_reserva_aula' | 'estado_reserva_aula';
+type NotificationType =
+  | "nueva_reserva"
+  | "estado_reserva"
+  | "nueva_reserva_aula"
+  | "estado_reserva_aula";
 
 interface EquipoNotification {
   nombre: string;
@@ -51,7 +55,8 @@ interface NotificacionStorage {
   type: string;
 }
 
-interface Notificacion extends Omit<NotificacionStorage, "created_at" | "read_at"> {
+interface Notificacion
+  extends Omit<NotificacionStorage, "created_at" | "read_at"> {
   createdAt: Date;
   readAt: Date | null;
   unread: boolean;
@@ -73,15 +78,17 @@ export function useNotificaciones() {
   }, [token]);
 
   // Normalizar notificaciones del servidor
-  const normalizeNotifications = (notifications: NotificacionStorage[]): Notificacion[] => {
-    return notifications.map(n => ({
+  const normalizeNotifications = (
+    notifications: NotificacionStorage[]
+  ): Notificacion[] => {
+    return notifications.map((n) => ({
       id: n.id,
       data: {
         ...n.data,
         reserva: {
           ...n.data.reserva,
-          estado: n.data.reserva?.estado || 'pendiente'
-        }
+          estado: n.data.reserva?.estado || "pendiente",
+        },
       },
       type: n.type,
       createdAt: new Date(n.created_at),
@@ -93,11 +100,11 @@ export function useNotificaciones() {
   // Cargar notificaciones persistentes del servidor
   const fetchNotifications = async () => {
     try {
-      const response = await api.get<NotificacionStorage[]>('/notificaciones');
+      const response = await api.get<NotificacionStorage[]>("/notificaciones");
       const normalizedNotifications = normalizeNotifications(response.data);
-      
+
       setNotificaciones(normalizedNotifications);
-      setUnreadCount(normalizedNotifications.filter(n => n.unread).length);
+      setUnreadCount(normalizedNotifications.filter((n) => n.unread).length);
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
@@ -106,19 +113,19 @@ export function useNotificaciones() {
   // Cargar notificaciones al montar el componente
   useEffect(() => {
     if (!user || !echo) return;
-    
+
     const loadInitialData = async () => {
       await fetchNotifications();
       setLoaded(true);
     };
-    
+
     loadInitialData();
   }, [user, echo]);
 
   // Manejar nueva notificación recibida
   const handleNewNotification = (data: any) => {
     console.log("Nueva notificación recibida:", data);
-    setUnreadCount(prev => prev + 1);
+    setUnreadCount((prev) => prev + 1);
     fetchNotifications();
   };
 
@@ -129,31 +136,39 @@ export function useNotificaciones() {
     const channelName = `notifications.user.${user.id}`;
     const channel = echo.private(channelName);
 
-    console.log('Suscribiendo a canal de notificaciones:', channelName);
+    console.log("Suscribiendo a canal de notificaciones:", channelName);
 
     if ([Role.Administrador, Role.Encargado].includes(user.role)) {
-      channel.listen('.nueva.reserva', handleNewNotification);
-      channel.listen('.nueva.reserva.aula', handleNewNotification);
-      console.log('Escuchando eventos de nueva reserva y nueva reserva de aula');
+      channel.listen(".nueva.reserva", handleNewNotification);
+      channel.listen(".nueva.reserva.aula", handleNewNotification);
+      console.log(
+        "Escuchando eventos de nueva reserva y nueva reserva de aula"
+      );
     }
 
     if (user.role === Role.Prestamista) {
-      channel.listen('.reserva.estado.actualizado', handleNewNotification);
-      channel.listen('.reserva.aula.estado.actualizado', handleNewNotification);
-      console.log('Escuchando eventos de cambio de estado');
+      channel.listen(".reserva.estado.actualizado", handleNewNotification);
+      channel.listen(".reserva.aula.estado.actualizado", handleNewNotification);
+      console.log("Escuchando eventos de cambio de estado");
     }
 
     return () => {
       if ([Role.Administrador, Role.Encargado].includes(user.role)) {
-        channel.stopListening('.nueva.reserva', handleNewNotification);
-        channel.stopListening('.nueva.reserva.aula', handleNewNotification);
+        channel.stopListening(".nueva.reserva", handleNewNotification);
+        channel.stopListening(".nueva.reserva.aula", handleNewNotification);
       }
       if (user.role === Role.Prestamista) {
-        channel.stopListening('.reserva.estado.actualizado', handleNewNotification);
-        channel.stopListening('.reserva.aula.estado.actualizado', handleNewNotification);
+        channel.stopListening(
+          ".reserva.estado.actualizado",
+          handleNewNotification
+        );
+        channel.stopListening(
+          ".reserva.aula.estado.actualizado",
+          handleNewNotification
+        );
       }
       echo.leave(channelName);
-      console.log('Dejando canal de notificaciones');
+      console.log("Dejando canal de notificaciones");
     };
   }, [echo, loaded, user]);
 
@@ -162,13 +177,15 @@ export function useNotificaciones() {
     try {
       if (notificationId) {
         await api.post(`/notificaciones/${notificationId}/marcar-leida`);
-        setNotificaciones(prev => prev.map(n => 
-          n.id === notificationId ? { ...n, unread: false } : n
-        ));
-        setUnreadCount(prev => prev - 1);
+        setNotificaciones((prev) =>
+          prev.map((n) =>
+            n.id === notificationId ? { ...n, unread: false } : n
+          )
+        );
+        setUnreadCount((prev) => prev - 1);
       } else {
-        await api.post('/notificaciones/marcar-leidas');
-        setNotificaciones(prev => prev.map(n => ({ ...n, unread: false })));
+        await api.post("/notificaciones/marcar-leidas");
+        setNotificaciones((prev) => prev.map((n) => ({ ...n, unread: false })));
         setUnreadCount(0);
       }
     } catch (error) {
@@ -179,9 +196,9 @@ export function useNotificaciones() {
   // Eliminar notificación individual
   const removeNotification = async (id: string) => {
     try {
-      setNotificaciones(prev => {
-        const updated = prev.filter(n => n.id !== id);
-        setUnreadCount(updated.filter(n => n.unread).length);
+      setNotificaciones((prev) => {
+        const updated = prev.filter((n) => n.id !== id);
+        setUnreadCount(updated.filter((n) => n.unread).length);
         return updated;
       });
 
@@ -199,7 +216,7 @@ export function useNotificaciones() {
     try {
       setNotificaciones([]);
       setUnreadCount(0);
-      await api.delete('/notificaciones/clear-all');
+      await api.delete("/notificaciones/clear-all");
     } catch (error) {
       console.error("Error clearing all notifications:", error);
       fetchNotifications();

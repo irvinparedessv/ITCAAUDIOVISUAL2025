@@ -1,9 +1,10 @@
 // layouts/protected-layout.tsx
-import { useLocation, Outlet, Navigate,useNavigate } from "react-router-dom";
+import { useLocation, Outlet, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { Spinner } from "react-bootstrap";
 import { getAllowedRoles } from "../helpers/matchRouteRoles";
 import { useEffect, useState } from "react";
+import Chatbot from "~/components/chatbot/chatbot";
 
 const publicRoutes = ["/login", "/forgot-password", "/reset-password"];
 
@@ -27,7 +28,13 @@ export default function ProtectedLayout() {
       setRedirectHandled(true);
       return;
     }
-  }, [isLoading, isAuthenticated, location.pathname, redirectHandled, navigate]);
+  }, [
+    isLoading,
+    isAuthenticated,
+    location.pathname,
+    redirectHandled,
+    navigate,
+  ]);
 
   useEffect(() => {
     setRedirectHandled(false);
@@ -39,7 +46,10 @@ export default function ProtectedLayout() {
     const allowedRoles = getAllowedRoles(location.pathname);
     const userRole = Number(user?.role);
 
-    if (allowedRoles.length > 0 && (!userRole || !allowedRoles.includes(userRole))) {
+    if (
+      allowedRoles.length > 0 &&
+      (!userRole || !allowedRoles.includes(userRole))
+    ) {
       return <Navigate to="/forbidden" replace />;
     }
   }
@@ -47,7 +57,7 @@ export default function ProtectedLayout() {
   return (
     <>
       <Outlet />
-     
+      <Chatbot />
     </>
   );
 }

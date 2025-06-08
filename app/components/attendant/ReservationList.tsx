@@ -6,12 +6,10 @@ import { useAuth } from "../../hooks/AuthContext";
 import toast from "react-hot-toast";
 import { FaEye, FaQrcode } from "react-icons/fa";
 
-
 type Role = {
   id: number;
   nombre: string;
 };
-
 
 type User = {
   id: number;
@@ -27,7 +25,6 @@ type User = {
   role_id: number;
   role: Role;
 };
-
 
 type Equipo = {
   id: number;
@@ -45,14 +42,12 @@ type Equipo = {
   };
 };
 
-
 type CodigoQR = {
   id: string; // GUID
   reserva_id: number;
   created_at: string;
   updated_at: string;
 };
-
 
 type Reservation = {
   id: number;
@@ -68,7 +63,6 @@ type Reservation = {
   codigo_qr: CodigoQR;
 };
 
-
 export default function ReservationList() {
   const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -78,16 +72,13 @@ export default function ReservationList() {
   >(null);
   const [comentario, setComentario] = useState("");
 
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
-
 
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const qrBaseUrl = "https://midominio.com/qrcode/";
-
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -100,42 +91,39 @@ export default function ReservationList() {
       }
     };
 
-
     if (user?.id) {
       fetchReservations();
     }
   }, [user]);
-
 
   const handleDetailClick = (reservation: Reservation) => {
     setSelectedReservation(reservation);
     setShowModal(true);
   };
 
-
-  const handleDecisionClick = (type: "Aprobar" | "Rechazar") => {
+  const handleDecisionClick = (
+    type: "Aprobar" | "Rechazar",
+    reservation: Reservation
+  ) => {
     setDecisionType(type);
     setComentario("");
+    setSelectedReservation(reservation);
     setShowDecisionModal(true);
   };
-
 
   const handleConfirmDecision = async () => {
     if (!selectedReservation || !decisionType) return;
 
-
     try {
-      await api.post(`/reservas/${selectedReservation.id}/estado`, {
+      await api.put(`/reservas-equipo/${selectedReservation.id}/estado`, {
         estado: decisionType === "Aprobar" ? "Aprobado" : "Rechazado",
         comentario,
       });
-
 
       toast.success(`Reserva ${decisionType.toLowerCase()}da con éxito`);
       setShowDecisionModal(false);
       setShowModal(false);
       setSelectedReservation(null);
-
 
       // Opcional: recargar reservas
       const res = await api.get("/reservas");
@@ -146,12 +134,10 @@ export default function ReservationList() {
     }
   };
 
-
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedReservation(null);
   };
-
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -160,9 +146,7 @@ export default function ReservationList() {
     indexOfLastItem
   );
 
-
   const totalPages = Math.ceil(reservations.length / itemsPerPage);
-
 
   // Función para paginación con puntos suspensivos
   const getPageNumbers = () => {
@@ -171,7 +155,6 @@ export default function ReservationList() {
     const rangeWithDots: (number | string)[] = [];
     let l: number | null = null;
 
-
     for (
       let i = Math.max(2, currentPage - delta);
       i <= Math.min(totalPages - 1, currentPage + delta);
@@ -179,7 +162,6 @@ export default function ReservationList() {
     ) {
       range.push(i);
     }
-
 
     for (let i = 1; i <= totalPages; i++) {
       if (i === 1 || i === totalPages || range.includes(i)) {
@@ -191,16 +173,13 @@ export default function ReservationList() {
       }
     }
 
-
     return rangeWithDots;
   };
-
 
   return (
     <div className="container py-5">
       <div className="table-responsive rounded shadow p-3 mt-4">
         <h4 className="mb-3 text-center">Listado de Reservas</h4>
-
 
         <table
           className="table table-hover align-middle text-center overflow-hidden"
@@ -265,13 +244,13 @@ export default function ReservationList() {
                     <div className="d-flex justify-content-end gap-2">
                       <Button
                         variant="success"
-                        onClick={() => handleDecisionClick("Aprobar")}
+                        onClick={() => handleDecisionClick("Aprobar", reserva)}
                       >
                         Aprobar
                       </Button>
                       <Button
                         variant="danger"
-                        onClick={() => handleDecisionClick("Rechazar")}
+                        onClick={() => handleDecisionClick("Rechazar", reserva)}
                       >
                         Rechazar
                       </Button>
@@ -304,7 +283,6 @@ export default function ReservationList() {
                 </button>
               </li>
 
-
               {getPageNumbers().map((page, index) =>
                 page === "..." ? (
                   <li key={`dots-${index}`} className="page-item disabled">
@@ -326,7 +304,6 @@ export default function ReservationList() {
                   </li>
                 )
               )}
-
 
               <li
                 className={`page-item ${
@@ -381,7 +358,6 @@ export default function ReservationList() {
         </Modal.Footer>
       </Modal>
 
-
       <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
         <Modal.Header
           closeButton
@@ -400,7 +376,6 @@ export default function ReservationList() {
             Detalles de Reserva #{selectedReservation?.id}
           </Modal.Title>
         </Modal.Header>
-
 
         <Modal.Body style={{ padding: "2rem" }}>
           {selectedReservation && (
@@ -477,7 +452,6 @@ export default function ReservationList() {
                   </div>
                 </div>
 
-
                 <div className="mb-4">
                   <div className="d-flex align-items-center mb-3">
                     <div
@@ -551,7 +525,6 @@ export default function ReservationList() {
                 </div>
               </div>
 
-
               {/* Sección derecha - Equipos y QR */}
               <div className="col-md-6">
                 <div className="mb-4">
@@ -598,7 +571,6 @@ export default function ReservationList() {
                   </div>
                 </div>
 
-
                 <div className="mt-4">
                   <div className="d-flex align-items-center mb-3">
                     <div
@@ -613,7 +585,6 @@ export default function ReservationList() {
                     <h5 className="fw-bold mb-0">Código QR</h5>
                   </div>
 
-
                   <div className="ps-5">
                     <div className="text-center">
                       {" "}
@@ -626,7 +597,6 @@ export default function ReservationList() {
                         />
                       </div>
                     </div>
-
 
                     <div>
                       {" "}
@@ -652,7 +622,6 @@ export default function ReservationList() {
   );
 }
 
-
 function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto") {
   switch (estado) {
     case "Pendiente":
@@ -666,7 +635,6 @@ function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto") {
   }
 }
 
-
 function formatDate(dateString: string) {
   const date = new Date(dateString);
   return date.toLocaleDateString("es-ES", {
@@ -677,5 +645,3 @@ function formatDate(dateString: string) {
     minute: "2-digit",
   });
 }
-
-

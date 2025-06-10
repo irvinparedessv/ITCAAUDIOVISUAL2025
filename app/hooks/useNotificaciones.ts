@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { initializeEcho } from "../utils/pusher";
 import { useAuth } from "./AuthContext";
 import { Role } from "app/types/roles";
@@ -62,166 +62,153 @@ interface Notificacion
   unread: boolean;
 }
 
-export function useNotificaciones() {
+interface UseNotificacionesOptions {
+  includeArchived?: boolean; // Para decidir si incluir notificaciones archivadas
+}
+
+export function useNotificaciones(options?: UseNotificacionesOptions) {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const { user, token } = useAuth(); // Asegúrate de que useAuth devuelva el token
+  const { user, token } = useAuth();
   const [echo, setEcho] = useState<any>(null);
 
-  // Inicializar Echo cuando tengamos el token
-  useEffect(() => {
-    if (token && typeof window !== "undefined") {
-      const echoInstance = initializeEcho(token);
-      setEcho(echoInstance);
-    }
-  }, [token]);
-
-  // Normalizar notificaciones del servidor
-  const normalizeNotifications = (
-    notifications: NotificacionStorage[]
-  ): Notificacion[] => {
-    return notifications.map((n) => ({
+  // Normalizar notificaciones
+  const normalizeNotifications = useCallback((notifications: NotificacionStorage[]): Notificacion[] => {
+    return notifications.map(n => ({
       id: n.id,
-      data: {
-        ...n.data,
-        reserva: {
-          ...n.data.reserva,
-          estado: n.data.reserva?.estado || "pendiente",
-        },
-      },
+      data: n.data,
       type: n.type,
       createdAt: new Date(n.created_at),
       readAt: n.read_at ? new Date(n.read_at) : null,
       unread: !n.read_at,
     }));
-  };
+  }, []);
 
-  // Cargar notificaciones persistentes del servidor
-  const fetchNotifications = async () => {
+  // Manejar nueva notificación
+  const handleNewNotification = useCallback((data: any) => {
+    setNotificaciones(prev => {
+      const newNotification: Notificacion = {
+        id: data.id,
+        data: data.data || data,
+        type: data.type,
+        createdAt: new Date(data.created_at || new Date()),
+        readAt: data.read_at ? new Date(data.read_at) : null,
+        unread: !data.read_at,
+      };
+      
+      // Evitar duplicados
+      if (!prev.some(n => n.id === newNotification.id)) {
+        return [newNotification, ...prev];
+      }
+      return prev;
+    });
+    
+    setUnreadCount(prev => data.read_at ? prev : prev + 1);
+  }, []);
+
+  // Cargar notificaciones
+  const fetchNotifications = useCallback(async () => {
     try {
-      const response = await api.get<NotificacionStorage[]>("/notificaciones");
-      const normalizedNotifications = normalizeNotifications(response.data);
-
-      setNotificaciones(normalizedNotifications);
-      setUnreadCount(normalizedNotifications.filter((n) => n.unread).length);
+      const endpoint = options?.includeArchived 
+        ? "/notificaciones/historial" 
+        : "/notificaciones";
+      const response = await api.get(endpoint);
+      const data = Array.isArray(response.data) ? response.data : response.data.notifications ?? [];
+      
+      setNotificaciones(normalizeNotifications(data));
+      setUnreadCount(data.filter((n: any) => !n.read_at).length);
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
-  };
+  }, [normalizeNotifications, options?.includeArchived]);
 
-  // Cargar notificaciones al montar el componente
+  // Inicializar Echo y cargar notificaciones
   useEffect(() => {
-    if (!user || !echo) return;
+    if (!token) return;
 
-    const loadInitialData = async () => {
-      await fetchNotifications();
-      setLoaded(true);
-    };
-
-    loadInitialData();
-  }, [user, echo]);
-
-  // Manejar nueva notificación recibida
-  const handleNewNotification = (data: any) => {
-    console.log("Nueva notificación recibida:", data);
-    setUnreadCount((prev) => prev + 1);
+    const echoInstance = initializeEcho(token);
+    setEcho(echoInstance);
     fetchNotifications();
-  };
+  }, [token, fetchNotifications]);
 
-  // Escuchar nuevas notificaciones en tiempo real
+  // Configurar listeners de Echo
   useEffect(() => {
-    if (!echo || !loaded || !user) return;
+    if (!echo || !user) return;
 
     const channelName = `notifications.user.${user.id}`;
     const channel = echo.private(channelName);
 
-    console.log("Suscribiendo a canal de notificaciones:", channelName);
+    const events = [
+      '.nueva.reserva',
+      '.nueva.reserva.aula',
+      '.reserva.estado.actualizado',
+      '.reserva.aula.estado.actualizado',
+      '.notificacion.eliminada'
+    ];
 
-    if ([Role.Administrador, Role.Encargado].includes(user.role)) {
-      channel.listen(".nueva.reserva", handleNewNotification);
-      channel.listen(".nueva.reserva.aula", handleNewNotification);
-      console.log(
-        "Escuchando eventos de nueva reserva y nueva reserva de aula"
-      );
-    }
-
-    if (user.role === Role.Prestamista) {
-      channel.listen(".reserva.estado.actualizado", handleNewNotification);
-      channel.listen(".reserva.aula.estado.actualizado", handleNewNotification);
-      console.log("Escuchando eventos de cambio de estado");
-    }
+    events.forEach(event => {
+      channel.listen(event, handleNewNotification);
+    });
 
     return () => {
-      if ([Role.Administrador, Role.Encargado].includes(user.role)) {
-        channel.stopListening(".nueva.reserva", handleNewNotification);
-        channel.stopListening(".nueva.reserva.aula", handleNewNotification);
-      }
-      if (user.role === Role.Prestamista) {
-        channel.stopListening(
-          ".reserva.estado.actualizado",
-          handleNewNotification
-        );
-        channel.stopListening(
-          ".reserva.aula.estado.actualizado",
-          handleNewNotification
-        );
-      }
+      events.forEach(event => {
+        channel.stopListening(event, handleNewNotification);
+      });
       echo.leave(channelName);
-      console.log("Dejando canal de notificaciones");
     };
-  }, [echo, loaded, user]);
+  }, [echo, user, handleNewNotification]);
 
-  // Marcar como leídas
-  const markAsRead = async (notificationId: string | null = null) => {
+  // Polling como fallback
+  useEffect(() => {
+    if (!user) return;
+    
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, [user, fetchNotifications]);
+
+  // Funciones para manejar notificaciones
+  const markAsRead = useCallback(async (id?: string) => {
     try {
-      if (notificationId) {
-        await api.post(`/notificaciones/${notificationId}/marcar-leida`);
-        setNotificaciones((prev) =>
-          prev.map((n) =>
-            n.id === notificationId ? { ...n, unread: false } : n
-          )
-        );
-        setUnreadCount((prev) => prev - 1);
+      if (id) {
+        await api.post(`/notificaciones/${id}/marcar-leida`);
+        setNotificaciones(prev => prev.map(n => 
+          n.id === id ? { ...n, unread: false, readAt: new Date() } : n
+        ));
+        setUnreadCount(prev => prev - 1);
       } else {
         await api.post("/notificaciones/marcar-leidas");
-        setNotificaciones((prev) => prev.map((n) => ({ ...n, unread: false })));
+        setNotificaciones(prev => prev.map(n => ({ ...n, unread: false, readAt: new Date() })));
         setUnreadCount(0);
       }
     } catch (error) {
-      console.error("Error marking notifications as read:", error);
+      console.error("Error marking as read:", error);
     }
-  };
+  }, []);
 
-  // Eliminar notificación individual
-  const removeNotification = async (id: string) => {
+  const removeNotification = useCallback(async (id: string) => {
     try {
-      setNotificaciones((prev) => {
-        const updated = prev.filter((n) => n.id !== id);
-        setUnreadCount(updated.filter((n) => n.unread).length);
-        return updated;
-      });
-
-      await api.delete(`/notificaciones/${id}`);
+      setNotificaciones(prev => prev.filter(n => n.id !== id));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      await api.put(`/notificaciones/${id}/archivar`);
     } catch (error) {
       console.error("Error removing notification:", error);
-      fetchNotifications();
+      fetchNotifications(); // Revertir si hay error
     }
-  };
+  }, [fetchNotifications]);
 
-  // Limpiar todas las notificaciones
-  const clearAllNotifications = async () => {
-    if (notificaciones.length === 0) return;
-
+  const clearAllNotifications = useCallback(async () => {
     try {
       setNotificaciones([]);
       setUnreadCount(0);
-      await api.delete("/notificaciones/clear-all");
+      await api.put("/notificaciones/archivar-todas");
     } catch (error) {
-      console.error("Error clearing all notifications:", error);
+      console.error("Error clearing notifications:", error);
       fetchNotifications();
     }
-  };
+  }, [fetchNotifications]);
 
   return {
     notificaciones,
@@ -229,6 +216,6 @@ export function useNotificaciones() {
     markAsRead,
     removeNotification,
     clearAllNotifications,
-    refreshNotifications: fetchNotifications,
+    refreshNotifications: fetchNotifications, // Esta línea ya existe
   };
 }

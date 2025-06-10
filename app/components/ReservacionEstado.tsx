@@ -58,9 +58,9 @@ export default function ReservacionEstado({
             onChange={(e) => setNewStatus(e.target.value)}
           >
             <option value="">Seleccione una opción</option>
-            <option value="approved">Aprobar</option>
-            <option value="rejected">Rechazar</option>
-            <option value="returned">Marcar como devuelto</option>
+            <option value="Aprobado">Aprobar</option>
+            <option value="Rechazado">Rechazar</option>
+            <option value="Devuelto">Marcar como devuelto</option>
           </select>
         </div>
 

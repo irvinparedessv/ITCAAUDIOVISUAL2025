@@ -11,6 +11,7 @@ import { useAuth } from "../../hooks/AuthContext";
 import { useNotificaciones } from "~/hooks/useNotificaciones";
 import React from 'react';
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FiRefreshCcw } from "react-icons/fi";
 
 // Definición de tipos
 type NotificationType = 'nueva_reserva' | 'estado_reserva' | 'nueva_reserva_aula' | 'estado_reserva_aula';
@@ -64,6 +65,7 @@ const NotificationItem = ({
   navigate, 
   removeNotification,
   markAsRead
+  
 }: {
   noti: Notificacion;
   userRole: Role;
@@ -230,6 +232,7 @@ const NavbarMenu = () => {
     markAsRead,
     removeNotification,
     clearAllNotifications,
+    refreshNotifications,
   } = useNotificaciones();
 
   useEffect(() => {
@@ -392,6 +395,16 @@ const NavbarMenu = () => {
               {notificaciones.length > 0 && (
                 <div className="mt-2 d-flex gap-2">
                   <button
+                    className="btn btn-sm bg-transparent border-0 text-dark me-2"
+                    title="Actualizar"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      refreshNotifications();
+                    }}
+                  >
+                    <FiRefreshCcw size={18} />
+                  </button>
+                  <button
                     className="btn btn-sm btn-outline-danger"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -399,15 +412,6 @@ const NavbarMenu = () => {
                     }}
                   >
                     Limpiar
-                  </button>
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate("/notifications");
-                    }}
-                  >
-                    Ver todas
                   </button>
                 </div>
               )}
@@ -479,6 +483,16 @@ const NavbarMenu = () => {
               {notificaciones.length > 0 && (
                 <>
                   <button
+                    className="btn btn-sm bg-transparent border-0 text-dark me-2"
+                    title="Actualizar"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      refreshNotifications();
+                    }}
+                  >
+                    <FiRefreshCcw size={18} />
+                  </button>
+                  <button
                     className="btn btn-sm btn-outline-danger me-2"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -486,15 +500,6 @@ const NavbarMenu = () => {
                     }}
                   >
                     Limpiar todas
-                  </button>
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate("/notifications");
-                    }}
-                  >
-                    Ver todas
                   </button>
                 </>
               )}

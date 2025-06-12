@@ -21,14 +21,12 @@ import CreacionEspacio from "./routes/creacionEspacio";
 import FormChat from "./routes/formChat";
 import EquipmentAvailabilityPage from "./routes/EquipmentAvailabilityPage";
 import OptionsReservation from "./routes/optionsReservation";
-import ReservationRoom from "./routes/reservationRoom";
 import TipoEquipos from "./routes/tipoEquipos";
 import Equipos from "./routes/equipos";
 import FormUsuario from "./routes/formUsuario";
 import EditUsuario from "./routes/editUsuario";
 import QrScan from "./routes/qr";
 import EspacioList from "./routes/espacioList";
-import ReservationRoomList from "./routes/reservationRoomList";
 import ApproveReservations from "./routes/attendant/approveReservations";
 import VerPerfil from "./routes/verPerfil";
 import EditPerfil from "./routes/editPerfil";
@@ -39,6 +37,9 @@ import NotificationsList from "./routes/NotificationsList";
 import PrediccionPage from "./routes/PrediccionPage";
 import OpcionesPanel from "./routes/OpcionesPanel";
 import App from "./root";
+import ReservaAulaDetail from "./components/applicant/ReservationRoomDetails";
+import ReserveClassroom from "./components/RoomReservationForm";
+import EspacioListWrapper from "./routes/wrappers/reservations";
 
 const router = createBrowserRouter([
   {
@@ -82,6 +83,11 @@ const router = createBrowserRouter([
             element: <AddReservation />,
           },
           {
+            path: "/reservas-aula/:id",
+            element: <ReservaAulaDetail />,
+          },
+
+          {
             path: "reservations",
             element: <ReservationList />,
           },
@@ -115,7 +121,11 @@ const router = createBrowserRouter([
           },
           {
             path: "reservationsroom",
-            element: <ReservationRoom />,
+            element: <ReserveClassroom />,
+          },
+          {
+            path: "reservations-room",
+            element: <EspacioListWrapper />,
           },
           {
             path: "tipoequipo",
@@ -140,10 +150,6 @@ const router = createBrowserRouter([
           {
             path: "espacioList",
             element: <EspacioList />,
-          },
-          {
-            path: "reservations-room",
-            element: <ReservationRoomList />,
           },
           {
             path: "approvereservations",

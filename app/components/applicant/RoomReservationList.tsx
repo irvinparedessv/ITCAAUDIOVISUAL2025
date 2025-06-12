@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Card, Button, Row, Col, Spinner } from "react-bootstrap";
+import { Button, Row, Col, Spinner, Table, Badge } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Badge } from "react-bootstrap";
-import api from "../api/axios";
+import api from "../../api/axios";
 
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -14,6 +13,7 @@ const RoomReservationList = () => {
   const [reservations, setReservations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
+
   const getEstadoVariant = (estado: string) => {
     switch (estado.toLowerCase()) {
       case "pendiente":
@@ -26,6 +26,7 @@ const RoomReservationList = () => {
         return "secondary";
     }
   };
+
   useEffect(() => {
     const today = new Date();
     const pastWeek = new Date(today);
@@ -105,35 +106,40 @@ const RoomReservationList = () => {
       ) : reservations.length === 0 ? (
         <p>No hay reservas en este rango de fechas.</p>
       ) : (
-        <Row xs={1} md={2} lg={3} className="g-4">
-          {reservations.map((res: any) => (
-            <Col key={res.id}>
-              <Card>
-                <Card.Body>
-                  <Card.Title className="d-flex justify-content-between align-items-center">
-                    <span>{res.aula?.name || "Aula Desconocida"}</span>
-                    <Badge bg={getEstadoVariant(res.estado)}>
-                      {res.estado}
-                    </Badge>
-                  </Card.Title>
-                  <Card.Text>
-                    {formatDate(res.fecha)} - {res.horario}
-                  </Card.Text>
-                  <Card.Text>
-                    Reservado por:{" "}
-                    <strong>{res.user?.first_name || "Desconocido"}</strong>
-                  </Card.Text>
+        <Table striped bordered hover responsive>
+          <thead>
+            <tr>
+              <th>Aula</th>
+              <th>Fecha</th>
+              <th>Horario</th>
+              <th>Reservado por</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reservations.map((res: any) => (
+              <tr key={res.id}>
+                <td>{res.aula?.name || "Aula Desconocida"}</td>
+                <td>{formatDate(res.fecha)}</td>
+                <td>{res.horario}</td>
+                <td>{res.user?.first_name || "Desconocido"}</td>
+                <td>
+                  <Badge bg={getEstadoVariant(res.estado)}>{res.estado}</Badge>
+                </td>
+                <td>
                   <Button
                     variant="primary"
+                    size="sm"
                     onClick={() => navigate(`/reservas-aula/${res.id}`)}
                   >
                     Ver detalles
                   </Button>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
       )}
     </div>
   );

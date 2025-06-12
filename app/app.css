@@ -25,7 +25,9 @@ input[type="time"] {
   border: 1px solid #ccc;
   border-radius: 4px;
 }
-
+.bg-primary {
+  background-color: #ffc107 !important;
+}
 /* Estructura del navbar */
 .navbar {
   background: var(--navbar-bg) !important;

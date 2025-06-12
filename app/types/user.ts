@@ -19,10 +19,10 @@ export type UserLogin = {
   last_name: string;
   email: string;
   role: number;
+  roleName: string;
   image?: string;
   estado: number; // ahora obligatorio
 };
-
 
 // Para crear usuarios, incluyendo imagen opcional tipo archivo
 export type UserCreateDTO = Omit<
@@ -46,7 +46,6 @@ export type UserUpdateDTO = {
 // Para identificar el usuario a actualizar (id requerido)
 export type UserWithId = UserUpdateDTO & { id: number };
 
-
 export interface UserProfileUpdateDTO {
   first_name: string;
   last_name: string;
@@ -58,4 +57,3 @@ export interface UserProfileUpdateDTO {
   image: File | string;
   image_url?: string; // Asegúrate de que este campo esté presente
 }
-

@@ -62,10 +62,19 @@ export default function Dashboard() {
             onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
-            title="Todas las Reservas"
+            title="Todas las Reservas Equipos"
             icon={<FaClipboardList size={24} style={getIconStyle()} />}
             link="/reservations"
-            description="Ver historial completo de reservaciones"
+            description="Ver historial completo de reservaciones de equipos"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
+          <DashboardCard
+            title="Todas las Reservas Espacios"
+            icon={<FaClipboardList size={24} style={getIconStyle()} />}
+            link="/reservations-room"
+            description="Ver historial completo de reservaciones de espacios"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -171,10 +180,19 @@ export default function Dashboard() {
             onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
-            title="Mis Reservas"
+            title="Mis Reservas Equipos"
             icon={<FaCalendarAlt size={24} style={getIconStyle()} />}
             link="/reservations"
-            description="Ver mis reservas activas"
+            description="Ver mis reservas equipo"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
+          <DashboardCard
+            title="Mis Reservas Espacios"
+            icon={<FaCalendarAlt size={24} style={getIconStyle()} />}
+            link="/reservations-room"
+            description="Ver mis reservas espacios"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}

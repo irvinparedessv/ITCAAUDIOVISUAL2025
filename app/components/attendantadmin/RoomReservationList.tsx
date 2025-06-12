@@ -135,6 +135,9 @@ const RoomReservationList = () => {
                   >
                     Ver detalles
                   </Button>
+                  <Button variant="primary" size="sm">
+                    Aprobar
+                  </Button>
                 </td>
               </tr>
             ))}

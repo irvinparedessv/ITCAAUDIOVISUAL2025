@@ -15,255 +15,261 @@ import api from "../api/axios";
 import { getTipoReservas } from "../services/tipoReservaService";
 
 export default function EquipmentReservationForm() {
-  type OptionType = { value: string; label: string };
+ type OptionType = { value: string; label: string };
 
-  const [formData, setFormData] = useState({
+type EquipmentOption = {
+  value: number;
+  label: string;
+  tipoEquipoId: number;
+  available?: boolean;
+};
+
+const [formData, setFormData] = useState({
+  date: "",
+  startTime: "",
+  endTime: "",
+  tipoReserva: null as SingleValue<OptionType>,
+  equipment: [] as MultiValue<EquipmentOption>,
+  aula: null as SingleValue<OptionType>,
+});
+
+const [allEquipmentOptions, setAllEquipmentOptions] = useState<EquipmentOption[]>([]);
+const [availableEquipmentOptions, setAvailableEquipmentOptions] = useState<EquipmentOption[]>([]);
+const [aulaOptions, setAulaOptions] = useState<OptionType[]>([]);
+const [loadingEquipments, setLoadingEquipments] = useState(false);
+const [loadingAulas, setLoadingAulas] = useState(true);
+const [loadingSubmit, setLoadingSubmit] = useState(false);
+const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>([]);
+const [loadingTipoReserva, setLoadingTipoReserva] = useState(true);
+const [checkingAvailability, setCheckingAvailability] = useState(false);
+const { user } = useAuth();
+
+const isDateTimeComplete =
+  formData.date && formData.startTime && formData.endTime;
+
+useEffect(() => {
+  const fetchAulas = async () => {
+    try {
+      const response = await api.get("/aulasEquipos");
+      const data = response.data;
+      const options = data.map((item: any) => ({
+        value: item.name,
+        label: item.name,
+      }));
+      setAulaOptions(options);
+    } catch (error) {
+      toast.error("Error cargando las aulas. Intente nuevamente.");
+    } finally {
+      setLoadingAulas(false);
+    }
+  };
+
+  fetchAulas();
+}, []);
+
+useEffect(() => {
+  const fetchTipos = async () => {
+    try {
+      const tipos = await getTipoReservas();
+      setTipoReservaOptions(
+        tipos.map((tr) => ({
+          value: tr.id.toString(),
+          label: tr.nombre,
+        }))
+      );
+    } catch (error) {
+      toast.error("Error cargando tipos de reserva");
+    } finally {
+      setLoadingTipoReserva(false);
+    }
+  };
+
+  fetchTipos();
+}, []);
+
+useEffect(() => {
+  const fetchEquipmentsByTipoReserva = async () => {
+    if (!formData.tipoReserva) {
+      setAvailableEquipmentOptions([]);
+      return;
+    }
+
+    try {
+      setLoadingEquipments(true);
+      const response = await api.get(`/equiposPorTipo/${formData.tipoReserva.value}`);
+      const data = response.data;
+      const options: EquipmentOption[] = data.map((item: any) => ({
+        value: item.id,
+        label: item.nombre,
+        tipoEquipoId: item.tipo_equipo_id,
+      }));
+
+      setAllEquipmentOptions(options);
+
+      if (isDateTimeComplete) {
+        await checkEquipmentAvailability(options);
+      } else {
+        setAvailableEquipmentOptions(options);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setAvailableEquipmentOptions([]);
+    } finally {
+      setLoadingEquipments(false);
+    }
+  };
+
+  fetchEquipmentsByTipoReserva();
+}, [formData.tipoReserva]);
+
+useEffect(() => {
+  if (!formData.equipment || formData.equipment.length === 0) {
+    setAvailableEquipmentOptions(allEquipmentOptions);
+    return;
+  }
+
+  const tiposSeleccionados = formData.equipment.map((eq) => eq.tipoEquipoId);
+
+  const opcionesFiltradas = allEquipmentOptions.filter((eq) => {
+    return (
+      formData.equipment.some((sel) => sel.value === eq.value) ||
+      !tiposSeleccionados.includes(eq.tipoEquipoId)
+    );
+  });
+
+  setAvailableEquipmentOptions(opcionesFiltradas);
+}, [formData.equipment, allEquipmentOptions]);
+
+useEffect(() => {
+  if (
+    isDateTimeComplete &&
+    formData.tipoReserva &&
+    allEquipmentOptions.length > 0
+  ) {
+    checkEquipmentAvailability(allEquipmentOptions);
+  }
+}, [formData.date, formData.startTime, formData.endTime]);
+
+const checkEquipmentAvailability = async (equipments: EquipmentOption[]) => {
+  try {
+    setCheckingAvailability(true);
+
+    const availabilityChecks = equipments.map(async (equipo) => {
+      try {
+        const response = await api.get(`/equipos/${equipo.value}/disponibilidad`, {
+          params: {
+            fecha: formData.date,
+            startTime: formData.startTime,
+            endTime: formData.endTime,
+          },
+        });
+
+        return {
+          ...equipo,
+          available: response.data.disponibilidad.cantidad_disponible > 0,
+        };
+      } catch (error) {
+        console.error(`Error verificando disponibilidad para equipo ${equipo.value}`, error);
+        return {
+          ...equipo,
+          available: false,
+        };
+      }
+    });
+
+    const results = await Promise.all(availabilityChecks);
+    const availableOptions = results.filter((equipo) => equipo.available);
+
+    setAvailableEquipmentOptions(availableOptions);
+
+    const currentSelected = formData.equipment.filter((eq) =>
+      availableOptions.some((opt) => opt.value === eq.value)
+    );
+
+    if (currentSelected.length !== formData.equipment.length) {
+      setFormData((prev) => ({ ...prev, equipment: currentSelected }));
+      toast.error("Algunos equipos seleccionados ya no están disponibles");
+    }
+  } catch (error) {
+    console.error("Error verificando disponibilidad:", error);
+    toast.error("Error al verificar disponibilidad de equipos");
+    setAvailableEquipmentOptions(equipments);
+  } finally {
+    setCheckingAvailability(false);
+  }
+};
+
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { name, value } = e.target;
+  setFormData((prev) => ({ ...prev, [name]: value }));
+};
+
+const handleClear = () => {
+  setFormData({
     date: "",
     startTime: "",
     endTime: "",
-    tipoReserva: null as SingleValue<OptionType>,
-    equipment: [] as MultiValue<OptionType>,
-    aula: null as SingleValue<OptionType>,
+    tipoReserva: null,
+    equipment: [],
+    aula: null,
   });
+  setAvailableEquipmentOptions([]);
+};
 
-  const [allEquipmentOptions, setAllEquipmentOptions] = useState<OptionType[]>(
-    []
-  );
-  const [availableEquipmentOptions, setAvailableEquipmentOptions] = useState<
-    OptionType[]
-  >([]);
-  const [aulaOptions, setAulaOptions] = useState<OptionType[]>([]);
-  const [loadingEquipments, setLoadingEquipments] = useState(false); // Cambia a false inicial
-  const [loadingAulas, setLoadingAulas] = useState(true);
-  const [loadingSubmit, setLoadingSubmit] = useState(false);
-  const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>(
-    []
-  );
-  const [loadingTipoReserva, setLoadingTipoReserva] = useState(true);
-  const [checkingAvailability, setCheckingAvailability] = useState(false);
-  const { user } = useAuth();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-  // Verifica si fecha y horas están completas
-  const isDateTimeComplete =
-    formData.date && formData.startTime && formData.endTime;
+  if (!user) {
+    toast.error("No se ha encontrado el usuario. Por favor inicie sesión.");
+    return;
+  }
 
-  useEffect(() => {
-    const fetchAulas = async () => {
-      try {
-        const response = await api.get("/aulasEquipos");
-        const data = response.data;
-        const options = data.map((item: any) => ({
-          value: item.name,
-          label: item.name,
-        }));
-        setAulaOptions(options);
-      } catch (error) {
-        toast.error("Error cargando las aulas. Intente nuevamente.");
-      } finally {
-        setLoadingAulas(false);
-      }
-    };
+  if (formData.equipment.length === 0) {
+    toast.error("Debe seleccionar al menos un equipo");
+    return;
+  }
 
-    fetchAulas();
-  }, []);
+  if (!formData.aula) {
+    toast.error("Debe seleccionar un aula");
+    return;
+  }
 
-  useEffect(() => {
-    const fetchTipos = async () => {
-      try {
-        const tipos = await getTipoReservas();
-        setTipoReservaOptions(
-          tipos.map((tr) => ({
-            value: tr.id.toString(),
-            label: tr.nombre,
-          }))
-        );
-      } catch (error) {
-        toast.error("Error cargando tipos de reserva");
-      } finally {
-        setLoadingTipoReserva(false);
-      }
-    };
+  if (!formData.date) {
+    toast.error("La fecha de reserva es obligatoria");
+    return;
+  }
 
-    fetchTipos();
-  }, []);
+  if (!formData.startTime || !formData.endTime) {
+    toast.error("Las horas de inicio y fin son obligatorias");
+    return;
+  }
 
-  useEffect(() => {
-    const fetchEquipmentsByTipoReserva = async () => {
-      if (!formData.tipoReserva) {
-        setAvailableEquipmentOptions([]);
-        return;
-      }
-
-      try {
-        setLoadingEquipments(true);
-        const response = await api.get(
-          `/equiposPorTipo/${formData.tipoReserva.value}`
-        );
-        const data = response.data;
-        const options = data.map((item: any) => ({
-          value: item.id,
-          label: item.nombre,
-        }));
-
-        setAllEquipmentOptions(options);
-
-        if (isDateTimeComplete) {
-          await checkEquipmentAvailability(options);
-        } else {
-          setAvailableEquipmentOptions(options);
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        setAvailableEquipmentOptions([]);
-      } finally {
-        setLoadingEquipments(false);
-      }
-    };
-
-    fetchEquipmentsByTipoReserva();
-  }, [formData.tipoReserva]);
-
-  // Verificar disponibilidad de equipos cuando cambia la fecha/hora
-  useEffect(() => {
-    if (
-      isDateTimeComplete &&
-      formData.tipoReserva &&
-      allEquipmentOptions.length > 0
-    ) {
-      checkEquipmentAvailability(allEquipmentOptions);
-    }
-  }, [formData.date, formData.startTime, formData.endTime]);
-
-  const checkEquipmentAvailability = async (equipments: OptionType[]) => {
-    try {
-      setCheckingAvailability(true);
-
-      const availabilityChecks = equipments.map(async (equipo) => {
-        try {
-          const response = await api.get(
-            `/equipos/${equipo.value}/disponibilidad`,
-            {
-              params: {
-                fecha: formData.date,
-                startTime: formData.startTime,
-                endTime: formData.endTime,
-              },
-            }
-          );
-
-          return {
-            ...equipo,
-            available: response.data.disponibilidad.cantidad_disponible > 0,
-          };
-        } catch (error) {
-          console.error(
-            `Error verificando disponibilidad para equipo ${equipo.value}`,
-            error
-          );
-          return {
-            ...equipo,
-            available: false,
-          };
-        }
-      });
-
-      const results = await Promise.all(availabilityChecks);
-      const availableOptions = results
-        .filter((equipo) => equipo.available)
-        .map((equipo) => ({
-          value: equipo.value,
-          label: equipo.label,
-        }));
-
-      setAvailableEquipmentOptions(availableOptions);
-
-      const currentSelected = formData.equipment.filter((eq) =>
-        availableOptions.some((opt) => opt.value === eq.value)
-      );
-
-      if (currentSelected.length !== formData.equipment.length) {
-        setFormData((prev) => ({ ...prev, equipment: currentSelected }));
-        toast.error("Algunos equipos seleccionados ya no están disponibles");
-      }
-    } catch (error) {
-      console.error("Error verificando disponibilidad:", error);
-      toast.error("Error al verificar disponibilidad de equipos");
-      setAvailableEquipmentOptions(equipments);
-    } finally {
-      setCheckingAvailability(false);
-    }
+  const payload = {
+    user_id: user.id,
+    equipo: formData.equipment.map((eq) => ({
+      id: eq.value,
+      cantidad: 1,
+    })),
+    aula: formData.aula.value,
+    fecha_reserva: formData.date,
+    startTime: formData.startTime,
+    endTime: formData.endTime,
+    tipo_reserva_id: formData.tipoReserva?.value,
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  try {
+    setLoadingSubmit(true);
+    const response = await api.post("/reservas", payload);
+    toast.success("¡Reserva creada exitosamente!");
+    handleClear();
+  } catch (error) {
+    console.error(error);
+    toast.error("Error al crear la reserva. Intenta nuevamente.");
+  } finally {
+    setLoadingSubmit(false);
+  }
+};
 
-  const handleClear = () => {
-    setFormData({
-      date: "",
-      startTime: "",
-      endTime: "",
-      tipoReserva: null,
-      equipment: [],
-      aula: null,
-    });
-    setAvailableEquipmentOptions([]);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!user) {
-      toast.error("No se ha encontrado el usuario. Por favor inicie sesión.");
-      return;
-    }
-
-    if (formData.equipment.length === 0) {
-      toast.error("Debe seleccionar al menos un equipo");
-      return;
-    }
-
-    if (!formData.aula) {
-      toast.error("Debe seleccionar un aula");
-      return;
-    }
-
-    if (!formData.date) {
-      toast.error("La fecha de reserva es obligatoria");
-      return;
-    }
-
-    if (!formData.startTime || !formData.endTime) {
-      toast.error("Las horas de inicio y fin son obligatorias");
-      return;
-    }
-
-    const payload = {
-      user_id: user.id,
-      equipo: formData.equipment.map((eq) => ({
-        id: eq.value,
-        cantidad: 1,
-      })),
-      aula: formData.aula.value,
-      fecha_reserva: formData.date,
-      startTime: formData.startTime,
-      endTime: formData.endTime,
-      tipo_reserva_id: formData.tipoReserva?.value,
-    };
-
-    try {
-      setLoadingSubmit(true);
-      const response = await api.post("/reservas", payload);
-      toast.success("¡Reserva creada exitosamente!");
-      handleClear();
-    } catch (error) {
-      console.error(error);
-      toast.error("Error al crear la reserva. Intenta nuevamente.");
-    } finally {
-      setLoadingSubmit(false);
-    }
-  };
 
   return (
     <div className="form-container">
@@ -366,16 +372,25 @@ export default function EquipmentReservationForm() {
               </div>
             </div>
           ) : (
-            <Select
+           <Select
               isMulti
               options={availableEquipmentOptions}
               value={formData.equipment}
-              onChange={(selected) =>
+              onChange={(selected) => {
+                // Enriquecer con tipoEquipoId desde allEquipmentOptions
+                const enriched = selected.map((s: any) => {
+                  const full = allEquipmentOptions.find((e: any) => e.value === s.value);
+                  return {
+                    ...s,
+                    tipoEquipoId: full?.tipoEquipoId,
+                  };
+                });
+
                 setFormData((prev) => ({
                   ...prev,
-                  equipment: selected,
-                }))
-              }
+                  equipment: enriched,
+                }));
+              }}
               isDisabled={
                 !formData.tipoReserva ||
                 checkingAvailability ||

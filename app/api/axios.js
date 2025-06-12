@@ -1,7 +1,8 @@
 import axios from "axios";
+import { APIURL } from "/app/constants/constant";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api", // la URL de tu backend Laravel
+  baseURL: APIURL, // la URL de tu backend Laravel
   withCredentials: true, // necesario para que envíe cookies (Sanctum)
 });
 

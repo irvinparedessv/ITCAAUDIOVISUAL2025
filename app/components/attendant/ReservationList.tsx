@@ -5,6 +5,7 @@ import { BrowserMultiFormatReader } from "@zxing/library";
 import { useAuth } from "../../hooks/AuthContext";
 import toast from "react-hot-toast";
 import { FaEye, FaQrcode } from "react-icons/fa";
+import { QRURL } from "~/constants/constant";
 
 type Role = {
   id: number;
@@ -78,7 +79,7 @@ export default function ReservationList() {
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const qrBaseUrl = "https://midominio.com/qrcode/";
+  const qrBaseUrl = QRURL;
 
   useEffect(() => {
     const fetchReservations = async () => {

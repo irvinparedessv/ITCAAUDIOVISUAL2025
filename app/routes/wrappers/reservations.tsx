@@ -1,6 +1,6 @@
 // EspacioListWrapper.tsx
 import { useAuth } from "../../hooks/AuthContext";
-import RoomReservationList from "../../components/applicant/RoomReservationList";
+import RoomReservationList from "../../components/applicant/RoomReservationList/RoomReservationList";
 import RoomReservationListAdmin from "../../components/attendantadmin/RoomReservationList";
 
 const EspacioListWrapper = () => {

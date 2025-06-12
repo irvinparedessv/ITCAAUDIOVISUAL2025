@@ -141,7 +141,7 @@ export default function Dashboard() {
           <DashboardCard
             title="Reservas de Espacios"
             icon={<FaBuilding size={24} style={getIconStyle()} />}
-            link="/reservationsroom"
+            link="/reservations-room"
             description="Gestionar reservas de espacios físicos"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}

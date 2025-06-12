@@ -6,7 +6,7 @@ import RoomReservationListAdmin from "../../components/attendantadmin/RoomReserv
 const EspacioListWrapper = () => {
   const { user } = useAuth();
 
-  if (user?.roleName == "admin") {
+  if (user?.roleName == "Administrador" || user?.roleName == "Encargado") {
     return <RoomReservationListAdmin />;
   }
 

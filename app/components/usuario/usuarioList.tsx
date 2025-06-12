@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import {
   getUsuarios,
   deleteUsuario,
   resetPassword,
   forgotPassword,
-} from "../services/userService";
+} from "../../services/userService";
 import type { User } from "app/types/user";
 import {
   FaUserCircle,

@@ -278,11 +278,14 @@ export default function EquipoForm({
                 setForm({ ...form, estado: e.target.value === "1" })
               }
               className="form-select"
+              disabled={!equipoEditando}
             >
               <option value="1">Disponible</option>
               <option value="0">No disponible</option>
             </select>
           </div>
+
+          
 
           <div className="col-md-6">
             <label htmlFor="cantidad" className="form-label">

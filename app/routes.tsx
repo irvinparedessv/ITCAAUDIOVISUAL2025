@@ -25,6 +25,7 @@ import TipoEquipos from "./routes/tipoEquipos";
 import Equipos from "./routes/equipos";
 import FormUsuario from "./routes/formUsuario";
 import EditUsuario from "./routes/editUsuario";
+import UsuarioListPage from "./routes/usuarioList";
 import QrScan from "./routes/qr";
 import EspacioList from "./routes/espacioList";
 import ApproveReservations from "./routes/attendant/approveReservations";
@@ -35,11 +36,12 @@ import ReservacionEstadoAula from "./routes/ReservacionEstadoAula";
 import BitacoraPage from "./routes/BitacoraPage";
 import NotificationsList from "./routes/NotificationsList";
 import PrediccionPage from "./routes/PrediccionPage";
-import OpcionesPanel from "./routes/OpcionesPanel";
+import OpcionesPanel from "./dashboard/OpcionesPanel";
 import App from "./root";
 import ReservaAulaDetail from "./components/applicant/ReservationRoomDetails";
 import ReserveClassroom from "./components/RoomReservationForm";
 import EspacioListWrapper from "./routes/wrappers/reservations";
+
 
 const router = createBrowserRouter([
   {
@@ -138,6 +140,10 @@ const router = createBrowserRouter([
           {
             path: "formUsuario",
             element: <FormUsuario />,
+          },
+          {
+            path: "usuarios",
+            element: <UsuarioListPage />,
           },
           {
             path: "editarUsuario/:id",

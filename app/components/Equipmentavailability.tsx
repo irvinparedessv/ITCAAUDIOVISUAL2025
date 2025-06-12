@@ -10,28 +10,8 @@ import {
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../api/axios";
+import type { AvailabilityData, Equipment } from "../types/equipo";
 
-type Equipment = {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  cantidad: number;
-  tipo_equipo: {
-    nombre: string;
-  };
-  disponibilidad?: {
-    cantidad_total: number;
-    cantidad_disponible: number;
-    cantidad_en_reserva: number;
-    cantidad_entregada: number;
-  };
-};
-
-type AvailabilityData = {
-  fecha: Date | null;
-  startTime: string;
-  endTime: string;
-};
 
 export default function EquipmentAvailabilityList() {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
@@ -46,10 +26,9 @@ export default function EquipmentAvailabilityList() {
 
   const fetchEquipment = async () => {
     try {
-      const response = await api.get("/equipos");
+      const response = await api.get("/obtenerEquipos");
       console.log("equipos:", response.data);
-      // Accede a response.data.data donde está el array real
-      setEquipmentList(response.data.data || []); // Usamos || [] como fallback por si es undefined
+      setEquipmentList(response.data || []);
     } catch (err) {
       setError("Error al cargar los equipos");
       console.error(err);

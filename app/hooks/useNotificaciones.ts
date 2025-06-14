@@ -84,27 +84,12 @@ export function useNotificaciones(options?: UseNotificacionesOptions) {
     }));
   }, []);
 
-  // Manejar nueva notificación
-  const handleNewNotification = useCallback((data: any) => {
-    setNotificaciones(prev => {
-      const newNotification: Notificacion = {
-        id: data.id,
-        data: data.data || data,
-        type: data.type,
-        createdAt: new Date(data.created_at || new Date()),
-        readAt: data.read_at ? new Date(data.read_at) : null,
-        unread: !data.read_at,
-      };
-      
-      // Evitar duplicados
-      if (!prev.some(n => n.id === newNotification.id)) {
-        return [newNotification, ...prev];
-      }
-      return prev;
-    });
-    
-    setUnreadCount(prev => data.read_at ? prev : prev + 1);
-  }, []);
+    // Manejar nueva notificación recibida
+  const handleNewNotification = (data: any) => {
+    console.log("Nueva notificación recibida:", data);
+    setUnreadCount(prev => prev + 1);
+    fetchNotifications(); // Refrescar la lista completa
+  };
 
   // Cargar notificaciones
   const fetchNotifications = useCallback(async () => {

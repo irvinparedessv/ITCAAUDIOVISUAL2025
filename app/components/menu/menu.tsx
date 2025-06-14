@@ -101,17 +101,17 @@ const NotificationItem = ({
       return;
     }
 
-    if (isNuevaReserva && isPending && isAdminOrManager) {
-      // Redirigir a la página de actualización según el tipo
-      const route = isAulaNotification ? 'actualizarEstadoAula' : 'actualizarEstado';
-      navigate(`/${route}/${reservaId}`);
-    } else {
-      // Redirigir a la página de listado según el tipo
+    // if (isNuevaReserva && isPending && isAdminOrManager) {
+    //   // Redirigir a la página de actualización según el tipo
+    //   const route = isAulaNotification ? 'actualizarEstadoAula' : 'actualizarEstado';
+    //   navigate(`/${route}/${reservaId}`);
+    // } else {
+    //   // Redirigir a la página de listado según el tipo
       const targetRoute = isAulaNotification ? "/reservations-room" : "/reservations";
       navigate(targetRoute, { 
         state: { highlightReservaId: reservaId } 
       });
-    }
+    // }
   };
 
   return (

@@ -1,40 +1,47 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Badge, Button, Modal, Form } from "react-bootstrap";
 import api from "../api/axios";
 import { useAuth } from "../hooks/AuthContext";
 import toast from "react-hot-toast";
-import { FaEye, FaFilter } from "react-icons/fa";
+import { FaEdit, FaEye, FaFilter } from "react-icons/fa";
 import type { TipoReserva } from "app/types/tipoReserva";
 import type { Bitacora } from "app/types/bitacora";
 import { QRURL } from "~/constants/constant";
 import type { Reservation } from "~/types/reservation";
 import EquipmentDetailsModal from "./applicant/EquipmentDetailsModal";
+import { useLocation, useNavigate } from "react-router-dom";
+import 'animate.css';
 
 export default function ReservationList() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const highlightId = location.state?.highlightReservaId;
+
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [filteredReservations, setFilteredReservations] = useState<
-    Reservation[]
-  >([]);
-  const [selectedReservation, setSelectedReservation] =
-    useState<Reservation | null>(null);
+  const [filteredReservations, setFilteredReservations] = useState<Reservation[]>([]);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const qrBaseUrl = QRURL;
   const [historial, setHistorial] = useState<Bitacora[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
-  const [historialCache, setHistorialCache] = useState<
-    Record<number, Bitacora[]>
-  >({});
+  const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
-  // Estados para los filtros
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [typeFilter, setTypeFilter] = useState<string>("Todos");
   const [showFilters, setShowFilters] = useState(false);
   const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
 
-  // Obtener tipos de reserva para el filtro
+  const highlightRef = useRef<HTMLTableRowElement>(null);
+
+  useEffect(() => {
+    if (highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
+
   useEffect(() => {
     const fetchTipoReservas = async () => {
       try {
@@ -91,16 +98,13 @@ export default function ReservationList() {
     }
   }, [user]);
 
-  // Aplicar filtros cuando cambian los valores
   useEffect(() => {
     let result = [...reservations];
 
-    // Filtrar por estado
     if (statusFilter !== "Todos") {
       result = result.filter((reserva) => reserva.estado === statusFilter);
     }
 
-    // Filtrar por tipo
     if (typeFilter !== "Todos") {
       result = result.filter(
         (reserva) => reserva.tipo_reserva?.nombre === typeFilter
@@ -114,11 +118,15 @@ export default function ReservationList() {
     setHistorial([]);
     setSelectedReservation(reservation);
     setShowModal(true);
+
+    // No limpiamos el estado para que el elemento siga siendo el primero
+    // navigate(".", { replace: true, state: {} });
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedReservation(null);
+    navigate(".", { replace: true, state: {} }); // Limpia el highlight al cerrar modal
   };
 
   const resetFilters = () => {
@@ -128,25 +136,27 @@ export default function ReservationList() {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedReservations = filteredReservations.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
 
-  const totalPages = Math.ceil(reservations.length / itemsPerPage);
+  // 🔁 Aquí movemos el highlight al principio
+  let orderedReservations = [...filteredReservations];
+  if (highlightId) {
+    const index = orderedReservations.findIndex((r) => r.id === highlightId);
+    if (index !== -1) {
+      const [highlighted] = orderedReservations.splice(index, 1);
+      orderedReservations.unshift(highlighted);
+    }
+  }
 
-  // Función para paginación con puntos suspensivos
+  const paginatedReservations = orderedReservations.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(orderedReservations.length / itemsPerPage);
+
   const getPageNumbers = () => {
-    const delta = 2; // páginas antes y después de la actual
+    const delta = 2;
     const range: (number | string)[] = [];
     const rangeWithDots: (number | string)[] = [];
     let l: number | null = null;
 
-    for (
-      let i = Math.max(2, currentPage - delta);
-      i <= Math.min(totalPages - 1, currentPage + delta);
-      i++
-    ) {
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
       range.push(i);
     }
 
@@ -177,7 +187,6 @@ export default function ReservationList() {
           </Button>
         </div>
 
-        {/* Panel de filtros */}
         {showFilters && (
           <div className="p-3 rounded mb-4">
             <div className="row g-3">
@@ -215,11 +224,7 @@ export default function ReservationList() {
               </div>
 
               <div className="col-md-4 d-flex align-items-end">
-                <Button
-                  variant="outline-danger"
-                  onClick={resetFilters}
-                  className="w-100"
-                >
+                <Button variant="outline-danger" onClick={resetFilters} className="w-100">
                   Limpiar filtros
                 </Button>
               </div>
@@ -227,72 +232,67 @@ export default function ReservationList() {
           </div>
         )}
 
-        <table
-          className="table table-hover align-middle text-center overflow-hidden"
-          style={{ borderRadius: "0.8rem" }}
-        >
+        <table className="table table-hover align-middle text-center overflow-hidden">
           <thead className="table-dark">
             <tr>
-              <th className="rounded-top-start">Usuario</th>
+              <th>Usuario</th>
               <th>Tipo Reserva</th>
               <th>Equipos</th>
               <th>Aula</th>
               <th>Fecha Salida</th>
               <th>Fecha Entrega</th>
               <th>Estado</th>
-              <th className="rounded-top-end">Acciones</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {paginatedReservations.map((reserva) => (
-              <tr key={reserva.id}>
-                <td className="fw-bold">
-                  {reserva.user.first_name}-{reserva.user.last_name}
-                </td>
-                <td>{reserva.tipo_reserva?.nombre}</td>
-                <td>
-                  {reserva.equipos
-                    .slice(0, 2)
-                    .map((e) => e.nombre)
-                    .join(", ")}
-                  {reserva.equipos.length > 2 && "..."}
-                </td>
-                <td>{reserva.aula}</td>
-                <td>{formatDate(reserva.fecha_reserva)}</td>
-                <td>{formatDate(reserva.fecha_entrega)}</td>
-                <td>
-                  <Badge
-                    bg={getBadgeColor(reserva.estado)}
-                    className="px-3 py-2"
-                    style={{ fontSize: "0.9rem" }}
-                  >
-                    {reserva.estado}
-                  </Badge>
-                </td>
-                <td>
-                  <div className="d-flex justify-content-center gap-2">
-                    <button
-                      className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
-                      title="Ver detalles"
-                      onClick={() => handleDetailClick(reserva)}
-                      style={{
-                        width: "44px",
-                        height: "44px",
-                        transition: "transform 0.2s ease-in-out",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.transform = "scale(1.15)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.transform = "scale(1)")
-                      }
-                    >
-                      <FaEye className="fs-5" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {paginatedReservations.map((reserva) => {
+              const isHighlighted = reserva.id === highlightId;
+              return (
+                <tr
+                  key={reserva.id}
+                  ref={isHighlighted ? highlightRef : null}
+                  className={`${isHighlighted ? "table-warning animate__animated animate__flash" : ""}`}
+                >
+                  <td className="fw-bold">
+                    {reserva.user.first_name}-{reserva.user.last_name}
+                  </td>
+                  <td>{reserva.tipo_reserva?.nombre}</td>
+                  <td>
+                    {reserva.equipos.slice(0, 2).map((e) => e.nombre).join(", ")}
+                    {reserva.equipos.length > 2 && "..."}
+                  </td>
+                  <td>{reserva.aula}</td>
+                  <td>{formatDate(reserva.fecha_reserva)}</td>
+                  <td>{formatDate(reserva.fecha_entrega)}</td>
+                  <td>
+                    <Badge bg={getBadgeColor(reserva.estado)} className="px-3 py-2">
+                      {reserva.estado}
+                    </Badge>
+                  </td>
+                  <td>
+                    <div className="d-flex justify-content-center gap-2">
+                      <button
+                        className="btn btn-outline-primary rounded-circle"
+                        onClick={() => handleDetailClick(reserva)}
+                        style={{ width: "44px", height: "44px" }}
+                      >
+                        <FaEye className="fs-5" />
+                      </button>
+
+                      <button
+                        className="btn btn-outline-success rounded-circle"
+                        onClick={() => navigate(`/actualizarEstado/${reserva.id}`)}
+                        style={{ width: "44px", height: "44px" }}
+                        title="Actualizar estado"
+                      >
+                        <FaEdit className="fs-5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
             {filteredReservations.length === 0 && (
               <tr>
                 <td colSpan={8} className="text-center text-muted">
@@ -304,7 +304,7 @@ export default function ReservationList() {
             )}
           </tbody>
         </table>
-        {/* Paginación */}
+
         <nav className="d-flex justify-content-center mt-4">
           <ul className="pagination">
             <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
@@ -316,34 +316,20 @@ export default function ReservationList() {
                 Anterior
               </button>
             </li>
-
             {getPageNumbers().map((page, index) =>
               page === "..." ? (
                 <li key={`dots-${index}`} className="page-item disabled">
                   <span className="page-link">...</span>
                 </li>
               ) : (
-                <li
-                  key={page}
-                  className={`page-item ${
-                    currentPage === page ? "active" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(Number(page))}
-                  >
+                <li key={page} className={`page-item ${currentPage === page ? "active" : ""}`}>
+                  <button className="page-link" onClick={() => setCurrentPage(Number(page))}>
                     {page}
                   </button>
                 </li>
               )
             )}
-
-            <li
-              className={`page-item ${
-                currentPage === totalPages ? "disabled" : ""
-              }`}
-            >
+            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
               <button
                 className="page-link"
                 onClick={() => setCurrentPage(currentPage + 1)}
@@ -369,7 +355,7 @@ export default function ReservationList() {
   );
 }
 
-function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto") {
+function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto" | string) {
   switch (estado) {
     case "Pendiente":
       return "warning";

@@ -11,6 +11,7 @@ import type { Reservation } from "~/types/reservation";
 import EquipmentDetailsModal from "./applicant/EquipmentDetailsModal";
 import { useLocation, useNavigate } from "react-router-dom";
 import 'animate.css';
+import ReservacionEstadoModal from "./ReservacionEstado";
 
 export default function ReservationList() {
   const { user } = useAuth();
@@ -28,6 +29,11 @@ export default function ReservationList() {
   const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
+  const [showEstadoModal, setShowEstadoModal] = useState(false);
+  const [reservaSeleccionadaParaEstado, setReservaSeleccionadaParaEstado] = useState<Reservation | null>(null);
+  const [isUpdatingEstado, setIsUpdatingEstado] = useState(false);
+  const [updatingReservationId, setUpdatingReservationId] = useState<number | null>(null);
+
 
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [typeFilter, setTypeFilter] = useState<string>("Todos");
@@ -81,22 +87,24 @@ export default function ReservationList() {
     }
   }, [showModal, selectedReservation]);
 
-  useEffect(() => {
-    const fetchReservations = async () => {
-      try {
-        const response = await api.get(`/reservas/${user?.id}`);
-        setReservations(response.data);
-        setFilteredReservations(response.data);
-      } catch (error) {
-        console.error(error);
-        toast.error("Error al cargar las reservas");
-      }
-    };
+  const fetchReservations = async () => {
+    try {
+      const response = await api.get(`/reservas/${user?.id}`);
+      setReservations(response.data);
+      setFilteredReservations(response.data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al cargar las reservas");
+    }
+  };
 
+
+  useEffect(() => {
     if (user?.id) {
       fetchReservations();
     }
   }, [user]);
+
 
   useEffect(() => {
     let result = [...reservations];
@@ -280,14 +288,23 @@ export default function ReservationList() {
                         <FaEye className="fs-5" />
                       </button>
 
-                      <button
-                        className="btn btn-outline-success rounded-circle"
-                        onClick={() => navigate(`/actualizarEstado/${reserva.id}`)}
-                        style={{ width: "44px", height: "44px" }}
-                        title="Actualizar estado"
-                      >
-                        <FaEdit className="fs-5" />
-                      </button>
+                     <button
+  className="btn btn-outline-success rounded-circle"
+  onClick={() => {
+    // Evita que se edite otra mientras una está en proceso
+    if (updatingReservationId !== null) return;
+    setReservaSeleccionadaParaEstado(reserva);
+    setShowEstadoModal(true);
+  }}
+  style={{ width: "44px", height: "44px" }}
+  title="Actualizar estado"
+  disabled={updatingReservationId === reserva.id}
+>
+  <FaEdit className="fs-5" />
+</button>
+
+
+
                     </div>
                   </td>
                 </tr>
@@ -304,6 +321,35 @@ export default function ReservationList() {
             )}
           </tbody>
         </table>
+        
+       {reservaSeleccionadaParaEstado && (
+  <ReservacionEstadoModal
+    show={showEstadoModal}
+    onHide={() => {
+      setShowEstadoModal(false);
+      setUpdatingReservationId(null);
+    }}
+    reservationId={reservaSeleccionadaParaEstado.id}
+    currentStatus={reservaSeleccionadaParaEstado.estado}
+    onBefore={() => setUpdatingReservationId(reservaSeleccionadaParaEstado.id)}
+    onAfter={() => setUpdatingReservationId(null)}
+    onSuccess={(newEstado) => {
+      // Actualiza localmente solo la reserva que cambió
+      setReservations((prev) =>
+        prev.map((r) =>
+          r.id === reservaSeleccionadaParaEstado.id
+            ? { ...r, estado: newEstado }
+            : r
+        )
+      );
+      setShowEstadoModal(false);
+      setUpdatingReservationId(null);
+    }}
+  />
+)}
+
+
+
 
         <nav className="d-flex justify-content-center mt-4">
           <ul className="pagination">
@@ -355,14 +401,16 @@ export default function ReservationList() {
   );
 }
 
-function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto" | string) {
+function getBadgeColor(estado: "Pendiente" | "Aprobado" | "Devuelto" | "Rechazado" | string) {
   switch (estado) {
     case "Pendiente":
       return "warning";
-    case "Entregado":
+    case "Aprobado":
       return "primary";
     case "Devuelto":
       return "success";
+    case "Rechazado":
+      return "danger";
     default:
       return "secondary";
   }

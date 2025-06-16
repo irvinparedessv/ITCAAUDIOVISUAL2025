@@ -1,22 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Modal, Button, Form, Spinner } from "react-bootstrap";
 import { FaCheck, FaTimes, FaUndo, FaSave } from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../api/axios";
+import type { Reservation } from "../types/reservation"; // Ajusta el path si es necesario
 
 interface Props {
+  show: boolean;
+  onHide: () => void;
   reservationId: number;
-  currentStatus: string;
-  onSuccess?: () => void;
+  currentStatus: Reservation["estado"];
+  onSuccess?: (newStatus: Reservation["estado"]) => void;
+  onBefore?: () => void;
+  onAfter?: () => void;
 }
 
-export default function ReservacionEstado({
+export default function ReservacionEstadoModal({
+  show,
+  onHide,
   reservationId,
   currentStatus,
   onSuccess,
+  onBefore,
+  onAfter,
 }: Props) {
-  const [newStatus, setNewStatus] = useState("");
+  const [newStatus, setNewStatus] = useState<Reservation["estado"] | "">("");
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (show) {
+      setNewStatus("");
+      setComment("");
+    }
+  }, [show]);
+
+  const getStatusOptions = () => {
+    switch (currentStatus) {
+      case "Pendiente":
+        return ["Aprobado", "Rechazado"];
+      case "Aprobado":
+        return ["Devuelto"];
+      default:
+        return []; // Rechazado o Devuelto ya no permite cambios
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,77 +56,99 @@ export default function ReservacionEstado({
 
     try {
       setLoading(true);
-     await api.put(`/reservas-equipo/${reservationId}/estado`, {
+      onBefore?.();
+
+      await api.put(`/reservas-equipo/${reservationId}/estado`, {
         estado: newStatus,
         comentario: comment,
       });
+
       toast.success("Estado actualizado correctamente");
-      if (onSuccess) onSuccess();
+      onSuccess?.(newStatus as Reservation["estado"]);
+      onHide();
     } catch (error) {
       console.error(error);
       toast.error("Error al actualizar el estado");
     } finally {
       setLoading(false);
+      onAfter?.();
     }
   };
 
+  const statusOptions = getStatusOptions();
+  const isReadOnly = currentStatus === "Rechazado" || currentStatus === "Devuelto";
+
   return (
-    <div className="form-container">
-      <h2 className="mb-4 text-center fw-bold">Actualizar Estado de Reserva</h2>
-      <form onSubmit={handleSubmit}>
-        {/* Estado */}
-        <div className="mb-4">
-          <label className="form-label d-flex align-items-center">
-            <FaCheck className="me-2" />
-            Nuevo Estado
-          </label>
-          <select
-            className="form-select"
-            value={newStatus}
-            onChange={(e) => setNewStatus(e.target.value)}
-          >
-            <option value="">Seleccione una opción</option>
-            <option value="Aprobado">Aprobar</option>
-            <option value="Rechazado">Rechazar</option>
-            <option value="Devuelto">Marcar como devuelto</option>
-          </select>
-        </div>
+    <Modal show={show} onHide={onHide} centered>
+      <Modal.Header closeButton>
+        <Modal.Title>Actualizar Estado de Reserva #{reservationId}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {statusOptions.length === 0 ? (
+          <p className="text-muted">Esta reserva ya no puede cambiar de estado.</p>
+        ) : (
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label>
+                <FaCheck className="me-2" />
+                Nuevo Estado
+              </Form.Label>
+              <Form.Select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value as Reservation["estado"])}
+              >
+                <option value="">Seleccione una opción</option>
+                {statusOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-        {/* Comentario */}
-        <div className="mb-4">
-          <label className="form-label d-flex align-items-center">
-            <FaUndo className="me-2" />
-            Comentario (opcional)
-          </label>
-          <textarea
-            className="form-control"
-            rows={3}
-            placeholder="Agrega un comentario si es necesario"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-          ></textarea>
-        </div>
+            <Form.Group className="mb-3">
+              <Form.Label>
+                <FaUndo className="me-2" />
+                Comentario {isReadOnly && "(no editable)"}
+              </Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Agrega un comentario si es necesario"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                disabled={isReadOnly}
+              />
+            </Form.Group>
 
-        {/* Botón */}
-        <div className="form-actions">
-          <button type="submit" className="btn primary-btn" disabled={loading}>
-            {loading ? (
-              <>
-                <span
-                  className="spinner-border spinner-border-sm me-2"
-                  aria-hidden="true"
-                ></span>
-                <span role="status">Guardando...</span>
-              </>
-            ) : (
-              <>
-                <FaSave className="me-2" />
-                Guardar cambios
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
+            <div className="d-flex justify-content-end">
+              <Button variant="secondary" onClick={onHide} className="me-2">
+                Cancelar
+              </Button>
+              <Button type="submit" variant="success" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      role="status"
+                      aria-hidden="true"
+                      className="me-2"
+                    />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <FaSave className="me-2" />
+                    Guardar cambios
+                  </>
+                )}
+              </Button>
+            </div>
+          </Form>
+        )}
+      </Modal.Body>
+    </Modal>
   );
 }

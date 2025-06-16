@@ -2,7 +2,9 @@ import { Navbar, Nav, Container, Dropdown, Offcanvas } from "react-bootstrap";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   FaHome, FaPlus, FaList, FaUserCircle, FaMoon, FaSun, 
-  FaCalendarAlt, FaTimes, FaBars 
+  FaCalendarAlt, FaTimes, FaBars, 
+  FaDoorOpen,
+  FaClipboardList
 } from "react-icons/fa";
 import { FaBell, FaComputer } from "react-icons/fa6";
 import { Role } from "../../types/roles";
@@ -12,6 +14,10 @@ import { useNotificaciones } from "~/hooks/useNotificaciones";
 import React from 'react';
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { FiRefreshCcw } from "react-icons/fi";
+import type { ReactNode, ElementType } from "react";
+
+
+
 
 // Definición de tipos
 type NotificationType = 'nueva_reserva' | 'estado_reserva' | 'nueva_reserva_aula' | 'estado_reserva_aula';
@@ -58,6 +64,13 @@ interface Notificacion {
   type: string;
 }
 
+interface HoverDropdownProps {
+  title: ReactNode;  // Change from string to ReactNode
+  icon: ElementType;
+  children: ReactNode;
+}
+
+
 // Componente NotificationItem
 const NotificationItem = ({ 
   noti, 
@@ -101,17 +114,10 @@ const NotificationItem = ({
       return;
     }
 
-    // if (isNuevaReserva && isPending && isAdminOrManager) {
-    //   // Redirigir a la página de actualización según el tipo
-    //   const route = isAulaNotification ? 'actualizarEstadoAula' : 'actualizarEstado';
-    //   navigate(`/${route}/${reservaId}`);
-    // } else {
-    //   // Redirigir a la página de listado según el tipo
-      const targetRoute = isAulaNotification ? "/reservations-room" : "/reservations";
-      navigate(targetRoute, { 
-        state: { highlightReservaId: reservaId } 
-      });
-    // }
+    const targetRoute = isAulaNotification ? "/reservations-room" : "/reservations";
+    navigate(targetRoute, { 
+      state: { highlightReservaId: reservaId } 
+    });
   };
 
   return (
@@ -200,8 +206,6 @@ const CustomUserToggle = React.forwardRef<HTMLButtonElement, { children: React.R
   )
 );
 
-
-
 const DesktopToggle = React.forwardRef<HTMLDivElement, { children: React.ReactNode, onClick?: (e: React.MouseEvent<HTMLDivElement>) => void }>(
   ({ children, onClick }, ref) => (
     <div 
@@ -219,6 +223,33 @@ const DesktopToggle = React.forwardRef<HTMLDivElement, { children: React.ReactNo
   )
 );
 
+// Componente para el dropdown que se activa con hover
+const HoverDropdown = ({ title, icon: Icon, children }: HoverDropdownProps) => {
+  const [show, setShow] = useState(false);
+
+  return (
+    <Dropdown 
+      show={show}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      className="mx-1 hover-dropdown"
+    >
+      <Dropdown.Toggle as={DesktopToggle} id={`dropdown-${typeof title === 'string' ? title.toLowerCase().replace(' ', '-') : 'dropdown'}`}>
+        <Icon className="me-1" /> {title}
+      </Dropdown.Toggle>
+      <Dropdown.Menu 
+        style={{
+          background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))"
+        }}
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+      >
+        {children}
+      </Dropdown.Menu>
+    </Dropdown>
+  );
+};
+
 // Componente principal NavbarMenu
 const NavbarMenu = () => {
   const { user, logout, checkAccess } = useAuth();
@@ -226,6 +257,7 @@ const NavbarMenu = () => {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const {
     notificaciones,
     unreadCount,
@@ -279,7 +311,7 @@ const NavbarMenu = () => {
     });
   };
 
-  // Funciones de renderizado
+  // Funciones de renderizado Mobile
   const renderMainMenu = () => (
     <>
       <Nav.Link as={Link} to="/" className="px-3 py-2 rounded text-dark" onClick={handleCloseSidebar}>
@@ -289,15 +321,45 @@ const NavbarMenu = () => {
       {user?.role === Role.Administrador && (
         <>
           {checkAccess("/reservations") && (
-            <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded text-dark" onClick={handleCloseSidebar}>
-              <FaList className="me-1" /> Reservas
-            </Nav.Link>
+            <Dropdown className="mb-2 offcanvas-dropdown">
+              <Dropdown.Toggle as={CustomToggle} id="dropdown-reservas-sidebar">
+                <FaComputer className="me-2" /> Reservas
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="w-100">
+                <Dropdown.Item 
+                  as={Link} 
+                  to="/addreservation" 
+                  className="d-flex align-items-center gap-2 text-dark" 
+                  onClick={handleCloseSidebar}
+                >
+                  <FaComputer className="me-2" /> Reserva de Equipos
+                </Dropdown.Item>
+                
+                <Dropdown.Item 
+                  as={Link} 
+                  to="/reservationsroom" 
+                  className="d-flex align-items-center gap-2 text-dark" 
+                  onClick={handleCloseSidebar}
+                >
+                  <FaDoorOpen className="me-2" /> Reserva de Espacios
+                </Dropdown.Item>
+
+                <Dropdown.Item 
+                  as={Link} 
+                  to="/approvereservations" 
+                  className="d-flex align-items-center gap-2 text-dark" 
+                  onClick={handleCloseSidebar}
+                >
+                  <FaClipboardList className="me-2" /> Aprobar reservas
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
           )}
 
           {checkAccess("/equipo") && (
             <Dropdown className="mb-2 offcanvas-dropdown">
               <Dropdown.Toggle as={CustomToggle} id="dropdown-equipo-sidebar">
-                <FaComputer className="me-1" /> Equipos
+                <FaComputer className="me-2" /> Equipos
               </Dropdown.Toggle>
               <Dropdown.Menu className="w-100">
                 <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
@@ -318,17 +380,49 @@ const NavbarMenu = () => {
         </>
       )}
 
+      {/* Menu encargado mobile */}
       {user?.role === Role.Encargado && (
         <>
-          {checkAccess("/equipo") && (
-            <Nav.Link as={Link} to="/equipo" className="px-3 py-2 rounded text-dark" onClick={handleCloseSidebar}>
-              <FaPlus className="me-1" /> Equipos
-            </Nav.Link>
-          )}
-          {checkAccess("/formEspacio") && (
+          {checkAccess("/reservations") && (
             <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded text-dark" onClick={handleCloseSidebar}>
               <FaList className="me-1" /> Reservas
             </Nav.Link>
+          )}
+          
+          {checkAccess("/reservations") && (
+            <Dropdown className="mb-2 offcanvas-dropdown">
+              <Dropdown.Toggle as={CustomToggle} id="dropdown-reservas-sidebar">
+                <FaComputer className="me-2" /> Reservas
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="w-100">
+                <Dropdown.Item 
+                  as={Link} 
+                  to="/addreservation" 
+                  className="d-flex align-items-center gap-2 text-dark" 
+                  onClick={handleCloseSidebar}
+                >
+                  <FaComputer className="me-2" /> Reserva de Equipos
+                </Dropdown.Item>
+                
+                <Dropdown.Item 
+                  as={Link} 
+                  to="/reservationsroom" 
+                  className="d-flex align-items-center gap-2 text-dark" 
+                  onClick={handleCloseSidebar}
+                >
+                  <FaDoorOpen className="me-2" /> Reserva de Espacios
+                </Dropdown.Item>
+
+                <Dropdown.Item 
+                  as={Link} 
+                  to="/approvereservations" 
+                  className="d-flex align-items-center gap-2 text-dark" 
+                  onClick={handleCloseSidebar}
+                >
+                  <FaClipboardList className="me-2" /> Aprobar reservas
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
           )}
         </>
       )}
@@ -377,7 +471,7 @@ const NavbarMenu = () => {
         <Dropdown className="mb-3 offcanvas-dropdown">
           <Dropdown.Toggle as={CustomToggle} id="dropdown-notifications-sidebar">
             <div className="position-relative">
-              <FaBell className="me-2" size={20} />
+              <FaBell className="me-2" size={16} />
               {unreadCount > 0 && (
                 <span className={`badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle ${unreadCount > 9 ? 'px-1' : ''}`}>
                   {unreadCount > 9 ? '9+' : unreadCount}
@@ -606,8 +700,8 @@ const NavbarMenu = () => {
       );
     }
 
-    
-    return (
+    // Para desktop, mantenemos el hover
+        return (
       <Dropdown align="end" >
         <Dropdown.Toggle as={CustomUserToggle} id="dropdown-user">
         <div className="custom-user-icon">
@@ -663,6 +757,8 @@ const NavbarMenu = () => {
     );
   };
 
+
+  // Funciones de renderizado Desktop con hover
   const renderDesktopMenu = () => (
     <Nav className="ms-auto align-items-center gap-1 flex-row navbar-nav">
       <Nav.Link as={Link} to="/" className="px-3 py-2 rounded text-dark">
@@ -672,36 +768,65 @@ const NavbarMenu = () => {
       {user?.role === Role.Administrador && (
         <>
           {checkAccess("/reservations") && (
-            <Nav.Link as={Link} to="/reservations" className="px-3 py-2 rounded text-dark">
-              <FaList className="me-1" /> Reservas
-            </Nav.Link>
+            <HoverDropdown
+              title={
+                <span className="d-flex align-items-center">
+                  Reservas <FaChevronDown className="ms-1" size={12}/>
+                </span>
+              }
+              icon={FaComputer}
+            >
+              <Dropdown.Item as={Link} to="/addreservation" className="d-flex align-items-start text-dark">
+                <FaComputer className="me-2" />
+                <div>
+                  <div className="fw-bold">Reserva de Equipos</div>
+                </div>
+              </Dropdown.Item>
+              
+              <Dropdown.Item as={Link} to="/reservationsroom" className="d-flex align-items-start text-dark">
+                <FaDoorOpen className="me-2" />
+                <div>
+                  <div className="fw-bold">Reserva de Espacios</div>
+                </div>
+              </Dropdown.Item>
+              <Dropdown.Item 
+                as={Link} 
+                to="/approvereservations" 
+                className="d-flex align-items-start text-dark" 
+                onClick={handleCloseSidebar}
+              >
+                <FaClipboardList className="me-2" />
+                <div>
+                  <div className="fw-bold">Aprobar reservas</div>
+                </div>
+              </Dropdown.Item>
+            </HoverDropdown>
           )}
 
           {checkAccess("/equipo") && (
-            <Dropdown className="mx-1">
-              <Dropdown.Toggle as={DesktopToggle} id="dropdown-equipo">
-                <FaComputer className="me-1" /> Equipos
-              </Dropdown.Toggle>
-              <Dropdown.Menu style={{
-                background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))"
-              }}>
-                <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-start text-dark">
-                  <FaList className="me-2" />
-                  <div>
-                    <div className="fw-bold">Listado de Equipos</div>
-                    <small>Ver todos los equipos</small>
-                  </div>
-                </Dropdown.Item>
-                
-                <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-start text-dark">
-                  <FaPlus className="me-2" />
-                  <div>
-                    <div className="fw-bold">Nuevo Equipo</div>
-                    <small>Agregar un nuevo equipo</small>
-                  </div>
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+            <HoverDropdown 
+            title={
+                <span className="d-flex align-items-center">
+                  Equipos <FaChevronDown className="ms-1" size={12}/>
+                </span>
+              } icon={FaComputer}>
+
+              <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-start text-dark">
+                <FaList className="me-2" />
+                <div>
+                  <div className="fw-bold">Listado de Equipos</div>
+                  <small>Ver todos los equipos</small>
+                </div>
+              </Dropdown.Item>
+              
+              <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-start text-dark">
+                <FaPlus className="me-2" />
+                <div>
+                  <div className="fw-bold">Nuevo Equipo</div>
+                  <small>Agregar un nuevo equipo</small>
+                </div>
+              </Dropdown.Item>
+            </HoverDropdown>
           )}
 
           {checkAccess("/formEspacio") && (
@@ -715,21 +840,52 @@ const NavbarMenu = () => {
               <FaList className="me-1" /> Reserva de espacios
             </Nav.Link>
           )}
-          
         </>
       )}
-
+      {/* Menu encargado desktop */}
       {user?.role === Role.Encargado && (
         <>
-          {checkAccess("/equipo") && (
-            <Nav.Link as={Link} to="/equipo" className="px-3 py-2 rounded text-dark">
-              <FaPlus className="me-1" /> Equipos
-            </Nav.Link>
-          )}
-          {checkAccess("/formEspacio") && (
+          {checkAccess("/reservations") && (
             <Nav.Link as={Link} to="/formEspacio" className="px-3 py-2 rounded text-dark">
               <FaList className="me-1" /> Reservas
             </Nav.Link>
+          )}
+          {checkAccess("/reservations") && (
+            <HoverDropdown
+              title={
+                <span className="d-flex align-items-center">
+                  Reservas <FaChevronDown className="ms-1" size={12}/>
+                </span>
+              }
+              icon={FaComputer}
+            >
+              <Dropdown.Item as={Link} to="/addreservation" className="d-flex align-items-start text-dark">
+                <FaComputer className="me-2" />
+                <div>
+                  <div className="fw-bold">Reserva de Equipos</div>
+                </div>
+              </Dropdown.Item>
+              
+              <Dropdown.Item as={Link} to="/reservationsroom" className="d-flex align-items-start text-dark">
+                <FaDoorOpen className="me-2" />
+                <div>
+                  <div className="fw-bold">Reserva de Espacios</div>
+                </div>
+              </Dropdown.Item>
+
+              <Dropdown.Item 
+                as={Link} 
+                to="/approvereservations" 
+                className="d-flex align-items-start text-dark" 
+                onClick={handleCloseSidebar}
+              >
+                <FaClipboardList className="me-2" />
+                <div>
+                  <div className="fw-bold">Aprobar reservas</div>
+                </div>
+              </Dropdown.Item>
+
+            </HoverDropdown>
           )}
         </>
       )}
@@ -737,55 +893,41 @@ const NavbarMenu = () => {
       {user?.role === Role.Prestamista && (
         <>
           {checkAccess("/addreservation") && (
-            <Dropdown className="mx-1">
-              <Dropdown.Toggle as={DesktopToggle} id="dropdown-nueva-reserva">
-                <FaPlus className="me-1" /> Nueva Reserva
-              </Dropdown.Toggle>
-              <Dropdown.Menu style={{
-                background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))"
-              }}>
-                <Dropdown.Item as={Link} to="/addreservation" className="d-flex align-items-start text-dark">
-                  <FaComputer className="me-2" />
-                  <div>
-                    <div className="fw-bold">Reservar Equipos</div>
-                    <small>Solicitar equipos tecnológicos</small>
-                  </div>
-                </Dropdown.Item>
-                <Dropdown.Item as={Link} to="/addreservation-room" className="d-flex align-items-start text-dark">
-                  <FaCalendarAlt className="me-2" />
-                  <div>
-                    <div className="fw-bold">Reservar Aula</div>
-                    <small>Solicitar espacio físico</small>
-                  </div>
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+            <HoverDropdown title="Nueva Reserva" icon={FaPlus}>
+              <Dropdown.Item as={Link} to="/addreservation" className="d-flex align-items-start text-dark">
+                <FaComputer className="me-2" />
+                <div>
+                  <div className="fw-bold">Reservar Equipos</div>
+                  <small>Solicitar equipos tecnológicos</small>
+                </div>
+              </Dropdown.Item>
+              <Dropdown.Item as={Link} to="/addreservation-room" className="d-flex align-items-start text-dark">
+                <FaCalendarAlt className="me-2" />
+                <div>
+                  <div className="fw-bold">Reservar Aula</div>
+                  <small>Solicitar espacio físico</small>
+                </div>
+              </Dropdown.Item>
+            </HoverDropdown>
           )}
           
           {checkAccess("/reservations") && (
-            <Dropdown className="mx-1">
-              <Dropdown.Toggle as={DesktopToggle} id="dropdown-reservas">
-                <FaList className="me-1" /> Mis Reservas
-              </Dropdown.Toggle>
-              <Dropdown.Menu style={{
-                background: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20))"
-              }}>
-                <Dropdown.Item as={Link} to="/reservations-room" className="d-flex align-items-start text-dark">
-                  <FaCalendarAlt className="me-2" />
-                  <div>
-                    <div className="fw-bold">Reservas de Aulas</div>
-                    <small>Ver o gestionar aulas reservadas</small>
-                  </div>
-                </Dropdown.Item>
-                <Dropdown.Item as={Link} to="/reservations" className="d-flex align-items-start text-dark">
-                  <FaComputer className="me-2" />
-                  <div>
-                    <div className="fw-bold">Reservas de Equipos</div>
-                    <small>Ver o gestionar equipos reservados</small>
-                  </div>
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+            <HoverDropdown title="Mis Reservas" icon={FaList}>
+              <Dropdown.Item as={Link} to="/reservations-room" className="d-flex align-items-start text-dark">
+                <FaCalendarAlt className="me-2" />
+                <div>
+                  <div className="fw-bold">Reservas de Aulas</div>
+                  <small>Ver o gestionar aulas reservadas</small>
+                </div>
+              </Dropdown.Item>
+              <Dropdown.Item as={Link} to="/reservations" className="d-flex align-items-start text-dark">
+                <FaComputer className="me-2" />
+                <div>
+                  <div className="fw-bold">Reservas de Equipos</div>
+                  <small>Ver o gestionar equipos reservados</small>
+                </div>
+              </Dropdown.Item>
+            </HoverDropdown>
           )}
         </>
       )}
@@ -834,7 +976,7 @@ const NavbarMenu = () => {
         onHide={handleCloseSidebar}
         placement="start"
         className="d-xl-none"
-        backdrop={false}  // ← Esto evita el fondo oscuro
+        backdrop={false}
         style={{
           width: '280px',
           background: "linear-gradient(rgb(245, 195, 92), rgb(245, 195, 92))",

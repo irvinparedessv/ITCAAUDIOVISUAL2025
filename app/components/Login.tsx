@@ -6,11 +6,10 @@ import {
   Modal,
   type ButtonProps,
 } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ForgotPassword from "./auth/ForgotPassword";
-import toast from "react-hot-toast";
 
 const MotionButton = motion(
   forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => (
@@ -24,6 +23,7 @@ const Login = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthenticated } = useAuth();
   const [showForgotModal, setShowForgotModal] = useState(false);
 
@@ -36,6 +36,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null); // Limpiar errores anteriores
 
     try {
       const result = await login(email, password);
@@ -48,13 +49,15 @@ const Login = () => {
       }
     } catch (err: any) {
       setIsLoading(false);
+      let msg = "Ocurrió un error inesperado al iniciar sesión.";
+
       if (err.response?.status === 401) {
-    toast.error("Credenciales incorrectas. Verifique su correo y contraseña.");
-  } else if (err.response?.data?.message) {
-    toast.error(err.response.data.message);
-  } else {
-    toast.error("Ocurrió un error inesperado al iniciar sesión.");
-  }
+        msg = "Credenciales incorrectas. Verifique su correo y contraseña.";
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      }
+
+      setError(msg); // Mostrar mensaje en tarjeta de error
     }
   };
 
@@ -92,7 +95,7 @@ const Login = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                <i className="bi bi-exclamation-circle me-2"></i>
+                
                 {error}
               </motion.div>
             )}

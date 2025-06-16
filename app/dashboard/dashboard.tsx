@@ -8,6 +8,8 @@ import {
   FaBuilding,
   FaUserShield,
   FaQrcode,
+  FaDoorOpen,
+  FaRegFileAlt,
 } from "react-icons/fa";
 import { FaComputer, FaBookmark } from "react-icons/fa6";
 import { Card, Container, Row, Col } from "react-bootstrap";
@@ -57,6 +59,15 @@ export default function Dashboard() {
             icon={<FaComputer size={24} style={getIconStyle()} />}
             link="/addreservation"
             description="Crear nueva reserva de equipos tecnológicos"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
+          <DashboardCard
+            title="Reservas de Espacios"
+            icon={<FaDoorOpen size={24} style={getIconStyle()} />}
+            link="/reservationsroom"
+            description="Gestionar reservas de espacios físicos"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -115,11 +126,38 @@ export default function Dashboard() {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           />
+          <DashboardCard
+            title="Reportes"
+            icon={<FaRegFileAlt size={24} style={getIconStyle()} />}
+            link="/"
+            description="Reportes generales del sistema"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
         </Row>
       )}
 
       {user?.role === Role.Encargado && (
         <Row xs={1} md={2} lg={3} className="g-4">
+          <DashboardCard
+            title="Reservar Equipo"
+            icon={<FaComputer size={24} style={getIconStyle()} />}
+            link="/addreservation"
+            description="Crear nueva reserva de equipos tecnológicos"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
+          <DashboardCard
+            title="Reservas de Espacios"
+            icon={<FaDoorOpen size={24} style={getIconStyle()} />}
+            link="/reservationsroom"
+            description="Gestionar reservas de espacios físicos"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
           <DashboardCard
             title="Aprobar Reservas"
             icon={<FaClipboardList size={24} style={getIconStyle()} />}
@@ -138,19 +176,11 @@ export default function Dashboard() {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           />
-          <DashboardCard
-            title="Reservas de Espacios"
-            icon={<FaBuilding size={24} style={getIconStyle()} />}
-            link="/reservations-room"
-            description="Gestionar reservas de espacios físicos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
+          
           <DashboardCard
             title="Equipos Disponibles"
             icon={<FaComputer size={24} style={getIconStyle()} />}
-            link="/formEquipo"
+            link="/equipmentavailability"
             description="Ver disponibilidad de equipos"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}

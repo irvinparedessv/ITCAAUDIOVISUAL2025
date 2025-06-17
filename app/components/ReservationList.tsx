@@ -12,6 +12,7 @@ import EquipmentDetailsModal from "./applicant/EquipmentDetailsModal";
 import { useLocation, useNavigate } from "react-router-dom";
 import 'animate.css';
 import ReservacionEstadoModal from "./ReservacionEstado";
+import { Role } from "~/types/roles";
 
 export default function ReservationList() {
   const { user } = useAuth();
@@ -288,23 +289,21 @@ export default function ReservationList() {
                         <FaEye className="fs-5" />
                       </button>
 
-                     <button
-  className="btn btn-outline-success rounded-circle"
-  onClick={() => {
-    // Evita que se edite otra mientras una está en proceso
-    if (updatingReservationId !== null) return;
-    setReservaSeleccionadaParaEstado(reserva);
-    setShowEstadoModal(true);
-  }}
-  style={{ width: "44px", height: "44px" }}
-  title="Actualizar estado"
-  disabled={updatingReservationId === reserva.id}
->
-  <FaEdit className="fs-5" />
-</button>
-
-
-
+                  {user?.role !== Role.Prestamista && (
+                      <button
+                        className="btn btn-outline-success rounded-circle"
+                        onClick={() => {
+                          if (updatingReservationId !== null) return;
+                          setReservaSeleccionadaParaEstado(reserva);
+                          setShowEstadoModal(true);
+                        }}
+                        style={{ width: "44px", height: "44px" }}
+                        title="Actualizar estado"
+                        disabled={updatingReservationId === reserva.id}
+                      >
+                        <FaEdit className="fs-5" />
+                      </button>
+                  )}
                     </div>
                   </td>
                 </tr>
@@ -323,34 +322,30 @@ export default function ReservationList() {
         </table>
         
        {reservaSeleccionadaParaEstado && (
-  <ReservacionEstadoModal
-    show={showEstadoModal}
-    onHide={() => {
-      setShowEstadoModal(false);
-      setUpdatingReservationId(null);
-    }}
-    reservationId={reservaSeleccionadaParaEstado.id}
-    currentStatus={reservaSeleccionadaParaEstado.estado}
-    onBefore={() => setUpdatingReservationId(reservaSeleccionadaParaEstado.id)}
-    onAfter={() => setUpdatingReservationId(null)}
-    onSuccess={(newEstado) => {
-      // Actualiza localmente solo la reserva que cambió
-      setReservations((prev) =>
-        prev.map((r) =>
-          r.id === reservaSeleccionadaParaEstado.id
-            ? { ...r, estado: newEstado }
-            : r
-        )
-      );
-      setShowEstadoModal(false);
-      setUpdatingReservationId(null);
-    }}
-  />
-)}
-
-
-
-
+          <ReservacionEstadoModal
+            show={showEstadoModal}
+            onHide={() => {
+              setShowEstadoModal(false);
+              setUpdatingReservationId(null);
+            }}
+            reservationId={reservaSeleccionadaParaEstado.id}
+            currentStatus={reservaSeleccionadaParaEstado.estado}
+            onBefore={() => setUpdatingReservationId(reservaSeleccionadaParaEstado.id)}
+            onAfter={() => setUpdatingReservationId(null)}
+            onSuccess={(newEstado) => {
+              // Actualiza localmente solo la reserva que cambió
+              setReservations((prev) =>
+                prev.map((r) =>
+                  r.id === reservaSeleccionadaParaEstado.id
+                    ? { ...r, estado: newEstado }
+                    : r
+                )
+              );
+              setShowEstadoModal(false);
+              setUpdatingReservationId(null);
+            }}
+          />
+        )}
         <nav className="d-flex justify-content-center mt-4">
           <ul className="pagination">
             <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
@@ -396,6 +391,7 @@ export default function ReservationList() {
         loadingHistorial={loadingHistorial}
         selectedReservation={selectedReservation}
         historial={historial}
+        qrBaseUrl={QRURL}
       />
     </div>
   );

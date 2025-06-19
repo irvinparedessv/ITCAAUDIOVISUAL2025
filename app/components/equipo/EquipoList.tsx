@@ -18,18 +18,22 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
   const [perPage] = useState(5);
   const [total, setTotal] = useState(0);
   const totalPages = Math.ceil(total / perPage);
+  const [lastPage, setLastPage] = useState(1);
+
 
   const fetchEquipos = async () => {
     try {
-      const res = await getEquipos({ search: "", page: 1, perPage: 5 });
-      console.log("Respuesta sin filtro:", res);
-      const data = Array.isArray(res.data) ? res.data : [];
-      setEquipos(data);
+      const res = await getEquipos({ search, page, perPage });
+
+      setEquipos(Array.isArray(res.data) ? res.data : []);
       setTotal(typeof res.total === "number" ? res.total : 0);
+      setLastPage(res.last_page); // 👈 usa el valor del backend
     } catch (error) {
       toast.error("Error al cargar los equipos");
     }
   };
+
+
 
   useEffect(() => {
     fetchEquipos();
@@ -171,7 +175,7 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
         </tbody>
       </table>
 
-      {totalPages >= 1 && (
+      {lastPage >= 1 && (
         <nav className="mt-3 d-flex justify-content-center">
           <ul className="pagination">
             <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
@@ -182,7 +186,7 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
                 Anterior
               </button>
             </li>
-            {[...Array(totalPages)].map((_, index) => (
+            {[...Array(lastPage)].map((_, index) => (
               <li
                 key={index}
                 className={`page-item ${page === index + 1 ? "active" : ""}`}
@@ -195,14 +199,10 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
                 </button>
               </li>
             ))}
-            <li
-              className={`page-item ${page === totalPages ? "disabled" : ""}`}
-            >
+            <li className={`page-item ${page === lastPage ? "disabled" : ""}`}>
               <button
                 className="page-link"
-                onClick={() =>
-                  setPage((prev) => Math.min(totalPages, prev + 1))
-                }
+                onClick={() => setPage((prev) => Math.min(lastPage, prev + 1))}
               >
                 Siguiente
               </button>

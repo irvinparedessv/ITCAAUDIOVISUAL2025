@@ -362,7 +362,7 @@ const NavbarMenu = () => {
                 <FaComputer className="me-2" /> Equipos
               </Dropdown.Toggle>
               <Dropdown.Menu className="w-100">
-                <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
+                <Dropdown.Item as={Link} to="/equipolist" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
                   <FaList className="me-2" /> Listado de Equipos
                 </Dropdown.Item>
                 <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-center gap-2 text-dark" onClick={handleCloseSidebar}>
@@ -811,7 +811,7 @@ const NavbarMenu = () => {
                 </span>
               } icon={FaComputer}>
 
-              <Dropdown.Item as={Link} to="/equipo" className="d-flex align-items-start text-dark">
+              <Dropdown.Item as={Link} to="/equipolist" className="d-flex align-items-start text-dark">
                 <FaList className="me-2" />
                 <div>
                   <div className="fw-bold">Listado de Equipos</div>

@@ -42,6 +42,8 @@ import ReservaAulaDetail from "./components/applicant/ReservationRoomDetails";
 import ReserveClassroom from "./components/RoomReservationForm";
 import EspacioListWrapper from "./routes/wrappers/reservations";
 import EquipoListPage from "./routes/EquipoListPage";
+import EquipoEditPage from "./routes/equipoEditPage";
+
 
 
 const router = createBrowserRouter([
@@ -137,6 +139,10 @@ const router = createBrowserRouter([
           {
             path: "equipo",
             element: <Equipos />,
+          },
+          {
+            path: "/equipos/editar/:id",
+            element: <EquipoEditPage />,
           },
           {
             path: "equipolist",

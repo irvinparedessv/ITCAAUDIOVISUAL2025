@@ -15,6 +15,7 @@ import {
   FaUpload,
   FaTrash,
 } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   onSubmit: (data: EquipoCreateDTO, isEdit?: boolean, id?: number) => void;
@@ -45,6 +46,7 @@ export default function EquipoForm({
   const [loading, setLoading] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
+  const navigate = useNavigate();
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -431,7 +433,15 @@ export default function EquipoForm({
                 <FaBroom className="me-2" />
                 Limpiar
               </button>
-            </>
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => navigate("/equipolist")}
+              >
+                <FaTimes className="me-2" />
+                Cancelar
+              </button>
+                </>
           )}
         </div>
 

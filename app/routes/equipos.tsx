@@ -6,10 +6,11 @@ import {
   deleteEquipo,
 } from "../services/equipoService";
 import { getTipoEquipos } from "../services/tipoEquipoService";
-import type { Equipo, EquipoCreateDTO } from "app/types/equipo";
+import type { Equipo, EquipoCreateDTO, EquipoUpdateDTO } from "app/types/equipo";
 import type { TipoEquipo } from "app/types/tipoEquipo";
 import EquipoForm from "../components/equipo/EquipoForm";
 import EquipoList from "../components/equipo/EquipoList";
+import toast from "react-hot-toast";
 
 export default function EquipoPage() {
   const [tipos, setTipos] = useState<TipoEquipo[]>([]);
@@ -33,22 +34,31 @@ export default function EquipoPage() {
   const toggleRecarga = () => setRecargarLista((v) => !v);
 
   const handleCreateOrUpdate = async (
-    data: EquipoCreateDTO,
-    isEdit?: boolean,
-    id?: number
-  ) => {
-    try {
-      if (isEdit && id) {
-        await updateEquipo(id, data);
-      } else {
-        await createEquipo(data);
-      }
-      setEditando(null);
-      toggleRecarga();
-    } catch (error) {
-      console.error("Error al guardar el equipo:", error);
+  data: EquipoCreateDTO | EquipoUpdateDTO,
+  isEdit?: boolean,
+  id?: number
+) => {
+  try {
+    if (isEdit && id) {
+      // Aseguramos que data tiene el id para actualización
+      const updateData: EquipoUpdateDTO = {
+        ...data,
+        id: id // Añadimos el id si no está presente
+      };
+      await updateEquipo(id, updateData);
+    } else {
+      // Para creación, eliminamos el id si existe
+      const { id: _, ...createData } = data as any;
+      await createEquipo(createData as EquipoCreateDTO);
     }
-  };
+    setEditando(null);
+    toggleRecarga();
+  } catch (error) {
+    console.error("Error al guardar el equipo:", error);
+    // Puedes agregar manejo de errores más específico aquí
+    toast.error("Error al guardar el equipo");
+  }
+};
 
   const handleDelete = async (id: number) => {
     try {

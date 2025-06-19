@@ -4,6 +4,7 @@ import type { TipoEquipo } from "app/types/tipoEquipo";
 import toast from "react-hot-toast";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { getEquipos } from "../../services/equipoService";
+import { Link, useNavigate } from "react-router-dom";
 
 interface Props {
   tipos: TipoEquipo[];
@@ -19,6 +20,8 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
   const [total, setTotal] = useState(0);
   const totalPages = Math.ceil(total / perPage);
   const [lastPage, setLastPage] = useState(1);
+    const navigate = useNavigate();
+
 
 
   const fetchEquipos = async () => {
@@ -145,14 +148,16 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
                 </td>
                 <td>
                   <div className="d-flex justify-content-center gap-2">
+
                     <button
-                      className="btn btn-outline-primary rounded-circle"
-                      title="Editar equipo"
-                      onClick={() => onEdit(equipo)}
-                      style={{ width: "44px", height: "44px" }}
-                    >
-                      <FaEdit />
+                        className="btn btn-outline-primary rounded-circle"
+                        title="Editar equipo"
+                        style={{ width: "44px", height: "44px" }}
+                        onClick={() => navigate(`/equipos/editar/${equipo.id}`)}
+                      >
+                        <FaEdit />
                     </button>
+
                     <button
                       className="btn btn-outline-danger rounded-circle"
                       title="Eliminar equipo"

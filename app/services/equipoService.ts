@@ -5,8 +5,6 @@ import type {
   EquipoUpdateDTO,
 } from "app/types/equipo";
 
-//const API_URL = 'http://localhost:8000/api/equipos'
-
 export interface EquipoFilters {
   search?: string;
   page?: number;
@@ -14,9 +12,37 @@ export interface EquipoFilters {
   tipoEquipoId?: number;
 }
 
+/**
+ * Obtiene un equipo específico por su ID
+ * @param id ID del equipo a obtener
+ * @returns Promise con los datos del equipo
+ */
+export const getEquipoById = async (id: number): Promise<Equipo> => {
+  try {
+    const response = await api.get(`/equipos/${id}`);
+    return response.data; // <- asegurarse que `data` es el equipo
+  } catch (error) {
+    console.error(`Error al obtener equipo con ID ${id}:`, error);
+    throw error;
+  }
+};
+
+
+
+/**
+ * Obtiene una lista paginada de equipos con filtros opcionales
+ * @param filters Filtros de búsqueda
+ * @returns Promise con los datos paginados
+ */
 export const getEquipos = async (
   filters: EquipoFilters = {}
-): Promise<{ data: Equipo[]; total: number; current_page: number; per_page: number; last_page: number }> => {
+): Promise<{ 
+  data: Equipo[]; 
+  total: number; 
+  current_page: number; 
+  per_page: number; 
+  last_page: number 
+}> => {
   try {
     const res = await api.get("/equipos", {
       params: {
@@ -40,7 +66,11 @@ export const getEquipos = async (
   }
 };
 
-
+/**
+ * Crea un nuevo equipo
+ * @param equipo Datos del equipo a crear
+ * @returns Promise con la respuesta del servidor
+ */
 export const createEquipo = async (equipo: EquipoCreateDTO) => {
   const formData = new FormData();
 
@@ -50,7 +80,7 @@ export const createEquipo = async (equipo: EquipoCreateDTO) => {
   formData.append("cantidad", equipo.cantidad.toString());
   formData.append("tipo_equipo_id", equipo.tipo_equipo_id.toString());
   formData.append("tipo_reserva_id", equipo.tipo_reserva_id.toString());
-  formData.append("is_deleted", "0"); // ← Esto soluciona el 422
+  formData.append("is_deleted", "0");
 
   if ((equipo as any).imagen) {
     formData.append("imagen", (equipo as any).imagen);
@@ -71,6 +101,12 @@ export const createEquipo = async (equipo: EquipoCreateDTO) => {
   }
 };
 
+/**
+ * Actualiza un equipo existente
+ * @param id ID del equipo a actualizar
+ * @param equipo Datos actualizados del equipo
+ * @returns Promise con la respuesta del servidor
+ */
 export const updateEquipo = async (id: number, equipo: EquipoUpdateDTO) => {
   const formData = new FormData();
 
@@ -103,6 +139,11 @@ export const updateEquipo = async (id: number, equipo: EquipoUpdateDTO) => {
   }
 };
 
+/**
+ * Elimina lógicamente un equipo (marca como is_deleted = true)
+ * @param id ID del equipo a eliminar
+ * @returns Promise con la respuesta del servidor
+ */
 export const deleteEquipo = async (id: number) => {
   try {
     const res = await api.put(`/equipos/${id}`, { is_deleted: true });
@@ -114,4 +155,13 @@ export const deleteEquipo = async (id: number) => {
     );
     throw error;
   }
+};
+
+// Exportación de todas las funciones del servicio
+export default {
+  getEquipoById,
+  getEquipos,
+  createEquipo,
+  updateEquipo,
+  deleteEquipo,
 };

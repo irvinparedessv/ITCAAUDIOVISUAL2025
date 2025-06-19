@@ -73,12 +73,12 @@ export default function EquipoPage() {
         resetEdit={resetEdit}
       />
 
-      <EquipoList
+      {/* <EquipoList
         tipos={tipos}
         onEdit={handleEdit}
         onDelete={handleDelete}
         key={recargarLista ? "reload" : "stable"} // para forzar remount y recarga datos
-      />
+      /> */}
     </div>
   );
 }

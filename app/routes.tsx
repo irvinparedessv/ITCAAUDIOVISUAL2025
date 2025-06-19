@@ -41,6 +41,7 @@ import App from "./root";
 import ReservaAulaDetail from "./components/applicant/ReservationRoomDetails";
 import ReserveClassroom from "./components/RoomReservationForm";
 import EspacioListWrapper from "./routes/wrappers/reservations";
+import EquipoListPage from "./routes/EquipoListPage";
 
 
 const router = createBrowserRouter([
@@ -136,6 +137,10 @@ const router = createBrowserRouter([
           {
             path: "equipo",
             element: <Equipos />,
+          },
+          {
+            path: "equipolist",
+            element: <EquipoListPage />,
           },
           {
             path: "formUsuario",

@@ -11,7 +11,7 @@ export const routeRoles: Record<string, Role[]> = {
   "/home": [Role.Prestamista, Role.Administrador, Role.Encargado],
 
   // -- Reservas --
-  "/addreservation": [Role.Prestamista, Role.Administrador],
+  "/addreservation": [Role.Prestamista, Role.Administrador, Role.Encargado],
   "/reservations": [Role.Prestamista, Role.Administrador, Role.Encargado],
   "/reservationdetail": [Role.Prestamista],
   "/reservationdetailAdmin": [Role.Administrador],

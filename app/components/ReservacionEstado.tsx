@@ -121,7 +121,7 @@ export default function ReservacionEstadoModal({
         <Form.Group className="mb-4">
           <Form.Label className="fw-semibold">
             <FaUndo className="me-2" />
-            Comentario {isReadOnly && "(no editable)"}
+            Comentario (Opcional) {isReadOnly && "(no editable)"}
           </Form.Label>
           <Form.Control
             as="textarea"

@@ -371,9 +371,19 @@ export default function NotificationsList() {
               onClick={() => {
                 setShowModal(false);
                 if (isEquipo) {
-                  navigate('/reservations');
+                  navigate('/reservations', {
+                    state: {
+                      highlightReservaId: notification.data.reserva?.id,
+                      page: notification.data.page ?? 1, // ← asegúrate que el backend te lo envía
+                    }
+                  });
                 } else if (isAula) {
-                  navigate('/reservations-room');
+                  navigate('/reservations-room', {
+                    state: {
+                      highlightReservaId: notification.data.reserva?.id,
+                      page: notification.data.page ?? 1,
+                    }
+                  });
                 }
               }}
             >

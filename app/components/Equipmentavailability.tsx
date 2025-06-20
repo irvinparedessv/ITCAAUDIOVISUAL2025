@@ -10,36 +10,54 @@ import {
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../api/axios";
-import type { AvailabilityData, Equipment } from "../types/equipo";
-
+import type { AvailabilityData, Equipment, TipoEquipo } from "../types/equipo";
 
 export default function EquipmentAvailabilityList() {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
+  const [tipoEquipos, setTipoEquipos] = useState<TipoEquipo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+
   const [availabilityData, setAvailabilityData] = useState<AvailabilityData>({
     fecha: null,
     startTime: "08:00",
     endTime: "17:00",
   });
-  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-  const fetchEquipment = async () => {
+  const [filtros, setFiltros] = useState({
+    tipo_equipo_id: "",
+    buscar: "",
+    page: 1,
+  });
+  const [searchTerm, setSearchTerm] = useState(filtros.buscar);
+
+  const fetchTipoEquipos = async () => {
     try {
-      const response = await api.get("/obtenerEquipos");
-      console.log("equipos:", response.data);
-      setEquipmentList(response.data || []);
-    } catch (err) {
-      setError("Error al cargar los equipos");
-      console.error(err);
-    } finally {
-      setLoading(false);
+      const response = await api.get("/tipoEquipos");
+      setTipoEquipos(response.data);
+    } catch (error) {
+      console.error("Error al cargar tipos de equipo", error);
     }
   };
 
-  useEffect(() => {
-    fetchEquipment();
-  }, []);
+  const fetchEquipment = async () => {
+    try {
+      const response = await api.get("/obtenerEquipos", {
+        params: {
+          tipo_equipo_id: filtros.tipo_equipo_id || undefined,
+          buscar: filtros.buscar || undefined,
+          page: filtros.page,
+        },
+      });
+      setEquipmentList(response.data.data);
+      setTotalPages(response.data.last_page);
+    } catch (err) {
+      setError("Error al cargar los equipos");
+      console.error(err);
+    } 
+  };
 
   const checkAllAvailability = async () => {
     if (!availabilityData.fecha) {
@@ -50,41 +68,29 @@ export default function EquipmentAvailabilityList() {
     setCheckingAvailability(true);
     try {
       const fechaStr = availabilityData.fecha.toISOString().split("T")[0];
-
-      const updatedEquipmentList = await Promise.all(
+      const updatedList = await Promise.all(
         equipmentList.map(async (equipo) => {
           try {
-            const response = await api.get(
-              `/equipos/${equipo.id}/disponibilidad`,
-              {
-                params: {
-                  fecha: fechaStr,
-                  startTime: availabilityData.startTime,
-                  endTime: availabilityData.endTime,
-                },
-              }
-            );
+            const res = await api.get(`/equipos/${equipo.id}/disponibilidad`, {
+              params: {
+                fecha: fechaStr,
+                startTime: availabilityData.startTime,
+                endTime: availabilityData.endTime,
+              },
+            });
             return {
               ...equipo,
-              disponibilidad: response.data.disponibilidad,
+              disponibilidad: res.data.disponibilidad,
             };
           } catch (err) {
-            console.error(
-              `Error verificando disponibilidad para equipo ${equipo.id}:`,
-              err
-            );
-            return {
-              ...equipo,
-              disponibilidad: undefined,
-            };
+            console.error(`Error verificando disponibilidad para equipo ${equipo.id}:`, err);
+            return { ...equipo, disponibilidad: undefined };
           }
         })
       );
-
-      setEquipmentList(updatedEquipmentList);
+      setEquipmentList(updatedList);
     } catch (err) {
       setError("Error al verificar disponibilidad");
-      console.error(err);
     } finally {
       setCheckingAvailability(false);
     }
@@ -96,42 +102,43 @@ export default function EquipmentAvailabilityList() {
       startTime: "08:00",
       endTime: "17:00",
     });
+    setFiltros({
+      tipo_equipo_id: "",
+      buscar: "",
+      page: 1,
+    });
     setEquipmentList((prev) =>
-      prev.map((equipo) => ({
-        ...equipo,
-        disponibilidad: undefined,
-      }))
+      prev.map((e) => ({ ...e, disponibilidad: undefined }))
     );
   };
 
-  if (loading)
-    return (
-      <Container
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "80vh" }}
-      >
-        <Spinner animation="border" variant="primary" />
-      </Container>
-    );
+  useEffect(() => {
+    fetchTipoEquipos();
+  }, []);
 
-  if (error)
-    return (
-      <Container className="my-5">
-        <Alert variant="danger" className="text-center">
-          {error}
-        </Alert>
-      </Container>
-    );
+  useEffect(() => {
+    fetchEquipment();
+  }, [filtros]);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      setFiltros((prev) => ({ ...prev, buscar: searchTerm, page: 1 }));
+    }, 500); // espera 500ms
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm]);
+
 
   return (
     <div className="container py-5">
       <div className="table-responsive rounded shadow p-3 mt-4">
+
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h4 className="mb-0 text-center">Listado de Equipos Disponibles</h4>
+          <h4 className="mb-0">Listado de Equipos Disponibles</h4>
           <div>
             <Button
               variant="primary"
-              className="me-2 btn-custom-red"
+              className="me-2"
               onClick={checkAllAvailability}
               disabled={!availabilityData.fecha || checkingAvailability}
             >
@@ -149,6 +156,38 @@ export default function EquipmentAvailabilityList() {
             </Button>
           </div>
         </div>
+
+        <Form className="row g-3 mb-4" onSubmit={(e) => e.preventDefault()}>
+          <div className="col-md-4">
+            <Form.Group>
+              <Form.Label>Tipo de equipo</Form.Label>
+              <Form.Select
+                value={filtros.tipo_equipo_id}
+                onChange={(e) =>
+                  setFiltros({ ...filtros, tipo_equipo_id: e.target.value, page: 1 })
+                }
+              >
+                <option value="">Todos</option>
+                {tipoEquipos.map((tipo) => (
+                  <option key={tipo.id} value={tipo.id}>
+                    {tipo.nombre}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+          </div>
+          <div className="col-md-4">
+            <Form.Group>
+              <Form.Label>Buscar equipo</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Buscar por nombre"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            </Form.Group>
+          </div>
+        </Form>
 
         <div className="mb-4 p-3 border rounded">
           <h5>Seleccione fecha y horario</h5>
@@ -211,71 +250,102 @@ export default function EquipmentAvailabilityList() {
           )}
         </div>
 
-        {error && (
-          <Alert variant="danger" className="mb-4">
-            {error}
-          </Alert>
-        )}
+        {error && <Alert variant="danger">{error}</Alert>}
 
-        <table
-          className="table table-hover align-middle text-center overflow-hidden"
-          style={{ borderRadius: "0.8rem" }}
-        >
+        <table className="table table-hover align-middle text-center">      
           <thead className="table-dark">
             <tr>
-              <th className="rounded-top-start">Nombre</th>
+              <th>Nombre</th>
               <th>Total</th>
               <th>Disponible</th>
               <th>En Reserva</th>
               <th>Entregado</th>
-              <th className="rounded-top-end">Estado</th>
+              <th>Estado</th>
             </tr>
           </thead>
           <tbody>
-            {equipmentList.map((equipment) => (
-              <tr key={equipment.id}>
-                <td className="fw-bold">{equipment.nombre}</td>
-                <td>{equipment.cantidad}</td>
-                <td>
-                  {equipment.disponibilidad ? (
-                    <>
-                      {equipment.disponibilidad.cantidad_disponible}
-                      {equipment.disponibilidad.cantidad_disponible ===
-                        equipment.cantidad}
-                    </>
-                  ) : (
-                    equipment.cantidad
-                  )}
-                </td>
-                <td>{equipment.disponibilidad?.cantidad_en_reserva ?? 0}</td>
-                <td>{equipment.disponibilidad?.cantidad_entregada ?? 0}</td>
-                <td>
-                  <Badge
-                    bg={
-                      (equipment.disponibilidad?.cantidad_disponible ??
-                        equipment.cantidad) === 0
-                        ? "danger"
-                        : (equipment.disponibilidad?.cantidad_disponible ??
-                            equipment.cantidad) < equipment.cantidad
-                        ? "warning"
-                        : "success"
-                    }
-                    className="px-3 py-2"
-                    style={{ fontSize: "0.9rem" }}
-                  >
-                    {(equipment.disponibilidad?.cantidad_disponible ??
-                      equipment.cantidad) === 0
-                      ? "Agotado"
-                      : (equipment.disponibilidad?.cantidad_disponible ??
-                          equipment.cantidad) < equipment.cantidad
-                      ? "Limitado"
-                      : "Disponible"}
-                  </Badge>
+            {equipmentList.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center text-muted py-4">
+                  No se encontraron equipos.
                 </td>
               </tr>
-            ))}
+            ) : (
+              equipmentList.map((equipment) => (
+                <tr key={equipment.id}>
+                  <td className="fw-bold">{equipment.nombre}</td>
+                  <td>{equipment.cantidad}</td>
+                  <td>
+                    {equipment.disponibilidad
+                      ? equipment.disponibilidad.cantidad_disponible
+                      : equipment.cantidad}
+                  </td>
+                  <td>{equipment.disponibilidad?.cantidad_en_reserva ?? 0}</td>
+                  <td>{equipment.disponibilidad?.cantidad_entregada ?? 0}</td>
+                  <td>
+                    <Badge
+                      bg={
+                        (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
+                          ? "danger"
+                          : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) <
+                            equipment.cantidad
+                          ? "warning"
+                          : "success"
+                      }
+                      className="px-3 py-2"
+                    >
+                      {(equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
+                        ? "Agotado"
+                        : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) <
+                          equipment.cantidad
+                        ? "Limitado"
+                        : "Disponible"}
+                    </Badge>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
+        {totalPages > 1 && (
+          <div className="d-flex justify-content-center mt-3">
+            <ul className="pagination">
+              <li className={`page-item ${filtros.page === 1 ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() =>
+                    setFiltros((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))
+                  }
+                >
+                  Anterior
+                </button>
+              </li>
+              {[...Array(totalPages)].map((_, i) => (
+                <li
+                  key={i}
+                  className={`page-item ${filtros.page === i + 1 ? "active" : ""}`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() => setFiltros({ ...filtros, page: i + 1 })}
+                  >
+                    {i + 1}
+                  </button>
+                </li>
+              ))}
+              <li className={`page-item ${filtros.page === totalPages ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() =>
+                    setFiltros((prev) => ({ ...prev, page: Math.min(totalPages, prev.page + 1) }))
+                  }
+                >
+                  Siguiente
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

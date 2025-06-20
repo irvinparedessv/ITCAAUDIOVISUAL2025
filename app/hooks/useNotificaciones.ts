@@ -34,6 +34,7 @@ interface ReservaBase {
   tipo_reserva?: string;
   equipos?: EquipoNotification[];
   comentario?: string;
+  pagina?: number;
 }
 
 interface ReservaNotification extends ReservaBase {

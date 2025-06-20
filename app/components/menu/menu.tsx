@@ -16,9 +16,6 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { FiRefreshCcw } from "react-icons/fi";
 import type { ReactNode, ElementType } from "react";
 
-
-
-
 // Definición de tipos
 type NotificationType = 'nueva_reserva' | 'estado_reserva' | 'nueva_reserva_aula' | 'estado_reserva_aula';
 
@@ -34,6 +31,7 @@ interface AulaNotification {
   horario: string;
   estado: string;
   comentario?: string;
+  pagina?: number;
 }
 
 interface ReservaNotification {
@@ -46,6 +44,7 @@ interface ReservaNotification {
   tipo_reserva?: string;
   equipos?: EquipoNotification[];
   comentario?: string;
+  pagina?: number;
 }
 
 interface NotificacionData {
@@ -103,22 +102,24 @@ const NotificationItem = ({
   const isNuevaReserva = noti.data.type?.includes('nueva') || false;
   const estadoStyle = getEstadoStyle(estado);
 
-   const handleClick = () => {
+  const handleClick = () => {
     if (noti.unread) {
       markAsRead(noti.id);
     }
 
     if (!reservaId) {
-      console.error('Error: ID de reserva no definido');
       navigate("/reservations");
       return;
     }
 
+    const page = noti.data.reserva.pagina || 1; // <-- aquí lees la página enviada desde backend
     const targetRoute = isAulaNotification ? "/reservations-room" : "/reservations";
-    navigate(targetRoute, { 
-      state: { highlightReservaId: reservaId } 
+
+    navigate(targetRoute, {
+      state: { highlightReservaId: reservaId, page }  // <-- pasas la página como estado al navegar
     });
   };
+
 
   return (
     <Dropdown.Item
@@ -346,7 +347,7 @@ const NavbarMenu = () => {
 
                 <Dropdown.Item 
                   as={Link} 
-                  to="/approvereservations" 
+                  to="/reservations" 
                   className="d-flex align-items-center gap-2 text-dark" 
                   onClick={handleCloseSidebar}
                 >
@@ -415,7 +416,7 @@ const NavbarMenu = () => {
 
                 <Dropdown.Item 
                   as={Link} 
-                  to="/approvereservations" 
+                  to="/reservations" 
                   className="d-flex align-items-center gap-2 text-dark" 
                   onClick={handleCloseSidebar}
                 >
@@ -791,7 +792,7 @@ const NavbarMenu = () => {
               </Dropdown.Item>
               <Dropdown.Item 
                 as={Link} 
-                to="/approvereservations" 
+                to="/reservations" 
                 className="d-flex align-items-start text-dark" 
                 onClick={handleCloseSidebar}
               >
@@ -875,7 +876,7 @@ const NavbarMenu = () => {
 
               <Dropdown.Item 
                 as={Link} 
-                to="/approvereservations" 
+                to="/reservations" 
                 className="d-flex align-items-start text-dark" 
                 onClick={handleCloseSidebar}
               >

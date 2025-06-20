@@ -161,7 +161,7 @@ export default function Dashboard() {
           <DashboardCard
             title="Aprobar Reservas"
             icon={<FaClipboardList size={24} style={getIconStyle()} />}
-            link="/approvereservations"
+            link="/reservations"
             description="Revisar y aprobar reservas pendientes"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}

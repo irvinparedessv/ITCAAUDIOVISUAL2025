@@ -67,3 +67,9 @@ export type EquipoFilters = {
   estado?: boolean;
   includeDeleted?: boolean;
 };
+
+// Tipo para el listado de tipos de equipo (por ejemplo: Proyector, Laptop, etc.)
+export interface TipoEquipo {
+  id: number;
+  nombre: string;
+}

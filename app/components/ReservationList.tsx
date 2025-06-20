@@ -15,19 +15,22 @@ import ReservacionEstadoModal from "./ReservacionEstado";
 import { Role } from "~/types/roles";
 
 export default function ReservationList() {
-  const { user } = useAuth();
+    const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const highlightRef = useRef<HTMLTableRowElement>(null);
+
+  // Estados
+  const [currentPage, setCurrentPage] = useState(1);
   const [highlightId, setHighlightId] = useState<number | null>(null);
-
-
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [reservationsLoaded, setReservationsLoaded] = useState(false);
+
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [historial, setHistorial] = useState<Bitacora[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -40,33 +43,89 @@ export default function ReservationList() {
   const [showFilters, setShowFilters] = useState(false);
   const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
   const [mostrarSoloHoy, setMostrarSoloHoy] = useState(false);
-  const highlightRef = useRef<HTMLTableRowElement>(null);
 
+  // --- Capturar page y highlightReservaId de location.state ---
   useEffect(() => {
-    if (highlightRef.current) {
-      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (location.state?.page) {
+      setCurrentPage(location.state.page);
     }
-  }, []);
+    if (location.state?.highlightReservaId) {
+      setHighlightId(location.state.highlightReservaId);
+    }
 
-  useEffect(() => {
-    const highlight = location.state?.highlightReservaId;
-    if (highlight) {
-      setHighlightId(highlight);
-      // Limpia el location.state para evitar reaparición
+    if (location.state?.page || location.state?.highlightReservaId) {
       navigate(".", { replace: true, state: {} });
     }
   }, [location.state, navigate]);
 
+  // Cargar tipos de reserva
   useEffect(() => {
-    if (highlightId !== null) {
+    const fetchTipoReservas = async () => {
+      try {
+        const response = await api.get("/tipo-reservas");
+        setTipoReservas(response.data);
+      } catch {
+        toast.error("Error al cargar tipos de reserva");
+      }
+    };
+    fetchTipoReservas();
+  }, []);
+
+  // Fetch reservas según filtros, página y mostrar solo hoy
+  const fetchReservations = async () => {
+    try {
+      let endpoint = `/reservas/${user?.id}`;
+      if (
+        mostrarSoloHoy &&
+        (user?.role === Role.Administrador || user?.role === Role.Encargado)
+      ) {
+        endpoint = "/reservas/dia";
+      }
+
+      const params: Record<string, any> = {
+        page: currentPage,
+        per_page: itemsPerPage,
+      };
+      if (statusFilter !== "Todos") {
+        params.estado = statusFilter;
+      }
+      if (typeFilter !== "Todos") {
+        params.tipo_reserva = typeFilter;
+      }
+
+      const response = await api.get(endpoint, { params });
+
+      setReservations(response.data.data);
+      setTotalPages(response.data.last_page);
+      setTotalItems(response.data.total);
+      setReservationsLoaded(true);
+    } catch {
+      toast.error("Error al cargar las reservas");
+      setReservationsLoaded(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchReservations();
+    }
+  }, [user, mostrarSoloHoy, currentPage, statusFilter, typeFilter]);
+
+  // Scroll y resaltar solo cuando las reservas están cargadas
+  useEffect(() => {
+    if (highlightId !== null && reservationsLoaded) {
+      if (highlightRef.current) {
+        highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
       const timeout = setTimeout(() => {
         setHighlightId(null);
-      }, 7000); // ⏱️ 5 segundos
+      }, 7000);
 
-      return () => clearTimeout(timeout); // Limpia si cambia antes de que termine
+      return () => clearTimeout(timeout);
     }
-  }, [highlightId]);
-    
+  }, [highlightId, reservationsLoaded]);
+
   useEffect(() => {
     const fetchTipoReservas = async () => {
       try {
@@ -103,37 +162,7 @@ export default function ReservationList() {
     }
   }, [showModal, selectedReservation]);
 
-  const fetchReservations = async () => {
-    try {
-      let endpoint = `/reservas/${user?.id}`;
-      if (
-        mostrarSoloHoy &&
-        (user?.role === Role.Administrador || user?.role === Role.Encargado)
-      ) {
-        endpoint = "/reservas/dia";
-      }
-
-      // Enviar filtros solo si no son "Todos"
-      const params: Record<string, any> = {
-        page: currentPage,
-        per_page: itemsPerPage,
-      };
-      if (statusFilter !== "Todos") {
-        params.estado = statusFilter;
-      }
-      if (typeFilter !== "Todos") {
-        params.tipo_reserva = typeFilter;
-      }
-
-      const response = await api.get(endpoint, { params });
-
-      setReservations(response.data.data);
-      setTotalPages(response.data.last_page);
-      setTotalItems(response.data.total);
-    } catch (error) {
-      toast.error("Error al cargar las reservas");
-    }
-  };
+ 
 
   useEffect(() => {
     if (user?.id) {
@@ -214,7 +243,7 @@ export default function ReservationList() {
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value);
-                    setCurrentPage(1); // reset pag a 1 si cambia filtro
+                    setCurrentPage(1);
                   }}
                 >
                   <option value="Todos">Todos los estados</option>
@@ -233,7 +262,7 @@ export default function ReservationList() {
                   value={typeFilter}
                   onChange={(e) => {
                     setTypeFilter(e.target.value);
-                    setCurrentPage(1); // reset pag a 1 si cambia filtro
+                    setCurrentPage(1);
                   }}
                 >
                   <option value="Todos">Todos los tipos</option>

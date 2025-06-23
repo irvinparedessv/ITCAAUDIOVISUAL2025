@@ -4,7 +4,7 @@ export interface ReservationRoom {
   fecha: string; // fecha ISO string
   horario: string; // texto del horario
   user: User; // usuario que reservó
-  estado: "Pendiente" | "Aprobado" | "Cancelado"; // estados típicos
+  estado: "pendiente" | "aprobado" | "cancelado" | "rechazado"; // estados típicos
   created_at?: string;
   updated_at?: string;
 }

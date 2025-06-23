@@ -10,41 +10,46 @@ import { QRURL } from "~/constants/constant";
 import type { Reservation } from "~/types/reservation";
 import EquipmentDetailsModal from "./applicant/EquipmentDetailsModal";
 import { useLocation, useNavigate } from "react-router-dom";
-import 'animate.css';
+import "animate.css";
 import ReservacionEstadoModal from "./ReservacionEstado";
 import { Role } from "~/types/roles";
 
 export default function ReservationList() {
-    const { user } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const highlightRef = useRef<HTMLTableRowElement>(null);
 
-  // Estados
   const [currentPage, setCurrentPage] = useState(1);
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [reservationsLoaded, setReservationsLoaded] = useState(false);
 
-  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [selectedReservation, setSelectedReservation] =
+    useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [historial, setHistorial] = useState<Bitacora[]>([]);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
-  const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
+  const [historialCache, setHistorialCache] = useState<
+    Record<number, Bitacora[]>
+  >({});
   const itemsPerPage = 15;
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [showEstadoModal, setShowEstadoModal] = useState(false);
-  const [reservaSeleccionadaParaEstado, setReservaSeleccionadaParaEstado] = useState<Reservation | null>(null);
+  const [reservaSeleccionadaParaEstado, setReservaSeleccionadaParaEstado] =
+    useState<Reservation | null>(null);
   const [isUpdatingEstado, setIsUpdatingEstado] = useState(false);
-  const [updatingReservationId, setUpdatingReservationId] = useState<number | null>(null);
+  const [updatingReservationId, setUpdatingReservationId] = useState<
+    number | null
+  >(null);
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [typeFilter, setTypeFilter] = useState<string>("Todos");
   const [showFilters, setShowFilters] = useState(false);
   const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
   const [mostrarSoloHoy, setMostrarSoloHoy] = useState(false);
 
-  // --- Capturar page y highlightReservaId de location.state ---
   useEffect(() => {
     if (location.state?.page) {
       setCurrentPage(location.state.page);
@@ -58,7 +63,6 @@ export default function ReservationList() {
     }
   }, [location.state, navigate]);
 
-  // Cargar tipos de reserva
   useEffect(() => {
     const fetchTipoReservas = async () => {
       try {
@@ -71,8 +75,8 @@ export default function ReservationList() {
     fetchTipoReservas();
   }, []);
 
-  // Fetch reservas según filtros, página y mostrar solo hoy
   const fetchReservations = async () => {
+    setReservationsLoaded(false);
     try {
       let endpoint = `/reservas/${user?.id}`;
       if (
@@ -99,9 +103,10 @@ export default function ReservationList() {
       setTotalPages(response.data.last_page);
       setTotalItems(response.data.total);
       setReservationsLoaded(true);
+      setIsFirstLoad(false);
     } catch {
       toast.error("Error al cargar las reservas");
-      setReservationsLoaded(false);
+      setReservationsLoaded(true); // Evitar quedarse trabado en loading
     }
   };
 
@@ -111,11 +116,13 @@ export default function ReservationList() {
     }
   }, [user, mostrarSoloHoy, currentPage, statusFilter, typeFilter]);
 
-  // Scroll y resaltar solo cuando las reservas están cargadas
   useEffect(() => {
     if (highlightId !== null && reservationsLoaded) {
       if (highlightRef.current) {
-        highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        highlightRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
 
       const timeout = setTimeout(() => {
@@ -125,18 +132,6 @@ export default function ReservationList() {
       return () => clearTimeout(timeout);
     }
   }, [highlightId, reservationsLoaded]);
-
-  useEffect(() => {
-    const fetchTipoReservas = async () => {
-      try {
-        const response = await api.get("/tipo-reservas");
-        setTipoReservas(response.data);
-      } catch (error) {
-        toast.error("Error al cargar tipos de reserva");
-      }
-    };
-    fetchTipoReservas();
-  }, []);
 
   const fetchHistorial = async (reservaId: number) => {
     if (historialCache[reservaId]) {
@@ -149,7 +144,7 @@ export default function ReservationList() {
       const response = await api.get(`/bitacoras/reserva/${reservaId}`);
       setHistorial(response.data);
       setHistorialCache((prev) => ({ ...prev, [reservaId]: response.data }));
-    } catch (error) {
+    } catch {
       toast.error("Error al cargar el historial de cambios");
     } finally {
       setLoadingHistorial(false);
@@ -161,14 +156,6 @@ export default function ReservationList() {
       fetchHistorial(selectedReservation.id);
     }
   }, [showModal, selectedReservation]);
-
- 
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchReservations();
-    }
-  }, [user, mostrarSoloHoy, currentPage, statusFilter, typeFilter]);
 
   const handleDetailClick = (reservation: Reservation) => {
     setHistorial([]);
@@ -194,7 +181,11 @@ export default function ReservationList() {
     const rangeWithDots: (number | string)[] = [];
     let l: number | null = null;
 
-    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+    for (
+      let i = Math.max(2, currentPage - delta);
+      i <= Math.min(totalPages - 1, currentPage + delta);
+      i++
+    ) {
       range.push(i);
     }
 
@@ -215,7 +206,8 @@ export default function ReservationList() {
     <div className="container py-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 className="mb-0">Listado de Reservas</h4>
-        {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
+        {(user?.role === Role.Administrador ||
+          user?.role === Role.Encargado) && (
           <Button
             onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
             className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
@@ -224,16 +216,16 @@ export default function ReservationList() {
           </Button>
         )}
       </div>
-
-      <Button
-        variant="outline-secondary"
-        onClick={() => setShowFilters(!showFilters)}
-        className="mb-3 d-flex align-items-center gap-2"
-      >
-        <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-      </Button>
-
-      {showFilters && (
+      {!isFirstLoad && (
+        <Button
+          variant="outline-secondary"
+          onClick={() => setShowFilters(!showFilters)}
+          className="mb-3 d-flex align-items-center gap-2"
+        >
+          <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+        </Button>
+      )}
+      {showFilters && !isFirstLoad && (
         <div className="p-3 rounded mb-4 border border-secondary">
           <div className="row g-3">
             <div className="col-md-4">
@@ -276,92 +268,117 @@ export default function ReservationList() {
             </div>
 
             <div className="col-md-4 d-flex align-items-end">
-              <Button variant="outline-danger" onClick={resetFilters} className="w-100">
+              <Button
+                variant="outline-danger"
+                onClick={resetFilters}
+                className="w-100"
+              >
                 Limpiar filtros
               </Button>
             </div>
           </div>
         </div>
       )}
-
-      <table className="table table-hover align-middle text-center overflow-hidden">
-        <thead className="table-dark">
-          <tr>
-            <th>Usuario</th>
-            <th>Tipo Reserva</th>
-            <th>Equipos</th>
-            <th>Aula</th>
-            <th>Fecha Salida</th>
-            <th>Fecha Entrega</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {reservations.map((reserva) => {
-            const isHighlighted = reserva.id === highlightId;
-            return (
-              <tr
-                key={reserva.id}
-                ref={isHighlighted ? highlightRef : null}
-                className={`${isHighlighted ? "table-warning animate__animated animate__flash" : ""}`}
-              >
-                <td className="fw-bold">
-                  {reserva.user.first_name}-{reserva.user.last_name}
-                </td>
-                <td>{reserva.tipo_reserva?.nombre}</td>
-                <td>
-                  {reserva.equipos.slice(0, 2).map((e) => e.nombre).join(", ")}
-                  {reserva.equipos.length > 2 && "..."}
-                </td>
-                <td>{reserva.aula}</td>
-                <td>{formatDate(reserva.fecha_reserva)}</td>
-                <td>{formatDate(reserva.fecha_entrega)}</td>
-                <td>
-                  <Badge bg={getBadgeColor(reserva.estado)} className="px-3 py-2">
-                    {reserva.estado}
-                  </Badge>
-                </td>
-                <td>
-                  <div className="d-flex justify-content-center gap-2">
-                    <button
-                      className="btn btn-outline-primary rounded-circle"
-                      onClick={() => handleDetailClick(reserva)}
-                      style={{ width: "44px", height: "44px" }}
+      {!reservationsLoaded && (
+        <div className="d-flex justify-content-center my-5">
+          <div
+            className="spinner-border text-primary"
+            role="status"
+            style={{ width: "3rem", height: "3rem" }}
+          >
+            <span className="visually-hidden">Cargando...</span>
+          </div>
+        </div>
+      )}
+      {reservationsLoaded && (
+        <table className="table table-hover align-middle text-center overflow-hidden">
+          <thead className="table-dark">
+            <tr>
+              <th>Usuario</th>
+              <th>Tipo Reserva</th>
+              <th>Equipos</th>
+              <th>Aula</th>
+              <th>Fecha Salida</th>
+              <th>Fecha Entrega</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reservations.map((reserva) => {
+              const isHighlighted = reserva.id === highlightId;
+              return (
+                <tr
+                  key={reserva.id}
+                  ref={isHighlighted ? highlightRef : null}
+                  className={`${
+                    isHighlighted
+                      ? "table-warning animate__animated animate__flash"
+                      : ""
+                  }`}
+                >
+                  <td className="fw-bold">
+                    {reserva.user.first_name}-{reserva.user.last_name}
+                  </td>
+                  <td>{reserva.tipo_reserva?.nombre}</td>
+                  <td>
+                    {reserva.equipos
+                      .slice(0, 2)
+                      .map((e) => e.nombre)
+                      .join(", ")}
+                    {reserva.equipos.length > 2 && "..."}
+                  </td>
+                  <td>{reserva.aula}</td>
+                  <td>{formatDate(reserva.fecha_reserva)}</td>
+                  <td>{formatDate(reserva.fecha_entrega)}</td>
+                  <td>
+                    <Badge
+                      bg={getBadgeColor(reserva.estado)}
+                      className="px-3 py-2"
                     >
-                      <FaEye className="fs-5" />
-                    </button>
-
-                    {user?.role !== Role.Prestamista && (
+                      {reserva.estado}
+                    </Badge>
+                  </td>
+                  <td>
+                    <div className="d-flex justify-content-center gap-2">
                       <button
-                        className="btn btn-outline-success rounded-circle"
-                        onClick={() => {
-                          if (updatingReservationId !== null) return;
-                          setReservaSeleccionadaParaEstado(reserva);
-                          setShowEstadoModal(true);
-                        }}
+                        className="btn btn-outline-primary rounded-circle"
+                        onClick={() => handleDetailClick(reserva)}
                         style={{ width: "44px", height: "44px" }}
-                        title="Actualizar estado"
-                        disabled={updatingReservationId === reserva.id}
                       >
-                        <FaEdit className="fs-5" />
+                        <FaEye className="fs-5" />
                       </button>
-                    )}
-                  </div>
+
+                      {user?.role !== Role.Prestamista && (
+                        <button
+                          className="btn btn-outline-success rounded-circle"
+                          onClick={() => {
+                            if (updatingReservationId !== null) return;
+                            setReservaSeleccionadaParaEstado(reserva);
+                            setShowEstadoModal(true);
+                          }}
+                          style={{ width: "44px", height: "44px" }}
+                          title="Actualizar estado"
+                          disabled={updatingReservationId === reserva.id}
+                        >
+                          <FaEdit className="fs-5" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {reservations.length === 0 && (
+              <tr>
+                <td colSpan={8} className="text-center text-muted">
+                  No hay reservas que coincidan con los filtros
                 </td>
               </tr>
-            );
-          })}
-          {reservations.length === 0 && (
-            <tr>
-              <td colSpan={8} className="text-center text-muted">
-                No hay reservas que coincidan con los filtros
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
+            )}
+          </tbody>
+        </table>
+      )}
       {reservaSeleccionadaParaEstado && (
         <ReservacionEstadoModal
           show={showEstadoModal}
@@ -372,7 +389,9 @@ export default function ReservationList() {
           }}
           reservationId={reservaSeleccionadaParaEstado.id}
           currentStatus={reservaSeleccionadaParaEstado.estado}
-          onBefore={() => setUpdatingReservationId(reservaSeleccionadaParaEstado.id)}
+          onBefore={() =>
+            setUpdatingReservationId(reservaSeleccionadaParaEstado.id)
+          }
           onAfter={() => setUpdatingReservationId(null)}
           onSuccess={(newEstado) => {
             setReservations((prev) =>
@@ -388,43 +407,55 @@ export default function ReservationList() {
           }}
         />
       )}
-
-      <nav className="d-flex justify-content-center mt-4">
-        <ul className="pagination">
-          <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-            <button
-              className="page-link"
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
+      {reservationsLoaded && (
+        <nav className="d-flex justify-content-center mt-4">
+          <ul className="pagination">
+            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </button>
+            </li>
+            {getPageNumbers().map((page, index) =>
+              page === "..." ? (
+                <li key={`dots-${index}`} className="page-item disabled">
+                  <span className="page-link">...</span>
+                </li>
+              ) : (
+                <li
+                  key={page}
+                  className={`page-item ${
+                    currentPage === page ? "active" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(Number(page))}
+                  >
+                    {page}
+                  </button>
+                </li>
+              )
+            )}
+            <li
+              className={`page-item ${
+                currentPage === totalPages ? "disabled" : ""
+              }`}
             >
-              Anterior
-            </button>
-          </li>
-          {getPageNumbers().map((page, index) =>
-            page === "..." ? (
-              <li key={`dots-${index}`} className="page-item disabled">
-                <span className="page-link">...</span>
-              </li>
-            ) : (
-              <li key={page} className={`page-item ${currentPage === page ? "active" : ""}`}>
-                <button className="page-link" onClick={() => setCurrentPage(Number(page))}>
-                  {page}
-                </button>
-              </li>
-            )
-          )}
-          <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-            <button
-              className="page-link"
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Siguiente
-            </button>
-          </li>
-        </ul>
-      </nav>
-
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente
+              </button>
+            </li>
+          </ul>
+        </nav>
+      )}
       <EquipmentDetailsModal
         getBadgeColor={getBadgeColor}
         formatDate={formatDate}

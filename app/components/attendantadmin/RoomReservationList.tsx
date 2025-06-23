@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Button, Row, Col, Spinner, Table, Badge } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import {
+  Button,
+  Row,
+  Col,
+  Spinner,
+  Table,
+  Badge,
+  Modal,
+} from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../../api/axios";
+import AulaReservacionEstadoModal from "./RoomReservationStateModal"; // Asegúrate que el path sea correcto
 
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -12,7 +20,9 @@ const RoomReservationList = () => {
   });
   const [reservations, setReservations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const navigate = useNavigate();
+  const [showEstadoModal, setShowEstadoModal] = useState(false);
+  const [selectedReserva, setSelectedReserva] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const getEstadoVariant = (estado: string) => {
     switch (estado.toLowerCase()) {
@@ -63,6 +73,26 @@ const RoomReservationList = () => {
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
+  };
+
+  const handleEstadoClick = (reserva: any) => {
+    setSelectedReserva(reserva);
+    setShowEstadoModal(true);
+  };
+
+  const handleEstadoSuccess = (nuevoEstado: string) => {
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === selectedReserva.id ? { ...r, estado: nuevoEstado } : r
+      )
+    );
+    setShowEstadoModal(false);
+    setSelectedReserva(null);
+  };
+
+  const handleDetailClick = (reserva: any) => {
+    setSelectedReserva(reserva);
+    setShowDetailModal(true);
   };
 
   return (
@@ -131,18 +161,68 @@ const RoomReservationList = () => {
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => navigate(`/reservas-aula-admin/${res.id}`)}
+                    onClick={() => handleDetailClick(res)}
                   >
                     Ver detalles
                   </Button>
-                  <Button variant="primary" size="sm">
-                    Aprobar
+                  <Button
+                    variant="outline-success"
+                    size="sm"
+                    className="ms-2"
+                    onClick={() => handleEstadoClick(res)}
+                  >
+                    Cambiar estado
                   </Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </Table>
+      )}
+
+      {/* Modal Detalle */}
+      {selectedReserva && (
+        <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Detalle de Reserva</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>
+              <strong>Aula:</strong> {selectedReserva.aula?.name}
+            </p>
+            <p>
+              <strong>Fecha:</strong> {formatDate(selectedReserva.fecha)}
+            </p>
+            <p>
+              <strong>Horario:</strong> {selectedReserva.horario}
+            </p>
+            <p>
+              <strong>Reservado por:</strong> {selectedReserva.user?.first_name}
+            </p>
+            <p>
+              <strong>Estado:</strong> {selectedReserva.estado}
+            </p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => setShowDetailModal(false)}
+            >
+              Cerrar
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
+
+      {/* Modal Estado actualizado con diseño completo */}
+      {selectedReserva && (
+        <AulaReservacionEstadoModal
+          show={showEstadoModal}
+          onHide={() => setShowEstadoModal(false)}
+          reservationId={selectedReserva.id}
+          currentStatus={selectedReserva.estado}
+          onSuccess={handleEstadoSuccess}
+        />
       )}
     </div>
   );

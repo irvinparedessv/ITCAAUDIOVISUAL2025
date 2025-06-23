@@ -168,6 +168,15 @@ export default function Dashboard() {
             onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
+            title="Aprobar Reservas Espacios"
+            icon={<FaClipboardList size={24} style={getIconStyle()} />}
+            link="/reservations-room"
+            description="Revisar y aprobar reservas pendientes"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
+          <DashboardCard
             title="Lector QR"
             icon={<FaQrcode size={24} style={getIconStyle()} />}
             link="/qrScan"
@@ -176,7 +185,7 @@ export default function Dashboard() {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           />
-          
+
           <DashboardCard
             title="Equipos Disponibles"
             icon={<FaComputer size={24} style={getIconStyle()} />}

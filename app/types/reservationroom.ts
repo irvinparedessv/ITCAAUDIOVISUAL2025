@@ -1,3 +1,5 @@
+import type { Role } from "./reservation";
+
 export interface ReservationRoom {
   id: number;
   aula: Room; // el aula reservada
@@ -7,6 +9,7 @@ export interface ReservationRoom {
   estado: "pendiente" | "aprobado" | "cancelado" | "rechazado"; // estados típicos
   created_at?: string;
   updated_at?: string;
+  comentario: string;
 }
 export interface Room {
   id: number;
@@ -18,5 +21,13 @@ export interface User {
   id: number;
   first_name: string;
   last_name?: string;
+  email: string;
+  role: Role;
   // otros campos que uses
 }
+export type HistorialItem = {
+  id: number;
+  nombre_usuario: string;
+  created_at: string;
+  accion: string;
+};

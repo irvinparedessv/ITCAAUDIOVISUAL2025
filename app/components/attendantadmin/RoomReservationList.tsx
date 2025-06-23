@@ -46,7 +46,7 @@ const RoomReservationList = () => {
             to: range.to.toISOString(),
           },
         });
-        setReservations(response.data);
+        if (response.data) setReservations(response.data.data);
       } catch (error) {
         console.error("Error al obtener reservas:", error);
       } finally {

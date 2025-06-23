@@ -8,6 +8,7 @@ import { FaEye } from "react-icons/fa";
 import type { ReservationRoom } from "~/types/reservationroom";
 import RoomDetailsModal from "../RoomDetailsModal";
 import type { Bitacora } from "~/types/bitacora";
+import { QRURL } from "~/constants/constant";
 
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -24,6 +25,7 @@ const RoomReservationList = () => {
   const [perPage] = useState(10);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [historial, setHistorial] = useState<Bitacora[]>([]);
+  const qrBaseUrl = QRURL;
 
   const [totalPages, setTotalPages] = useState(1);
   const [selectedReservation, setSelectedReservation] =
@@ -65,17 +67,20 @@ const RoomReservationList = () => {
     fetchReservations();
   }, [range, statusFilter, debouncedSearch, page, perPage]);
   const handleDetailClick = (reservation: ReservationRoom) => {
+    console.log(reservation);
     setSelectedReservation(reservation);
     setShowModal(true);
   };
-  const getBadgeColor = (estado: "Pendiente" | "Entregado" | "Devuelto") => {
+  const getBadgeColor = (
+    estado: "pendiente" | "aprobado" | "cancelado" | "rechazado"
+  ) => {
     switch (estado) {
-      case "Pendiente":
+      case "pendiente":
         return "warning";
-      case "Entregado":
-        return "primary";
-      case "Devuelto":
+      case "aprobado":
         return "success";
+      case "cancelado":
+        return "danger";
       default:
         return "secondary";
     }
@@ -214,6 +219,7 @@ const RoomReservationList = () => {
           </>
         )}
         <RoomDetailsModal
+          qrBaseUrl={qrBaseUrl}
           getBadgeColor={getBadgeColor}
           formatDate={formatDate}
           handleCloseModal={handleCloseModal}

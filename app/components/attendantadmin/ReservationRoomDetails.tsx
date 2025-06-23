@@ -1,236 +1,193 @@
-import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import {
-  Card,
-  ListGroup,
-  Badge,
-  Spinner,
-  Alert,
-  Button,
-  Modal,
-  Form,
-} from "react-bootstrap";
-import { QRCodeSVG } from "qrcode.react";
-import api from "../../api/axios";
+import React from "react";
+import { Modal, Badge } from "react-bootstrap";
+import type {
+  ReservationRoom,
+  HistorialItem,
+} from "../../types/reservationroom";
 
-type ReservaAula = {
-  id: number;
-  fecha: string;
-  horario: string;
-  estado: "pendiente" | "aprobada" | "rechazada";
-  comentario: string | null;
-  aula: {
-    id: number;
-    name: string;
-  };
-  user: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    role: {
-      nombre: string;
-    };
-  };
+interface Props {
+  showModal: boolean;
+  handleCloseModal: () => void;
+  selectedReservation: ReservationRoom | null;
+  historial: HistorialItem[];
+  loadingHistorial: boolean;
+  formatDate: (date: string) => string;
+  getBadgeColor: (estado: ReservationRoom["estado"]) => string;
+  qrBaseUrl: string;
+}
+
+const RoomDetailsModal: React.FC<Props> = ({
+  showModal,
+  handleCloseModal,
+  selectedReservation,
+  historial,
+  loadingHistorial,
+  formatDate,
+  getBadgeColor,
+  qrBaseUrl,
+}) => {
+  return (
+    <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
+      <Modal.Header
+        closeButton
+        className="text-white"
+        style={{
+          backgroundColor: "rgb(177, 41, 29)",
+          borderBottom: "none",
+          padding: "1.5rem",
+        }}
+      >
+        <Modal.Title className="fw-bold">
+          <i
+            className="bi bi-card-checklist me-2"
+            style={{ color: "#D4A017" }}
+          ></i>
+          Detalles de Reserva #{selectedReservation?.id}
+        </Modal.Title>
+      </Modal.Header>
+
+      <Modal.Body style={{ padding: "2rem" }}>
+        {selectedReservation && (
+          <div className="row g-4">
+            <div className="col-md-6">
+              <div className="mb-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div
+                    className="p-2 rounded me-3"
+                    style={{ backgroundColor: "rgb(212, 158, 23)" }}
+                  >
+                    <i
+                      className="bi bi-person-fill fs-4"
+                      style={{ color: "#D4A017" }}
+                    ></i>
+                  </div>
+                  <h5 className="fw-bold mb-0">Información del Usuario</h5>
+                </div>
+                <div className="ps-5">
+                  <p>
+                    <strong>Nombre:</strong>{" "}
+                    {selectedReservation.user.first_name}{" "}
+                    {selectedReservation.user.last_name}
+                  </p>
+                  <p>
+                    <strong>Correo:</strong>{" "}
+                    {selectedReservation.user.first_name}
+                  </p>
+                  <p>
+                    <strong>Rol:</strong> {selectedReservation.user.first_name}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div
+                    className="p-2 rounded me-3"
+                    style={{ backgroundColor: "rgb(212, 158, 23)" }}
+                  >
+                    <i
+                      className="bi bi-calendar-check fs-4"
+                      style={{ color: "#D4A017" }}
+                    ></i>
+                  </div>
+                  <h5 className="fw-bold mb-0">Detalles de Reserva</h5>
+                </div>
+                <div className="ps-5">
+                  <p>
+                    <strong>Aula:</strong> {selectedReservation.aula.name}
+                  </p>
+                  <p>
+                    <strong>Fecha:</strong>{" "}
+                    {formatDate(selectedReservation.fecha)}
+                  </p>
+                  <p>
+                    <strong>Horario:</strong> {selectedReservation.horario}
+                  </p>
+                  <p>
+                    <strong>Estado:</strong>{" "}
+                    <Badge bg={getBadgeColor(selectedReservation.estado)}>
+                      {selectedReservation.estado}
+                    </Badge>
+                  </p>
+                  <p>
+                    <strong>Comentario:</strong>{" "}
+                    {selectedReservation.comentario || "Sin comentario"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <h5>Historial de cambios</h5>
+                {loadingHistorial ? (
+                  <div className="text-center my-3">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Cargando...</span>
+                    </div>
+                  </div>
+                ) : historial.length > 0 ? (
+                  <ul className="list-group">
+                    {historial.map((item) => (
+                      <li key={item.id} className="list-group-item">
+                        <div className="d-flex justify-content-between">
+                          <strong>{item.nombre_usuario}</strong>
+                          <span>{formatDate(item.created_at)}</span>
+                        </div>
+                        <div className="mt-2">
+                          <Badge bg="info">{item.accion}</Badge>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted">No hay registro de cambios</p>
+                )}
+              </div>
+            </div>
+
+            <div className="col-md-6">
+              <div className="d-flex align-items-center mb-3">
+                <div
+                  className="p-2 rounded me-3"
+                  style={{ backgroundColor: "rgb(212, 158, 23)" }}
+                >
+                  <i
+                    className="bi bi-qr-code-scan fs-4"
+                    style={{ color: "#D4A017" }}
+                  ></i>
+                </div>
+                <h5 className="fw-bold mb-0">Código QR</h5>
+              </div>
+
+              <div className="ps-5">
+                <div className="text-center">
+                  <div className="bg-body-secondary p-3 rounded-3 shadow-sm mb-3 d-inline-block">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.id}&size=300x300`}
+                      alt="Código QR de Reserva"
+                      style={{
+                        maxWidth: "100%",
+                        height: "auto",
+                        display: "block",
+                      }}
+                    />
+                  </div>
+                </div>
+                <p className="small text-body-secondary mb-1">
+                  Escanee este código para verificar la reserva
+                </p>
+                <p className="small bg-body-secondary p-2 rounded text-break">
+                  <code className="text-body-secondary">
+                    {qrBaseUrl}
+                    {selectedReservation.id}
+                  </code>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal.Body>
+    </Modal>
+  );
 };
 
-export default function ReservationDetailAula() {
-  const { id } = useParams<{ id: string }>();
-  const [reserva, setReserva] = useState<ReservaAula | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [accion, setAccion] = useState<"Aprobar" | "Rechazar" | null>(null);
-  const [comentario, setComentario] = useState("");
-
-  useEffect(() => {
-    const fetchReserva = async () => {
-      try {
-        const res = await api.get(`/reservas-aula/${id}`);
-        setReserva(res.data);
-      } catch (err) {
-        console.error(err);
-        setError("No se pudo cargar la reserva.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) fetchReserva();
-  }, [id]);
-
-  const handleAbrirModal = (tipo: "Aprobar" | "Rechazar") => {
-    setAccion(tipo);
-    setComentario("");
-    setShowModal(true);
-  };
-
-  const handleCerrarModal = () => {
-    setShowModal(false);
-    setAccion(null);
-  };
-
-  const handleEnviar = async () => {
-    if (!reserva) return;
-
-    try {
-      await api.post(`/reservas-aula/${id}/estado`, {
-        estado: accion === "Aprobar" ? "aprobada" : "rechazada",
-        comentario,
-      });
-
-      alert(
-        `Reserva ${
-          accion === "Aprobar" ? "aprobada" : "rechazada"
-        } correctamente.`
-      );
-      setReserva({
-        ...reserva,
-        estado: accion === "Aprobar" ? "aprobada" : "rechazada",
-        comentario,
-      });
-      setShowModal(false);
-    } catch (err) {
-      console.error(err);
-      alert("Error al cambiar el estado de la reserva.");
-    }
-  };
-
-  const formatDate = (fecha: string) => {
-    return new Date(fecha).toLocaleDateString("es-ES", {
-      weekday: "long",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
-  const getBadgeColor = (estado: string) => {
-    switch (estado) {
-      case "pendiente":
-        return "warning";
-      case "aprobada":
-        return "success";
-      case "rechazada":
-        return "danger";
-      default:
-        return "secondary";
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="text-center my-5">
-        <Spinner animation="border" />
-        <p>Cargando reserva...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center my-5">
-        <Alert variant="danger">{error}</Alert>
-      </div>
-    );
-  }
-
-  if (!reserva) return null;
-
-  const qrData = `Reserva Aula: ${reserva.aula.name} | ${reserva.fecha} | ${reserva.horario} | Usuario: ${reserva.user.first_name} ${reserva.user.last_name}`;
-
-  return (
-    <>
-      <Card className="shadow-lg my-4">
-        <Card.Header className="bg-primary text-white text-center">
-          <h5>Detalle de Reserva de Aula</h5>
-        </Card.Header>
-        <Card.Body>
-          <ListGroup variant="flush">
-            <ListGroup.Item>
-              <strong>Usuario:</strong> {reserva.user.first_name}{" "}
-              {reserva.user.last_name}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Correo:</strong> {reserva.user.email}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Rol:</strong> {reserva.user.role.nombre}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Aula:</strong> {reserva.aula.name}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Fecha:</strong> {formatDate(reserva.fecha)}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Horario:</strong> {reserva.horario}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Estado:</strong>{" "}
-              <Badge bg={getBadgeColor(reserva.estado)}>{reserva.estado}</Badge>
-            </ListGroup.Item>
-            {reserva.comentario && (
-              <ListGroup.Item>
-                <strong>Comentario:</strong> {reserva.comentario}
-              </ListGroup.Item>
-            )}
-            <ListGroup.Item className="text-center">
-              <strong>Código QR de la Reserva:</strong>
-              <div className="mt-2">
-                <QRCodeSVG value={qrData} size={128} />
-              </div>
-            </ListGroup.Item>
-            {reserva.estado === "pendiente" && (
-              <ListGroup.Item className="text-center mt-3">
-                <Button
-                  variant="success"
-                  className="mx-2"
-                  onClick={() => handleAbrirModal("Aprobar")}
-                >
-                  Aprobar
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={() => handleAbrirModal("Rechazar")}
-                >
-                  Rechazar
-                </Button>
-              </ListGroup.Item>
-            )}
-          </ListGroup>
-        </Card.Body>
-      </Card>
-
-      <Modal show={showModal} onHide={handleCerrarModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>{accion} Reserva</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="comentario">
-              <Form.Label>Comentario</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={comentario}
-                onChange={(e) => setComentario(e.target.value)}
-                placeholder={`Escribe un comentario para ${accion?.toLowerCase()} la reserva...`}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCerrarModal}>
-            Cancelar
-          </Button>
-          <Button
-            variant={accion === "Aprobar" ? "success" : "danger"}
-            onClick={handleEnviar}
-          >
-            {accion}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </>
-  );
-}
+export default RoomDetailsModal;

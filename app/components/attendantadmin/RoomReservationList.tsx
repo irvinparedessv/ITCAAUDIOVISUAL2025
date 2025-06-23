@@ -12,6 +12,9 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../../api/axios";
 import AulaReservacionEstadoModal from "./RoomReservationStateModal"; // Asegúrate que el path sea correcto
+import { QRURL } from "~/constants/constant";
+import type { Bitacora } from "~/types/bitacora";
+import RoomDetailsModal from "../applicant/RoomDetailsModal";
 
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -22,7 +25,12 @@ const RoomReservationList = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showEstadoModal, setShowEstadoModal] = useState(false);
   const [selectedReserva, setSelectedReserva] = useState<any>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+
+  const [historial, setHistorial] = useState<Bitacora[]>([]);
+
+  const qrBaseUrl = QRURL;
 
   const getEstadoVariant = (estado: string) => {
     switch (estado.toLowerCase()) {
@@ -35,6 +43,24 @@ const RoomReservationList = () => {
       default:
         return "secondary";
     }
+  };
+  const getBadgeColor = (
+    estado: "pendiente" | "aprobado" | "cancelado" | "rechazado"
+  ) => {
+    switch (estado) {
+      case "pendiente":
+        return "warning";
+      case "aprobado":
+        return "success";
+      case "cancelado":
+        return "danger";
+      default:
+        return "secondary";
+    }
+  };
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedReserva(null);
   };
 
   useEffect(() => {
@@ -91,8 +117,9 @@ const RoomReservationList = () => {
   };
 
   const handleDetailClick = (reserva: any) => {
+    console.log(reserva);
     setSelectedReserva(reserva);
-    setShowDetailModal(true);
+    setShowModal(true);
   };
 
   return (
@@ -180,39 +207,16 @@ const RoomReservationList = () => {
         </Table>
       )}
 
-      {/* Modal Detalle */}
-      {selectedReserva && (
-        <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Detalle de Reserva</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <p>
-              <strong>Aula:</strong> {selectedReserva.aula?.name}
-            </p>
-            <p>
-              <strong>Fecha:</strong> {formatDate(selectedReserva.fecha)}
-            </p>
-            <p>
-              <strong>Horario:</strong> {selectedReserva.horario}
-            </p>
-            <p>
-              <strong>Reservado por:</strong> {selectedReserva.user?.first_name}
-            </p>
-            <p>
-              <strong>Estado:</strong> {selectedReserva.estado}
-            </p>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="secondary"
-              onClick={() => setShowDetailModal(false)}
-            >
-              Cerrar
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      )}
+      <RoomDetailsModal
+        qrBaseUrl={qrBaseUrl}
+        getBadgeColor={getBadgeColor}
+        formatDate={formatDate}
+        handleCloseModal={handleCloseModal}
+        showModal={showModal}
+        loadingHistorial={loadingHistorial}
+        selectedReservation={selectedReserva}
+        historial={historial}
+      />
 
       {/* Modal Estado actualizado con diseño completo */}
       {selectedReserva && (

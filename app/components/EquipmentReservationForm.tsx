@@ -13,6 +13,7 @@ import {
 import toast from "react-hot-toast";
 import api from "../api/axios";
 import { getTipoReservas } from "../services/tipoReservaService";
+import { formatTo12h, timeOptions } from "~/utils/time";
 
 export default function EquipmentReservationForm() {
  type OptionType = { value: string; label: string };
@@ -43,6 +44,17 @@ const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>([]);
 const [loadingTipoReserva, setLoadingTipoReserva] = useState(true);
 const [checkingAvailability, setCheckingAvailability] = useState(false);
 const { user } = useAuth();
+const isTodaySelected = formData.date === new Date().toISOString().split("T")[0];
+
+const startTimeOptions = timeOptions.filter((time) => {
+  const hour = Number(time.split(":")[0]);
+  return hour >= 7 && hour <= 17;
+});
+
+const endTimeOptions = timeOptions.filter((time) => {
+  const hour = Number(time.split(":")[0]);
+  return hour >= 7 && hour <= 20;
+});
 
 const isDateTimeComplete =
   formData.date && formData.startTime && formData.endTime;
@@ -224,6 +236,37 @@ const handleSubmit = async (e: React.FormEvent) => {
     return;
   }
 
+  const now = new Date();
+
+  const selectedDate = new Date(formData.date + "T" + formData.startTime);
+  const dateOnly = new Date(formData.date);
+  const daysDiff = (dateOnly.getTime() - now.setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24);
+
+  // ➤ Validar máximo 7 días de anticipación
+  if (daysDiff > 7) {
+    toast.error("Solo se pueden hacer reservas con hasta una semana de anticipación.");
+    return;
+  }
+
+  console.log("Ahora:", new Date());
+  console.log("Inicio de reserva:", selectedDate);
+  console.log("Diferencia en minutos:", (selectedDate.getTime() - Date.now()) / 60000);
+  // ➤ Validar que hoy sea al menos 1 hora antes
+  const isToday =
+    new Date().toISOString().split("T")[0] === formData.date;
+
+  if (isToday) {
+    const now = new Date();
+    const diffInMinutes = (selectedDate.getTime() - now.getTime()) / 60000;
+
+    if (diffInMinutes < 30) {
+      toast.error("Si reservas para hoy, debe ser al menos con 30 minutos de anticipación.");
+      return;
+    }
+  }
+
+
+  // Resto de validaciones y envío del formulario
   if (formData.equipment.length === 0) {
     toast.error("Debe seleccionar al menos un equipo");
     return;
@@ -243,6 +286,9 @@ const handleSubmit = async (e: React.FormEvent) => {
     toast.error("Las horas de inicio y fin son obligatorias");
     return;
   }
+
+  // Continúa con el envío como ya lo tienes...
+
 
   const payload = {
     user_id: user.id,
@@ -289,8 +335,14 @@ const handleSubmit = async (e: React.FormEvent) => {
             onChange={handleChange}
             className="form-control"
             min={new Date().toISOString().split("T")[0]}
+            max={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
             required
           />
+          {isTodaySelected && (
+            <small className="form-text text-muted">
+              La reservación debe hacerse con al menos 30 minutos de anticipación.
+            </small>
+          )}
         </div>
 
         {/* Horas */}
@@ -300,28 +352,67 @@ const handleSubmit = async (e: React.FormEvent) => {
               <FaClock className="me-2" />
               Hora de inicio
             </label>
-            <input
-              type="time"
-              name="startTime"
+            <select
+              className="form-select"
               value={formData.startTime}
-              onChange={handleChange}
-              className="form-control"
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, startTime: e.target.value }))
+              }
               required
-            />
+            >
+               <option value="">Selecciona una hora</option>
+                {timeOptions
+                  .filter((time) => {
+                    const [hourStr, minStr] = time.split(":");
+                    const hour = Number(hourStr);
+                    const minutes = Number(minStr);
+                    // Permitir horas hasta 17:00 (sin 17:30)
+                    return hour < 17 || (hour === 17 && minutes === 0);
+                  })
+                  .map((time) => (
+                    <option key={time} value={time}>
+                      {formatTo12h(time)}
+                    </option>
+                ))}
+            </select>
           </div>
           <div className="col-md-6">
             <label className="form-label d-flex align-items-center">
               <FaClock className="me-2" />
               Hora de entrega
             </label>
-            <input
-              type="time"
-              name="endTime"
+            <select
+              className="form-select"
               value={formData.endTime}
-              onChange={handleChange}
-              className="form-control"
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, endTime: e.target.value }))
+              }
               required
-            />
+            >
+              <option value="">Selecciona una hora</option>
+                {timeOptions
+                  .filter((time) => {
+                    const [hourStr, minStr] = time.split(":");
+                    const hour = Number(hourStr);
+                    const minutes = Number(minStr);
+                    // Solo mostrar horas mayores a la hora de inicio seleccionada
+                    if (formData.startTime) {
+                      const [startHourStr, startMinStr] = formData.startTime.split(":");
+                      const startHour = Number(startHourStr);
+                      const startMinutes = Number(startMinStr);
+                      const timeHourMin = hour * 60 + minutes;
+                      const startHourMin = startHour * 60 + startMinutes;
+                      if (timeHourMin <= startHourMin) return false;
+                    }
+                    // Limitar hora entrega hasta 20:00 (sin 20:30)
+                    return hour < 20 || (hour === 20 && minutes === 0);
+                  })
+                  .map((time) => (
+                    <option key={time} value={time}>
+                      {formatTo12h(time)}
+                    </option>
+                  ))}
+            </select>
           </div>
         </div>
 

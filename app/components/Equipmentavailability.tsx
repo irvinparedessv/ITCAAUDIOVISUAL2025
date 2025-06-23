@@ -11,6 +11,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../api/axios";
 import type { AvailabilityData, Equipment, TipoEquipo } from "../types/equipo";
+import { formatTo12h, timeOptions } from "~/utils/time";
 
 export default function EquipmentAvailabilityList() {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
@@ -211,8 +212,7 @@ export default function EquipmentAvailabilityList() {
             <div className="col-md-4">
               <Form.Group>
                 <Form.Label>Hora de inicio</Form.Label>
-                <Form.Control
-                  type="time"
+                <Form.Select
                   value={availabilityData.startTime}
                   onChange={(e) =>
                     setAvailabilityData({
@@ -220,14 +220,28 @@ export default function EquipmentAvailabilityList() {
                       startTime: e.target.value,
                     })
                   }
-                />
+                >
+                  <option value="">Selecciona una hora</option>
+                  {timeOptions
+                    .filter((time) => {
+                      const [hourStr, minStr] = time.split(":");
+                      const hour = Number(hourStr);
+                      const minutes = Number(minStr);
+                      // Permitir solo hasta 17:00 (sin 17:30)
+                      return hour < 17 || (hour === 17 && minutes === 0);
+                    })
+                    .map((time) => (
+                      <option key={time} value={time}>
+                        {formatTo12h(time)}
+                      </option>
+                    ))}
+                </Form.Select>
               </Form.Group>
             </div>
             <div className="col-md-4">
               <Form.Group>
                 <Form.Label>Hora de fin</Form.Label>
-                <Form.Control
-                  type="time"
+                <Form.Select
                   value={availabilityData.endTime}
                   onChange={(e) =>
                     setAvailabilityData({
@@ -235,7 +249,31 @@ export default function EquipmentAvailabilityList() {
                       endTime: e.target.value,
                     })
                   }
-                />
+                >
+                  <option value="">Selecciona una hora</option>
+                  {timeOptions
+                    .filter((time) => {
+                      const [hourStr, minStr] = time.split(":");
+                      const hour = Number(hourStr);
+                      const minutes = Number(minStr);
+                      if (availabilityData.startTime) {
+                        const [startHourStr, startMinStr] = availabilityData.startTime.split(":");
+                        const startHour = Number(startHourStr);
+                        const startMinutes = Number(startMinStr);
+                        const timeMinutes = hour * 60 + minutes;
+                        const startMinutesTotal = startHour * 60 + startMinutes;
+                        // Solo mostrar horas mayores a la hora de inicio seleccionada
+                        if (timeMinutes <= startMinutesTotal) return false;
+                      }
+                      // Limitar la hora máxima a 20:00 (sin 20:30)
+                      return hour < 20 || (hour === 20 && minutes === 0);
+                    })
+                    .map((time) => (
+                      <option key={time} value={time}>
+                        {formatTo12h(time)}
+                      </option>
+                    ))}
+                </Form.Select>
               </Form.Group>
             </div>
           </div>
@@ -244,7 +282,7 @@ export default function EquipmentAvailabilityList() {
               <small>
                 Mostrando disponibilidad para:{" "}
                 {availabilityData.fecha.toLocaleDateString()} de{" "}
-                {availabilityData.startTime} a {availabilityData.endTime}
+                {formatTo12h(availabilityData.startTime)} a {formatTo12h(availabilityData.endTime)}
               </small>
             </div>
           )}

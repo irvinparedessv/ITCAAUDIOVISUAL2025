@@ -1,3 +1,5 @@
+// services/equipoService.ts
+
 import api from "../api/axios";
 import type {
   Equipo,
@@ -10,38 +12,33 @@ export interface EquipoFilters {
   page?: number;
   perPage?: number;
   tipoEquipoId?: number;
+  estado?: boolean; // ✅ Agregado para que pueda enviarse como filtro
 }
 
 /**
  * Obtiene un equipo específico por su ID
- * @param id ID del equipo a obtener
- * @returns Promise con los datos del equipo
  */
 export const getEquipoById = async (id: number): Promise<Equipo> => {
   try {
     const response = await api.get(`/equipos/${id}`);
-    return response.data; // <- asegurarse que `data` es el equipo
+    return response.data;
   } catch (error) {
     console.error(`Error al obtener equipo con ID ${id}:`, error);
     throw error;
   }
 };
 
-
-
 /**
  * Obtiene una lista paginada de equipos con filtros opcionales
- * @param filters Filtros de búsqueda
- * @returns Promise con los datos paginados
  */
 export const getEquipos = async (
   filters: EquipoFilters = {}
-): Promise<{ 
-  data: Equipo[]; 
-  total: number; 
-  current_page: number; 
-  per_page: number; 
-  last_page: number 
+): Promise<{
+  data: Equipo[];
+  total: number;
+  current_page: number;
+  per_page: number;
+  last_page: number;
 }> => {
   try {
     const res = await api.get("/equipos", {
@@ -50,6 +47,7 @@ export const getEquipos = async (
         page: filters.page ?? 1,
         per_page: filters.perPage ?? 5,
         tipo_equipo_id: filters.tipoEquipoId ?? undefined,
+        estado: filters.estado !== undefined ? filters.estado : undefined, // ✅ filtro por estado
       },
     });
 
@@ -68,8 +66,6 @@ export const getEquipos = async (
 
 /**
  * Crea un nuevo equipo
- * @param equipo Datos del equipo a crear
- * @returns Promise con la respuesta del servidor
  */
 export const createEquipo = async (equipo: EquipoCreateDTO) => {
   const formData = new FormData();
@@ -103,9 +99,6 @@ export const createEquipo = async (equipo: EquipoCreateDTO) => {
 
 /**
  * Actualiza un equipo existente
- * @param id ID del equipo a actualizar
- * @param equipo Datos actualizados del equipo
- * @returns Promise con la respuesta del servidor
  */
 export const updateEquipo = async (id: number, equipo: EquipoUpdateDTO) => {
   const formData = new FormData();
@@ -140,9 +133,7 @@ export const updateEquipo = async (id: number, equipo: EquipoUpdateDTO) => {
 };
 
 /**
- * Elimina lógicamente un equipo (marca como is_deleted = true)
- * @param id ID del equipo a eliminar
- * @returns Promise con la respuesta del servidor
+ * Elimina lógicamente un equipo
  */
 export const deleteEquipo = async (id: number) => {
   try {
@@ -157,7 +148,7 @@ export const deleteEquipo = async (id: number) => {
   }
 };
 
-// Exportación de todas las funciones del servicio
+// Exportación
 export default {
   getEquipoById,
   getEquipos,

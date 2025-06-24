@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Badge, Button, Modal, Form } from "react-bootstrap";
+import { Badge, Button, Modal, Form, InputGroup, Spinner } from "react-bootstrap";
 import api from "../api/axios";
 import { useAuth } from "../hooks/AuthContext";
 import toast from "react-hot-toast";
-import { FaEdit, FaEye, FaFilter } from "react-icons/fa";
+import { FaEdit, FaEye, FaFilter, FaSearch, FaTimes } from "react-icons/fa";
 import type { TipoReserva } from "app/types/tipoReserva";
 import type { Bitacora } from "app/types/bitacora";
 import { QRURL } from "~/constants/constant";
@@ -15,49 +15,49 @@ import ReservacionEstadoModal from "./ReservacionEstado";
 import { Role } from "~/types/roles";
 
 export default function ReservationList() {
+  // Estados de autenticación y navegación
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const highlightRef = useRef<HTMLTableRowElement>(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [highlightId, setHighlightId] = useState<number | null>(null);
+  // Estados de datos y carga
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [reservationsLoaded, setReservationsLoaded] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
 
-  const [selectedReservation, setSelectedReservation] =
-    useState<Reservation | null>(null);
+  // Estados para modales
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [historial, setHistorial] = useState<Bitacora[]>([]);
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
-  const [historialCache, setHistorialCache] = useState<
-    Record<number, Bitacora[]>
-  >({});
-  const itemsPerPage = 15;
+  const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
+  const [showEstadoModal, setShowEstadoModal] = useState(false);
+  const [reservaSeleccionadaParaEstado, setReservaSeleccionadaParaEstado] = useState<Reservation | null>(null);
+  const [updatingReservationId, setUpdatingReservationId] = useState<number | null>(null);
+
+  // Estados de paginación
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [showEstadoModal, setShowEstadoModal] = useState(false);
-  const [reservaSeleccionadaParaEstado, setReservaSeleccionadaParaEstado] =
-    useState<Reservation | null>(null);
-  const [isUpdatingEstado, setIsUpdatingEstado] = useState(false);
-  const [updatingReservationId, setUpdatingReservationId] = useState<
-    number | null
-  >(null);
+  const itemsPerPage = 15;
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+
+  // Estados de filtros
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [typeFilter, setTypeFilter] = useState<string>("Todos");
   const [showFilters, setShowFilters] = useState(false);
-  const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
   const [mostrarSoloHoy, setMostrarSoloHoy] = useState(false);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
+  // Efectos
   useEffect(() => {
-    if (location.state?.page) {
-      setCurrentPage(location.state.page);
-    }
-    if (location.state?.highlightReservaId) {
-      setHighlightId(location.state.highlightReservaId);
-    }
-
+    if (location.state?.page) setCurrentPage(location.state.page);
+    if (location.state?.highlightReservaId) setHighlightId(location.state.highlightReservaId);
+    
     if (location.state?.page || location.state?.highlightReservaId) {
       navigate(".", { replace: true, state: {} });
     }
@@ -75,14 +75,28 @@ export default function ReservationList() {
     fetchTipoReservas();
   }, []);
 
+  useEffect(() => {
+    if (highlightId !== null && reservationsLoaded) {
+      if (highlightRef.current) {
+        highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      const timeout = setTimeout(() => setHighlightId(null), 7000);
+      return () => clearTimeout(timeout);
+    }
+  }, [highlightId, reservationsLoaded]);
+
+  useEffect(() => {
+    if (showModal && selectedReservation) {
+      fetchHistorial(selectedReservation.id);
+    }
+  }, [showModal, selectedReservation]);
+
+  // Funciones principales
   const fetchReservations = async () => {
     setReservationsLoaded(false);
     try {
       let endpoint = `/reservas/${user?.id}`;
-      if (
-        mostrarSoloHoy &&
-        (user?.role === Role.Administrador || user?.role === Role.Encargado)
-      ) {
+      if (mostrarSoloHoy && (user?.role === Role.Administrador || user?.role === Role.Encargado)) {
         endpoint = "/reservas/dia";
       }
 
@@ -90,48 +104,33 @@ export default function ReservationList() {
         page: currentPage,
         per_page: itemsPerPage,
       };
-      if (statusFilter !== "Todos") {
-        params.estado = statusFilter;
-      }
-      if (typeFilter !== "Todos") {
-        params.tipo_reserva = typeFilter;
-      }
+      
+      if (statusFilter !== "Todos") params.estado = statusFilter;
+      if (typeFilter !== "Todos") params.tipo_reserva = typeFilter;
+      if (startDate) params.fecha_inicio = startDate;
+      if (endDate) params.fecha_fin = endDate;
+      if (searchTerm) params.search = searchTerm;
 
       const response = await api.get(endpoint, { params });
 
       setReservations(response.data.data);
       setTotalPages(response.data.last_page);
       setTotalItems(response.data.total);
+    } catch (error) {
+      console.error("Error al cargar reservaciones:", error);
+      toast.error("Error al cargar las reservas");
+    } finally {
       setReservationsLoaded(true);
       setIsFirstLoad(false);
-    } catch {
-      toast.error("Error al cargar las reservas");
-      setReservationsLoaded(true); // Evitar quedarse trabado en loading
     }
   };
 
   useEffect(() => {
     if (user?.id) {
-      fetchReservations();
+      const timer = setTimeout(fetchReservations, 300);
+      return () => clearTimeout(timer);
     }
-  }, [user, mostrarSoloHoy, currentPage, statusFilter, typeFilter]);
-
-  useEffect(() => {
-    if (highlightId !== null && reservationsLoaded) {
-      if (highlightRef.current) {
-        highlightRef.current.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
-
-      const timeout = setTimeout(() => {
-        setHighlightId(null);
-      }, 7000);
-
-      return () => clearTimeout(timeout);
-    }
-  }, [highlightId, reservationsLoaded]);
+  }, [user, mostrarSoloHoy, currentPage, statusFilter, typeFilter, startDate, endDate, searchTerm]);
 
   const fetchHistorial = async (reservaId: number) => {
     if (historialCache[reservaId]) {
@@ -151,12 +150,7 @@ export default function ReservationList() {
     }
   };
 
-  useEffect(() => {
-    if (showModal && selectedReservation) {
-      fetchHistorial(selectedReservation.id);
-    }
-  }, [showModal, selectedReservation]);
-
+  // Handlers
   const handleDetailClick = (reservation: Reservation) => {
     setHistorial([]);
     setSelectedReservation(reservation);
@@ -172,6 +166,9 @@ export default function ReservationList() {
   const resetFilters = () => {
     setStatusFilter("Todos");
     setTypeFilter("Todos");
+    setStartDate("");
+    setEndDate("");
+    setSearchTerm("");
     setCurrentPage(1);
   };
 
@@ -181,11 +178,7 @@ export default function ReservationList() {
     const rangeWithDots: (number | string)[] = [];
     let l: number | null = null;
 
-    for (
-      let i = Math.max(2, currentPage - delta);
-      i <= Math.min(totalPages - 1, currentPage + delta);
-      i++
-    ) {
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
       range.push(i);
     }
 
@@ -202,33 +195,61 @@ export default function ReservationList() {
     return rangeWithDots;
   };
 
+  // Render
   return (
-    <div className="container py-5">
+    <div className="table-responsive rounded shadow p-3 mt-4">
+      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 className="mb-0">Listado de Reservas</h4>
-        {(user?.role === Role.Administrador ||
-          user?.role === Role.Encargado) && (
+        {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
           <Button
             onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
             className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
           >
-            {mostrarSoloHoy ? "Ver todas las reservas" : "Ver reservas de hoy"}
+            {mostrarSoloHoy ? "Ver todas" : "Ver solo hoy"}
           </Button>
         )}
       </div>
-      {!isFirstLoad && (
-        <Button
-          variant="outline-secondary"
-          onClick={() => setShowFilters(!showFilters)}
-          className="mb-3 d-flex align-items-center gap-2"
-        >
-          <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+
+      {/* Buscador con icono y limpiar + botón de filtros */}
+<div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
+  <div className="flex-grow-1">
+    <InputGroup>
+      <InputGroup.Text>
+        <FaSearch />
+      </InputGroup.Text>
+      <Form.Control
+        type="text"
+        placeholder="Buscar por usuario, aula, equipo, estado..."
+        value={searchTerm}
+        onChange={(e) => {
+          setSearchTerm(e.target.value);
+          setCurrentPage(1);
+        }}
+      />
+      {searchTerm && (
+        <Button variant="outline-secondary" onClick={() => setSearchTerm("")}>
+          <FaTimes />
         </Button>
       )}
+    </InputGroup>
+  </div>
+
+  <Button
+    variant="outline-secondary"
+    onClick={() => setShowFilters(!showFilters)}
+    className="d-flex align-items-center gap-2"
+  >
+    <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+  </Button>
+</div>
+
+
+
       {showFilters && !isFirstLoad && (
         <div className="p-3 rounded mb-4 border border-secondary">
           <div className="row g-3">
-            <div className="col-md-4">
+            <div className="col-md-3">
               <Form.Group>
                 <Form.Label>Estado</Form.Label>
                 <Form.Select
@@ -238,7 +259,7 @@ export default function ReservationList() {
                     setCurrentPage(1);
                   }}
                 >
-                  <option value="Todos">Todos los estados</option>
+                  <option value="Todos">Todos</option>
                   <option value="Pendiente">Pendiente</option>
                   <option value="Aprobado">Entregado</option>
                   <option value="Devuelto">Devuelto</option>
@@ -247,9 +268,9 @@ export default function ReservationList() {
               </Form.Group>
             </div>
 
-            <div className="col-md-4">
+            <div className="col-md-3">
               <Form.Group>
-                <Form.Label>Tipo de reserva</Form.Label>
+                <Form.Label>Tipo</Form.Label>
                 <Form.Select
                   value={typeFilter}
                   onChange={(e) => {
@@ -257,128 +278,208 @@ export default function ReservationList() {
                     setCurrentPage(1);
                   }}
                 >
-                  <option value="Todos">Todos los tipos</option>
+                  <option value="Todos">Todos</option>
                   {tipoReservas.map((tipo) => (
-                    <option key={tipo.id} value={tipo.nombre}>
-                      {tipo.nombre}
-                    </option>
+                    <option key={tipo.id} value={tipo.nombre}>{tipo.nombre}</option>
                   ))}
                 </Form.Select>
               </Form.Group>
             </div>
 
-            <div className="col-md-4 d-flex align-items-end">
-              <Button
-                variant="outline-danger"
-                onClick={resetFilters}
-                className="w-100"
-              >
+            <div className="col-md-3">
+              <Form.Group>
+                <Form.Label>Desde</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    if (endDate && e.target.value > endDate) setEndDate("");
+                    setCurrentPage(1);
+                  }}
+                />
+              </Form.Group>
+            </div>
+
+            <div className="col-md-3">
+              <Form.Group>
+                <Form.Label>Hasta</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => {
+                    if (!startDate || e.target.value >= startDate) {
+                      setEndDate(e.target.value);
+                      setCurrentPage(1);
+                    } else {
+                      toast.error("La fecha fin no puede ser anterior");
+                    }
+                  }}
+                  min={startDate}
+                  disabled={!startDate}
+                />
+              </Form.Group>
+            </div>
+
+            <div className="col-12">
+              <Button variant="outline-danger" onClick={resetFilters} className="w-100">
                 Limpiar filtros
               </Button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Loading */}
       {!reservationsLoaded && (
         <div className="d-flex justify-content-center my-5">
-          <div
-            className="spinner-border text-primary"
-            role="status"
-            style={{ width: "3rem", height: "3rem" }}
-          >
-            <span className="visually-hidden">Cargando...</span>
-          </div>
+          <Spinner animation="border" variant="primary" style={{ width: "3rem", height: "3rem" }} />
         </div>
       )}
-      {reservationsLoaded && (
-        <table className="table table-hover align-middle text-center overflow-hidden">
-          <thead className="table-dark">
-            <tr>
-              <th>Usuario</th>
-              <th>Tipo Reserva</th>
-              <th>Equipos</th>
-              <th>Aula</th>
-              <th>Fecha Salida</th>
-              <th>Fecha Entrega</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reservations.map((reserva) => {
-              const isHighlighted = reserva.id === highlightId;
-              return (
-                <tr
-                  key={reserva.id}
-                  ref={isHighlighted ? highlightRef : null}
-                  className={`${
-                    isHighlighted
-                      ? "table-warning animate__animated animate__flash"
-                      : ""
-                  }`}
-                >
-                  <td className="fw-bold">
-                    {reserva.user.first_name}-{reserva.user.last_name}
-                  </td>
-                  <td>{reserva.tipo_reserva?.nombre}</td>
-                  <td>
-                    {reserva.equipos
-                      .slice(0, 2)
-                      .map((e) => e.nombre)
-                      .join(", ")}
-                    {reserva.equipos.length > 2 && "..."}
-                  </td>
-                  <td>{reserva.aula}</td>
-                  <td>{formatDate(reserva.fecha_reserva)}</td>
-                  <td>{formatDate(reserva.fecha_entrega)}</td>
-                  <td>
-                    <Badge
-                      bg={getBadgeColor(reserva.estado)}
-                      className="px-3 py-2"
-                    >
-                      {reserva.estado}
-                    </Badge>
-                  </td>
-                  <td>
-                    <div className="d-flex justify-content-center gap-2">
-                      <button
-                        className="btn btn-outline-primary rounded-circle"
-                        onClick={() => handleDetailClick(reserva)}
-                        style={{ width: "44px", height: "44px" }}
-                      >
-                        <FaEye className="fs-5" />
-                      </button>
 
-                      {user?.role !== Role.Prestamista && (
-                        <button
-                          className="btn btn-outline-success rounded-circle"
-                          onClick={() => {
-                            if (updatingReservationId !== null) return;
-                            setReservaSeleccionadaParaEstado(reserva);
-                            setShowEstadoModal(true);
-                          }}
-                          style={{ width: "44px", height: "44px" }}
-                          title="Actualizar estado"
-                          disabled={updatingReservationId === reserva.id}
-                        >
-                          <FaEdit className="fs-5" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+      {/* Resultados */}
+      {reservationsLoaded && (
+        <>
+          <div className="mb-2 text-muted">
+            Mostrando {reservations.length} de {totalItems} reservas
+            {searchTerm && ` para "${searchTerm}"`}
+          </div>
+
+          <div className="table-responsive">
+            <table className="table table-hover align-middle text-center">
+              <thead className="table-dark">
+                <tr>
+                  <th>#</th>
+                  <th>Usuario</th>
+                  <th>Tipo</th>
+                  <th>Equipos</th>
+                  <th>Aula</th>
+                  <th>Salida</th>
+                  <th>Entrega</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
-              );
-            })}
-            {reservations.length === 0 && (
-              <tr>
-                <td colSpan={8} className="text-center text-muted">
-                  No hay reservas que coincidan con los filtros
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {reservations.map((reserva) => {
+                  const isHighlighted = reserva.id === highlightId;
+                  return (
+                    <tr
+                      key={reserva.id}
+                      ref={isHighlighted ? highlightRef : null}
+                      className={isHighlighted ? "table-warning animate__animated animate__flash" : ""}
+                    >
+                      <td className="fw-bold">
+                        {reserva.id}
+                      </td>
+                      <td className="fw-bold">
+                        {reserva.user.first_name} {reserva.user.last_name}
+                      </td>
+                      <td>{reserva.tipo_reserva?.nombre}</td>
+                      <td>
+                        {reserva.equipos.slice(0, 2).map(e => e.nombre).join(", ")}
+                        {reserva.equipos.length > 2 && "..."}
+                      </td>
+                      <td>{reserva.aula}</td>
+                      <td>{formatDate(reserva.fecha_reserva)}</td>
+                      <td>{formatDate(reserva.fecha_entrega)}</td>
+                      <td>
+                        <Badge bg={getBadgeColor(reserva.estado)} className="px-3 py-2">
+                          {reserva.estado}
+                        </Badge>
+                      </td>
+                      <td>
+                        <div className="d-flex justify-content-center gap-2">
+                          <button
+                            className="btn btn-outline-primary rounded-circle"
+                            onClick={() => handleDetailClick(reserva)}
+                            style={{ width: "44px", height: "44px" }}
+                          >
+                            <FaEye className="fs-5" />
+                          </button>
+
+                          {user?.role !== Role.Prestamista && (
+                            <button
+                              className="btn btn-outline-success rounded-circle"
+                              onClick={() => {
+                                if (updatingReservationId !== null) return;
+                                setReservaSeleccionadaParaEstado(reserva);
+                                setShowEstadoModal(true);
+                              }}
+                              style={{ width: "44px", height: "44px" }}
+                              title="Actualizar estado"
+                              disabled={updatingReservationId === reserva.id}
+                            >
+                              <FaEdit className="fs-5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {reservations.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="text-center py-4 text-muted">
+                      {searchTerm
+                        ? "No hay resultados para tu búsqueda"
+                        : "No se encontraron reservas"}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Paginación */}
+          {totalPages > 1 && (
+            <nav className="d-flex justify-content-center mt-4">
+              <ul className="pagination">
+                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </button>
+                </li>
+                {getPageNumbers().map((page, index) =>
+                  page === "..." ? (
+                    <li key={`dots-${index}`} className="page-item disabled">
+                      <span className="page-link">...</span>
+                    </li>
+                  ) : (
+                    <li
+                      key={page}
+                      className={`page-item ${currentPage === page ? "active" : ""}`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() => setCurrentPage(Number(page))}
+                      >
+                        {page}
+                      </button>
+                    </li>
+                  )
+                )}
+                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Siguiente
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          )}
+        </>
       )}
+
+
+      {/* Modales */}
       {reservaSeleccionadaParaEstado && (
         <ReservacionEstadoModal
           show={showEstadoModal}
@@ -407,55 +508,7 @@ export default function ReservationList() {
           }}
         />
       )}
-      {reservationsLoaded && (
-        <nav className="d-flex justify-content-center mt-4">
-          <ul className="pagination">
-            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-              <button
-                className="page-link"
-                onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                Anterior
-              </button>
-            </li>
-            {getPageNumbers().map((page, index) =>
-              page === "..." ? (
-                <li key={`dots-${index}`} className="page-item disabled">
-                  <span className="page-link">...</span>
-                </li>
-              ) : (
-                <li
-                  key={page}
-                  className={`page-item ${
-                    currentPage === page ? "active" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(Number(page))}
-                  >
-                    {page}
-                  </button>
-                </li>
-              )
-            )}
-            <li
-              className={`page-item ${
-                currentPage === totalPages ? "disabled" : ""
-              }`}
-            >
-              <button
-                className="page-link"
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Siguiente
-              </button>
-            </li>
-          </ul>
-        </nav>
-      )}
+
       <EquipmentDetailsModal
         getBadgeColor={getBadgeColor}
         formatDate={formatDate}
@@ -470,6 +523,7 @@ export default function ReservationList() {
   );
 }
 
+// Funciones auxiliares
 function getBadgeColor(estado: string) {
   switch (estado) {
     case "Pendiente":

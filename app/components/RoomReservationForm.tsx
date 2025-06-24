@@ -44,6 +44,15 @@ export default function ReserveClassroom() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
+  const formatDateLocal = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  };
+
+
   const userId = user?.id;
 
   useEffect(() => {
@@ -104,7 +113,7 @@ export default function ReserveClassroom() {
 
     return selectedClassroomData.horarios.some((h) => {
       const day = date.toLocaleDateString("en-US", { weekday: "long" });
-      const current = date.toISOString().split("T")[0];
+      const current = formatDateLocal(date);
       return (
         h.days.includes(day) && current >= h.start_date && current <= h.end_date
       );
@@ -119,7 +128,7 @@ export default function ReserveClassroom() {
     });
 
     const horario = selectedClassroomData.horarios.find((h) => {
-      const current = selectedDate.toISOString().split("T")[0];
+      const current = formatDateLocal(selectedDate);
       return (
         h.days.includes(selectedDay) &&
         current >= h.start_date &&
@@ -146,13 +155,16 @@ export default function ReserveClassroom() {
     }
 
     try {
-      await api.post("/reservasAula", {
-        aula_id: aula.id,
-        fecha: selectedDate.toISOString().split("T")[0],
-        horario: selectedTime,
-        user_id: userId,
-        estado: "pendiente",
-      });
+      const response = await api.post("/reservasAula", {
+  aula_id: aula.id,
+  fecha: formatDateLocal(selectedDate),
+  horario: selectedTime,
+  user_id: userId,
+  estado: "pendiente",
+});
+
+console.log("Respuesta real:", response.data);
+
 
       toast.success("Reserva realizada con éxito");
       setSelectedDate(null);
@@ -213,8 +225,11 @@ export default function ReserveClassroom() {
             id="date"
             selected={selectedDate}
             onChange={(date) => {
-              setSelectedDate(date);
-              setSelectedTime("");
+                if (date) {
+                  date.setHours(12, 0, 0, 0); // <- ¡Evita el error por zona horaria!
+                  setSelectedDate(date);
+                  setSelectedTime("");
+                }
             }}
             className="form-control"
             dateFormat="dd/MM/yyyy"

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button, Spinner, Table, Badge } from "react-bootstrap";
 
 import api from "../../../api/axios";
@@ -9,6 +9,10 @@ import type { ReservationRoom } from "~/types/reservationroom";
 import RoomDetailsModal from "../RoomDetailsModal";
 import type { Bitacora } from "~/types/bitacora";
 import { QRURL } from "~/constants/constant";
+import toast from "react-hot-toast";
+import { useLocation, useNavigate } from "react-router-dom";
+import "animate.css";
+
 
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -25,12 +29,67 @@ const RoomReservationList = () => {
   const [perPage] = useState(10);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [historial, setHistorial] = useState<Bitacora[]>([]);
+  const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
   const qrBaseUrl = QRURL;
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+  const highlightRef = useRef<HTMLTableRowElement>(null);
+
 
   const [totalPages, setTotalPages] = useState(1);
   const [selectedReservation, setSelectedReservation] =
     useState<ReservationRoom | null>(null);
 
+
+  useEffect(() => {
+  const highlightIdFromState = (location.state as any)?.highlightReservaId;
+  const pageFromState = (location.state as any)?.page;  
+
+    if (highlightIdFromState !== undefined && highlightIdFromState !== null) {
+      setHighlightId(highlightIdFromState);
+      if (pageFromState) setPage(pageFromState);
+
+      // Limpia el state de la URL
+      navigate(".", { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
+
+
+  useEffect(() => {
+    if (highlightId !== null && reservations.length > 0 && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      const timeout = setTimeout(() => setHighlightId(null), 7000);
+      return () => clearTimeout(timeout);
+    }
+  }, [highlightId, reservations]);
+
+
+  const fetchHistorial = async (reservaId: number) => {
+    if (historialCache[reservaId]) {
+      setHistorial(historialCache[reservaId]);
+      return;
+    }
+
+    setLoadingHistorial(true);
+    try {
+      const response = await api.get(`/bitacoras/reserva-aula/${reservaId}`);
+      setHistorial(response.data);
+      setHistorialCache((prev) => ({ ...prev, [reservaId]: response.data }));
+    } catch {
+      toast.error("Error al cargar el historial de cambios");
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showModal && selectedReservation) {
+      fetchHistorial(selectedReservation.id);
+    }
+  }, [showModal, selectedReservation]); 
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
@@ -81,6 +140,8 @@ const RoomReservationList = () => {
         return "success";
       case "cancelado":
         return "danger";
+      case "rechazado":
+        return "danger";
       default:
         return "secondary";
     }
@@ -88,6 +149,7 @@ const RoomReservationList = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedReservation(null);
+    setHighlightId(null);
   };
   useEffect(() => {
     // Default: última semana
@@ -108,6 +170,8 @@ const RoomReservationList = () => {
         return "danger";
       case "aprobado":
         return "success";
+      case "rechazado":
+        return "danger";
       default:
         return "secondary";
     }
@@ -172,8 +236,14 @@ const RoomReservationList = () => {
                 </tr>
               </thead>
               <tbody>
-                {reservations.map((res) => (
-                  <tr key={res.id}>
+                {reservations.map((res) => {
+                  const isHighlighted = res.id === highlightId;
+                  return (
+                    <tr
+                      key={res.id}
+                      ref={isHighlighted ? highlightRef : null}
+                      className={isHighlighted ? "table-warning animate__animated animate__flash" : ""}
+                    >
                     <td>{res.aula?.name || "Aula Desconocida"}</td>
                     <td>{formatDate(res.fecha)}</td>
                     <td>{res.horario}</td>
@@ -207,7 +277,8 @@ const RoomReservationList = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </Table>
 

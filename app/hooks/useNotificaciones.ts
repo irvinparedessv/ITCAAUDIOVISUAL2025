@@ -23,6 +23,7 @@ interface AulaNotification {
   horario: string;
   estado: string;
   comentario?: string;
+  pagina?: number;
 }
 
 interface ReservaBase {

@@ -37,6 +37,7 @@ import BitacoraPage from "./routes/BitacoraPage";
 import NotificationsList from "./routes/NotificationsList";
 import PrediccionPage from "./routes/PrediccionPage";
 import OpcionesPanel from "./dashboard/OpcionesPanel";
+import OpcionesReportes from "./dashboard/OpcionesReportes";
 import App from "./root";
 import ReservaAulaDetail from "./components/applicant/ReservationRoomDetails";
 import ReserveClassroom from "./components/RoomReservationForm";
@@ -203,6 +204,10 @@ const router = createBrowserRouter([
           {
             path: "administracion",
             element: <OpcionesPanel />,
+          },
+          {
+            path: "opcionesReportes",
+            element: <OpcionesReportes />,
           },
         ],
       },

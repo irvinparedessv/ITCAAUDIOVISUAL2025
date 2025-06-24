@@ -4,10 +4,12 @@ import { Toaster } from "react-hot-toast";
 import { useAuth } from "./hooks/AuthContext";
 import NavbarMenu from "./components/menu/menu";
 import { Spinner } from "react-bootstrap";
+import { ThemeProvider, useTheme } from './components/ThemeContext'; // Ajusta la ruta
 
-export default function App() {
+function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+  const { darkMode  } = useTheme();  
 
   const hideNavbarRoutes = [
     "/login",
@@ -18,6 +20,9 @@ export default function App() {
 
   const shouldShowNavbar =
     isAuthenticated && !hideNavbarRoutes.includes(location.pathname);
+
+  // Puedes usar `theme` para condicionar algo, por ejemplo:
+  console.log("Tema actual:", darkMode );
 
   if (isLoading) {
     return (
@@ -55,6 +60,17 @@ export default function App() {
 
   return (
     <>
+      {shouldShowNavbar && <NavbarMenu />}
+      <main className="container my-4">
+        <Outlet />
+      </main>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
       <Toaster
         position="top-right"
         toastOptions={{
@@ -65,10 +81,7 @@ export default function App() {
           },
         }}
       />
-      {shouldShowNavbar && <NavbarMenu />}
-      <main className="container my-4">
-        <Outlet />
-      </main>
-    </>
+      <AppContent />
+    </ThemeProvider>
   );
 }

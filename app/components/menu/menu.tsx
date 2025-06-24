@@ -15,6 +15,7 @@ import React from 'react';
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { FiRefreshCcw } from "react-icons/fi";
 import type { ReactNode, ElementType } from "react";
+import { useTheme } from "../ThemeContext";
 
 // Definición de tipos
 type NotificationType = 'nueva_reserva' | 'estado_reserva' | 'nueva_reserva_aula' | 'estado_reserva_aula';
@@ -256,7 +257,6 @@ const NavbarMenu = () => {
   const { user, logout, checkAccess } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [darkMode, setDarkMode] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const {
@@ -268,26 +268,8 @@ const NavbarMenu = () => {
     refreshNotifications,
   } = useNotificaciones();
 
-  useEffect(() => {
-    const savedMode = localStorage.getItem("darkMode");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const isDark = savedMode ? JSON.parse(savedMode) : prefersDark;
-    setDarkMode(isDark);
-    updateTheme(isDark);
-  }, []);
+  
 
-  const updateTheme = (isDark: boolean) => {
-    document.documentElement.setAttribute("data-bs-theme", isDark ? "dark" : "light");
-    document.body.classList.toggle("dark", isDark);
-    document.body.classList.toggle("light", !isDark);
-  };
-
-  const toggleDarkMode = useCallback(() => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem("darkMode", JSON.stringify(newMode));
-    updateTheme(newMode);
-  }, [darkMode]);
 
   const handleLogout = () => {
     logout();
@@ -299,6 +281,10 @@ const NavbarMenu = () => {
     "/reset-password",
     "/forbidden",
   ];
+
+  
+  const { darkMode, toggleDarkMode } = useTheme();
+
 
   const shouldShowNavbar = user && !hideNavbarRoutes.includes(location.pathname);
 

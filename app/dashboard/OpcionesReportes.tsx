@@ -4,7 +4,7 @@ import { Card } from 'react-bootstrap';
 
 const opciones = [
   {
-    nombre: 'Reportes',
+    nombre: 'Reportes 1',
     descripcion: 'Reportes generales del sistema',
     ruta: '/opcionesReportes',
     icono: <FaRegFileAlt size={24} />,
@@ -23,7 +23,7 @@ const opciones = [
   },
 ];
 
-const OpcionesAdministrativas = () => {
+const OpcionesReporte = () => {
   const navigate = useNavigate();
 
   // Estilo del borde degradado
@@ -84,4 +84,4 @@ const OpcionesAdministrativas = () => {
   );
 };
 
-export default OpcionesAdministrativas;
+export default OpcionesReporte;

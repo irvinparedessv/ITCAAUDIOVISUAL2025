@@ -424,7 +424,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           </label>
           {loadingTipoReserva ? (
             <div className="d-flex justify-content-center">
-              <div className="spinner-border text-primary" role="status">
+              <div className="spinner-border" role="status">
                 <span className="visually-hidden">Cargando...</span>
               </div>
             </div>
@@ -453,12 +453,12 @@ const handleSubmit = async (e: React.FormEvent) => {
             <FaBoxes className="me-2" />
             Equipos Disponibles
             {checkingAvailability && (
-              <span className="ms-2 spinner-border spinner-border-sm text-primary"></span>
+              <span className="ms-2 spinner-border spinner-border-sm"></span>
             )}
           </label>
           {loadingEquipments ? (
             <div className="d-flex justify-content-center">
-              <div className="spinner-border text-primary" role="status">
+              <div className="spinner-border" role="status">
                 <span className="visually-hidden">Cargando...</span>
               </div>
             </div>

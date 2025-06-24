@@ -5,6 +5,18 @@ import { Badge } from "react-bootstrap";
 import { FaSearch } from "react-icons/fa";
 import toast from "react-hot-toast";
 
+const formatDate = (date: Date) => date.toISOString().split("T")[0];
+
+const getDefaultDates = () => {
+  const today = new Date();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(today.getDate() - 7);
+  return {
+    inicio: formatDate(sevenDaysAgo),
+    fin: formatDate(today),
+  };
+};
+
 export default function BitacoraPage() {
   const [registros, setRegistros] = useState<Bitacora[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -14,6 +26,12 @@ export default function BitacoraPage() {
   const [fechaFin, setFechaFin] = useState("");
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+
+  useEffect(() => {
+    const { inicio, fin } = getDefaultDates();
+    setFechaInicio(inicio);
+    setFechaFin(fin);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -123,9 +141,10 @@ export default function BitacoraPage() {
                   type="button"
                   className="btn btn-outline-secondary btn-sm"
                   onClick={() => {
+                    const { inicio, fin } = getDefaultDates();
                     setModuloFiltro("todos");
-                    setFechaInicio("");
-                    setFechaFin("");
+                    setFechaInicio(inicio);
+                    setFechaFin(fin);
                     setSearchTerm("");
                     setPage(1);
                   }}

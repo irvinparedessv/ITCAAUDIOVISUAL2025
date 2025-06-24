@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Button,
   Row,
@@ -6,21 +6,30 @@ import {
   Spinner,
   Table,
   Badge,
-  Modal,
+  Form,
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../../api/axios";
-import AulaReservacionEstadoModal from "./RoomReservationStateModal"; // Asegúrate que el path sea correcto
+import AulaReservacionEstadoModal from "./RoomReservationStateModal";
 import { QRURL } from "~/constants/constant";
 import type { Bitacora } from "~/types/bitacora";
 import RoomDetailsModal from "../applicant/RoomDetailsModal";
+import toast from "react-hot-toast";
+import { FaEdit, FaEye } from "react-icons/fa";
+import PaginationComponent from "../applicant/RoomReservationList/Pagination";
+import Filters from "../applicant/RoomReservationList/Filter";
+import { useLocation, useNavigate } from "react-router-dom";
+import "animate.css";
 
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
     from: null,
     to: null,
   });
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("todos");
+
   const [reservations, setReservations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showEstadoModal, setShowEstadoModal] = useState(false);
@@ -29,39 +38,28 @@ const RoomReservationList = () => {
   const [loadingHistorial, setLoadingHistorial] = useState(false);
 
   const [historial, setHistorial] = useState<Bitacora[]>([]);
+  const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
+
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const perPage = 10;
 
   const qrBaseUrl = QRURL;
 
-  const getEstadoVariant = (estado: string) => {
-    switch (estado.toLowerCase()) {
-      case "pendiente":
-        return "warning";
-      case "cancelado":
-        return "danger";
-      case "aprobado":
-        return "success";
-      default:
-        return "secondary";
+  // Para manejo de redirección y resaltado
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Se espera que el estado de la navegación incluya { highlightReservaId: number, page: number }
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+
+  const highlightRef = useRef<HTMLTableRowElement>(null);
+
+  // Si hay state en la navegación, se limpia para evitar que se vuelva a resaltar
+  useEffect(() => {
+    if ((location.state as any)?.page || (location.state as any)?.highlightReservaId) {
+      navigate(".", { replace: true, state: {} });
     }
-  };
-  const getBadgeColor = (
-    estado: "pendiente" | "aprobado" | "cancelado" | "rechazado"
-  ) => {
-    switch (estado) {
-      case "pendiente":
-        return "warning";
-      case "aprobado":
-        return "success";
-      case "cancelado":
-        return "danger";
-      default:
-        return "secondary";
-    }
-  };
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedReserva(null);
-  };
+  }, [location.state, navigate]);
 
   useEffect(() => {
     const today = new Date();
@@ -71,6 +69,52 @@ const RoomReservationList = () => {
   }, []);
 
   useEffect(() => {
+    setPage(1); // Reiniciar página al cambiar filtros
+  }, [range.from, range.to, status, search]);
+
+  // Agrega este useEffect para manejar correctamente la navegación incluso en la misma página
+  useEffect(() => {
+    const highlightIdFromState = (location.state as any)?.highlightReservaId;
+    const pageFromState = (location.state as any)?.page;
+
+    if (highlightIdFromState !== undefined && highlightIdFromState !== null) {
+      setHighlightId(highlightIdFromState);
+      if (pageFromState) {
+        setPage(pageFromState);
+      }
+
+      // Limpiar el state después de aplicarlo para evitar que se repita
+      navigate(".", { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
+
+
+  const fetchHistorial = async (reservaId: number, forceRefresh = false) => {
+    if (!forceRefresh && historialCache[reservaId]) {
+      setHistorial(historialCache[reservaId]);
+      return;
+    }
+
+    setLoadingHistorial(true);
+    try {
+      const response = await api.get(`/bitacoras/reserva-aula/${reservaId}`);
+      setHistorial(response.data);
+      setHistorialCache((prev) => ({ ...prev, [reservaId]: response.data }));
+    } catch {
+      toast.error("Error al cargar el historial de cambios");
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };
+
+
+  useEffect(() => {
+      if (showModal && selectedReserva) {
+        fetchHistorial(selectedReserva.id);
+      }
+    }, [showModal, selectedReserva]); 
+
+  useEffect(() => {
     const fetchReservations = async () => {
       if (!range.from || !range.to) return;
 
@@ -78,11 +122,19 @@ const RoomReservationList = () => {
       try {
         const response = await api.get("/reservas-aula", {
           params: {
-            from: range.from.toISOString(),
-            to: range.to.toISOString(),
+            from: range.from.toISOString().split("T")[0],
+            to: range.to.toISOString().split("T")[0],
+            page,
+            per_page: perPage,
+            search,
+            status,
           },
         });
-        if (response.data) setReservations(response.data.data);
+
+        if (response.data) {
+          setReservations(response.data.data);
+          setTotalPages(response.data.last_page);
+        }
       } catch (error) {
         console.error("Error al obtener reservas:", error);
       } finally {
@@ -91,14 +143,59 @@ const RoomReservationList = () => {
     };
 
     fetchReservations();
-  }, [range.from, range.to]);
+  }, [range.from, range.to, page, search, status]);
+
+  // Efecto para hacer scroll y remover el resaltado después de unos segundos
+  useEffect(() => {
+    if (highlightId !== null && reservations.length > 0 && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Se agrega la clase directamente en la fila desde el className
+      const timeout = setTimeout(() => {
+        setHighlightId(null);
+      }, 7000);
+      return () => clearTimeout(timeout);
+    }
+  }, [highlightId, reservations]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return `${date.getDate().toString().padStart(2, "0")}/${
+      (date.getMonth() + 1).toString().padStart(2, "0")
+    }/${date.getFullYear()}`;
+  };
+
+  const getEstadoVariant = (estado: string) => {
+    switch (estado.toLowerCase()) {
+      case "pendiente":
+        return "warning";
+      case "cancelado":
+      case "rechazado":
+        return "danger";
+      case "aprobado":
+        return "success";
+      default:
+        return "secondary";
+    }
+  };
+
+  const getBadgeColor = (estado: "pendiente" | "aprobado" | "cancelado" | "rechazado") => {
+    switch (estado) {
+      case "pendiente":
+        return "warning";
+      case "aprobado":
+        return "success";
+      case "cancelado":
+      case "rechazado":
+        return "danger";
+      default:
+        return "secondary";
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedReserva(null);
+    setHighlightId(null);
   };
 
   const handleEstadoClick = (reserva: any) => {
@@ -106,128 +203,157 @@ const RoomReservationList = () => {
     setShowEstadoModal(true);
   };
 
-  const handleEstadoSuccess = (nuevoEstado: string) => {
-    setReservations((prev) =>
-      prev.map((r) =>
-        r.id === selectedReserva.id ? { ...r, estado: nuevoEstado } : r
-      )
-    );
-    setShowEstadoModal(false);
-    setSelectedReserva(null);
+  const handleEstadoSuccess = async (nuevoEstado: string) => {
+    try {
+      const { data } = await api.get(`/reservas-aula/${selectedReserva.id}`);
+
+      setSelectedReserva(data); // actualiza reserva del modal
+      await fetchHistorial(data.id, true);
+
+      setReservations((prev) =>
+        prev.map((r) => (r.id === data.id ? data : r))
+      );
+    } catch (e) {
+      toast.error("No se pudo actualizar la reserva");
+    } finally {
+      setShowEstadoModal(false);
+    }
   };
 
+
+
   const handleDetailClick = (reserva: any) => {
-    console.log(reserva);
     setSelectedReserva(reserva);
     setShowModal(true);
   };
 
   return (
     <div className="mt-4 px-3">
-      <Row className="align-items-center mb-4">
-        <Col>
-          <h2>Reservas de Aulas</h2>
-        </Col>
-        <Col md="auto">
-          <Row>
-            <Col>
-              <DatePicker
-                selected={range.from}
-                onChange={(date) =>
-                  setRange((prev) => ({ ...prev, from: date }))
-                }
-                selectsStart
-                startDate={range.from}
-                endDate={range.to}
-                placeholderText="Desde"
-                className="form-control"
-              />
-            </Col>
-            <Col>
-              <DatePicker
-                selected={range.to}
-                onChange={(date) => setRange((prev) => ({ ...prev, to: date }))}
-                selectsEnd
-                startDate={range.from}
-                endDate={range.to}
-                placeholderText="Hasta"
-                className="form-control"
-              />
-            </Col>
-          </Row>
-        </Col>
-      </Row>
-
-      {isLoading ? (
-        <Spinner animation="border" />
-      ) : reservations.length === 0 ? (
-        <p>No hay reservas en este rango de fechas.</p>
-      ) : (
-        <Table striped bordered hover responsive>
-          <thead>
-            <tr>
-              <th>Aula</th>
-              <th>Fecha</th>
-              <th>Horario</th>
-              <th>Reservado por</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reservations.map((res: any) => (
-              <tr key={res.id}>
-                <td>{res.aula?.name || "Aula Desconocida"}</td>
-                <td>{formatDate(res.fecha)}</td>
-                <td>{res.horario}</td>
-                <td>{res.user?.first_name || "Desconocido"}</td>
-                <td>
-                  <Badge bg={getEstadoVariant(res.estado)}>{res.estado}</Badge>
-                </td>
-                <td>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleDetailClick(res)}
-                  >
-                    Ver detalles
-                  </Button>
-                  <Button
-                    variant="outline-success"
-                    size="sm"
-                    className="ms-2"
-                    onClick={() => handleEstadoClick(res)}
-                  >
-                    Cambiar estado
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      )}
-
-      <RoomDetailsModal
-        qrBaseUrl={qrBaseUrl}
-        getBadgeColor={getBadgeColor}
-        formatDate={formatDate}
-        handleCloseModal={handleCloseModal}
-        showModal={showModal}
-        loadingHistorial={loadingHistorial}
-        selectedReservation={selectedReserva}
-        historial={historial}
-      />
-
-      {/* Modal Estado actualizado con diseño completo */}
-      {selectedReserva && (
-        <AulaReservacionEstadoModal
-          show={showEstadoModal}
-          onHide={() => setShowEstadoModal(false)}
-          reservationId={selectedReserva.id}
-          currentStatus={selectedReserva.estado}
-          onSuccess={handleEstadoSuccess}
+      <div className="table-responsive rounded shadow p-3 mt-4">
+        <Row className="align-items-center mb-4">
+          <Col>
+            <h2>Reservas de Aulas</h2>
+          </Col>
+        </Row>
+        <Filters
+          from={range.from}
+          to={range.to}
+          setFrom={(date) => {
+            setRange((r) => ({ ...r, from: date }));
+            setPage(1);
+          }}
+          setTo={(date) => {
+            setRange((r) => ({ ...r, to: date }));
+            setPage(1);
+          }}
+          statusFilter={status}
+          setStatusFilter={(s) => {
+            setStatus(s);
+            setPage(1);
+          }}
+          search={search}
+          setSearch={(s) => {
+            setSearch(s);
+            setPage(1);
+          }}
+          onReset={() => {
+            const today = new Date();
+            const pastWeek = new Date(today);
+            pastWeek.setDate(today.getDate() - 7);
+            setRange({ from: pastWeek, to: today });
+            setSearch("");
+            setStatus("todos");
+            setPage(1);
+          }}
         />
-      )}
+        {isLoading ? (
+          <Spinner animation="border" />
+        ) : reservations.length === 0 ? (
+          <p>No hay reservas que coincidan con los filtros.</p>
+        ) : (
+          <>
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>Aula</th>
+                  <th>Fecha</th>
+                  <th>Horario</th>
+                  <th>Reservado por</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reservations.map((res: any) => {
+                  const isHighlighted = res.id === highlightId;
+                  return (
+                    <tr
+                      key={res.id}
+                      ref={isHighlighted ? highlightRef : null}
+                      className={isHighlighted ? "table-warning animate__animated animate__flash" : ""}
+                    >
+                      <td>{res.aula?.name || "Aula Desconocida"}</td>
+                      <td>{formatDate(res.fecha)}</td>
+                      <td>{res.horario}</td>
+                      <td>{res.user?.first_name || "Desconocido"}</td>
+                      <td>
+                        <Badge bg={getEstadoVariant(res.estado)}>{res.estado}</Badge>
+                      </td>
+                      <td>
+                        <div className="d-flex justify-content-center gap-2">
+                          <button
+                            className="btn btn-outline-primary rounded-circle"
+                            title="Ver detalles"
+                            style={{ width: "44px", height: "44px" }}
+                            onClick={() => handleDetailClick(res)}
+                          >
+                            <FaEye className="fs-5" />
+                          </button>
+                          <button
+                            className="btn btn-outline-success rounded-circle"
+                            style={{ width: "44px", height: "44px" }}
+                            title="Cambiar estado"
+                            onClick={() => handleEstadoClick(res)}
+                          >
+                            <FaEdit className="fs-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+            <PaginationComponent
+              page={page}
+              totalPages={totalPages}
+              onPageChange={(p) => setPage(p)}
+            />
+          </>
+        )}
+        <RoomDetailsModal
+          qrBaseUrl={qrBaseUrl}
+          getBadgeColor={getBadgeColor}
+          formatDate={formatDate}
+          handleCloseModal={handleCloseModal}
+          showModal={showModal}
+          loadingHistorial={loadingHistorial}
+          selectedReservation={selectedReserva}
+          historial={historial}
+        />
+        {selectedReserva && (
+          <AulaReservacionEstadoModal
+            show={showEstadoModal}
+            onHide={() => {
+              setShowEstadoModal(false);
+              setHighlightId(null); // 🔁 elimina el resaltado también al cerrar este modal
+            }}      
+            reservationId={selectedReserva.id}
+            currentStatus={selectedReserva.estado}
+            onSuccess={handleEstadoSuccess}
+          />
+        )}
+      </div>
     </div>
   );
 };

@@ -132,8 +132,8 @@ export default function ReservationList() {
     }
   }, [user, mostrarSoloHoy, currentPage, statusFilter, typeFilter, startDate, endDate, searchTerm]);
 
-  const fetchHistorial = async (reservaId: number) => {
-    if (historialCache[reservaId]) {
+  const fetchHistorial = async (reservaId: number, forceRefresh = false) => {
+    if (!forceRefresh && historialCache[reservaId]) {
       setHistorial(historialCache[reservaId]);
       return;
     }
@@ -149,6 +149,7 @@ export default function ReservationList() {
       setLoadingHistorial(false);
     }
   };
+
 
   // Handlers
   const handleDetailClick = (reservation: Reservation) => {
@@ -206,7 +207,7 @@ export default function ReservationList() {
             onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
             className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
           >
-            {mostrarSoloHoy ? "Ver todas" : "Ver solo hoy"}
+            {mostrarSoloHoy ? "Ver todas las reservas" : "Ver reservas de hoy"}
           </Button>
         )}
       </div>
@@ -494,18 +495,26 @@ export default function ReservationList() {
             setUpdatingReservationId(reservaSeleccionadaParaEstado.id)
           }
           onAfter={() => setUpdatingReservationId(null)}
-          onSuccess={(newEstado) => {
-            setReservations((prev) =>
-              prev.map((r) =>
-                r.id === reservaSeleccionadaParaEstado.id
-                  ? { ...r, estado: newEstado }
-                  : r
-              )
-            );
-            setShowEstadoModal(false);
-            setUpdatingReservationId(null);
-            setHighlightId(null);
-          }}
+          onSuccess={async (newEstado) => {
+          const reservaId = reservaSeleccionadaParaEstado.id;
+
+          setReservations((prev) =>
+            prev.map((r) =>
+              r.id === reservaId ? { ...r, estado: newEstado } : r
+            )
+          );
+
+          // Actualizar historial y estado del modal
+          await fetchHistorial(reservaId, true);
+          setSelectedReservation((prev) =>
+            prev ? { ...prev, estado: newEstado } : null
+          );
+
+          setShowEstadoModal(false);
+          setUpdatingReservationId(null);
+          setHighlightId(null);
+        }}
+
         />
       )}
 

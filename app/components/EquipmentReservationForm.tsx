@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Select from "react-select";
 import type { MultiValue, SingleValue } from "react-select";
 import { useAuth } from "../hooks/AuthContext";
@@ -9,11 +9,14 @@ import {
   FaSchool,
   FaSave,
   FaBroom,
+  FaUpload,
+  FaTrash,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../api/axios";
 import { getTipoReservas } from "../services/tipoReservaService";
 import { formatTo12h, timeOptions } from "~/utils/time";
+import { useDropzone } from "react-dropzone";
 
 export default function EquipmentReservationForm() {
  type OptionType = { value: string; label: string };
@@ -45,6 +48,47 @@ const [loadingTipoReserva, setLoadingTipoReserva] = useState(true);
 const [checkingAvailability, setCheckingAvailability] = useState(false);
 const { user } = useAuth();
 const isTodaySelected = formData.date === new Date().toISOString().split("T")[0];
+
+
+const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+
+const onDrop = useCallback((acceptedFiles: File[]) => {
+  const file = acceptedFiles[0];
+  if (file) {
+    // Validar tipo de archivo
+    const validTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (!validTypes.includes(file.type)) {
+      toast.error('Solo se permiten archivos PDF o Word');
+      return;
+    }
+
+    // Validar tamaño
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('El archivo no puede ser mayor a 5MB');
+      return;
+    }
+
+    setUploadedFile(file);
+  }
+}, []);
+
+const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  onDrop,
+  accept: {
+    'application/pdf': ['.pdf'],
+    'application/msword': ['.doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+  },
+  maxFiles: 1,
+  multiple: false
+});
+
 
 const startTimeOptions = timeOptions.filter((time) => {
   const hour = Number(time.split(":")[0]);
@@ -446,6 +490,57 @@ const handleSubmit = async (e: React.FormEvent) => {
             />
           )}
         </div>
+
+        {/* Dropzone para Evento */}
+        {formData.tipoReserva?.label === "Eventos" && (
+        <div className="mb-4">
+          <label className="form-label d-flex align-items-center">
+            <FaSave className="me-2" />
+            Documento del Evento (PDF o Word)
+          </label>
+          
+          {uploadedFile ? (
+            <div className="mt-2">
+              <div className="d-flex align-items-center justify-content-between bg-light p-3 rounded border">
+                <div>
+                  <strong>Archivo seleccionado:</strong> {uploadedFile.name}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUploadedFile(null)}
+                  className="btn btn-outline-danger btn-sm"
+                >
+                  <FaTrash className="me-1" />
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              {...getRootProps()}
+              className={`border rounded p-4 text-center cursor-pointer ${
+                isDragActive ? "border-primary bg-light" : "border-secondary-subtle"
+              }`}
+            >
+              <input {...getInputProps()} />
+              <div className="d-flex flex-column align-items-center justify-content-center">
+                <FaUpload className="text-muted mb-2" size={24} />
+                {isDragActive ? (
+                  <p className="text-primary mb-0">Suelta el documento aquí...</p>
+                ) : (
+                  <>
+                    <p className="mb-1">Arrastra y suelta un documento aquí, o haz clic para seleccionar</p>
+                    <p className="text-muted small mb-0">
+                      Formatos: PDF, DOC, DOCX (Máx. 5MB)
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        )}
+
 
         {/* Multiselect Equipos */}
         <div className="mb-4">

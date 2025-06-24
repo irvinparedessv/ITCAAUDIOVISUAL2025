@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { Button, Form, InputGroup } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import {
   getUsuarios,
   deleteUsuario,
-  resetPassword,
   forgotPassword,
 } from "../../services/userService";
 import type { User } from "app/types/user";
@@ -11,11 +12,12 @@ import {
   FaUserCircle,
   FaEdit,
   FaTrash,
-  FaSearch,
   FaKey,
+  FaSearch,
+  FaFilter,
+  FaTimes,
   FaPlus,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
 
 const rolesMap: Record<number, string> = {
   1: "Administrador",
@@ -23,73 +25,33 @@ const rolesMap: Record<number, string> = {
   3: "Prestamista",
 };
 
-const UsuarioList = () => {
+export default function UsuarioList() {
   const [usuarios, setUsuarios] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState<any>({
+    search: "",
+    page: 1,
+    per_page: 10, // ✅ Usar snake_case compatible con Laravel
+    role_id: undefined,
+    estado: undefined,
+  });
+  const [lastPage, setLastPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    cargarUsuarios(currentPage);
-  }, [currentPage]);
-
-  const cargarUsuarios = async (page = 1) => {
-    setLoading(true);
+  const cargarUsuarios = async () => {
     try {
-      const response = await getUsuarios({ page });
+      const response = await getUsuarios(filters);
       setUsuarios(response?.data || []);
-      setTotalPages(response?.last_page || 1);
-      setCurrentPage(response?.current_page || 1);
+      setLastPage(response?.last_page || 1);
     } catch (error) {
-      console.error("Error al cargar usuarios:", error);
       toast.error("Error al cargar usuarios");
       setUsuarios([]);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const eliminarUsuario = async (id: number) => {
-    toast(
-      (t) => (
-        <div>
-          <p>¿Estás seguro de que deseas desactivar a este usuario?</p>
-          <div className="d-flex justify-content-end gap-2 mt-2">
-            <button
-              className="btn btn-sm btn-danger"
-              onClick={async () => {
-                try {
-                  await deleteUsuario(id);
-                  setUsuarios((prevUsuarios) =>
-                    prevUsuarios.map((u) =>
-                      u.id === id ? { ...u, estado: 0 } : u
-                    )
-                  );
-                  toast.success("Usuario desactivado correctamente");
-                  toast.dismiss(t.id);
-                } catch (error) {
-                  toast.error("Error al desactivar el usuario");
-                  toast.dismiss(t.id);
-                }
-              }}
-            >
-              Sí, desactivar
-            </button>
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ),
-      {
-        duration: 10000,
-      }
-    );
-  };
+  useEffect(() => {
+    cargarUsuarios();
+  }, [filters]);
 
   const handleResetPassword = async (userId: number, email: string) => {
     toast(
@@ -102,13 +64,10 @@ const UsuarioList = () => {
               onClick={async () => {
                 try {
                   await forgotPassword(email);
-                  toast.success(
-                    `Se ha enviado un enlace de restablecimiento a ${email}`
-                  );
+                  toast.success(`Enlace enviado a ${email}`);
                   toast.dismiss(t.id);
-                } catch (error) {
-                  toast.error("Error al enviar el enlace de restablecimiento");
-                  console.error("Error al restablecer contraseña:", error);
+                } catch {
+                  toast.error("Error al enviar el enlace");
                   toast.dismiss(t.id);
                 }
               }}
@@ -124,242 +83,305 @@ const UsuarioList = () => {
           </div>
         </div>
       ),
-      {
-        duration: 10000,
-      }
+      { duration: 10000 }
     );
   };
 
-  const filteredUsuarios = (usuarios || []).filter((u) => {
-    const fullName = `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase();
-    return (
-      fullName.includes(searchTerm.toLowerCase()) ||
-      (u.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+  const confirmarEliminacion = (id: number) => {
+    toast(
+      (t) => (
+        <div>
+          <p>¿Deseas desactivar este usuario?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={async () => {
+                try {
+                  await deleteUsuario(id);
+                  toast.success("Usuario desactivado");
+                  cargarUsuarios();
+                } catch {
+                  toast.error("Error al desactivar usuario");
+                }
+                toast.dismiss(t.id);
+              }}
+            >
+              Sí, desactivar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: 8000 }
     );
-  });
+  };
+
+  const handleFilterUpdate = (key: string, value: any) => {
+    setFilters((prev: any) => ({
+      ...prev,
+      [key]: value,
+      page: 1,
+    }));
+  };
+
+  const handlePageChange = (page: number) => {
+    setFilters((prev: any) => ({
+      ...prev,
+      page: page,
+    }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      search: "",
+      page: 1,
+      per_page: 5,
+      role_id: undefined,
+      estado: undefined,
+    });
+  };
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4 className="mb-0 text-center flex-grow-1">Listado de Usuarios</h4>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h4 className="text-center flex-grow-1">Listado de Usuarios</h4>
+        <Button
+          variant="primary"
+          onClick={() => navigate("/formUsuario")}
+          className="d-flex align-items-center gap-2"
+        >
+          <FaPlus /> Crear Usuario
+        </Button>
       </div>
 
-      {/* Sección mejorada de búsqueda y creación */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3 mb-4">
-        {/* Buscador con lupa perfectamente integrada */}
-        <div className="position-relative flex-grow-1 w-100">
-          <div className="input-group" style={{ height: "42px" }}>
-            <span className="input-group-text bg-transparent border-end-0 pe-2 ps-3">
-              <FaSearch size={16} className="text-body-secondary" />
-            </span>
-            <input
+      <div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
+        <div className="flex-grow-1">
+          <InputGroup>
+            <InputGroup.Text>
+              <FaSearch />
+            </InputGroup.Text>
+            <Form.Control
               type="text"
-              placeholder="Buscar por nombre o correo..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="form-control border-start-0 ps-0 py-2 bg-transparent"
-              style={{
-                borderColor: "var(--bs-border-color)",
-                boxShadow: "none",
-                borderRadius: "0 0.375rem 0.375rem 0",
-              }}
+              placeholder="Buscar por nombre o correo"
+              value={filters.search}
+              onChange={(e) => handleFilterUpdate("search", e.target.value)}
             />
-            {searchTerm && (
-              <button
-                className="btn btn-link text-body-secondary d-flex align-items-center justify-content-center px-3"
-                type="button"
-                onClick={() => setSearchTerm("")}
-                style={{
-                  borderLeft: "1px solid var(--bs-border-color)",
-                  borderRadius: "0 0.375rem 0.375rem 0",
-                }}
+            {filters.search && (
+              <Button
+                variant="outline-secondary"
+                onClick={() => handleFilterUpdate("search", "")}
               >
-                ×
-              </button>
+                <FaTimes />
+              </Button>
             )}
-          </div>
+          </InputGroup>
         </div>
 
-        {/* Botón de creación */}
-        <div className="d-flex justify-content-center justify-content-md-end w-100 w-md-auto">
-          <Link
-            to="/formUsuario"
-            className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
-            style={{
-              borderRadius: "8px",
-              height: "42px",
-            }}
-          >
-            <FaPlus className="fs-6" />
-            <span>Crear Usuario</span>
-          </Link>
-        </div>
+        <Button
+          variant="outline-secondary"
+          onClick={() => setShowFilters(!showFilters)}
+          className="d-flex align-items-center gap-2"
+        >
+          <FaFilter />
+          {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+        </Button>
       </div>
 
-      {loading ? (
-        <p className="text-center">Cargando usuarios...</p>
-      ) : (
-        <>
-          <table
-            className="table table-hover align-middle text-center overflow-hidden"
-            style={{ borderRadius: "0.8rem", fontSize: "0.9rem" }}
-          >
-            <thead className="table-dark">
-              <tr>
-                <th className="rounded-top-start">Imagen</th>
-                <th>Nombre</th>
-                <th>Correo</th>
-                <th>Teléfono</th>
-                <th>Dirección</th>
-                <th>Rol</th>
-                <th>Estado</th>
-                <th className="rounded-top-end">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsuarios.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center text-muted">
-                    No se encontraron usuarios.
-                  </td>
-                </tr>
-              ) : (
-                filteredUsuarios.map((usuario) => (
-                  <tr key={usuario.id}>
-                    <td>
-                      {usuario.image ? (
-                        <img
-                          src={`http://localhost:8000/storage/${usuario.image}`}
-                          alt={usuario.first_name}
-                          style={{
-                            width: "50px",
-                            height: "50px",
-                            objectFit: "cover",
-                            borderRadius: "50%",
-                          }}
-                        />
-                      ) : (
-                        <FaUserCircle size={40} className="text-secondary" />
-                      )}
-                    </td>
-                    <td className="fw-bold">
-                      {usuario.first_name} {usuario.last_name}
-                    </td>
-                    <td>{usuario.email}</td>
-                    <td>{usuario.phone || "N/A"}</td>
-                    <td>{usuario.address || "N/A"}</td>
-                    <td>{rolesMap[usuario.role_id] || "Desconocido"}</td>
-                    <td>
-                      <span
-                        className={`badge ${
-                          usuario.estado === 1
-                            ? "bg-success"
-                            : usuario.estado === 0
-                            ? "bg-danger"
-                            : "bg-warning"
-                        }`}
-                      >
-                        {usuario.estado === 1
-                          ? "Activo"
-                          : usuario.estado === 0
-                          ? "Inactivo"
-                          : "Pendiente"}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="d-flex justify-content-center gap-2">
-                        <Link
-                          to={`/editarUsuario/${usuario.id}`}
-                          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
-                          title="Editar usuario"
-                          style={{
-                            width: "44px",
-                            height: "44px",
-                            transition: "transform 0.2s ease-in-out",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.transform = "scale(1.15)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.transform = "scale(1)")
-                          }
-                        >
-                          <FaEdit className="fs-5" />
-                        </Link>
-                        <button
-                          className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
-                          title="Restablecer contraseña"
-                          onClick={() =>
-                            handleResetPassword(usuario.id, usuario.email)
-                          }
-                          style={{
-                            width: "44px",
-                            height: "44px",
-                            transition: "transform 0.2s ease-in-out",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.transform = "scale(1.15)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.transform = "scale(1)")
-                          }
-                        >
-                          <FaKey className="fs-5" />
-                        </button>
-                        <button
-                          className="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center"
-                          title="Desactivar usuario"
-                          onClick={() => eliminarUsuario(usuario.id)}
-                          style={{
-                            width: "44px",
-                            height: "44px",
-                            transition: "transform 0.2s ease-in-out",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.transform = "scale(1.15)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.transform = "scale(1)")
-                          }
-                        >
-                          <FaTrash className="fs-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {showFilters && (
+        <div className="border p-3 rounded mb-3">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <Form.Label>Rol</Form.Label>
+              <Form.Select
+                value={filters.role_id || ""}
+                onChange={(e) =>
+                  handleFilterUpdate("role_id", e.target.value || undefined)
+                }
+              >
+                <option value="">Todos</option>
+                {Object.entries(rolesMap).map(([id, nombre]) => (
+                  <option key={id} value={id}>
+                    {nombre}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
 
-          {/* Paginación */}
-          <div className="d-flex justify-content-center align-items-center mt-3 gap-2">
-            <button
-              className="btn btn-outline-secondary"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              Anterior
-            </button>
+            <div className="col-md-6">
+              <Form.Label>Estado</Form.Label>
+              <Form.Select
+                value={
+                  filters.estado === undefined
+                    ? ""
+                    : filters.estado === 1
+                    ? "1"
+                    : "0"
+                }
+                onChange={(e) =>
+                  handleFilterUpdate(
+                    "estado",
+                    e.target.value === "" ? undefined : Number(e.target.value)
+                  )
+                }
+              >
+                <option value="">Todos</option>
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+              </Form.Select>
+            </div>
 
-            <button className="btn btn-primary" disabled>
-              {currentPage}
-            </button>
-
-            <button
-              className="btn btn-outline-secondary"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-            >
-              Siguiente
-            </button>
+            <div className="col-12">
+              <Button
+                variant="outline-danger"
+                onClick={resetFilters}
+                className="w-100"
+              >
+                <FaTimes className="me-2" />
+                Limpiar filtros
+              </Button>
+            </div>
           </div>
-        </>
+        </div>
+      )}
+
+      <table className="table table-hover align-middle text-center">
+        <thead className="table-dark">
+          <tr>
+            <th>Imagen</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Teléfono</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {usuarios.length > 0 ? (
+            usuarios.map((user) => (
+              <tr key={user.id}>
+                <td>
+                  {user.image_url ? (
+                    <img
+                      src={user.image_url}
+                      alt={user.email}
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        objectFit: "cover",
+                        borderRadius: "50%",
+                      }}
+                    />
+                  ) : (
+                    <FaUserCircle size={50} className="text-secondary" />
+                  )}
+                </td>
+                <td>{user.first_name} {user.last_name}</td>
+                <td>{user.email}</td>
+                <td>{user.phone || "-"}</td>
+                <td>{rolesMap[user.role_id] || "Desconocido"}</td>
+                <td>
+                  <span
+                    className={`badge ${
+                      user.estado === 1
+                        ? "bg-success"
+                        : user.estado === 0
+                        ? "bg-danger"
+                        : "bg-warning text-dark"
+                    }`}
+                  >
+                    {user.estado === 1
+                      ? "Activo"
+                      : user.estado === 0
+                      ? "Inactivo"
+                      : "Pendiente"}
+                  </span>
+                </td>
+                <td>
+                  <div className="d-flex justify-content-center gap-2">
+                    <Button
+                      variant="outline-primary"
+                      className="rounded-circle"
+                      title="Editar usuario"
+                      onClick={() => navigate(`/editarUsuario/${user.id}`)}
+                      style={{ width: "44px", height: "44px" }}
+                    >
+                      <FaEdit />
+                    </Button>
+                    <Button
+                      variant="outline-warning"
+                      className="rounded-circle"
+                      title="Restablecer contraseña"
+                      onClick={() => handleResetPassword(user.id, user.email)}
+                      style={{ width: "44px", height: "44px" }}
+                    >
+                      <FaKey />
+                    </Button>
+                    <Button
+                      variant="outline-danger"
+                      className="rounded-circle"
+                      title="Eliminar usuario"
+                      onClick={() => confirmarEliminacion(user.id)}
+                      style={{ width: "44px", height: "44px" }}
+                    >
+                      <FaTrash />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={7}>No se encontraron usuarios.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {lastPage > 1 && (
+        <nav className="d-flex justify-content-center mt-3">
+          <ul className="pagination">
+            <li className={`page-item ${filters.page === 1 ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => handlePageChange(filters.page - 1)}
+              >
+                Anterior
+              </button>
+            </li>
+            {Array.from({ length: lastPage }, (_, i) => i + 1).map((num) => (
+              <li
+                key={num}
+                className={`page-item ${filters.page === num ? "active" : ""}`}
+              >
+                <button
+                  className="page-link"
+                  onClick={() => handlePageChange(num)}
+                >
+                  {num}
+                </button>
+              </li>
+            ))}
+            <li
+              className={`page-item ${
+                filters.page === lastPage ? "disabled" : ""
+              }`}
+            >
+              <button
+                className="page-link"
+                onClick={() => handlePageChange(filters.page + 1)}
+              >
+                Siguiente
+              </button>
+            </li>
+          </ul>
+        </nav>
       )}
     </div>
   );
-};
-
-export default UsuarioList;
+}

@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaChartLine, FaBook } from 'react-icons/fa';
+import { FaUsers, FaChartLine, FaBook, FaRegFileAlt } from 'react-icons/fa';
 import { Card } from 'react-bootstrap';
 
 const opciones = [
   {
-    nombre: 'Usuarios',
-    descripcion: 'Gestión de cuentas y permisos',
+    nombre: 'Reportes',
+    descripcion: 'Reportes generales del sistema',
     ruta: '/usuarios',
-    icono: <FaUsers size={24} />,
+    icono: <FaRegFileAlt size={24} />,
   },
   {
     nombre: 'Análisis',

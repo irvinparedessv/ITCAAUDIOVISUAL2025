@@ -214,39 +214,88 @@ export default function FormUsuario() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isFormValid()) {
-      toast.error("Por favor corrija los errores antes de enviar");
-      return;
-    }
+  e.preventDefault();
+  
+  // Validación inicial del formulario
+  if (!isFormValid()) {
+    toast.error("Por favor corrija los errores antes de enviar");
+    return;
+  }
 
-    toast.success("Creando usuario...");
+  setIsLoading(true);
 
-    setIsLoading(true);
-
-    const formDataToSend = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value !== null) {
-        if (key === "role_id")
-          formDataToSend.append(key, Number(value).toString());
-        else if (key !== "image") formDataToSend.append(key, value.toString());
+  const formDataToSend = new FormData();
+  Object.entries(formData).forEach(([key, value]) => {
+    if (value !== null) {
+      if (key === "role_id") {
+        formDataToSend.append(key, Number(value).toString());
+      } else if (key !== "image") {
+        formDataToSend.append(key, value.toString());
       }
-    });
-    if (formData.image) formDataToSend.append("image", formData.image);
-
-    formDataToSend.append("estado", "0");
-
-    try {
-      await createUsuario(formDataToSend);
-      toast.success("Usuario creado con éxito");
-      handleClear();
-      navigate("/usuarios");
-    } catch (error) {
-      toast.error("Error al crear el usuario");
-    } finally {
-      setIsLoading(false);
     }
-  };
+  });
+  
+  if (formData.image) {
+    formDataToSend.append("image", formData.image);
+  }
+  formDataToSend.append("estado", "0");
+
+  // Mostrar loading solo si pasa todas las validaciones
+  const loadingToastId = toast.loading("Estamos creando el usuario. Por favor, espere un momento...", {
+    position: 'top-right'
+  });
+
+  try {
+    const response = await createUsuario(formDataToSend);
+    
+    // Cerrar toast de loading
+    toast.dismiss(loadingToastId);
+    
+    // Mostrar éxito
+    toast.success("Usuario creado con éxito", {
+      position: 'top-right',
+      duration: 3000
+    });
+    
+    handleClear();
+    navigate("/usuarios");
+    
+  } catch (error: any) {
+    // Cerrar toast de loading primero
+    toast.dismiss(loadingToastId);
+    
+    // Manejo de errores
+    const errorData = error.response?.data;
+    const isEmailExists = errorData?.error === 'email_exists';
+    const errorMessage = isEmailExists 
+      ? "El correo electrónico ya está registrado"
+      : errorData?.message || "Error al crear el usuario";
+
+    // Mostrar error
+    toast.error(errorMessage, {
+      position: 'top-right',
+      duration: 5000
+    });
+
+    // Marcar error en campo si es email duplicado
+    if (isEmailExists) {
+      setFormErrors(prev => ({
+        ...prev,
+        email: errorMessage
+      }));
+    }
+
+    // Debug
+    console.error('Error al crear usuario:', {
+      status: error.response?.status,
+      data: errorData,
+      message: error.message
+    });
+    
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleClear = () => {
     setFormData({

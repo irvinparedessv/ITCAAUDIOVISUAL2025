@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import type { Equipo } from "app/types/equipo";
-import type { TipoEquipo } from "app/types/tipoEquipo";
+import type { Equipo, EquipoFilters, TipoEquipo } from "app/types/equipo";
+import { Button, Form, InputGroup } from "react-bootstrap";
 import toast from "react-hot-toast";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaFilter, FaTrash, FaTimes, FaSearch } from "react-icons/fa";
 import { getEquipos } from "../../services/equipoService";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   tipos: TipoEquipo[];
@@ -14,33 +14,31 @@ interface Props {
 
 export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [perPage] = useState(5);
+  const [filters, setFilters] = useState<EquipoFilters>({
+    search: "",
+    page: 1,
+    perPage: 5,
+  });
   const [total, setTotal] = useState(0);
-  const totalPages = Math.ceil(total / perPage);
   const [lastPage, setLastPage] = useState(1);
-    const navigate = useNavigate();
-
-
+  const [showFilters, setShowFilters] = useState(false);
+  const navigate = useNavigate();
 
   const fetchEquipos = async () => {
     try {
-      const res = await getEquipos({ search, page, perPage });
-
+      const res = await getEquipos(filters);
       setEquipos(Array.isArray(res.data) ? res.data : []);
-      setTotal(typeof res.total === "number" ? res.total : 0);
-      setLastPage(res.last_page); // 👈 usa el valor del backend
+      setTotal(res.total);
+      setLastPage(res.last_page);
     } catch (error) {
       toast.error("Error al cargar los equipos");
+      console.error("Error fetching equipos:", error);
     }
   };
 
-
-
   useEffect(() => {
     fetchEquipos();
-  }, [search, page]);
+  }, [filters]);
 
   const getTipoNombre = (id: number) => {
     const tipo = tipos.find((t) => t.id === id);
@@ -73,33 +71,145 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
           </div>
         </div>
       ),
-      {
-        duration: 5000,
-      }
+      { duration: 5000 }
     );
+  };
+
+  const handleFilterUpdate = <K extends keyof EquipoFilters>(
+    key: K,
+    value: EquipoFilters[K]
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+      page: 1,
+    }));
+  };
+
+  const handlePageChange = (page: number) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: page,
+    }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      search: "",
+      page: 1,
+      perPage: 5,
+      tipoEquipoId: undefined,
+      estado: undefined,
+    });
   };
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
       <h4 className="mb-3 text-center">Listado de Equipos</h4>
 
-      <div className="mb-3 d-flex justify-content-end">
-        <input
-          type="text"
-          className="form-control w-auto"
-          placeholder="Buscar por nombre o descripción"
-          value={search}
-          onChange={(e) => {
-            setPage(1);
-            setSearch(e.target.value);
-          }}
-        />
+      {/* Buscador con icono y limpiar + botón de filtros */}
+      <div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
+        <div className="flex-grow-1">
+          <InputGroup>
+            <InputGroup.Text>
+              <FaSearch />
+            </InputGroup.Text>
+            <Form.Control
+              type="text"
+              placeholder="Buscar por nombre o descripción"
+              value={filters.search || ""}
+              onChange={(e) => handleFilterUpdate("search", e.target.value)}
+            />
+            {filters.search && (
+              <Button
+                variant="outline-secondary"
+                onClick={() => handleFilterUpdate("search", "")}
+              >
+                <FaTimes />
+              </Button>
+            )}
+          </InputGroup>
+        </div>
+
+        <Button
+          variant="outline-secondary"
+          onClick={() => setShowFilters(!showFilters)}
+          className="d-flex align-items-center gap-2"
+        >
+          <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+        </Button>
       </div>
 
-      <table
-        className="table table-hover align-middle text-center overflow-hidden"
-        style={{ borderRadius: "0.8rem" }}
-      >
+
+      {/* Filtros avanzados */}
+      {showFilters && (
+        <div className="p-3 rounded mb-4 border border-secondary">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <Form.Group>
+                <Form.Label>Tipo de equipo</Form.Label>
+                <Form.Select
+                  value={filters.tipoEquipoId || ""}
+                  onChange={(e) =>
+                    handleFilterUpdate(
+                      "tipoEquipoId",
+                      e.target.value ? Number(e.target.value) : undefined
+                    )
+                  }
+                >
+                  <option value="">Todos</option>
+                  {tipos.map((tipo) => (
+                    <option key={tipo.id} value={tipo.id}>
+                      {tipo.nombre}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </div>
+
+            <div className="col-md-6">
+              <Form.Group>
+                <Form.Label>Estado</Form.Label>
+                <Form.Select
+                  value={
+                    filters.estado === undefined
+                      ? ""
+                      : filters.estado
+                      ? "true"
+                      : "false"
+                  }
+                  onChange={(e) =>
+                    handleFilterUpdate(
+                      "estado",
+                      e.target.value === ""
+                        ? undefined
+                        : e.target.value === "true"
+                    )
+                  }
+                >
+                  <option value="">Todos</option>
+                  <option value="true">Disponible</option>
+                  <option value="false">No disponible</option>
+                </Form.Select>
+              </Form.Group>
+            </div>
+
+            <div className="col-12">
+              <Button
+                variant="outline-danger"
+                onClick={resetFilters}
+                className="w-100"
+              >
+                <FaTimes className="me-2" />
+                Limpiar filtros
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tabla de equipos */}
+      <table className="table table-hover align-middle text-center overflow-hidden">
         <thead className="table-dark">
           <tr>
             <th className="rounded-top-start">Nombre</th>
@@ -148,66 +258,73 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
                 </td>
                 <td>
                   <div className="d-flex justify-content-center gap-2">
-
-                    <button
-                        className="btn btn-outline-primary rounded-circle"
-                        title="Editar equipo"
-                        style={{ width: "44px", height: "44px" }}
-                        onClick={() => navigate(`/equipos/editar/${equipo.id}`)}
-                      >
-                        <FaEdit />
-                    </button>
-
-                    <button
-                      className="btn btn-outline-danger rounded-circle"
-                      title="Eliminar equipo"
-                      onClick={() => confirmarEliminacion(equipo.id)}
+                    <Button
+                      variant="outline-primary"
+                      className="rounded-circle"
+                      title="Editar equipo"
                       style={{ width: "44px", height: "44px" }}
+                      onClick={() => navigate(`/equipos/editar/${equipo.id}`)}
+                    >
+                      <FaEdit />
+                    </Button>
+                    <Button
+                      variant="outline-danger"
+                      className="rounded-circle"
+                      title="Eliminar equipo"
+                      style={{ width: "44px", height: "44px" }}
+                      onClick={() => confirmarEliminacion(equipo.id)}
                     >
                       <FaTrash />
-                    </button>
+                    </Button>
                   </div>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={7} className="text-center text-muted">
-                No se encontraron equipos
+              <td colSpan={7} className="text-muted text-center">
+                No se encontraron equipos.
               </td>
             </tr>
           )}
         </tbody>
       </table>
 
-      {lastPage >= 1 && (
-        <nav className="mt-3 d-flex justify-content-center">
+      {/* Paginación */}
+      {lastPage > 1 && (
+        <nav className="d-flex justify-content-center mt-3">
           <ul className="pagination">
-            <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+            <li className={`page-item ${filters.page === 1 ? "disabled" : ""}`}>
               <button
                 className="page-link"
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                onClick={() => handlePageChange((filters.page || 1) - 1)}
               >
                 Anterior
               </button>
             </li>
-            {[...Array(lastPage)].map((_, index) => (
+            {Array.from({ length: lastPage }, (_, i) => i + 1).map((num) => (
               <li
-                key={index}
-                className={`page-item ${page === index + 1 ? "active" : ""}`}
+                key={num}
+                className={`page-item ${
+                  filters.page === num ? "active" : ""
+                }`}
               >
                 <button
                   className="page-link"
-                  onClick={() => setPage(index + 1)}
+                  onClick={() => handlePageChange(num)}
                 >
-                  {index + 1}
+                  {num}
                 </button>
               </li>
             ))}
-            <li className={`page-item ${page === lastPage ? "disabled" : ""}`}>
+            <li
+              className={`page-item ${
+                filters.page === lastPage ? "disabled" : ""
+              }`}
+            >
               <button
                 className="page-link"
-                onClick={() => setPage((prev) => Math.min(lastPage, prev + 1))}
+                onClick={() => handlePageChange((filters.page || 1) + 1)}
               >
                 Siguiente
               </button>

@@ -10,6 +10,7 @@ import {
   FaQrcode,
   FaDoorOpen,
   FaRegFileAlt,
+  FaUsers,
 } from "react-icons/fa";
 import { FaComputer, FaBookmark } from "react-icons/fa6";
 import { Card, Container, Row, Col } from "react-bootstrap";
@@ -118,19 +119,19 @@ export default function Dashboard() {
             onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
-            title="Administración"
-            icon={<FaUserShield size={24} style={getIconStyle()} />}
-            link="/administracion"
-            description="Configuración del sistema"
+            title="Usuarios"
+            icon={<FaUsers size={24} style={getIconStyle()} />}
+            link="/usuarios"
+            description="Gestión de cuentas y permisos"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
-            title="Reportes"
-            icon={<FaRegFileAlt size={24} style={getIconStyle()} />}
-            link="/"
-            description="Reportes generales del sistema"
+            title="Administración"
+            icon={<FaUserShield size={24} style={getIconStyle()} />}
+            link="/administracion"
+            description="Configuración del sistema"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}

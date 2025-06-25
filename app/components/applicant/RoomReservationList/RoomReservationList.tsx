@@ -234,27 +234,30 @@ const RoomReservationList = () => {
     initialHighlightHandled.current = false;
   };
 
-   const handleCancelClick = async (reserva: any) => {
+  const handleCancelClick = async (reserva: any) => {
   if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?")) return;
 
   try {
-    const { data } = await api.put(`/reservas-aula/${reserva.id}/cancelar`);
+    const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
+      estado: "Cancelado",
+      comentario: "Cancelado por el prestamista",
+    });
+
     toast.success("Reserva cancelada exitosamente.");
 
-    // Actualiza la lista local
     setReservations((prev) =>
-      prev.map((r) => (r.id === data.id ? data : r))
+      prev.map((r) => (r.id === data.reserva?.id ? data.reserva : r))
     );
 
-    // Actualiza la reserva seleccionada si es la misma
-    if (selectedReservation?.id === data.id) {
-      setSelectedReservation(data);
-      //await fetchHistorial(data.id, true);
+    if (data.reserva && selectedReservation?.id === data.reserva.id) {
+      setSelectedReservation(data.reserva);
     }
+
   } catch (err) {
     toast.error("No se pudo cancelar la reserva.");
   }
 };
+
 
   return (
     <div className="container py-5">
@@ -345,7 +348,13 @@ const RoomReservationList = () => {
                           <button
                             className="btn btn-outline-danger rounded-circle"
                             title="Cancelar reserva"
-                            style={{ width: "44px", height: "44px" }}
+                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
                             onClick={() => handleCancelClick(res)}
                             disabled={res.estado.toLowerCase() !== "pendiente"}
                           >

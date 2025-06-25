@@ -4,7 +4,7 @@ import { Button, Spinner, Table, Badge } from "react-bootstrap";
 import api from "../../../api/axios";
 import Filters from "./Filter";
 import PaginationComponent from "./Pagination";
-import { FaEye } from "react-icons/fa";
+import { FaEye, FaTimes } from "react-icons/fa";
 import type { ReservationRoom } from "~/types/reservationroom";
 import RoomDetailsModal from "../RoomDetailsModal";
 import type { Bitacora } from "~/types/bitacora";
@@ -13,12 +13,16 @@ import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import "animate.css";
 
-
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
     from: null,
     to: null,
   });
+  const [initialRange, setInitialRange] = useState<{ from: Date | null; to: Date | null }>({
+    from: null,
+    to: null,
+  });
+
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
@@ -37,16 +41,26 @@ const RoomReservationList = () => {
 
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const highlightRef = useRef<HTMLTableRowElement>(null);
-
+  const initialHighlightHandled = useRef(false);
 
   const [totalPages, setTotalPages] = useState(1);
   const [selectedReservation, setSelectedReservation] =
     useState<ReservationRoom | null>(null);
 
-
+  // Inicializar rango a última semana
   useEffect(() => {
-  const highlightIdFromState = (location.state as any)?.highlightReservaId;
-  const pageFromState = (location.state as any)?.page;  
+    const today = new Date();
+    const pastWeek = new Date(today);
+    pastWeek.setDate(today.getDate() - 7);
+    const initial = { from: pastWeek, to: today };
+    setRange(initial);
+    setInitialRange(initial);
+  }, []);
+
+  // Obtener highlightId y página del state de navegación
+  useEffect(() => {
+    const highlightIdFromState = (location.state as any)?.highlightReservaId;
+    const pageFromState = (location.state as any)?.page;
 
     if (highlightIdFromState !== undefined && highlightIdFromState !== null) {
       setHighlightId(highlightIdFromState);
@@ -57,7 +71,36 @@ const RoomReservationList = () => {
     }
   }, [location.state, navigate]);
 
+  // Ajustar rango si la reserva destacada está fuera del rango actual
+  useEffect(() => {
+    if (!highlightId || initialHighlightHandled.current) return;
 
+    const adjustRangeForHighlight = async () => {
+      if (!range.from || !range.to) return;
+
+      try {
+        const resDestacada = await api.get(`/reservas-aula/${highlightId}`);
+        const reservaFecha = new Date(resDestacada.data.fecha);
+
+        const fromDate = range.from;
+        const toDate = range.to;
+
+        if (reservaFecha < fromDate || reservaFecha > toDate) {
+          const newFrom = reservaFecha < fromDate ? reservaFecha : fromDate;
+          const newTo = reservaFecha > toDate ? reservaFecha : toDate;
+          setRange({ from: newFrom, to: newTo });
+        }
+
+        initialHighlightHandled.current = true;
+      } catch (error) {
+        console.warn("No se pudo ajustar el rango para la reserva destacada");
+      }
+    };
+
+    adjustRangeForHighlight();
+  }, [highlightId, range.from, range.to]);
+
+  // Scroll y quitar highlight después de 7s
   useEffect(() => {
     if (highlightId !== null && reservations.length > 0 && highlightRef.current) {
       highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -66,6 +109,46 @@ const RoomReservationList = () => {
     }
   }, [highlightId, reservations]);
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  useEffect(() => {
+    const fetchReservations = async () => {
+      if (!range.from || !range.to) return;
+
+      setIsLoading(true);
+      try {
+        const response = await api.get("/reservas-aula", {
+          params: {
+            from: range.from.toISOString(),
+            to: range.to.toISOString(),
+            status: statusFilter,
+            search: debouncedSearch.trim() || undefined,
+            page,
+            per_page: perPage,
+          },
+        });
+        setReservations(response.data.data);
+        setTotalPages(response.data.last_page);
+      } catch (error) {
+        console.error("Error al obtener reservas:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReservations();
+  }, [range, statusFilter, debouncedSearch, page, perPage]);
+
+  useEffect(() => {
+    setPage(1);
+    initialHighlightHandled.current = false;
+  }, [range.from, range.to, statusFilter, debouncedSearch]);
 
   const fetchHistorial = async (reservaId: number) => {
     if (historialCache[reservaId]) {
@@ -89,47 +172,13 @@ const RoomReservationList = () => {
     if (showModal && selectedReservation) {
       fetchHistorial(selectedReservation.id);
     }
-  }, [showModal, selectedReservation]); 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 500);
+  }, [showModal, selectedReservation]);
 
-    return () => clearTimeout(handler);
-  }, [search]);
-
-  useEffect(() => {
-    const fetchReservations = async () => {
-      if (!range.from || !range.to) return;
-
-      setIsLoading(true);
-      try {
-        const response = await api.get("/reservas-aula", {
-          params: {
-            from: range.from.toISOString(),
-            to: range.to.toISOString(),
-            status: statusFilter,
-            search: debouncedSearch.trim() || undefined, // <- Acá usar debouncedSearch
-            page,
-            per_page: perPage,
-          },
-        });
-        setReservations(response.data.data);
-        setTotalPages(response.data.last_page);
-      } catch (error) {
-        console.error("Error al obtener reservas:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchReservations();
-  }, [range, statusFilter, debouncedSearch, page, perPage]);
   const handleDetailClick = (reservation: ReservationRoom) => {
-    console.log(reservation);
     setSelectedReservation(reservation);
     setShowModal(true);
   };
+
   const getBadgeColor = (
     estado: "pendiente" | "aprobado" | "cancelado" | "rechazado"
   ) => {
@@ -139,25 +188,18 @@ const RoomReservationList = () => {
       case "aprobado":
         return "success";
       case "cancelado":
-        return "danger";
       case "rechazado":
         return "danger";
       default:
         return "secondary";
     }
   };
+
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedReservation(null);
     setHighlightId(null);
   };
-  useEffect(() => {
-    // Default: última semana
-    const today = new Date();
-    const pastWeek = new Date(today);
-    pastWeek.setDate(today.getDate() - 7);
-    setRange({ from: pastWeek, to: today });
-  }, []);
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString();
@@ -167,11 +209,10 @@ const RoomReservationList = () => {
       case "pendiente":
         return "warning";
       case "cancelado":
+      case "rechazado":
         return "danger";
       case "aprobado":
         return "success";
-      case "rechazado":
-        return "danger";
       default:
         return "secondary";
     }
@@ -180,12 +221,40 @@ const RoomReservationList = () => {
   const resetFilters = () => {
     setStatusFilter("Todos");
     setSearch("");
-    const today = new Date();
-    const pastWeek = new Date(today);
-    pastWeek.setDate(today.getDate() - 7);
-    setRange({ from: pastWeek, to: today });
+    if (initialRange.from && initialRange.to) {
+      setRange(initialRange);
+    } else {
+      const today = new Date();
+      const pastWeek = new Date(today);
+      pastWeek.setDate(today.getDate() - 7);
+      setRange({ from: pastWeek, to: today });
+    }
     setPage(1);
+    setHighlightId(null);
+    initialHighlightHandled.current = false;
   };
+
+   const handleCancelClick = async (reserva: any) => {
+  if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?")) return;
+
+  try {
+    const { data } = await api.put(`/reservas-aula/${reserva.id}/cancelar`);
+    toast.success("Reserva cancelada exitosamente.");
+
+    // Actualiza la lista local
+    setReservations((prev) =>
+      prev.map((r) => (r.id === data.id ? data : r))
+    );
+
+    // Actualiza la reserva seleccionada si es la misma
+    if (selectedReservation?.id === data.id) {
+      setSelectedReservation(data);
+      //await fetchHistorial(data.id, true);
+    }
+  } catch (err) {
+    toast.error("No se pudo cancelar la reserva.");
+  }
+};
 
   return (
     <div className="container py-5">
@@ -244,39 +313,47 @@ const RoomReservationList = () => {
                       ref={isHighlighted ? highlightRef : null}
                       className={isHighlighted ? "table-warning animate__animated animate__flash" : ""}
                     >
-                    <td>{res.aula?.name || "Aula Desconocida"}</td>
-                    <td>{formatDate(res.fecha)}</td>
-                    <td>{res.horario}</td>
-                    <td>{res.user?.first_name || "Desconocido"}</td>
-                    <td>
-                      <Badge bg={getEstadoVariant(res.estado)}>
-                        {res.estado}
-                      </Badge>
-                    </td>
-                    <td>
-                      {" "}
-                      <div className="d-flex justify-content-center gap-2">
-                        <button
-                          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
-                          title="Ver detalles"
-                          onClick={() => handleDetailClick(res)}
-                          style={{
-                            width: "44px",
-                            height: "44px",
-                            transition: "transform 0.2s ease-in-out",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.transform = "scale(1.15)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.transform = "scale(1)")
-                          }
-                        >
-                          <FaEye className="fs-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      <td>{res.aula?.name || "Aula Desconocida"}</td>
+                      <td>{formatDate(res.fecha)}</td>
+                      <td>{res.horario}</td>
+                      <td>{res.user?.first_name || "Desconocido"}</td>
+                      <td>
+                        <Badge bg={getEstadoVariant(res.estado)}>
+                          {res.estado}
+                        </Badge>
+                      </td>
+                      <td>
+                        <div className="d-flex justify-content-center gap-2">
+                          <button
+                            className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+                            title="Ver detalles"
+                            onClick={() => handleDetailClick(res)}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                          >
+                            <FaEye className="fs-5" />
+                          </button>
+                          <button
+                            className="btn btn-outline-danger rounded-circle"
+                            title="Cancelar reserva"
+                            style={{ width: "44px", height: "44px" }}
+                            onClick={() => handleCancelClick(res)}
+                            disabled={res.estado.toLowerCase() !== "pendiente"}
+                          >
+                            <FaTimes className="fs-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -289,6 +366,7 @@ const RoomReservationList = () => {
             />
           </>
         )}
+
         <RoomDetailsModal
           qrBaseUrl={qrBaseUrl}
           getBadgeColor={getBadgeColor}

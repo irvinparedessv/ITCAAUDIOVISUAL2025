@@ -3,7 +3,7 @@ import { Modal, Button, Form, Spinner } from "react-bootstrap";
 import { FaCheck, FaUndo, FaSave } from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../../api/axios";
-import type { ReservationRoom } from "../../types/reservationroom"; // Asegúrate de que esta interfaz exista
+import type { ReservationRoom } from "../../types/reservationroom";
 
 interface Props {
   show: boolean;
@@ -24,9 +24,7 @@ export default function RoomReservationStateModal({
   onBefore,
   onAfter,
 }: Props) {
-  const [newStatus, setNewStatus] = useState<ReservationRoom["estado"] | "">(
-    ""
-  );
+  const [newStatus, setNewStatus] = useState<ReservationRoom["estado"] | "">("");
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -38,8 +36,7 @@ export default function RoomReservationStateModal({
   }, [show]);
 
   const getStatusOptions = () => {
-    console.log(currentStatus);
-    switch (currentStatus) {
+    switch (currentStatus.toLowerCase()) {
       case "pendiente":
         return ["Aprobado", "Rechazado"];
       case "aprobado":
@@ -67,8 +64,9 @@ export default function RoomReservationStateModal({
       });
 
       toast.success("Estado actualizado correctamente");
+
       onSuccess?.(newStatus as ReservationRoom["estado"]);
-      onHide();
+      onHide(); // ✅ cerramos desde aquí para evitar re-render molesto
     } catch (error) {
       console.error(error);
       toast.error("Error al actualizar el estado");
@@ -79,8 +77,7 @@ export default function RoomReservationStateModal({
   };
 
   const statusOptions = getStatusOptions();
-  const isReadOnly =
-    currentStatus === "rechazado" || currentStatus === "cancelado";
+  const isReadOnly = currentStatus === "rechazado" || currentStatus === "cancelado";
 
   return (
     <Modal show={show} onHide={onHide} centered size="lg">
@@ -94,19 +91,14 @@ export default function RoomReservationStateModal({
         }}
       >
         <Modal.Title className="fw-bold">
-          <i
-            className="bi bi-arrow-repeat me-2"
-            style={{ color: "#D4A017" }}
-          ></i>
+          <i className="bi bi-arrow-repeat me-2" style={{ color: "#D4A017" }}></i>
           Actualizar Estado de Reserva #{reservationId}
         </Modal.Title>
       </Modal.Header>
 
       <Modal.Body style={{ padding: "2rem" }}>
         {statusOptions.length === 0 ? (
-          <p className="text-muted">
-            Esta reserva ya no puede cambiar de estado.
-          </p>
+          <p className="text-muted">Esta reserva ya no puede cambiar de estado.</p>
         ) : (
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-4">
@@ -119,6 +111,7 @@ export default function RoomReservationStateModal({
                 onChange={(e) =>
                   setNewStatus(e.target.value as ReservationRoom["estado"])
                 }
+                disabled={loading}
               >
                 <option value="">Seleccione una opción</option>
                 {statusOptions.map((option) => (
@@ -140,12 +133,17 @@ export default function RoomReservationStateModal({
                 placeholder="Agrega un comentario si es necesario"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                disabled={isReadOnly}
+                disabled={isReadOnly || loading}
               />
             </Form.Group>
 
             <div className="d-flex justify-content-end">
-              <Button variant="secondary" onClick={onHide} className="me-2">
+              <Button
+                variant="secondary"
+                onClick={onHide}
+                className="me-2"
+                disabled={loading}
+              >
                 Cancelar
               </Button>
               <Button

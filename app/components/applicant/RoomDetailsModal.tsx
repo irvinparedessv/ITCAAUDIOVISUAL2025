@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Modal, Badge } from "react-bootstrap";
-import type { ReservationRoom} from "../../types/reservationroom";
+import type { ReservationRoom } from "../../types/reservationroom";
 import type { HistorialItem } from "~/types/reservation";
 
 interface Props {
@@ -10,7 +10,9 @@ interface Props {
   historial: HistorialItem[];
   loadingHistorial: boolean;
   formatDate: (date: string) => string;
-  getBadgeColor: (estado: "pendiente" | "aprobado" | "cancelado" | "rechazado") => string;
+  getBadgeColor: (
+    estado: "pendiente" | "aprobado" | "cancelado" | "rechazado"
+  ) => string;
   qrBaseUrl: string;
 }
 
@@ -40,15 +42,20 @@ const RoomDetailsModal: React.FC<Props> = ({
             className="bi bi-card-checklist me-2"
             style={{ color: "#D4A017" }}
           ></i>
-          Detalles de Reserva #{selectedReservation?.id}
+          Detalles de Reserva #{selectedReservation?.id ?? ""}
         </Modal.Title>
       </Modal.Header>
 
       <Modal.Body style={{ padding: "2rem" }}>
-        {selectedReservation && (
+        {!selectedReservation?.user || !selectedReservation?.aula ? (
+          <div className="text-center text-danger fw-bold">
+            Datos de la reserva incompletos.
+          </div>
+        ) : (
           <div className="row g-4">
-            {/* Sección izquierda - Información principal */}
+            {/* Columna izquierda */}
             <div className="col-md-6">
+              {/* Información del Usuario */}
               <div className="mb-4">
                 <div className="d-flex align-items-center mb-3">
                   <div
@@ -64,45 +71,37 @@ const RoomDetailsModal: React.FC<Props> = ({
                 </div>
                 <div className="ps-5">
                   <div className="d-flex align-items-center mb-3">
-                    <span
-                      className="d-inline-block text-nowrap me-3"
-                      style={{ width: "100px", fontWeight: "500" }}
-                    >
+                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
                       <i className="bi bi-person me-2 text-body-emphasis"></i>
                       Nombre
                     </span>
                     <p className="mb-0 fw-semibold flex-grow-1">
-                      {selectedReservation.user.first_name}{" "}
-                      {selectedReservation.user.last_name}
+                      {selectedReservation.user?.first_name ?? "Desconocido"}{" "}
+                      {selectedReservation.user?.last_name ?? ""}
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span
-                      className="d-inline-block text-nowrap me-3"
-                      style={{ width: "100px", fontWeight: "500" }}
-                    >
+                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
                       <i className="bi bi-envelope me-2 text-body-emphasis"></i>
                       Correo
                     </span>
                     <p className="mb-0 fw-semibold flex-grow-1">
-                      {selectedReservation.user.email}
+                      {selectedReservation.user?.email ?? "Sin correo"}
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span
-                      className="d-inline-block text-nowrap me-3"
-                      style={{ width: "100px", fontWeight: "500" }}
-                    >
+                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
                       <i className="bi bi-person-gear me-2 text-body-emphasis"></i>
                       Rol
                     </span>
                     <p className="mb-0 fw-semibold flex-grow-1">
-                      {selectedReservation.user.role.nombre}
+                      {selectedReservation.user?.role?.nombre ?? "Rol desconocido"}
                     </p>
                   </div>
                 </div>
               </div>
 
+              {/* Detalles de Reserva */}
               <div className="mb-4">
                 <div className="d-flex align-items-center mb-3">
                   <div
@@ -118,22 +117,16 @@ const RoomDetailsModal: React.FC<Props> = ({
                 </div>
                 <div className="ps-5">
                   <div className="d-flex align-items-center mb-3">
-                    <span
-                      className="d-inline-block text-nowrap me-3"
-                      style={{ width: "100px", fontWeight: "500" }}
-                    >
+                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
                       <i className="bi bi-door-open me-2 text-body-emphasis"></i>
                       Aula
                     </span>
                     <p className="mb-0 fw-semibold flex-grow-1">
-                      {selectedReservation.aula.name}
+                      {selectedReservation.aula?.name ?? "Aula desconocida"}
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span
-                      className="d-inline-block text-nowrap me-3"
-                      style={{ width: "100px", fontWeight: "500" }}
-                    >
+                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
                       <i className="bi bi-calendar me-2 text-body-emphasis"></i>
                       Fecha
                     </span>
@@ -142,10 +135,7 @@ const RoomDetailsModal: React.FC<Props> = ({
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span
-                      className="d-inline-block text-nowrap me-3"
-                      style={{ width: "100px", fontWeight: "500" }}
-                    >
+                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
                       <i className="bi bi-clock me-2 text-body-emphasis"></i>
                       Horario
                     </span>
@@ -154,29 +144,26 @@ const RoomDetailsModal: React.FC<Props> = ({
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span
-                      className="d-inline-block text-nowrap me-3"
-                      style={{ width: "100px", fontWeight: "500" }}
-                    >
+                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
                       <i className="bi bi-info-circle me-2 text-body-emphasis"></i>
                       Estado
                     </span>
                     <Badge
-                      bg={getBadgeColor(selectedReservation.estado)}
+                      bg={getBadgeColor(
+                        selectedReservation.estado.toLowerCase() as
+                          | "pendiente"
+                          | "aprobado"
+                          | "cancelado"
+                          | "rechazado"
+                      )}
                       className="px-3 py-1 d-flex justify-content-center align-items-center"
-                      style={{
-                        fontSize: "0.85rem",
-                        width: "100%",
-                      }}
+                      style={{ fontSize: "0.85rem", width: "100%" }}
                     >
                       {selectedReservation.estado}
                     </Badge>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span
-                      className="d-inline-block text-nowrap me-3"
-                      style={{ width: "100px", fontWeight: "500" }}
-                    >
+                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
                       <i className="bi bi-chat-left-text me-2 text-body-emphasis"></i>
                       Comentario
                     </span>
@@ -187,6 +174,7 @@ const RoomDetailsModal: React.FC<Props> = ({
                 </div>
               </div>
 
+              {/* Historial */}
               <div className="mt-4">
                 <h5>Historial de cambios</h5>
                 {loadingHistorial ? (
@@ -215,7 +203,7 @@ const RoomDetailsModal: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Sección derecha - QR */}
+            {/* Columna derecha - Código QR */}
             <div className="col-md-6">
               <div className="d-flex align-items-center mb-3">
                 <div

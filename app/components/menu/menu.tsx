@@ -16,53 +16,9 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { FiRefreshCcw } from "react-icons/fi";
 import type { ReactNode, ElementType } from "react";
 import { useTheme } from "../ThemeContext";
+import type { AulaNotification, Notificacion, ReservaNotification } from "../../types/notification";
 
-// Definición de tipos
-type NotificationType = 'nueva_reserva' | 'estado_reserva' | 'nueva_reserva_aula' | 'estado_reserva_aula';
 
-interface EquipoNotification {
-  nombre: string;
-  tipo_equipo?: string;
-}
-
-interface AulaNotification {
-  id: number;
-  aula: string;
-  fecha: string;
-  horario: string;
-  estado: string;
-  comentario?: string;
-  pagina?: number;
-}
-
-interface ReservaNotification {
-  id: number;
-  user?: string;
-  aula: string;
-  fecha_reserva: string;
-  fecha_entrega: string;
-  estado: string;
-  tipo_reserva?: string;
-  equipos?: EquipoNotification[];
-  comentario?: string;
-  pagina?: number;
-}
-
-interface NotificacionData {
-  type: NotificationType;
-  title: string;
-  message: string;
-  reserva: ReservaNotification | AulaNotification;
-}
-
-interface Notificacion {
-  id: string;
-  data: NotificacionData;
-  createdAt: Date;
-  readAt: Date | null;
-  unread: boolean;
-  type: string;
-}
 
 interface HoverDropdownProps {
   title: ReactNode;  // Change from string to ReactNode
@@ -99,27 +55,32 @@ const NotificationItem = ({
   const reservaId = reservaData?.id;
   
   // Verificación segura del tipo de notificación
-  const isAulaNotification = noti.data.type?.includes('aula') || false;
-  const isNuevaReserva = noti.data.type?.includes('nueva') || false;
-  const estadoStyle = getEstadoStyle(estado);
+ const isAulaNotification = [
+  "nueva_reserva_aula",
+  "estado_reserva_aula",
+  "cancelacion_reserva_prestamista"
+].includes(noti.data.type);
 
-  const handleClick = () => {
-    if (noti.unread) {
-      markAsRead(noti.id);
-    }
+const estadoStyle = getEstadoStyle(estado);
 
-    if (!reservaId) {
-      navigate("/reservations");
-      return;
-    }
+const handleClick = () => {
+  if (noti.unread) {
+    markAsRead(noti.id);
+  }
 
-    const page = noti.data.reserva.pagina || 1; // <-- aquí lees la página enviada desde backend
-    const targetRoute = isAulaNotification ? "/reservations-room" : "/reservations";
+  if (!reservaId) {
+    navigate("/reservations");
+    return;
+  }
 
-    navigate(targetRoute, {
-      state: { highlightReservaId: reservaId, page }  // <-- pasas la página como estado al navegar
-    });
-  };
+  const page = noti.data.reserva.pagina || 1;
+  const targetRoute = isAulaNotification ? "/reservations-room" : "/reservations";
+
+  navigate(targetRoute, {
+    state: { highlightReservaId: reservaId, page }
+  });
+};
+
 
 
   return (
@@ -1007,7 +968,6 @@ function getEstadoStyle(estado: string): { className: string, displayText: strin
       };
     case 'rejected':
     case 'rechazado':
-    case 'cancelada':
       return { 
         className: 'text-danger', 
         displayText: 'Rechazado' 
@@ -1018,6 +978,11 @@ function getEstadoStyle(estado: string): { className: string, displayText: strin
       return { 
         className: 'text-info', 
         displayText: 'Completada' 
+      };
+    case 'cancelado':
+      return { 
+        className: 'text-secondary', 
+        displayText: 'Cancelado' 
       };
     default:
       return { 

@@ -3,70 +3,8 @@ import { initializeEcho } from "../utils/pusher";
 import { useAuth } from "./AuthContext";
 import { Role } from "app/types/roles";
 import api from "../api/axios";
+import type { Notificacion, NotificacionStorage, UseNotificacionesOptions } from "../types/notification";
 
-// Tipos mejorados para las notificaciones
-type NotificationType =
-  | "nueva_reserva"
-  | "estado_reserva"
-  | "nueva_reserva_aula"
-  | "estado_reserva_aula";
-
-interface EquipoNotification {
-  nombre: string;
-  tipo_equipo?: string;
-}
-
-interface AulaNotification {
-  id: number;
-  aula: string;
-  fecha: string;
-  horario: string;
-  estado: string;
-  comentario?: string;
-  pagina?: number;
-}
-
-interface ReservaBase {
-  id: number;
-  aula: string;
-  fecha_reserva: string;
-  fecha_entrega: string;
-  estado: string;
-  tipo_reserva?: string;
-  equipos?: EquipoNotification[];
-  comentario?: string;
-  pagina?: number;
-}
-
-interface ReservaNotification extends ReservaBase {
-  user?: string;
-}
-
-interface NotificacionData {
-  type: NotificationType;
-  title: string;
-  message: string;
-  reserva: ReservaNotification | AulaNotification;
-}
-
-interface NotificacionStorage {
-  id: string;
-  data: NotificacionData;
-  read_at: string | null;
-  created_at: string;
-  type: string;
-}
-
-interface Notificacion
-  extends Omit<NotificacionStorage, "created_at" | "read_at"> {
-  createdAt: Date;
-  readAt: Date | null;
-  unread: boolean;
-}
-
-interface UseNotificacionesOptions {
-  includeArchived?: boolean; // Para decidir si incluir notificaciones archivadas
-}
 
 export function useNotificaciones(options?: UseNotificacionesOptions) {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
@@ -130,6 +68,7 @@ export function useNotificaciones(options?: UseNotificacionesOptions) {
       '.nueva.reserva.aula',
       '.reserva.estado.actualizado',
       '.reserva.aula.estado.actualizado',
+      '.reserva.aula.cancelada.prestamista',
       '.notificacion.eliminada'
     ];
 

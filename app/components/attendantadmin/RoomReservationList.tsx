@@ -239,26 +239,31 @@ const RoomReservationList = () => {
   };
 
   const handleCancelClick = async (reserva: any) => {
-  if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?")) return;
+    if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?")) return;
 
-  try {
-    const { data } = await api.put(`/reservas-aula/${reserva.id}/cancelar`);
-    toast.success("Reserva cancelada exitosamente.");
+    try {
+      const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
+        estado: "Cancelado",
+        comentario: "Cancelada por el solicitante",
+      });
 
-    // Actualiza la lista local
-    setReservations((prev) =>
-      prev.map((r) => (r.id === data.id ? data : r))
-    );
+      toast.success("Reserva cancelada exitosamente.");
 
-    // Actualiza la reserva seleccionada si es la misma
-    if (selectedReserva?.id === data.id) {
-      setSelectedReserva(data);
-      await fetchHistorial(data.id, true);
+      const updated = data.reserva;
+
+      setReservations((prev) =>
+        prev.map((r) => (r.id === updated.id ? updated : r))
+      );
+
+      if (selectedReserva?.id === updated.id) {
+        setSelectedReserva(updated);
+        await fetchHistorial(updated.id, true);
+      }
+    } catch (err) {
+      toast.error("No se pudo cancelar la reserva.");
     }
-  } catch (err) {
-    toast.error("No se pudo cancelar la reserva.");
-  }
-};
+  };
+
 
 
   return (
@@ -328,7 +333,13 @@ const RoomReservationList = () => {
                           <button 
                             className="btn btn-outline-primary rounded-circle" 
                             title="Ver detalles" 
-                            style={{ width: "44px", height: "44px" }} 
+                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
                             onClick={() => handleDetailClick(res)}
                           >
                             <FaEye className="fs-5" />
@@ -336,7 +347,13 @@ const RoomReservationList = () => {
                           <button 
                             className="btn btn-outline-success rounded-circle" 
                             title="Cambiar estado" 
-                            style={{ width: "44px", height: "44px" }} 
+                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
                             onClick={() => handleEstadoClick(res)}
                           >
                             <FaEdit className="fs-5" />
@@ -344,7 +361,13 @@ const RoomReservationList = () => {
                           <button
                             className="btn btn-outline-danger rounded-circle"
                             title="Cancelar reserva"
-                            style={{ width: "44px", height: "44px" }}
+                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
                             onClick={() => handleCancelClick(res)}
                             disabled={res.estado.toLowerCase() !== "pendiente"}
                           >

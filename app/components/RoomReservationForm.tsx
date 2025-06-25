@@ -52,6 +52,18 @@ export default function ReserveClassroom() {
     return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   };
 
+  const isRangeInFuture = (range: string, selectedDate: Date): boolean => {
+    const [start] = range.split(" - ");
+    const [hour, minute] = start.split(":").map(Number);
+
+    const now = new Date();
+    const rangeDate = new Date(selectedDate);
+    rangeDate.setHours(hour, minute, 0, 0);
+
+    return rangeDate > now;
+  };  
+
+
 
   const userId = user?.id;
 
@@ -108,17 +120,68 @@ export default function ReserveClassroom() {
     return result;
   };
 
+  const getCurrentAndNextWeekRange = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 (domingo) - 6 (sábado)
+
+    const start = new Date(today);
+    start.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setDate(end.getDate() + 13); // 14 días en total (semana actual + próxima)
+    end.setHours(23, 59, 59, 999);
+
+    return { start, end };
+  };
+
+
+
   const isDateEnabled = (date: Date): boolean => {
     if (!selectedClassroomData) return false;
 
-    return selectedClassroomData.horarios.some((h) => {
-      const day = date.toLocaleDateString("en-US", { weekday: "long" });
-      const current = formatDateLocal(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Ignorar fechas pasadas
+    if (date < today) return false;
+
+    const dateString = formatDateLocal(date);
+    const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+
+    const horariosValidos = selectedClassroomData.horarios.filter((h) => {
       return (
-        h.days.includes(day) && current >= h.start_date && current <= h.end_date
+        h.days.includes(dayName) &&
+        dateString >= h.start_date &&
+        dateString <= h.end_date
       );
     });
+
+    if (horariosValidos.length === 0) return false;
+
+    const isToday =
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
+
+    if (isToday) {
+      // Verificamos si algún rango aún está disponible hoy
+      for (const h of horariosValidos) {
+        const slots = generateTimeSlots(h.start_time, h.end_time);
+        const hasAvailable = slots.some((range) =>
+          isRangeInFuture(range, date)
+        );
+        if (hasAvailable) return true;
+      }
+      return false; // Si no hay ninguno disponible, desactiva el día
+    }
+
+    return true; // Otros días válidos sí pasan
   };
+
+
+
+
 
   const getTimeOptions = (): string[] => {
     if (!selectedDate || !selectedClassroomData) return [];
@@ -138,8 +201,21 @@ export default function ReserveClassroom() {
 
     if (!horario) return [];
 
-    return generateTimeSlots(horario.start_time, horario.end_time);
+    let slots = generateTimeSlots(horario.start_time, horario.end_time);
+
+    // Filtra rangos si es hoy
+    const today = new Date();
+    const selectedDateOnly = new Date(selectedDate);
+    selectedDateOnly.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDateOnly.getTime() === today.getTime()) {
+      slots = slots.filter((range) => isRangeInFuture(range, selectedDate));
+    }
+
+    return slots;
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,14 +232,14 @@ export default function ReserveClassroom() {
 
     try {
       const response = await api.post("/reservasAula", {
-  aula_id: aula.id,
-  fecha: formatDateLocal(selectedDate),
-  horario: selectedTime,
-  user_id: userId,
-  estado: "pendiente",
-});
+        aula_id: aula.id,
+        fecha: formatDateLocal(selectedDate),
+        horario: selectedTime,
+        user_id: userId,
+        estado: "pendiente",
+      });
 
-console.log("Respuesta real:", response.data);
+      console.log("Respuesta real:", response.data);
 
 
       toast.success("Reserva realizada con éxito");

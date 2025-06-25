@@ -1,5 +1,6 @@
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
+import { APPLARAVEL } from "~/constants/constant";
 
 declare global {
   interface Window {
@@ -19,7 +20,7 @@ const initializeEcho = (token: string) => {
       key: "47727907193b763eb41f",
       cluster: "us2",
       forceTLS: true,
-      authEndpoint: "http://localhost:8000/broadcasting/auth",
+      authEndpoint: APPLARAVEL + "/broadcasting/auth",
       auth: {
         headers: {
           Authorization: `Bearer ${token}`,

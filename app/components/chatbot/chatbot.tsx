@@ -44,11 +44,7 @@ const Chatbot = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   return (
-    <div
-      className={`chatbot-container ${isOpen ? "open" : ""} ${
-        isDarkMode ? "dark" : ""
-      }`}
-    >
+    <div className={`chatbot-container ${isOpen ? "open" : ""}`}>
       {isOpen && (
         <>
           <div className="chat-header">

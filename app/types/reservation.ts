@@ -48,7 +48,7 @@ export type Reservation = {
   user_id: number;
   fecha_reserva: string;
   fecha_entrega: string;
-  estado: "Pendiente" | "Aprobado" | "Devuelto" | "Rechazado";
+  estado: "Pendiente" | "Aprobado" | "Devuelto" | "Rechazado" | "Cancelado";
   created_at: string;
   updated_at: string;
   user: User;

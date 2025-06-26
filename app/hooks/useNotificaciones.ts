@@ -69,7 +69,8 @@ export function useNotificaciones(options?: UseNotificacionesOptions) {
       '.reserva.estado.actualizado',
       '.reserva.aula.estado.actualizado',
       '.reserva.aula.cancelada.prestamista',
-      '.notificacion.eliminada'
+      '.notificacion.eliminada',
+      '.reserva.cancelada',
     ];
 
     events.forEach(event => {

@@ -44,6 +44,7 @@ import ReserveClassroom from "./components/RoomReservationForm";
 import EspacioListWrapper from "./routes/wrappers/reservations";
 import EquipoListPage from "./routes/EquipoListPage";
 import EquipoEditPage from "./routes/equipoEditPage";
+import PrediccionPorEquipoPage from "./routes/PrediccionPorEquipoPage";
 
 
 
@@ -200,6 +201,10 @@ const router = createBrowserRouter([
           {
             path: "prediccion",
             element: <PrediccionPage />,
+          },
+          {
+            path: "prediccionPorEquipoPage",
+            element: <PrediccionPorEquipoPage />,
           },
           {
             path: "administracion",

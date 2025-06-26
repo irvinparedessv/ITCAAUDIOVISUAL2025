@@ -10,9 +10,15 @@ const opciones = [
     icono: <FaRegFileAlt size={24} />,
   },
   {
-    nombre: 'Análisis',
+    nombre: 'Análisis por tipo de equipo',
     descripcion: 'Predicción y estadísticas',
     ruta: '/prediccion',
+    icono: <FaChartLine size={24} />,
+  },
+  {
+    nombre: 'Análisis por equipo',
+    descripcion: 'Predicción y estadísticas',
+    ruta: '/prediccionPorEquipoPage',
     icono: <FaChartLine size={24} />,
   },
   {

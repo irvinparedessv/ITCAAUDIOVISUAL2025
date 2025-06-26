@@ -4,7 +4,8 @@ export type NotificationType =
   | "estado_reserva"
   | "nueva_reserva_aula"
   | "estado_reserva_aula"
-  | "cancelacion_reserva_prestamista";
+  | "cancelacion_reserva_prestamista"
+  | "cancelacion_reserva";
 
 // Datos de equipo dentro de una notificación
 export interface EquipoNotification {

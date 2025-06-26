@@ -196,6 +196,31 @@ export default function ReservationList() {
     return rangeWithDots;
   };
 
+  const handleCancelReservation = async (reservaId: number) => {
+    const confirm = window.confirm("¿Estás seguro de cancelar esta reserva?");
+    if (!confirm) return;
+
+    try {
+      await api.put(`/reservas-equipo/${reservaId}/estado`, {
+        estado: "Cancelado",
+        comentario: "Cancelada por el usuario",
+      });
+
+      toast.success("Reserva cancelada correctamente");
+
+      setReservations((prev) =>
+        prev.map((r) =>
+          r.id === reservaId ? { ...r, estado: "Cancelado" } as Reservation : r
+        )
+      );
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || "Error al cancelar la reserva"
+      );
+    }
+  };
+
+
   // Render
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
@@ -393,8 +418,15 @@ export default function ReservationList() {
                         <div className="d-flex justify-content-center gap-2">
                           <button
                             className="btn btn-outline-primary rounded-circle"
+                            title="Ver detalles"
                             onClick={() => handleDetailClick(reserva)}
-                            style={{ width: "44px", height: "44px" }}
+                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
                           >
                             <FaEye className="fs-5" />
                           </button>
@@ -407,13 +439,34 @@ export default function ReservationList() {
                                 setReservaSeleccionadaParaEstado(reserva);
                                 setShowEstadoModal(true);
                               }}
-                              style={{ width: "44px", height: "44px" }}
+                              style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.transform = "scale(1.15)")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.transform = "scale(1)")
+                              }
                               title="Actualizar estado"
                               disabled={updatingReservationId === reserva.id}
                             >
                               <FaEdit className="fs-5" />
                             </button>
                           )}
+                          <button
+                            className="btn btn-outline-danger rounded-circle"
+                            title="Cancelar reserva"
+                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => handleCancelReservation(reserva.id)}
+                            disabled={reserva.estado.toLowerCase() !== "pendiente"}
+                          >
+                            <FaTimes className="fs-5" />
+                          </button>
                         </div>
                       </td>
                     </tr>

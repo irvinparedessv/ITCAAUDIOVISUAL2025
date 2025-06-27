@@ -56,6 +56,7 @@ export type Reservation = {
   equipos: Equipo[];
   codigo_qr: CodigoQR;
   tipo_reserva: TipoReserva;
+  documento_url?: string;
 };
 
 export type HistorialItem = {

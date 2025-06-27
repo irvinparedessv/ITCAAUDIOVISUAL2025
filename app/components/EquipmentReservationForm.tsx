@@ -49,6 +49,12 @@ const [checkingAvailability, setCheckingAvailability] = useState(false);
 const { user } = useAuth();
 const isTodaySelected = formData.date === new Date().toISOString().split("T")[0];
 
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const maxDate = new Date(today);
+maxDate.setDate(today.getDate() + 6); // Hoy + 6 = 7 días incluyendo hoy
+
 
 const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
@@ -331,33 +337,50 @@ const handleSubmit = async (e: React.FormEvent) => {
     return;
   }
 
+  if (formData.tipoReserva?.label === "Eventos" && !uploadedFile) {
+    toast.error("Debe subir el documento del evento.");
+    return;
+  }
+
+
   // Continúa con el envío como ya lo tienes...
+  const formPayload = new FormData();
 
+  formPayload.append("user_id", user.id.toString());
+  formPayload.append("aula", formData.aula.value);
+  formPayload.append("fecha_reserva", formData.date);
+  formPayload.append("startTime", formData.startTime);
+  formPayload.append("endTime", formData.endTime);
+  formPayload.append("tipo_reserva_id", formData.tipoReserva?.value || "");
 
-  const payload = {
-    user_id: user.id,
-    equipo: formData.equipment.map((eq) => ({
-      id: eq.value,
-      cantidad: 1,
-    })),
-    aula: formData.aula.value,
-    fecha_reserva: formData.date,
-    startTime: formData.startTime,
-    endTime: formData.endTime,
-    tipo_reserva_id: formData.tipoReserva?.value,
-  };
+  if (uploadedFile) {
+    formPayload.append("documento_evento", uploadedFile);
+  }
+
+  // ✅ Enviar equipos como array para que Laravel lo entienda
+  formData.equipment.forEach((eq, index) => {
+    formPayload.append(`equipo[${index}][id]`, eq.value.toString());
+    formPayload.append(`equipo[${index}][cantidad]`, "1");
+  });
 
   try {
     setLoadingSubmit(true);
-    const response = await api.post("/reservas", payload);
+    const response = await api.post("/reservas", formPayload, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
     toast.success("¡Reserva creada exitosamente!");
     handleClear();
+    setUploadedFile(null);
   } catch (error) {
     console.error(error);
     toast.error("Error al crear la reserva. Intenta nuevamente.");
   } finally {
     setLoadingSubmit(false);
   }
+
 };
 
 
@@ -372,16 +395,16 @@ const handleSubmit = async (e: React.FormEvent) => {
             <FaCalendarAlt className="me-2" />
             Fecha de Reserva
           </label>
-          <input
-            type="date"
-            name="date"
-            value={formData.date}
-            onChange={handleChange}
-            className="form-control"
-            min={new Date().toISOString().split("T")[0]}
-            max={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
-            required
-          />
+            <input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              className="form-control"
+              min={today.toISOString().split("T")[0]}
+              max={maxDate.toISOString().split("T")[0]}
+              required
+            />
           {isTodaySelected && (
             <small className="form-text text-muted">
               La reservación debe hacerse con al menos 30 minutos de anticipación.

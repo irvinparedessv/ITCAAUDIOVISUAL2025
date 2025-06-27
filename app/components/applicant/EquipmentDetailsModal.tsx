@@ -1,6 +1,7 @@
 // components/ReservationDetailsModal.tsx
 import React from "react";
 import { Modal, Badge } from "react-bootstrap";
+import { FaEye } from "react-icons/fa";
 import type { HistorialItem, Reservation } from "~/types/reservation";
 
 interface Props {
@@ -10,7 +11,7 @@ interface Props {
   historial: HistorialItem[];
   loadingHistorial: boolean;
   formatDate: (date: string) => string;
-  getBadgeColor: (estado: "Pendiente" | "Aprobado" | "Devuelto" | "Rechazado") => string;
+  getBadgeColor: (estado: "Pendiente" | "Aprobado" | "Devuelto" | "Rechazado" | "Cancelado") => string;
   qrBaseUrl: string;
 }
 
@@ -24,6 +25,8 @@ const EquipmentDetailsModal: React.FC<Props> = ({
   getBadgeColor,
   qrBaseUrl
 }) => {
+
+  console.log("Modal render, selectedReservation:", selectedReservation);
   return (
     <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
         <Modal.Header
@@ -204,6 +207,22 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                         {selectedReservation.tipo_reserva?.nombre}
                       </p>
                     </div>
+                  {/* Documento PDF o Word */}
+                  {selectedReservation.documento_url && (
+                    <div  className="mt-3">
+                      <strong className="d-block mb-2">Documento del evento:</strong>
+                      <div className="mt-3 text-center">
+                        <a
+                            href={selectedReservation.documento_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-danger"
+                          >
+                            <FaEye className="me-1" /> Ver Documento
+                          </a>
+                      </div>
+                    </div>
+                  )}
                   </div>
                   <div className="mt-4">
                     <h5>Historial de cambios</h5>

@@ -153,6 +153,7 @@ export default function ReservationList() {
 
   // Handlers
   const handleDetailClick = (reservation: Reservation) => {
+    console.log("Abriendo modal con reserva:", reservation);
     setHistorial([]);
     setSelectedReservation(reservation);
     setShowModal(true);

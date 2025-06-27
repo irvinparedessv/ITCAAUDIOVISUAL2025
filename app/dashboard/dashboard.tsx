@@ -103,7 +103,7 @@ export default function Dashboard() {
           <DashboardCard
             title="Gestión de Espacios"
             icon={<FaBuilding size={24} style={getIconStyle()} />}
-            link="/formEspacio"
+            link="/rooms"
             description="Administrar espacios disponibles"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}

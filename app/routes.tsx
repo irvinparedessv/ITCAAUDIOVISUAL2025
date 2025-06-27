@@ -27,7 +27,6 @@ import FormUsuario from "./routes/formUsuario";
 import EditUsuario from "./routes/editUsuario";
 import UsuarioListPage from "./routes/usuarioList";
 import QrScan from "./routes/qr";
-import EspacioList from "./routes/espacioList";
 import ApproveReservations from "./routes/attendant/approveReservations";
 import VerPerfil from "./routes/verPerfil";
 import EditPerfil from "./routes/editPerfil";
@@ -45,8 +44,7 @@ import EspacioListWrapper from "./routes/wrappers/reservations";
 import EquipoListPage from "./routes/EquipoListPage";
 import EquipoEditPage from "./routes/equipoEditPage";
 import PrediccionPorEquipoPage from "./routes/PrediccionPorEquipoPage";
-
-
+import AulaList from "./components/attendantadmin/RoomList";
 
 const router = createBrowserRouter([
   {
@@ -90,6 +88,14 @@ const router = createBrowserRouter([
             element: <AddReservation />,
           },
           {
+            path: "rooms",
+            element: <AulaList />,
+          },
+          {
+            path: "/aulas/editar/:id",
+            element: <CreacionEspacio />,
+          },
+          {
             path: "/reservas-aula/:id",
             element: <ReservaAulaDetail />,
           },
@@ -111,7 +117,7 @@ const router = createBrowserRouter([
             element: <FormEquipo />,
           },
           {
-            path: "formEspacio",
+            path: "createRoom",
             element: <CreacionEspacio />,
           },
           {
@@ -165,10 +171,6 @@ const router = createBrowserRouter([
           {
             path: "qrScan",
             element: <QrScan />,
-          },
-          {
-            path: "espacioList",
-            element: <EspacioList />,
           },
           {
             path: "approvereservations",

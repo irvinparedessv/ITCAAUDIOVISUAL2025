@@ -22,11 +22,15 @@ export const routeRoles: Record<string, Role[]> = {
   "/tipoequipo": [Role.Administrador],
 
   // -- Espacios --
-  "/formEspacio": [Role.Administrador],
+  "/createRoom": [Role.Administrador],
 
   // -- Otros --
   "/formChat": [Role.Prestamista, Role.Administrador],
   "/inventario": [Role.Administrador],
   "/menu": [Role.Prestamista, Role.Administrador],
-  "/equipmentavailability": [Role.Encargado, Role.Administrador, Role.Prestamista]
+  "/equipmentavailability": [
+    Role.Encargado,
+    Role.Administrador,
+    Role.Prestamista,
+  ],
 };

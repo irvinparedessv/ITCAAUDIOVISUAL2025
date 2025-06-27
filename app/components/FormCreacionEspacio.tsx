@@ -1,8 +1,17 @@
-import React, { useState } from "react";
-import { FaSave, FaTimes, FaPlus, FaBroom, FaUpload, FaTrash } from 'react-icons/fa';
-import { useDropzone } from 'react-dropzone';
-import toast, { Toaster } from 'react-hot-toast';
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import {
+  FaSave,
+  FaTimes,
+  FaPlus,
+  FaBroom,
+  FaUpload,
+  FaTrash,
+} from "react-icons/fa";
+import { useDropzone } from "react-dropzone";
+import toast from "react-hot-toast";
 import api from "../api/axios";
+import { APPLARAVEL } from "~/constants/constant";
 
 const diasSemana = [
   { value: "Monday", label: "Lunes" },
@@ -15,6 +24,9 @@ const diasSemana = [
 ];
 
 export const CreateSpaceForm = () => {
+  const { id } = useParams();
+  const isEdit = Boolean(id);
+
   const [name, setName] = useState("");
   const [renderImages, setRenderImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -27,42 +39,74 @@ export const CreateSpaceForm = () => {
     days: [] as string[],
   });
 
+  const [loading, setLoading] = useState(isEdit);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
+
+  useEffect(() => {
+    if (isEdit) {
+      setLoading(true);
+      api
+        .get(`/aulas/${id}`)
+        .then((res) => {
+          const aula = res.data;
+          setName(aula.name);
+
+          // Imágenes (asegúrate de agregar tu dominio real si es necesario)
+          const imageUrls = aula.imagenes.map((img: any) =>
+            img.image_path.startsWith("http")
+              ? img.image_path
+              : `${APPLARAVEL + "/"}${img.image_path}`
+          );
+          setImagePreviews(imageUrls);
+
+          // Horarios con parseo del campo days (viene como string JSON)
+          const horariosParseados = aula.horarios.map((h: any) => ({
+            ...h,
+            days: typeof h.days === "string" ? JSON.parse(h.days) : h.days,
+          }));
+          setAvailableTimes(horariosParseados);
+        })
+        .catch(() => toast.error("Error al cargar el aula"))
+        .finally(() => setLoading(false));
+    }
+  }, [id]);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => {
-      const files = acceptedFiles.filter(file => file.type.match('image.*'));
+      const files = acceptedFiles.filter((file) => file.type.match("image.*"));
       if (files.length !== acceptedFiles.length) {
-        toast.error('Solo se permiten archivos de imagen (JPEG, PNG, GIF)');
+        toast.error("Solo se permiten archivos de imagen");
       }
       setRenderImages(files);
-      setImagePreviews(files.map(file => URL.createObjectURL(file)));
+      setImagePreviews(files.map((file) => URL.createObjectURL(file)));
     },
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif']
+      "image/*": [".jpeg", ".jpg", ".png", ".gif"],
     },
-    multiple: true
+    multiple: true,
   });
-
-
-
-
-
-
 
   const handleAddTime = () => {
     const { start_date, end_date, start_time, end_time, days } = timeInput;
 
-    if (!start_date || !end_date || !start_time || !end_time || days.length === 0) {
-      toast.error('Completa todos los campos y selecciona al menos un día.');
+    if (
+      !start_date ||
+      !end_date ||
+      !start_time ||
+      !end_time ||
+      days.length === 0
+    ) {
+      toast.error("Completa todos los campos y selecciona al menos un día.");
       return;
     }
 
     if (end_date < start_date) {
-      toast.error('La fecha fin no puede ser menor a la fecha inicio.');
+      toast.error("La fecha fin no puede ser menor a la fecha inicio.");
       return;
     }
 
     if (end_time <= start_time) {
-      toast.error('La hora fin debe ser mayor a la hora inicio.');
+      toast.error("La hora fin debe ser mayor a la hora inicio.");
       return;
     }
 
@@ -73,7 +117,7 @@ export const CreateSpaceForm = () => {
     });
 
     if (isOverlap) {
-      toast.error('Ya existe un rango con fechas y días similares.');
+      toast.error("Ya existe un rango con fechas y días similares.");
       return;
     }
 
@@ -85,7 +129,7 @@ export const CreateSpaceForm = () => {
       end_time: "",
       days: [],
     });
-    toast.success('Horario agregado correctamente');
+    toast.success("Horario agregado correctamente");
   };
 
   const handleRemoveImage = (index: number) => {
@@ -119,46 +163,81 @@ export const CreateSpaceForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
-      toast.error('El nombre del espacio es obligatorio');
+      toast.error("El nombre del espacio es obligatorio");
       return;
     }
 
-    if (renderImages.length === 0) {
-      toast.error('Debes subir al menos una imagen del espacio');
+    if (!isEdit && renderImages.length === 0) {
+      toast.error("Debes subir al menos una imagen del espacio");
       return;
     }
 
     if (availableTimes.length === 0) {
-      toast.error('Debes agregar al menos un horario disponible');
+      toast.error("Debes agregar al menos un horario disponible");
       return;
     }
 
     const formData = new FormData();
     formData.append("name", name);
-    renderImages.forEach((file, i) => formData.append(`render_images[${i}]`, file));
+    renderImages.forEach((file, i) =>
+      formData.append(`render_images[${i}]`, file)
+    );
     formData.append("available_times", JSON.stringify(availableTimes));
 
+    setLoadingSubmit(true);
+
     try {
-      await api.post("/aulas", formData, {
+      const endpoint = isEdit ? `/aulas/${id}/update` : "/aulas";
+      await api.post(endpoint, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      toast.success('Espacio creado correctamente');
-      handleClear();
+      toast.success(
+        isEdit
+          ? "Espacio actualizado correctamente"
+          : "Espacio creado correctamente"
+      );
+      if (!isEdit) handleClear();
     } catch (err) {
       console.error(err);
-      toast.error('Error al crear el espacio');
+      toast.error("Error al guardar el espacio");
+    } finally {
+      setLoadingSubmit(false);
     }
   };
 
+  if (loading || loadingSubmit) {
+    return (
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "50vh" }}
+      >
+        <div className="text-center">
+          <div className="spinner-border text-primary mb-3" role="status" />
+          <div>
+            {loading
+              ? "Cargando espacio..."
+              : isEdit
+              ? "Actualizando espacio..."
+              : "Creando espacio..."}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="form-container">
-      <h2 className="mb-4 text-center fw-bold">Crear Nuevo Espacio</h2>
+      <h2 className="mb-4 text-center fw-bold">
+        {isEdit ? "Editar Espacio" : "Crear Nuevo Espacio"}
+      </h2>
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label htmlFor="name" className="form-label">Nombre del espacio</label>
+          <label htmlFor="name" className="form-label">
+            Nombre del espacio
+          </label>
           <input
             id="name"
             type="text"
@@ -171,23 +250,21 @@ export const CreateSpaceForm = () => {
 
         <div className="mb-4">
           <label className="form-label">Imágenes 360°</label>
-          
+
           {imagePreviews.length > 0 ? (
             <div className="d-flex flex-wrap justify-content-center gap-4">
               {imagePreviews.map((src, i) => (
                 <div key={i} className="d-flex flex-column align-items-center">
-                  <div className="image-preview-container">
-                    <img
-                      src={src}
-                      alt={`Vista previa ${i + 1}`}
-                      className="img-fluid rounded border mb-2"
-                      style={{ 
-                        maxWidth: '220px',
-                        maxHeight: '220px',
-                        objectFit: 'cover'
-                      }}
-                    />
-                  </div>
+                  <img
+                    src={src}
+                    alt={`Vista previa ${i + 1}`}
+                    className="img-fluid rounded border mb-2"
+                    style={{
+                      maxWidth: "220px",
+                      maxHeight: "220px",
+                      objectFit: "cover",
+                    }}
+                  />
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(i)}
@@ -203,69 +280,77 @@ export const CreateSpaceForm = () => {
             <div
               {...getRootProps()}
               className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
-                isDragActive ? 'border-primary bg-light' : ''
+                isDragActive ? "border-primary bg-light" : ""
               }`}
             >
-
-
-            <input {...getInputProps()} />
-                    <div className="d-flex flex-column align-items-center justify-content-center">
-                      <FaUpload className="text-muted mb-2" />
-                      {isDragActive ? (
-                        <p className="text-primary mb-0">Suelta las imágenes aquí...</p>
-                      ) : (
-                        <>
-                          <p className="mb-1">Arrastra y suelta imágenes aquí, o haz clic para seleccionar</p>
-                          <p className="text-muted small mb-0">Formatos: JPEG, PNG, GIF (Máx. 5MB cada una)</p>
-                        </>
-                      )}
-                    </div>
-                  </div>
+              <input {...getInputProps()} />
+              <div className="d-flex flex-column align-items-center justify-content-center">
+                <FaUpload className="text-muted mb-2" />
+                {isDragActive ? (
+                  <p className="text-primary mb-0">
+                    Suelta las imágenes aquí...
+                  </p>
+                ) : (
+                  <>
+                    <p className="mb-1">
+                      Arrastra y suelta imágenes aquí, o haz clic para
+                      seleccionar
+                    </p>
+                    <p className="text-muted small mb-0">
+                      Formatos: JPEG, PNG, GIF (Máx. 5MB cada una)
+                    </p>
+                  </>
                 )}
               </div>
-        
+            </div>
+          )}
+        </div>
 
+        {/* Horarios */}
         <div className="mb-4">
           <h5 className="mb-3">Horarios disponibles</h5>
-          
           <div className="row mb-3">
-            <div className="col-md-3 mb-2 mb-md-0">
-              <label htmlFor="start_date" className="form-label">Fecha de inicio</label>
+            <div className="col-md-3 mb-2">
+              <label className="form-label">Fecha de inicio</label>
               <input
-                id="start_date"
                 type="date"
                 value={timeInput.start_date}
-                onChange={(e) => setTimeInput({ ...timeInput, start_date: e.target.value })}
+                onChange={(e) =>
+                  setTimeInput({ ...timeInput, start_date: e.target.value })
+                }
                 className="form-control"
               />
             </div>
-            <div className="col-md-3 mb-2 mb-md-0">
-              <label htmlFor="end_date" className="form-label">Fecha de fin</label>
+            <div className="col-md-3 mb-2">
+              <label className="form-label">Fecha de fin</label>
               <input
-                id="end_date"
                 type="date"
                 value={timeInput.end_date}
-                onChange={(e) => setTimeInput({ ...timeInput, end_date: e.target.value })}
+                onChange={(e) =>
+                  setTimeInput({ ...timeInput, end_date: e.target.value })
+                }
                 className="form-control"
               />
             </div>
-            <div className="col-md-3 mb-2 mb-md-0">
-              <label htmlFor="start_time" className="form-label">Hora inicio</label>
+            <div className="col-md-3 mb-2">
+              <label className="form-label">Hora inicio</label>
               <input
-                id="start_time"
                 type="time"
                 value={timeInput.start_time}
-                onChange={(e) => setTimeInput({ ...timeInput, start_time: e.target.value })}
+                onChange={(e) =>
+                  setTimeInput({ ...timeInput, start_time: e.target.value })
+                }
                 className="form-control"
               />
             </div>
-            <div className="col-md-3">
-              <label htmlFor="end_time" className="form-label">Hora fin</label>
+            <div className="col-md-3 mb-2">
+              <label className="form-label">Hora fin</label>
               <input
-                id="end_time"
                 type="time"
                 value={timeInput.end_time}
-                onChange={(e) => setTimeInput({ ...timeInput, end_time: e.target.value })}
+                onChange={(e) =>
+                  setTimeInput({ ...timeInput, end_time: e.target.value })
+                }
                 className="form-control"
               />
             </div>
@@ -293,7 +378,10 @@ export const CreateSpaceForm = () => {
                       }));
                     }}
                   />
-                  <label className="form-check-label" htmlFor={`day-${d.value}`}>
+                  <label
+                    className="form-check-label"
+                    htmlFor={`day-${d.value}`}
+                  >
                     {d.label}
                   </label>
                 </div>
@@ -316,12 +404,19 @@ export const CreateSpaceForm = () => {
             <h6>Horarios agregados:</h6>
             <ul className="list-group">
               {availableTimes.map((t, i) => (
-                <li key={i} className="list-group-item d-flex justify-content-between align-items-center">
+                <li
+                  key={i}
+                  className="list-group-item d-flex justify-content-between align-items-center"
+                >
                   <span>
-                    Del {t.start_date} al {t.end_date} de {t.start_time} a {t.end_time} –{' '}
+                    Del {t.start_date} al {t.end_date} de {t.start_time} a{" "}
+                    {t.end_time} –{" "}
                     {t.days
-                      .map((d: string) => diasSemana.find((x) => x.value === d)?.label)
-                      .join(', ')}
+                      .map(
+                        (d: string) =>
+                          diasSemana.find((x) => x.value === d)?.label
+                      )
+                      .join(", ")}
                   </span>
                   <button
                     type="button"
@@ -339,19 +434,20 @@ export const CreateSpaceForm = () => {
         <div className="form-actions">
           <button type="submit" className="btn primary-btn">
             <FaSave className="me-2" />
-            Crear espacio
+            {isEdit ? "Actualizar espacio" : "Crear espacio"}
           </button>
-          <button
-            type="button"
-            className="btn secondary-btn"
-            onClick={handleClear}
-          >
-            <FaBroom className="me-2" />
-            Limpiar
-          </button>
+          {!isEdit && (
+            <button
+              type="button"
+              className="btn secondary-btn"
+              onClick={handleClear}
+            >
+              <FaBroom className="me-2" />
+              Limpiar
+            </button>
+          )}
         </div>
       </form>
     </div>
-    
   );
 };

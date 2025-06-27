@@ -96,16 +96,6 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({
 });
 
 
-const startTimeOptions = timeOptions.filter((time) => {
-  const hour = Number(time.split(":")[0]);
-  return hour >= 7 && hour <= 17;
-});
-
-const endTimeOptions = timeOptions.filter((time) => {
-  const hour = Number(time.split(":")[0]);
-  return hour >= 7 && hour <= 20;
-});
-
 const isDateTimeComplete =
   formData.date && formData.startTime && formData.endTime;
 
@@ -263,8 +253,23 @@ const checkEquipmentAvailability = async (equipments: EquipmentOption[]) => {
 
 const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const { name, value } = e.target;
-  setFormData((prev) => ({ ...prev, [name]: value }));
+
+  if (name === "date") {
+    setFormData((prev) => ({
+      ...prev,
+      date: value,
+      startTime: "",
+      endTime: "",
+      tipoReserva: null,
+      equipment: [],
+      aula: null,
+    }));
+    setAvailableEquipmentOptions([]);
+  } else {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }
 };
+
 
 const handleClear = () => {
   setFormData({
@@ -364,24 +369,50 @@ const handleSubmit = async (e: React.FormEvent) => {
   });
 
   try {
-    setLoadingSubmit(true);
-    const response = await api.post("/reservas", formPayload, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      setLoadingSubmit(true);
+      const response = await api.post("/reservas", formPayload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      toast.success("¡Reserva creada exitosamente!");
+      handleClear();
+      setUploadedFile(null);
+    } catch (error: any) {
+      console.error(error);
+      const message =
+        error.response?.data?.message || "Error al crear la reserva. Intenta nuevamente.";
+      toast.error(message);
+    } finally {
+      setLoadingSubmit(false);
+    }
+
+  };
+
+  const getStartTimeOptions = (): string[] => {
+    const now = new Date();
+    const selectedDateStr = formData.date;
+    const isTodaySelected =
+      selectedDateStr === new Date().toISOString().split("T")[0];
+
+    return timeOptions.filter((time) => {
+      const [hourStr, minuteStr] = time.split(":");
+      const hour = Number(hourStr);
+      const minute = Number(minuteStr);
+
+      // Limita el rango a 7:00 - 17:00
+      if (hour < 7 || (hour > 17 || (hour === 17 && minute > 0))) return false;
+
+      if (isTodaySelected) {
+        const selectedTime = new Date(`${selectedDateStr}T${time}`);
+        const minTime = new Date(now.getTime() + 30 * 60000); // Ahora + 30 min
+        return selectedTime > minTime;
+      }
+
+      return true;
     });
-
-    toast.success("¡Reserva creada exitosamente!");
-    handleClear();
-    setUploadedFile(null);
-  } catch (error) {
-    console.error(error);
-    toast.error("Error al crear la reserva. Intenta nuevamente.");
-  } finally {
-    setLoadingSubmit(false);
-  }
-
-};
+  };
 
 
   return (
@@ -428,18 +459,10 @@ const handleSubmit = async (e: React.FormEvent) => {
               required
             >
                <option value="">Selecciona una hora</option>
-                {timeOptions
-                  .filter((time) => {
-                    const [hourStr, minStr] = time.split(":");
-                    const hour = Number(hourStr);
-                    const minutes = Number(minStr);
-                    // Permitir horas hasta 17:00 (sin 17:30)
-                    return hour < 17 || (hour === 17 && minutes === 0);
-                  })
-                  .map((time) => (
-                    <option key={time} value={time}>
-                      {formatTo12h(time)}
-                    </option>
+                {getStartTimeOptions().map((time) => (
+                  <option key={time} value={time}>
+                    {formatTo12h(time)}
+                  </option>
                 ))}
             </select>
           </div>
@@ -524,7 +547,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           
           {uploadedFile ? (
             <div className="mt-2">
-              <div className="d-flex align-items-center justify-content-between bg-light p-3 rounded border">
+              <div className="d-flex align-items-center justify-content-between p-3 rounded border">
                 <div>
                   <strong>Archivo seleccionado:</strong> {uploadedFile.name}
                 </div>

@@ -246,9 +246,11 @@ export default function ReserveClassroom() {
       setSelectedDate(null);
       setSelectedTime("");
       setSelectedClassroom("");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Error al enviar la reserva. Intenta nuevamente.");
+      const message =
+        error.response?.data?.message || "Error al enviar la reserva. Intenta nuevamente.";
+      toast.error(message);
     }
   };
 

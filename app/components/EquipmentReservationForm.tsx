@@ -11,12 +11,14 @@ import {
   FaBroom,
   FaUpload,
   FaTrash,
+  FaUser,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../api/axios";
 import { getTipoReservas } from "../services/tipoReservaService";
 import { formatTo12h, timeOptions } from "~/utils/time";
 import { useDropzone } from "react-dropzone";
+import { Role } from "~/types/roles";
 
 export default function EquipmentReservationForm() {
  type OptionType = { value: string; label: string };
@@ -48,6 +50,8 @@ const [loadingTipoReserva, setLoadingTipoReserva] = useState(true);
 const [checkingAvailability, setCheckingAvailability] = useState(false);
 const { user } = useAuth();
 const isTodaySelected = formData.date === new Date().toISOString().split("T")[0];
+const [prestamistaOptions, setPrestamistaOptions] = useState<OptionType[]>([]);
+const [selectedPrestamista, setSelectedPrestamista] = useState<SingleValue<OptionType>>(null);
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -175,6 +179,26 @@ useEffect(() => {
 }, [formData.tipoReserva]);
 
 useEffect(() => {
+  const fetchPrestamistas = async () => {
+    if (user?.role !== Role.Administrador && user?.role !== Role.Encargado) return;
+
+    try {
+      const res = await api.get('/usuarios/rol/Prestamista');
+      const options = res.data.map((u: any) => ({
+        value: u.id,
+        label: `${u.first_name} ${u.last_name} (${u.email})`,
+      }));
+      setPrestamistaOptions(options);
+    } catch (err) {
+      toast.error('Error al cargar usuarios prestamistas');
+    }
+  };
+
+  fetchPrestamistas();
+}, [user]);
+
+
+useEffect(() => {
   if (!formData.equipment || formData.equipment.length === 0) {
     setAvailableEquipmentOptions(allEquipmentOptions);
     return;
@@ -265,6 +289,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       aula: null,
     }));
     setAvailableEquipmentOptions([]);
+    setSelectedPrestamista(null);
   } else {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
@@ -351,7 +376,10 @@ const handleSubmit = async (e: React.FormEvent) => {
   // Continúa con el envío como ya lo tienes...
   const formPayload = new FormData();
 
-  formPayload.append("user_id", user.id.toString());
+  formPayload.append(
+    "user_id",
+    selectedPrestamista?.value?.toString() || user.id.toString()
+  );
   formPayload.append("aula", formData.aula.value);
   formPayload.append("fecha_reserva", formData.date);
   formPayload.append("startTime", formData.startTime);
@@ -379,6 +407,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       toast.success("¡Reserva creada exitosamente!");
       handleClear();
       setUploadedFile(null);
+      setSelectedPrestamista(null);
     } catch (error: any) {
       console.error(error);
       const message =
@@ -505,6 +534,30 @@ const handleSubmit = async (e: React.FormEvent) => {
             </select>
           </div>
         </div>
+
+        {/* USUARIO */}
+        {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
+        <div className="mb-4">
+            <label className="form-label d-flex align-items-center">
+              <FaUser className="me-2" />
+              Seleccionar Usuario
+            </label>
+            <Select
+              options={prestamistaOptions}
+              value={selectedPrestamista}
+              onChange={(selected) => setSelectedPrestamista(selected)}
+              placeholder={
+                !formData.date
+                  ? "Selecciona primero una fecha"
+                  : "Selecciona un usuario prestamista"
+              }
+              className="react-select-container"
+              classNamePrefix="react-select"
+              isDisabled={!isDateTimeComplete}
+            />
+
+          </div>
+        )}
 
         {/* TIPO RESERVA */}
         <div className="mb-4">

@@ -263,13 +263,13 @@ export default function ReservationList() {
         <h4 className="mb-0">Listado de Reservas</h4>
         {(user?.role === Role.Administrador ||
           user?.role === Role.Encargado) && (
-          <Button
-            onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
-            className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
-          >
-            {mostrarSoloHoy ? "Ver todas las reservas" : "Ver reservas de hoy"}
-          </Button>
-        )}
+            <Button
+              onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
+              className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
+            >
+              {mostrarSoloHoy ? "Ver todas las reservas" : "Ver reservas de hoy"}
+            </Button>
+          )}
       </div>
 
       {/* Buscador con icono y limpiar + botón de filtros */}
@@ -489,6 +489,23 @@ export default function ReservationList() {
                             <FaEye className="fs-5" />
                           </button>
 
+                          {/* BOTÓN NUEVO EDITAR */}
+                          <button
+                            className="btn btn-outline-warning rounded-circle"
+                            title="Editar reserva"
+                            onClick={() => navigate(`/equipmentreservation/edit/${reserva.id}`)}
+                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out" }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            disabled={reserva.estado.toLowerCase() !== "pendiente"} 
+                          >
+                            <FaEdit className="fs-5" />
+                          </button>
+
                           {user?.role !== Role.Prestamista && (
                             <button
                               className="btn btn-outline-success rounded-circle"
@@ -503,8 +520,8 @@ export default function ReservationList() {
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform =
-                                  "scale(1.15)")
+                              (e.currentTarget.style.transform =
+                                "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -577,9 +594,8 @@ export default function ReservationList() {
                   ) : (
                     <li
                       key={page}
-                      className={`page-item ${
-                        currentPage === page ? "active" : ""
-                      }`}
+                      className={`page-item ${currentPage === page ? "active" : ""
+                        }`}
                     >
                       <button
                         className="page-link"
@@ -591,9 +607,8 @@ export default function ReservationList() {
                   )
                 )}
                 <li
-                  className={`page-item ${
-                    currentPage === totalPages ? "disabled" : ""
-                  }`}
+                  className={`page-item ${currentPage === totalPages ? "disabled" : ""
+                    }`}
                 >
                   <button
                     className="page-link"

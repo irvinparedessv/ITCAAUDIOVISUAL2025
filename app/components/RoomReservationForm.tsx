@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { Container, Row, Col, Spinner } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../api/axios";
+import Select, { type SingleValue } from "react-select";
 import "pannellum/build/pannellum.css";
 import PanoramaViewer from "./PanoramaViewer";
 import toast from "react-hot-toast";
@@ -12,8 +13,10 @@ import {
   FaDoorOpen,
   FaCheck,
   FaBroom,
+  FaUser,
 } from "react-icons/fa";
 import { useAuth } from "app/hooks/AuthContext";
+import { Role } from "~/types/roles";
 
 declare global {
   interface Window {
@@ -35,6 +38,7 @@ type Aula = {
   image_path?: string;
   horarios: Horario[];
 };
+type OptionType = { value: string; label: string };
 
 export default function ReserveClassroom() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -42,6 +46,12 @@ export default function ReserveClassroom() {
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
   const [availableClassrooms, setAvailableClassrooms] = useState<Aula[]>([]);
   const [loading, setLoading] = useState(true);
+  const [prestamistaOptions, setPrestamistaOptions] = useState<OptionType[]>(
+    []
+  );
+  const [selectedPrestamista, setSelectedPrestamista] =
+    useState<SingleValue<OptionType>>(null);
+
   const { user } = useAuth();
 
   const formatDateLocal = (date: Date) => {
@@ -49,7 +59,10 @@ export default function ReserveClassroom() {
     const month = date.getMonth() + 1;
     const day = date.getDate();
 
-    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(
+      2,
+      "0"
+    )}`;
   };
 
   const isRangeInFuture = (range: string, selectedDate: Date): boolean => {
@@ -61,14 +74,39 @@ export default function ReserveClassroom() {
     rangeDate.setHours(hour, minute, 0, 0);
 
     return rangeDate > now;
-  };  
-
-
+  };
 
   const userId = user?.id;
+  const isDateTimeComplete = selectedDate && selectedTime;
+
+  useEffect(() => {
+    const fetchPrestamistas = async () => {
+      if (user?.role !== Role.Administrador && user?.role !== Role.Encargado)
+        return;
+
+      setLoading(true); // <-- activa loading para usuarios también
+
+      try {
+        const res = await api.get("/usuarios/rol/Prestamista");
+        const options = res.data.map((u: any) => ({
+          value: u.id,
+          label: `${u.first_name} ${u.last_name} (${u.email})`,
+        }));
+        setPrestamistaOptions(options);
+      } catch (err) {
+        toast.error("Error al cargar usuarios prestamistas");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPrestamistas();
+  }, [user]);
 
   useEffect(() => {
     const fetchAulas = async () => {
+      setLoading(true);
+
       try {
         const response = await api.get("/aulas");
         setAvailableClassrooms(response.data);
@@ -120,30 +158,12 @@ export default function ReserveClassroom() {
     return result;
   };
 
-  const getCurrentAndNextWeekRange = () => {
-    const today = new Date();
-    const dayOfWeek = today.getDay(); // 0 (domingo) - 6 (sábado)
-
-    const start = new Date(today);
-    start.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(start);
-    end.setDate(end.getDate() + 13); // 14 días en total (semana actual + próxima)
-    end.setHours(23, 59, 59, 999);
-
-    return { start, end };
-  };
-
-
-
   const isDateEnabled = (date: Date): boolean => {
     if (!selectedClassroomData) return false;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Ignorar fechas pasadas
     if (date < today) return false;
 
     const dateString = formatDateLocal(date);
@@ -165,7 +185,6 @@ export default function ReserveClassroom() {
       date.getFullYear() === today.getFullYear();
 
     if (isToday) {
-      // Verificamos si algún rango aún está disponible hoy
       for (const h of horariosValidos) {
         const slots = generateTimeSlots(h.start_time, h.end_time);
         const hasAvailable = slots.some((range) =>
@@ -173,15 +192,11 @@ export default function ReserveClassroom() {
         );
         if (hasAvailable) return true;
       }
-      return false; // Si no hay ninguno disponible, desactiva el día
+      return false;
     }
 
-    return true; // Otros días válidos sí pasan
+    return true;
   };
-
-
-
-
 
   const getTimeOptions = (): string[] => {
     if (!selectedDate || !selectedClassroomData) return [];
@@ -203,7 +218,6 @@ export default function ReserveClassroom() {
 
     let slots = generateTimeSlots(horario.start_time, horario.end_time);
 
-    // Filtra rangos si es hoy
     const today = new Date();
     const selectedDateOnly = new Date(selectedDate);
     selectedDateOnly.setHours(0, 0, 0, 0);
@@ -215,7 +229,6 @@ export default function ReserveClassroom() {
 
     return slots;
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,12 +248,11 @@ export default function ReserveClassroom() {
         aula_id: aula.id,
         fecha: formatDateLocal(selectedDate),
         horario: selectedTime,
-        user_id: userId,
+        user_id: selectedPrestamista?.value?.toString() || userId,
         estado: "pendiente",
       });
 
       console.log("Respuesta real:", response.data);
-
 
       toast.success("Reserva realizada con éxito");
       setSelectedDate(null);
@@ -249,7 +261,8 @@ export default function ReserveClassroom() {
     } catch (error: any) {
       console.error(error);
       const message =
-        error.response?.data?.message || "Error al enviar la reserva. Intenta nuevamente.";
+        error.response?.data?.message ||
+        "Error al enviar la reserva. Intenta nuevamente.";
       toast.error(message);
     }
   };
@@ -260,6 +273,15 @@ export default function ReserveClassroom() {
     setSelectedClassroom("");
     toast.success("Formulario limpiado");
   };
+
+  if (loading) {
+    return (
+      <div className="text-center my-5">
+        <Spinner animation="border" variant="primary" />
+        <p className="mt-3">Cargando datos, espera por favor...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="form-container">
@@ -303,11 +325,11 @@ export default function ReserveClassroom() {
             id="date"
             selected={selectedDate}
             onChange={(date) => {
-                if (date) {
-                  date.setHours(12, 0, 0, 0); // <- ¡Evita el error por zona horaria!
-                  setSelectedDate(date);
-                  setSelectedTime("");
-                }
+              if (date) {
+                date.setHours(12, 0, 0, 0);
+                setSelectedDate(date);
+                setSelectedTime("");
+              }
             }}
             className="form-control"
             dateFormat="dd/MM/yyyy"
@@ -339,7 +361,24 @@ export default function ReserveClassroom() {
             ))}
           </select>
         </div>
-
+        {(user?.role === Role.Administrador ||
+          user?.role === Role.Encargado) && (
+          <div className="mb-4">
+            <label className="form-label d-flex align-items-center">
+              <FaUser className="me-2" />
+              Seleccionar Usuario
+            </label>
+            <Select
+              options={prestamistaOptions}
+              value={selectedPrestamista}
+              onChange={(selected) => setSelectedPrestamista(selected)}
+              placeholder="Selecciona un usuario prestamista"
+              className="react-select-container"
+              classNamePrefix="react-select"
+              isDisabled={!isDateTimeComplete}
+            />
+          </div>
+        )}
         <div className="form-actions">
           <button type="submit" className="btn primary-btn">
             <FaCheck className="me-2" />

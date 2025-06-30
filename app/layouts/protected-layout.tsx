@@ -5,6 +5,7 @@ import { Spinner } from "react-bootstrap";
 import { getAllowedRoles } from "../helpers/matchRouteRoles";
 import { useEffect, useState } from "react";
 import Chatbot from "~/components/chatbot/chatbot";
+import { Role } from "~/types/roles";
 
 const publicRoutes = ["/login", "/forgot-password", "/reset-password"];
 
@@ -57,7 +58,7 @@ export default function ProtectedLayout() {
   return (
     <>
       <Outlet />
-      <Chatbot />
+      {user?.role === Role.Prestamista && <Chatbot />}{" "}
     </>
   );
 }

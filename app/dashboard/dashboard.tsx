@@ -139,6 +139,38 @@ export default function Dashboard() {
         </Row>
       )}
 
+      {user?.role === Role.EspacioEncargado && (
+        <Row xs={1} md={2} lg={3} className="g-4">
+          <DashboardCard
+            title="Gestion de Reservas"
+            icon={<FaClipboardList size={24} style={getIconStyle()} />}
+            link="/reservations-room"
+            description="Revisar y aprobar reservas pendientes"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
+          <DashboardCard
+            title="Creacion de Reservas"
+            icon={<FaDoorOpen size={24} style={getIconStyle()} />}
+            link="/reservationsroom"
+            description="Gestionar reservas de espacios físicos"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
+          <DashboardCard
+            title="Lector QR"
+            icon={<FaQrcode size={24} style={getIconStyle()} />}
+            link="/qrScan"
+            description="Leer Codigo QR"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
+        </Row>
+      )}
+
       {user?.role === Role.Encargado && (
         <Row xs={1} md={2} lg={3} className="g-4">
           <DashboardCard

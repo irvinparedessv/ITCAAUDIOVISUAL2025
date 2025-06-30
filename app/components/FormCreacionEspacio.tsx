@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   FaSave,
   FaTimes,
@@ -12,6 +12,7 @@ import { useDropzone } from "react-dropzone";
 import toast from "react-hot-toast";
 import api from "../api/axios";
 import { APPLARAVEL } from "~/constants/constant";
+import { Spinner } from "react-bootstrap";
 
 const diasSemana = [
   { value: "Monday", label: "Lunes" },
@@ -25,6 +26,7 @@ const diasSemana = [
 
 export const CreateSpaceForm = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const isEdit = Boolean(id);
 
   const [name, setName] = useState("");
@@ -51,7 +53,6 @@ export const CreateSpaceForm = () => {
           const aula = res.data;
           setName(aula.name);
 
-          // Imágenes (asegúrate de agregar tu dominio real si es necesario)
           const imageUrls = aula.imagenes.map((img: any) =>
             img.image_path.startsWith("http")
               ? img.image_path
@@ -59,7 +60,6 @@ export const CreateSpaceForm = () => {
           );
           setImagePreviews(imageUrls);
 
-          // Horarios con parseo del campo days (viene como string JSON)
           const horariosParseados = aula.horarios.map((h: any) => ({
             ...h,
             days: typeof h.days === "string" ? JSON.parse(h.days) : h.days,
@@ -129,7 +129,6 @@ export const CreateSpaceForm = () => {
       end_time: "",
       days: [],
     });
-    toast.success("Horario agregado correctamente");
   };
 
   const handleRemoveImage = (index: number) => {
@@ -169,11 +168,6 @@ export const CreateSpaceForm = () => {
       return;
     }
 
-    if (!isEdit && renderImages.length === 0) {
-      toast.error("Debes subir al menos una imagen del espacio");
-      return;
-    }
-
     if (availableTimes.length === 0) {
       toast.error("Debes agregar al menos un horario disponible");
       return;
@@ -199,6 +193,7 @@ export const CreateSpaceForm = () => {
           : "Espacio creado correctamente"
       );
       if (!isEdit) handleClear();
+      navigate("/rooms");
     } catch (err) {
       console.error(err);
       toast.error("Error al guardar el espacio");
@@ -214,7 +209,11 @@ export const CreateSpaceForm = () => {
         style={{ height: "50vh" }}
       >
         <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status" />
+          <Spinner
+            animation="border"
+            variant="dark"
+            style={{ width: "3rem", height: "3rem" }}
+          />
           <div>
             {loading
               ? "Cargando espacio..."
@@ -249,7 +248,7 @@ export const CreateSpaceForm = () => {
         </div>
 
         <div className="mb-4">
-          <label className="form-label">Imágenes 360°</label>
+          <label className="form-label">Imágenes 360° (Opcionales)</label>
 
           {imagePreviews.length > 0 ? (
             <div className="d-flex flex-wrap justify-content-center gap-4">
@@ -297,7 +296,7 @@ export const CreateSpaceForm = () => {
                       seleccionar
                     </p>
                     <p className="text-muted small mb-0">
-                      Formatos: JPEG, PNG, GIF (Máx. 5MB cada una)
+                      Formatos: JPEG, PNG, GIF (Opcionales)
                     </p>
                   </>
                 )}
@@ -306,7 +305,6 @@ export const CreateSpaceForm = () => {
           )}
         </div>
 
-        {/* Horarios */}
         <div className="mb-4">
           <h5 className="mb-3">Horarios disponibles</h5>
           <div className="row mb-3">

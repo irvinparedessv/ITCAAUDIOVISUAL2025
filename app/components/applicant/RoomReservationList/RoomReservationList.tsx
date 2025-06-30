@@ -18,7 +18,10 @@ const RoomReservationList = () => {
     from: null,
     to: null,
   });
-  const [initialRange, setInitialRange] = useState<{ from: Date | null; to: Date | null }>({
+  const [initialRange, setInitialRange] = useState<{
+    from: Date | null;
+    to: Date | null;
+  }>({
     from: null,
     to: null,
   });
@@ -33,7 +36,9 @@ const RoomReservationList = () => {
   const [perPage] = useState(10);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [historial, setHistorial] = useState<Bitacora[]>([]);
-  const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
+  const [historialCache, setHistorialCache] = useState<
+    Record<number, Bitacora[]>
+  >({});
   const qrBaseUrl = QRURL;
 
   const location = useLocation();
@@ -102,8 +107,15 @@ const RoomReservationList = () => {
 
   // Scroll y quitar highlight después de 7s
   useEffect(() => {
-    if (highlightId !== null && reservations.length > 0 && highlightRef.current) {
-      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (
+      highlightId !== null &&
+      reservations.length > 0 &&
+      highlightRef.current
+    ) {
+      highlightRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
       const timeout = setTimeout(() => setHighlightId(null), 7000);
       return () => clearTimeout(timeout);
     }
@@ -235,29 +247,28 @@ const RoomReservationList = () => {
   };
 
   const handleCancelClick = async (reserva: any) => {
-  if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?")) return;
+    if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?"))
+      return;
 
-  try {
-    const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
-      estado: "Cancelado",
-      comentario: "Cancelado por el prestamista",
-    });
+    try {
+      const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
+        estado: "Cancelado",
+        comentario: "Cancelado por el prestamista",
+      });
 
-    toast.success("Reserva cancelada exitosamente.");
+      toast.success("Reserva cancelada exitosamente.");
 
-    setReservations((prev) =>
-      prev.map((r) => (r.id === data.reserva?.id ? data.reserva : r))
-    );
+      setReservations((prev) =>
+        prev.map((r) => (r.id === data.reserva?.id ? data.reserva : r))
+      );
 
-    if (data.reserva && selectedReservation?.id === data.reserva.id) {
-      setSelectedReservation(data.reserva);
+      if (data.reserva && selectedReservation?.id === data.reserva.id) {
+        setSelectedReservation(data.reserva);
+      }
+    } catch (err) {
+      toast.error("No se pudo cancelar la reserva.");
     }
-
-  } catch (err) {
-    toast.error("No se pudo cancelar la reserva.");
-  }
-};
-
+  };
 
   return (
     <div className="container py-5">
@@ -291,9 +302,17 @@ const RoomReservationList = () => {
         />
 
         {isLoading ? (
-          <Spinner animation="border" />
+          <div className="d-flex justify-content-center my-5">
+            <Spinner
+              animation="border"
+              variant="dark"
+              style={{ width: "3rem", height: "3rem" }}
+            />
+          </div>
         ) : reservations.length === 0 ? (
-          <p>No hay reservas en este rango de fechas.</p>
+          <div className="d-flex justify-content-center my-5">
+            <p>No hay reservas coincidentes con los filtros seleccionados.</p>
+          </div>
         ) : (
           <>
             <Table striped bordered hover responsive>
@@ -314,7 +333,11 @@ const RoomReservationList = () => {
                     <tr
                       key={res.id}
                       ref={isHighlighted ? highlightRef : null}
-                      className={isHighlighted ? "table-warning animate__animated animate__flash" : ""}
+                      className={
+                        isHighlighted
+                          ? "table-warning animate__animated animate__flash"
+                          : ""
+                      }
                     >
                       <td>{res.aula?.name || "Aula Desconocida"}</td>
                       <td>{formatDate(res.fecha)}</td>
@@ -348,7 +371,11 @@ const RoomReservationList = () => {
                           <button
                             className="btn btn-outline-danger rounded-circle"
                             title="Cancelar reserva"
-                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }

@@ -1018,6 +1018,36 @@ const NavbarMenu = () => {
         </>
       )}
 
+      {user?.role === Role.EspacioEncargado && (
+        <>
+          {checkAccess("/reservations-room") && (
+            <HoverDropdown title="Reservas" icon={FaPlus}>
+              <Dropdown.Item
+                as={Link}
+                to="/reservations-room"
+                className="d-flex align-items-start text-dark"
+              >
+                <FaComputer className="me-2" />
+                <div>
+                  <div className="fw-bold">Gestionar Reservas</div>
+                  <small>Aprobar/Rechazar reservas</small>
+                </div>
+              </Dropdown.Item>
+              <Dropdown.Item
+                as={Link}
+                to="/reservationroom"
+                className="d-flex align-items-start text-dark"
+              >
+                <FaCalendarAlt className="me-2" />
+                <div>
+                  <div className="fw-bold">Reservar Espacio</div>
+                  <small>Solicitar reserva para espacio físico</small>
+                </div>
+              </Dropdown.Item>
+            </HoverDropdown>
+          )}
+        </>
+      )}
       {user?.role === Role.Prestamista && (
         <>
           {checkAccess("/addreservation") && (

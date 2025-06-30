@@ -15,7 +15,6 @@ export const routeRoles: Record<string, Role[]> = {
   "/reservations": [Role.Prestamista, Role.Administrador, Role.Encargado],
   "/reservationdetail": [Role.Prestamista],
   "/reservationdetailAdmin": [Role.Administrador],
-  "/reservations-room": [Role.Prestamista, Role.Administrador, Role.Encargado],
   // -- Equipos --
   "/equipo": [Role.Administrador],
   "/formEquipo": [Role.Administrador],
@@ -23,7 +22,12 @@ export const routeRoles: Record<string, Role[]> = {
 
   // -- Espacios --
   "/createRoom": [Role.Administrador],
-
+  "/reservations-room": [Role.Administrador, Role.EspacioEncargado],
+  "/reservationsroom": [
+    Role.Administrador,
+    Role.EspacioEncargado,
+    Role.Prestamista,
+  ], //crear reserva espacio todo mod nombre ruta
   // -- Otros --
   "/formChat": [Role.Prestamista, Role.Administrador],
   "/inventario": [Role.Administrador],

@@ -37,6 +37,9 @@ input[type="time"] {
   color: var(--navbar-text) !important;
   transition: background-color 0.2s ease;
 }
+.spinner-border.text-primary {
+  color: #a52a2a !important; /* Cambia el color */
+}
 
 /* Hovers (dependiendo del modo) */
 .navbar-nav .nav-link:hover,

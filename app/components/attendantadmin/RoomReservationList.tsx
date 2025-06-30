@@ -1,18 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import {
-  Row,
-  Col,
-  Spinner,
-  Table,
-  Badge,
-} from "react-bootstrap";
+import { Row, Col, Spinner, Table, Badge } from "react-bootstrap";
 import api from "../../api/axios";
 import AulaReservacionEstadoModal from "./RoomReservationStateModal";
 import { QRURL } from "~/constants/constant";
 import type { Bitacora } from "~/types/bitacora";
 import RoomDetailsModal from "../applicant/RoomDetailsModal";
 import toast from "react-hot-toast";
-import { FaEdit, FaEye, FaTimes } from "react-icons/fa";
+import { FaEdit, FaEye, FaTimes, FaExchangeAlt } from "react-icons/fa";
 import PaginationComponent from "../applicant/RoomReservationList/Pagination";
 import Filters from "../applicant/RoomReservationList/Filter";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -33,21 +27,28 @@ const RoomReservationList = () => {
   const [showModal, setShowModal] = useState(false);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [historial, setHistorial] = useState<Bitacora[]>([]);
-  const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
+  const [historialCache, setHistorialCache] = useState<
+    Record<number, Bitacora[]>
+  >({});
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const perPage = 10;
   const qrBaseUrl = QRURL;
-
   const location = useLocation();
   const navigate = useNavigate();
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const highlightRef = useRef<HTMLTableRowElement>(null);
   const [isChangingEstado, setIsChangingEstado] = useState(false);
   const initialHighlightHandled = useRef(false);
-  const [initialRange, setInitialRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
+  const [initialRange, setInitialRange] = useState<{
+    from: Date | null;
+    to: Date | null;
+  }>({ from: null, to: null });
 
+  const handleEditClick = (reserva: any) => {
+    navigate(`/reservas-aula/editar/${reserva.id}`, { state: { page } });
+  };
   // Inicializar rango a última semana
   useEffect(() => {
     const today = new Date();
@@ -57,7 +58,6 @@ const RoomReservationList = () => {
     setRange(initial);
     setInitialRange(initial); // guardar el rango original
   }, []);
-
 
   // Reset página al cambiar filtros
   useEffect(() => {
@@ -98,7 +98,7 @@ const RoomReservationList = () => {
           let newTo = reservaFecha > toDate ? reservaFecha : toDate;
           setRange({ from: newFrom, to: newTo });
         }
-        
+
         initialHighlightHandled.current = true;
       } catch {
         console.warn("No se pudo cargar la reserva destacada.");
@@ -167,8 +167,8 @@ const RoomReservationList = () => {
     if (highlightId !== null && highlightRef.current) {
       const timer = setTimeout(() => {
         highlightRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
+          behavior: "smooth",
+          block: "center",
         });
       }, 100);
 
@@ -189,21 +189,30 @@ const RoomReservationList = () => {
   // Helpers
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+    return `${date.getDate().toString().padStart(2, "0")}/${(
+      date.getMonth() + 1
+    )
       .toString()
       .padStart(2, "0")}/${date.getFullYear()}`;
   };
 
   const getEstadoVariant = (estado: string) => {
     switch (estado.toLowerCase()) {
-      case "pendiente": return "warning";
-      case "cancelado": case "rechazado": return "danger";
-      case "aprobado": return "success";
-      default: return "secondary";
+      case "pendiente":
+        return "warning";
+      case "cancelado":
+      case "rechazado":
+        return "danger";
+      case "aprobado":
+        return "success";
+      default:
+        return "secondary";
     }
   };
 
-  const getBadgeColor = (estado: "pendiente" | "aprobado" | "cancelado" | "rechazado") => {
+  const getBadgeColor = (
+    estado: "pendiente" | "aprobado" | "cancelado" | "rechazado"
+  ) => {
     return getEstadoVariant(estado);
   };
 
@@ -223,7 +232,9 @@ const RoomReservationList = () => {
     try {
       const updatedReserva = { ...selectedReserva, estado: nuevoEstado };
       setSelectedReserva(updatedReserva);
-      setReservations((prev) => prev.map((r) => (r.id === updatedReserva.id ? updatedReserva : r)));
+      setReservations((prev) =>
+        prev.map((r) => (r.id === updatedReserva.id ? updatedReserva : r))
+      );
       const { data } = await api.get(`/reservas-aula/${updatedReserva.id}`);
       setSelectedReserva(data);
       await fetchHistorial(data.id, true);
@@ -239,7 +250,8 @@ const RoomReservationList = () => {
   };
 
   const handleCancelClick = async (reserva: any) => {
-    if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?")) return;
+    if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?"))
+      return;
 
     try {
       const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
@@ -264,23 +276,35 @@ const RoomReservationList = () => {
     }
   };
 
-
-
   return (
     <div className="mt-4 px-3">
       <div className="table-responsive rounded shadow p-3 mt-4">
         <Row className="align-items-center mb-4">
-          <Col><h2>Reservas de Aulas</h2></Col>
+          <Col>
+            <h2>Reservas de Aulas</h2>
+          </Col>
         </Row>
         <Filters
           from={range.from}
           to={range.to}
-          setFrom={(date) => { setRange((r) => ({ ...r, from: date })); setPage(1); }}
-          setTo={(date) => { setRange((r) => ({ ...r, to: date })); setPage(1); }}
+          setFrom={(date) => {
+            setRange((r) => ({ ...r, from: date }));
+            setPage(1);
+          }}
+          setTo={(date) => {
+            setRange((r) => ({ ...r, to: date }));
+            setPage(1);
+          }}
           statusFilter={status}
-          setStatusFilter={(s) => { setStatus(s); setPage(1); }}
+          setStatusFilter={(s) => {
+            setStatus(s);
+            setPage(1);
+          }}
           search={search}
-          setSearch={(s) => { setSearch(s); setPage(1); }}
+          setSearch={(s) => {
+            setSearch(s);
+            setPage(1);
+          }}
           onReset={() => {
             if (initialRange.from && initialRange.to) {
               setRange(initialRange);
@@ -298,9 +322,19 @@ const RoomReservationList = () => {
           }}
         />
         {isLoading ? (
-          <Spinner animation="border" />
+          <div
+            className="d-flex justify-content-center align-items-center"
+            style={{ height: "50vh" }}
+          >
+            <Spinner animation="border" />
+          </div>
         ) : reservations.length === 0 ? (
-          <p>No hay reservas que coincidan con los filtros.</p>
+          <div
+            className="d-flex justify-content-center align-items-center"
+            style={{ height: "50vh" }}
+          >
+            <p>No hay reservas que coincidan con los filtros.</p>
+          </div>
         ) : (
           <>
             <Table striped bordered hover responsive>
@@ -321,19 +355,31 @@ const RoomReservationList = () => {
                     <tr
                       key={res.id}
                       ref={isHighlighted ? highlightRef : null}
-                      className={isHighlighted ? "table-warning animate__animated animate__flash" : ""}
+                      className={
+                        isHighlighted
+                          ? "table-warning animate__animated animate__flash"
+                          : ""
+                      }
                     >
                       <td>{res.aula?.name || "Aula Desconocida"}</td>
                       <td>{formatDate(res.fecha)}</td>
                       <td>{res.horario}</td>
                       <td>{res.user?.first_name || "Desconocido"}</td>
-                      <td><Badge bg={getEstadoVariant(res.estado)}>{res.estado}</Badge></td>
+                      <td>
+                        <Badge bg={getEstadoVariant(res.estado)}>
+                          {res.estado}
+                        </Badge>
+                      </td>
                       <td>
                         <div className="d-flex justify-content-center gap-2">
-                          <button 
-                            className="btn btn-outline-primary rounded-circle" 
-                            title="Ver detalles" 
-                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                          <button
+                            className="btn btn-outline-primary rounded-circle"
+                            title="Ver detalles"
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
@@ -344,10 +390,15 @@ const RoomReservationList = () => {
                           >
                             <FaEye className="fs-5" />
                           </button>
-                          <button 
-                            className="btn btn-outline-success rounded-circle" 
-                            title="Cambiar estado" 
-                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+
+                          <button
+                            className="btn btn-outline-success rounded-circle"
+                            title="Cambiar estado"
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
@@ -356,12 +407,36 @@ const RoomReservationList = () => {
                             }
                             onClick={() => handleEstadoClick(res)}
                           >
+                            <FaExchangeAlt className="fs-5" />
+                          </button>
+
+                          <button
+                            className="btn btn-outline-warning rounded-circle"
+                            title="Editar reserva"
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => handleEditClick(res)}
+                          >
                             <FaEdit className="fs-5" />
                           </button>
+
                           <button
                             className="btn btn-outline-danger rounded-circle"
                             title="Cancelar reserva"
-                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
@@ -380,10 +455,10 @@ const RoomReservationList = () => {
                 })}
               </tbody>
             </Table>
-            <PaginationComponent 
-              page={page} 
-              totalPages={totalPages} 
-              onPageChange={(p) => setPage(p)} 
+            <PaginationComponent
+              page={page}
+              totalPages={totalPages}
+              onPageChange={(p) => setPage(p)}
             />
           </>
         )}

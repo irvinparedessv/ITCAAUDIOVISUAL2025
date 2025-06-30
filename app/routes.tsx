@@ -137,6 +137,10 @@ const router = createBrowserRouter([
             element: <ReserveClassroom />,
           },
           {
+            path: "reservas-aula/editar/:id",
+            element: <ReserveClassroom />,
+          },
+          {
             path: "reservations-room",
             element: <EspacioListWrapper />,
           },

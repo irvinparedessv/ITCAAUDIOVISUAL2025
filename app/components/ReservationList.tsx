@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Badge, Button, Modal, Form, InputGroup, Spinner } from "react-bootstrap";
+import {
+  Badge,
+  Button,
+  Modal,
+  Form,
+  InputGroup,
+  Spinner,
+} from "react-bootstrap";
 import api from "../api/axios";
 import { useAuth } from "../hooks/AuthContext";
 import toast from "react-hot-toast";
@@ -28,14 +35,20 @@ export default function ReservationList() {
   const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
 
   // Estados para modales
-  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [selectedReservation, setSelectedReservation] =
+    useState<Reservation | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [historial, setHistorial] = useState<Bitacora[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
-  const [historialCache, setHistorialCache] = useState<Record<number, Bitacora[]>>({});
+  const [historialCache, setHistorialCache] = useState<
+    Record<number, Bitacora[]>
+  >({});
   const [showEstadoModal, setShowEstadoModal] = useState(false);
-  const [reservaSeleccionadaParaEstado, setReservaSeleccionadaParaEstado] = useState<Reservation | null>(null);
-  const [updatingReservationId, setUpdatingReservationId] = useState<number | null>(null);
+  const [reservaSeleccionadaParaEstado, setReservaSeleccionadaParaEstado] =
+    useState<Reservation | null>(null);
+  const [updatingReservationId, setUpdatingReservationId] = useState<
+    number | null
+  >(null);
 
   // Estados de paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -56,8 +69,9 @@ export default function ReservationList() {
   // Efectos
   useEffect(() => {
     if (location.state?.page) setCurrentPage(location.state.page);
-    if (location.state?.highlightReservaId) setHighlightId(location.state.highlightReservaId);
-    
+    if (location.state?.highlightReservaId)
+      setHighlightId(location.state.highlightReservaId);
+
     if (location.state?.page || location.state?.highlightReservaId) {
       navigate(".", { replace: true, state: {} });
     }
@@ -78,7 +92,10 @@ export default function ReservationList() {
   useEffect(() => {
     if (highlightId !== null && reservationsLoaded) {
       if (highlightRef.current) {
-        highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        highlightRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
       const timeout = setTimeout(() => setHighlightId(null), 7000);
       return () => clearTimeout(timeout);
@@ -96,7 +113,10 @@ export default function ReservationList() {
     setReservationsLoaded(false);
     try {
       let endpoint = `/reservas/${user?.id}`;
-      if (mostrarSoloHoy && (user?.role === Role.Administrador || user?.role === Role.Encargado)) {
+      if (
+        mostrarSoloHoy &&
+        (user?.role === Role.Administrador || user?.role === Role.Encargado)
+      ) {
         endpoint = "/reservas/dia";
       }
 
@@ -104,7 +124,7 @@ export default function ReservationList() {
         page: currentPage,
         per_page: itemsPerPage,
       };
-      
+
       if (statusFilter !== "Todos") params.estado = statusFilter;
       if (typeFilter !== "Todos") params.tipo_reserva = typeFilter;
       if (startDate) params.fecha_inicio = startDate;
@@ -130,7 +150,16 @@ export default function ReservationList() {
       const timer = setTimeout(fetchReservations, 300);
       return () => clearTimeout(timer);
     }
-  }, [user, mostrarSoloHoy, currentPage, statusFilter, typeFilter, startDate, endDate, searchTerm]);
+  }, [
+    user,
+    mostrarSoloHoy,
+    currentPage,
+    statusFilter,
+    typeFilter,
+    startDate,
+    endDate,
+    searchTerm,
+  ]);
 
   const fetchHistorial = async (reservaId: number, forceRefresh = false) => {
     if (!forceRefresh && historialCache[reservaId]) {
@@ -149,7 +178,6 @@ export default function ReservationList() {
       setLoadingHistorial(false);
     }
   };
-
 
   // Handlers
   const handleDetailClick = (reservation: Reservation) => {
@@ -180,7 +208,11 @@ export default function ReservationList() {
     const rangeWithDots: (number | string)[] = [];
     let l: number | null = null;
 
-    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+    for (
+      let i = Math.max(2, currentPage - delta);
+      i <= Math.min(totalPages - 1, currentPage + delta);
+      i++
+    ) {
       range.push(i);
     }
 
@@ -211,7 +243,9 @@ export default function ReservationList() {
 
       setReservations((prev) =>
         prev.map((r) =>
-          r.id === reservaId ? { ...r, estado: "Cancelado" } as Reservation : r
+          r.id === reservaId
+            ? ({ ...r, estado: "Cancelado" } as Reservation)
+            : r
         )
       );
     } catch (err: any) {
@@ -221,14 +255,14 @@ export default function ReservationList() {
     }
   };
 
-
   // Render
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 className="mb-0">Listado de Reservas</h4>
-        {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
+        {(user?.role === Role.Administrador ||
+          user?.role === Role.Encargado) && (
           <Button
             onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
             className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
@@ -239,39 +273,40 @@ export default function ReservationList() {
       </div>
 
       {/* Buscador con icono y limpiar + botón de filtros */}
-<div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
-  <div className="flex-grow-1">
-    <InputGroup>
-      <InputGroup.Text>
-        <FaSearch />
-      </InputGroup.Text>
-      <Form.Control
-        type="text"
-        placeholder="Buscar por usuario, aula, equipo, estado..."
-        value={searchTerm}
-        onChange={(e) => {
-          setSearchTerm(e.target.value);
-          setCurrentPage(1);
-        }}
-      />
-      {searchTerm && (
-        <Button variant="outline-secondary" onClick={() => setSearchTerm("")}>
-          <FaTimes />
+      <div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
+        <div className="flex-grow-1">
+          <InputGroup>
+            <InputGroup.Text>
+              <FaSearch />
+            </InputGroup.Text>
+            <Form.Control
+              type="text"
+              placeholder="Buscar por usuario, aula, equipo, estado..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            {searchTerm && (
+              <Button
+                variant="outline-secondary"
+                onClick={() => setSearchTerm("")}
+              >
+                <FaTimes />
+              </Button>
+            )}
+          </InputGroup>
+        </div>
+
+        <Button
+          variant="outline-secondary"
+          onClick={() => setShowFilters(!showFilters)}
+          className="d-flex align-items-center gap-2"
+        >
+          <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
         </Button>
-      )}
-    </InputGroup>
-  </div>
-
-  <Button
-    variant="outline-secondary"
-    onClick={() => setShowFilters(!showFilters)}
-    className="d-flex align-items-center gap-2"
-  >
-    <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-  </Button>
-</div>
-
-
+      </div>
 
       {showFilters && !isFirstLoad && (
         <div className="p-3 rounded mb-4 border border-secondary">
@@ -307,7 +342,9 @@ export default function ReservationList() {
                 >
                   <option value="Todos">Todos</option>
                   {tipoReservas.map((tipo) => (
-                    <option key={tipo.id} value={tipo.nombre}>{tipo.nombre}</option>
+                    <option key={tipo.id} value={tipo.nombre}>
+                      {tipo.nombre}
+                    </option>
                   ))}
                 </Form.Select>
               </Form.Group>
@@ -349,7 +386,11 @@ export default function ReservationList() {
             </div>
 
             <div className="col-12">
-              <Button variant="outline-danger" onClick={resetFilters} className="w-100">
+              <Button
+                variant="outline-danger"
+                onClick={resetFilters}
+                className="w-100"
+              >
                 Limpiar filtros
               </Button>
             </div>
@@ -360,7 +401,11 @@ export default function ReservationList() {
       {/* Loading */}
       {!reservationsLoaded && (
         <div className="d-flex justify-content-center my-5">
-          <Spinner animation="border" variant="primary" style={{ width: "3rem", height: "3rem" }} />
+          <Spinner
+            animation="border"
+            variant="dark"
+            style={{ width: "3rem", height: "3rem" }}
+          />
         </div>
       )}
 
@@ -394,24 +439,32 @@ export default function ReservationList() {
                     <tr
                       key={reserva.id}
                       ref={isHighlighted ? highlightRef : null}
-                      className={isHighlighted ? "table-warning animate__animated animate__flash" : ""}
+                      className={
+                        isHighlighted
+                          ? "table-warning animate__animated animate__flash"
+                          : ""
+                      }
                     >
-                      <td className="fw-bold">
-                        {reserva.id}
-                      </td>
+                      <td className="fw-bold">{reserva.id}</td>
                       <td className="fw-bold">
                         {reserva.user.first_name} {reserva.user.last_name}
                       </td>
                       <td>{reserva.tipo_reserva?.nombre}</td>
                       <td>
-                        {reserva.equipos.slice(0, 2).map(e => e.nombre).join(", ")}
+                        {reserva.equipos
+                          .slice(0, 2)
+                          .map((e) => e.nombre)
+                          .join(", ")}
                         {reserva.equipos.length > 2 && "..."}
                       </td>
                       <td>{reserva.aula}</td>
                       <td>{formatDate(reserva.fecha_reserva)}</td>
                       <td>{formatDate(reserva.fecha_entrega)}</td>
                       <td>
-                        <Badge bg={getBadgeColor(reserva.estado)} className="px-3 py-2">
+                        <Badge
+                          bg={getBadgeColor(reserva.estado)}
+                          className="px-3 py-2"
+                        >
                           {reserva.estado}
                         </Badge>
                       </td>
@@ -421,7 +474,11 @@ export default function ReservationList() {
                             className="btn btn-outline-primary rounded-circle"
                             title="Ver detalles"
                             onClick={() => handleDetailClick(reserva)}
-                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
@@ -440,9 +497,14 @@ export default function ReservationList() {
                                 setReservaSeleccionadaParaEstado(reserva);
                                 setShowEstadoModal(true);
                               }}
-                              style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                              style={{
+                                width: "44px",
+                                height: "44px",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform = "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -456,7 +518,11 @@ export default function ReservationList() {
                           <button
                             className="btn btn-outline-danger rounded-circle"
                             title="Cancelar reserva"
-                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out",}}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
@@ -464,7 +530,9 @@ export default function ReservationList() {
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                             onClick={() => handleCancelReservation(reserva.id)}
-                            disabled={reserva.estado.toLowerCase() !== "pendiente"}
+                            disabled={
+                              reserva.estado.toLowerCase() !== "pendiente"
+                            }
                           >
                             <FaTimes className="fs-5" />
                           </button>
@@ -490,7 +558,9 @@ export default function ReservationList() {
           {totalPages > 1 && (
             <nav className="d-flex justify-content-center mt-4">
               <ul className="pagination">
-                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                <li
+                  className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+                >
                   <button
                     className="page-link"
                     onClick={() => setCurrentPage(currentPage - 1)}
@@ -507,7 +577,9 @@ export default function ReservationList() {
                   ) : (
                     <li
                       key={page}
-                      className={`page-item ${currentPage === page ? "active" : ""}`}
+                      className={`page-item ${
+                        currentPage === page ? "active" : ""
+                      }`}
                     >
                       <button
                         className="page-link"
@@ -518,7 +590,11 @@ export default function ReservationList() {
                     </li>
                   )
                 )}
-                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                <li
+                  className={`page-item ${
+                    currentPage === totalPages ? "disabled" : ""
+                  }`}
+                >
                   <button
                     className="page-link"
                     onClick={() => setCurrentPage(currentPage + 1)}
@@ -532,7 +608,6 @@ export default function ReservationList() {
           )}
         </>
       )}
-
 
       {/* Modales */}
       {reservaSeleccionadaParaEstado && (
@@ -550,25 +625,24 @@ export default function ReservationList() {
           }
           onAfter={() => setUpdatingReservationId(null)}
           onSuccess={async (newEstado) => {
-          const reservaId = reservaSeleccionadaParaEstado.id;
+            const reservaId = reservaSeleccionadaParaEstado.id;
 
-          setReservations((prev) =>
-            prev.map((r) =>
-              r.id === reservaId ? { ...r, estado: newEstado } : r
-            )
-          );
+            setReservations((prev) =>
+              prev.map((r) =>
+                r.id === reservaId ? { ...r, estado: newEstado } : r
+              )
+            );
 
-          // Actualizar historial y estado del modal
-          await fetchHistorial(reservaId, true);
-          setSelectedReservation((prev) =>
-            prev ? { ...prev, estado: newEstado } : null
-          );
+            // Actualizar historial y estado del modal
+            await fetchHistorial(reservaId, true);
+            setSelectedReservation((prev) =>
+              prev ? { ...prev, estado: newEstado } : null
+            );
 
-          setShowEstadoModal(false);
-          setUpdatingReservationId(null);
-          setHighlightId(null);
-        }}
-
+            setShowEstadoModal(false);
+            setUpdatingReservationId(null);
+            setHighlightId(null);
+          }}
         />
       )}
 

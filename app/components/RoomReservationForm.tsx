@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Container, Row, Col, Spinner } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -41,6 +42,8 @@ type Aula = {
 type OptionType = { value: string; label: string };
 
 export default function ReserveClassroom() {
+  const { id } = useParams(); // <-- Para saber si estamos editando
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
@@ -53,77 +56,81 @@ export default function ReserveClassroom() {
     useState<SingleValue<OptionType>>(null);
 
   const { user } = useAuth();
+  const userId = user?.id;
+
+  const isDateTimeComplete = selectedDate && selectedTime;
+
+  // === Cargar aulas y usuarios ===
+  useEffect(() => {
+    const fetchAulas = async () => {
+      try {
+        const response = await api.get("/aulas");
+        setAvailableClassrooms(response.data);
+      } catch {
+        toast.error("Error al cargar aulas");
+      }
+    };
+
+    const fetchPrestamistas = async () => {
+      if (user?.role === Role.Administrador || user?.role === Role.Encargado) {
+        try {
+          const res = await api.get("/usuarios/rol/Prestamista");
+          const options = res.data.map((u: any) => ({
+            value: u.id,
+            label: `${u.first_name} ${u.last_name} (${u.email})`,
+          }));
+          setPrestamistaOptions(options);
+        } catch {
+          toast.error("Error al cargar usuarios prestamistas");
+        }
+      }
+    };
+
+    Promise.all([fetchAulas(), fetchPrestamistas()]).finally(() =>
+      setLoading(false)
+    );
+  }, [user]);
+
+  // === Si es edición: cargar reserva ===
+  useEffect(() => {
+    if (!id) return;
+
+    const loadReserva = async () => {
+      setLoading(true);
+      try {
+        const { data } = await api.get(`/reservas-aula/${id}`);
+        setSelectedClassroom(data.aula.name);
+        setSelectedDate(new Date(data.fecha));
+        setSelectedTime(data.horario);
+        if (data.user) {
+          setSelectedPrestamista({
+            value: data.user.id,
+            label: `${data.user.first_name} ${data.user.last_name} (${data.user.email})`,
+          });
+        }
+      } catch {
+        toast.error("Error al cargar datos de la reserva");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadReserva();
+  }, [id]);
+
+  const selectedClassroomData = availableClassrooms.find(
+    (c) => c.name === selectedClassroom
+  );
 
   const formatDateLocal = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
-
     return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(
       2,
       "0"
     )}`;
   };
-
-  const isRangeInFuture = (range: string, selectedDate: Date): boolean => {
-    const [start] = range.split(" - ");
-    const [hour, minute] = start.split(":").map(Number);
-
-    const now = new Date();
-    const rangeDate = new Date(selectedDate);
-    rangeDate.setHours(hour, minute, 0, 0);
-
-    return rangeDate > now;
-  };
-
-  const userId = user?.id;
-  const isDateTimeComplete = selectedDate && selectedTime;
-
-  useEffect(() => {
-    const fetchPrestamistas = async () => {
-      if (user?.role !== Role.Administrador && user?.role !== Role.Encargado)
-        return;
-
-      setLoading(true); // <-- activa loading para usuarios también
-
-      try {
-        const res = await api.get("/usuarios/rol/Prestamista");
-        const options = res.data.map((u: any) => ({
-          value: u.id,
-          label: `${u.first_name} ${u.last_name} (${u.email})`,
-        }));
-        setPrestamistaOptions(options);
-      } catch (err) {
-        toast.error("Error al cargar usuarios prestamistas");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPrestamistas();
-  }, [user]);
-
-  useEffect(() => {
-    const fetchAulas = async () => {
-      setLoading(true);
-
-      try {
-        const response = await api.get("/aulas");
-        setAvailableClassrooms(response.data);
-      } catch (error) {
-        console.error("Error al cargar aulas", error);
-        toast.error("Error al cargar las aulas");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAulas();
-  }, []);
-
-  const selectedClassroomData = availableClassrooms.find(
-    (c) => c.name === selectedClassroom
-  );
 
   const parseTime = (timeStr: string) => {
     const [hours, minutes] = timeStr.split(":").map(Number);
@@ -144,7 +151,6 @@ export default function ReserveClassroom() {
     while (current < endTime) {
       const next = new Date(current);
       next.setHours(current.getHours() + 2);
-
       if (next > endTime) break;
 
       result.push(
@@ -158,12 +164,20 @@ export default function ReserveClassroom() {
     return result;
   };
 
+  const isRangeInFuture = (range: string, selectedDate: Date): boolean => {
+    const [start] = range.split(" - ");
+    const [hour, minute] = start.split(":").map(Number);
+    const now = new Date();
+    const rangeDate = new Date(selectedDate);
+    rangeDate.setHours(hour, minute, 0, 0);
+    return rangeDate > now;
+  };
+
   const isDateEnabled = (date: Date): boolean => {
     if (!selectedClassroomData) return false;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     if (date < today) return false;
 
     const dateString = formatDateLocal(date);
@@ -187,10 +201,7 @@ export default function ReserveClassroom() {
     if (isToday) {
       for (const h of horariosValidos) {
         const slots = generateTimeSlots(h.start_time, h.end_time);
-        const hasAvailable = slots.some((range) =>
-          isRangeInFuture(range, date)
-        );
-        if (hasAvailable) return true;
+        if (slots.some((range) => isRangeInFuture(range, date))) return true;
       }
       return false;
     }
@@ -200,7 +211,6 @@ export default function ReserveClassroom() {
 
   const getTimeOptions = (): string[] => {
     if (!selectedDate || !selectedClassroomData) return [];
-
     const selectedDay = selectedDate.toLocaleDateString("en-US", {
       weekday: "long",
     });
@@ -233,7 +243,7 @@ export default function ReserveClassroom() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !selectedTime || !selectedClassroom) {
-      toast.error("Por favor, completa todos los campos");
+      toast.error("Completa todos los campos");
       return;
     }
 
@@ -244,25 +254,28 @@ export default function ReserveClassroom() {
     }
 
     try {
-      const response = await api.post("/reservasAula", {
+      const payload = {
         aula_id: aula.id,
         fecha: formatDateLocal(selectedDate),
         horario: selectedTime,
         user_id: selectedPrestamista?.value?.toString() || userId,
         estado: "pendiente",
-      });
+      };
 
-      console.log("Respuesta real:", response.data);
-
-      toast.success("Reserva realizada con éxito");
-      setSelectedDate(null);
-      setSelectedTime("");
-      setSelectedClassroom("");
+      let response;
+      if (id) {
+        response = await api.put(`/reservas-aula/${id}`, payload);
+        toast.success("Reserva actualizada");
+      } else {
+        response = await api.post("/reservasAula", payload);
+        toast.success("Reserva creada");
+      }
+      setTimeout(() => {
+        navigate("/reservations-room");
+      }, 2000);
     } catch (error: any) {
-      console.error(error);
       const message =
-        error.response?.data?.message ||
-        "Error al enviar la reserva. Intenta nuevamente.";
+        error.response?.data?.message || "Error al guardar la reserva";
       toast.error(message);
     }
   };
@@ -271,14 +284,13 @@ export default function ReserveClassroom() {
     setSelectedDate(null);
     setSelectedTime("");
     setSelectedClassroom("");
-    toast.success("Formulario limpiado");
   };
 
   if (loading) {
     return (
       <div className="text-center my-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-3">Cargando datos, espera por favor...</p>
+        <p className="mt-3">Cargando datos...</p>
       </div>
     );
   }
@@ -287,14 +299,13 @@ export default function ReserveClassroom() {
     <div className="form-container">
       <h2 className="mb-4 text-center fw-bold">
         <FaDoorOpen className="me-2" />
-        Reserva de Aula
+        {id ? "Editar Reserva" : "Reserva de Aula"}
       </h2>
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label htmlFor="classroom" className="form-label">
-            <FaDoorOpen className="me-2" />
-            Aula
+            <FaDoorOpen className="me-2" /> Aula
           </label>
           <select
             id="classroom"
@@ -318,8 +329,7 @@ export default function ReserveClassroom() {
 
         <div className="mb-4">
           <label htmlFor="date" className="form-label">
-            <FaCalendarAlt className="me-2" />
-            Fecha
+            <FaCalendarAlt className="me-2" /> Fecha
           </label>
           <DatePicker
             id="date"
@@ -342,8 +352,7 @@ export default function ReserveClassroom() {
 
         <div className="mb-4">
           <label htmlFor="time" className="form-label">
-            <FaClock className="me-2" />
-            Horario
+            <FaClock className="me-2" /> Horario
           </label>
           <select
             id="time"
@@ -361,12 +370,12 @@ export default function ReserveClassroom() {
             ))}
           </select>
         </div>
+
         {(user?.role === Role.Administrador ||
           user?.role === Role.Encargado) && (
           <div className="mb-4">
             <label className="form-label d-flex align-items-center">
-              <FaUser className="me-2" />
-              Seleccionar Usuario
+              <FaUser className="me-2" /> Seleccionar Usuario
             </label>
             <Select
               options={prestamistaOptions}
@@ -379,18 +388,17 @@ export default function ReserveClassroom() {
             />
           </div>
         )}
+
         <div className="form-actions">
           <button type="submit" className="btn primary-btn">
-            <FaCheck className="me-2" />
-            Reservar Aula
+            <FaCheck className="me-2" /> {id ? "Actualizar" : "Reservar"}
           </button>
           <button
             type="button"
             className="btn secondary-btn"
             onClick={handleClear}
           >
-            <FaBroom className="me-2" />
-            Limpiar
+            <FaBroom className="me-2" /> Limpiar
           </button>
         </div>
       </form>

@@ -45,6 +45,7 @@ import EquipoListPage from "./routes/EquipoListPage";
 import EquipoEditPage from "./routes/equipoEditPage";
 import PrediccionPorEquipoPage from "./routes/PrediccionPorEquipoPage";
 import AulaList from "./components/attendantadmin/RoomList";
+import EditEquipmentReservationForm from "./components/EditEquipmentReservationForm";
 
 const router = createBrowserRouter([
   {
@@ -107,6 +108,10 @@ const router = createBrowserRouter([
           {
             path: "reservationdetail/:idQr",
             element: <ReservationDetail />,
+          },
+          {
+            path: "/equipmentreservation/edit/:id",
+            element: <EditEquipmentReservationForm />,
           },
           {
             path: "reservationdetailAdmin",

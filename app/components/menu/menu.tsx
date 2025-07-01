@@ -87,9 +87,20 @@ const NotificationItem = ({
       ? "/reservations-room"
       : "/reservations";
 
-    navigate(targetRoute, {
-      state: { highlightReservaId: reservaId, page },
-    });
+    // ⚠️ Detectar si ya estás en la misma ruta
+    if (location.pathname === targetRoute) {
+      // 🔁 Forzar actualización sin navegar
+      window.dispatchEvent(
+        new CustomEvent("force-refresh", {
+          detail: { highlightReservaId: reservaId, page },
+        })
+      );
+    } else {
+      // 🚀 Navegación normal con estado
+      navigate(targetRoute, {
+        state: { highlightReservaId: reservaId, page },
+      });
+    }
   };
 
   return (

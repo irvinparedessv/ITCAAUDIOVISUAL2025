@@ -4,7 +4,7 @@ import { Button, Spinner, Table, Badge } from "react-bootstrap";
 import api from "../../../api/axios";
 import Filters from "./Filter";
 import PaginationComponent from "./Pagination";
-import { FaEye, FaTimes } from "react-icons/fa";
+import { FaEdit, FaEye, FaTimes } from "react-icons/fa";
 import type { ReservationRoom } from "~/types/reservationroom";
 import RoomDetailsModal from "../RoomDetailsModal";
 import type { Bitacora } from "~/types/bitacora";
@@ -104,6 +104,10 @@ const RoomReservationList = () => {
 
     adjustRangeForHighlight();
   }, [highlightId, range.from, range.to]);
+
+   const handleEditClick = (reserva: any) => {
+    navigate(`/reservas-aula/editar/${reserva.id}`, { state: { page } });
+  };
 
   // Scroll y quitar highlight después de 7s
   useEffect(() => {
@@ -367,6 +371,25 @@ const RoomReservationList = () => {
                             }
                           >
                             <FaEye className="fs-5" />
+                          </button>
+                          <button
+                            className="btn btn-outline-warning rounded-circle"
+                            title="Editar reserva"
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => handleEditClick(res)}
+                            disabled={res.estado.toLowerCase() !== "pendiente"}
+                          >
+                            <FaEdit className="fs-5" />
                           </button>
                           <button
                             className="btn btn-outline-danger rounded-circle"

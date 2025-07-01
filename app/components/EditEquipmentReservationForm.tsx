@@ -104,7 +104,10 @@ export default function EditEquipmentReservationForm() {
         },
     });
 
+    // 1) Cargar la reserva por ID SOLO cuando cambia 'id'
     useEffect(() => {
+        if (!id) return;
+
         const fetchData = async () => {
             try {
                 const res = await api.get(`/reserva-id/${id}`);
@@ -114,7 +117,7 @@ export default function EditEquipmentReservationForm() {
                 const startTime = cleanTime(reserva.fecha_reserva.split(" ")[1]);
                 const endTime = cleanTime(reserva.fecha_entrega.split(" ")[1]);
 
-                // Set prestamista info
+                // Prestamista info
                 const prestamista = {
                     value: reserva.user_id,
                     label: `${reserva.user.first_name} ${reserva.user.last_name} (${reserva.user.email})`
@@ -150,9 +153,10 @@ export default function EditEquipmentReservationForm() {
             }
         };
 
-        if (id) fetchData();
+        fetchData();
     }, [id]);
 
+    // 2) Cargar tipos de reserva, aulas y prestamistas SOLO cuando cambia 'user'
     useEffect(() => {
         const fetchOptions = async () => {
             try {
@@ -178,10 +182,6 @@ export default function EditEquipmentReservationForm() {
                         label: `${u.first_name} ${u.last_name} (${u.email})`
                     }))
                 );
-
-                if (formData.tipoReserva?.value) {
-                    await fetchEquipmentsByTipoReserva();
-                }
             } catch (err) {
                 toast.error("Error cargando opciones");
             } finally {
@@ -190,39 +190,53 @@ export default function EditEquipmentReservationForm() {
             }
         };
 
-        fetchOptions();
-    }, [user, formData.tipoReserva?.value]);
+        if (user) fetchOptions();
+    }, [user]);
 
-    const fetchEquipmentsByTipoReserva = async () => {
-        if (!formData.tipoReserva) {
+    // 3) Cargar equipos según tipo de reserva SOLO cuando cambia 'tipoReserva'
+    useEffect(() => {
+        if (!formData.tipoReserva?.value) {
             setAvailableEquipmentOptions([]);
             return;
         }
 
-        try {
-            setLoadingEquipments(true);
-            const eqRes = await api.get(`/equiposPorTipo/${formData.tipoReserva.value}`);
-            const options = eqRes.data.map((e: any) => ({
-                value: e.id,
-                label: e.nombre,
-                tipoEquipoId: e.tipo_equipo_id,
-            }));
+        const fetchEquipmentsByTipoReserva = async () => {
+            try {
+                if (!formData.tipoReserva?.value) {
+                    // Si no hay tipoReserva, no haces nada
+                    setAvailableEquipmentOptions([]);
+                    setAllEquipmentOptions([]);
+                    return;
+                }
 
-            setAllEquipmentOptions(options);
+                setLoadingEquipments(true);
 
-            if (isDateTimeComplete) {
-                setAvailableEquipmentOptions([]);
-                await checkEquipmentAvailability(options);
-            } else {
-                setAvailableEquipmentOptions(options);
+                const eqRes = await api.get(`/equiposPorTipo/${formData.tipoReserva.value}`);
+                const options = eqRes.data.map((e: any) => ({
+                    value: e.id,
+                    label: e.nombre,
+                    tipoEquipoId: e.tipo_equipo_id,
+                }));
+
+                setAllEquipmentOptions(options);
+
+                if (isDateTimeComplete) {
+                    setAvailableEquipmentOptions([]);
+                    await checkEquipmentAvailability(options);
+                } else {
+                    setAvailableEquipmentOptions(options);
+                }
+            } catch (err) {
+                console.error("Error cargando equipos:", err);
+                toast.error("Error cargando equipos");
+            } finally {
+                setLoadingEquipments(false);
             }
-        } catch (err) {
-            console.error("Error cargando equipos:", err);
-            toast.error("Error cargando equipos");
-        } finally {
-            setLoadingEquipments(false);
-        }
-    };
+        };
+
+
+        fetchEquipmentsByTipoReserva();
+    }, [formData.tipoReserva?.value, isDateTimeComplete]);
 
     const checkEquipmentAvailability = async (equipments: EquipmentOption[]) => {
         try {
@@ -398,30 +412,6 @@ export default function EditEquipmentReservationForm() {
         }
     };
 
-
-    const getStartTimeOptions = (): string[] => {
-        const now = new Date();
-        const selectedDateStr = formData.date;
-        const isTodaySelected = selectedDateStr === new Date().toISOString().split("T")[0];
-
-        return timeOptions.filter((time) => {
-            const [hourStr, minuteStr] = time.split(":");
-            const hour = Number(hourStr);
-            const minute = Number(minuteStr);
-
-            // Limita el rango a 7:00 - 17:00
-            if (hour < 7 || (hour > 17 || (hour === 17 && minute > 0))) return false;
-
-            if (isTodaySelected) {
-                const selectedTime = new Date(`${selectedDateStr}T${time}`);
-                const minTime = new Date(now.getTime() + 30 * 60000); // Ahora + 30 min
-                return selectedTime > minTime;
-            }
-
-            return true;
-        });
-    };
-
     return (
         <div className="form-container">
             <h2 className="mb-4 text-center fw-bold">Editar Reservación</h2>
@@ -464,52 +454,30 @@ export default function EditEquipmentReservationForm() {
                         <label className="form-label d-flex align-items-center">
                             <FaClock className="me-2" /> Hora de inicio
                         </label>
-                        <select
-                            className="form-select"
-                            value={formData.startTime}
-                            onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                            required
-                            disabled={true}
-                        >
-                            <option value="">Selecciona hora</option>
-                            {getStartTimeOptions().map((time) => (
-                                <option key={time} value={time}>{formatTo12h(time)}</option>
-                            ))}
+                        <select className="form-select" value={formData.startTime} disabled>
+                            {formData.startTime ? (
+                                <option value={formData.startTime}>
+                                    {formatTo12h(formData.startTime)}
+                                </option>
+                            ) : (
+                                <option value="">--:--</option>
+                            )}
                         </select>
                     </div>
                     <div className="col-md-6">
                         <label className="form-label d-flex align-items-center">
                             <FaClock className="me-2" /> Hora de entrega
                         </label>
-                        <select
-                            className="form-select"
-                            value={formData.endTime}
-                            onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
-                            required
-                            disabled={true}
-                        >
-                            <option value="">Selecciona hora</option>
-                            {timeOptions
-                                .filter((time) => {
-                                    if (!formData.startTime) return false;
-
-                                    const [hourStr, minStr] = time.split(":");
-                                    const hour = Number(hourStr);
-                                    const minutes = Number(minStr);
-                                    const [startHourStr, startMinStr] = formData.startTime.split(":");
-                                    const startHour = Number(startHourStr);
-                                    const startMinutes = Number(startMinStr);
-
-                                    const timeHourMin = hour * 60 + minutes;
-                                    const startHourMin = startHour * 60 + startMinutes;
-
-                                    return timeHourMin > startHourMin &&
-                                        (hour < 20 || (hour === 20 && minutes === 0));
-                                })
-                                .map((time) => (
-                                    <option key={time} value={time}>{formatTo12h(time)}</option>
-                                ))}
+                        <select className="form-select" value={formData.endTime} disabled>
+                            {formData.endTime ? (
+                                <option value={formData.endTime}>
+                                    {formatTo12h(formData.endTime)}
+                                </option>
+                            ) : (
+                                <option value="">--:--</option>
+                            )}
                         </select>
+
                     </div>
                 </div>
 

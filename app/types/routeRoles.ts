@@ -22,7 +22,7 @@ export const routeRoles: Record<string, Role[]> = {
 
   // -- Espacios --
   "/createRoom": [Role.Administrador],
-  "/reservations-room": [Role.Administrador, Role.EspacioEncargado],
+  "/reservations-room": [Role.Administrador, Role.EspacioEncargado, Role.Prestamista,],
   "/reservationsroom": [
     Role.Administrador,
     Role.EspacioEncargado,

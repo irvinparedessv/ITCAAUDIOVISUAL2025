@@ -425,6 +425,7 @@ const RoomReservationList = () => {
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                             onClick={() => handleEditClick(res)}
+                            disabled={res.estado.toLowerCase() !== "pendiente"}
                           >
                             <FaEdit className="fs-5" />
                           </button>

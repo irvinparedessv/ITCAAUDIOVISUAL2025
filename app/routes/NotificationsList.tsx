@@ -36,7 +36,7 @@ interface Notification {
 }
 
 export default function NotificationsList() {
-  const { 
+  const {
     markAsRead,
   } = useNotificaciones({ includeArchived: true });
   const navigate = useNavigate();
@@ -49,9 +49,9 @@ export default function NotificationsList() {
   const [showDeleteSuccessToast, setShowDeleteSuccessToast] = useState(false);
   const [showDeleteErrorToast, setShowDeleteErrorToast] = useState(false);
 
-  useEffect(() => {
-    api
-      .get("/notificaciones/historial")
+  const loadNotifications = () => {
+    setIsLoading(true);
+    api.get("/notificaciones/historial")
       .then((res) => {
         setNotifications(res.data.notifications);
         setIsLoading(false);
@@ -60,7 +60,17 @@ export default function NotificationsList() {
         console.error("Error al cargar notificaciones", err);
         setIsLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadNotifications();
   }, []);
+
+  const handleMarkAllAsRead = async () => {
+    await markAsRead(); // marcar todas
+    loadNotifications(); // recargar lista desde backend
+    window.dispatchEvent(new CustomEvent("notification-updated"));
+  };
 
   const handleSelect = (id: string) => {
     const notification = notifications.find((n) => n.id === id);
@@ -68,7 +78,7 @@ export default function NotificationsList() {
       console.error("Notificación no encontrada");
       return;
     }
-    
+
     setSelectedNotification(notification);
     setShowModal(true);
 
@@ -79,12 +89,22 @@ export default function NotificationsList() {
             n.id === id ? { ...n, read_at: res.data.notification.read_at } : n
           )
         );
+
+        // ✅ Añade esto justo aquí:
+        markAsRead(id); // tu función ya importada desde useNotificaciones
+
+        window.dispatchEvent(
+          new CustomEvent("notification-updated", {
+            detail: { id }, // opcional, si el menú lo necesita
+          })
+        );
       })
       .catch((err) => {
         console.error("Error al cargar detalle de la notificación", err);
         setNotifications((prev) => prev.filter((n) => n.id !== id));
       });
   };
+
 
   function deleteNotification(id: string) {
     api.delete(`/notificaciones/${id}`)
@@ -95,6 +115,7 @@ export default function NotificationsList() {
           setShowModal(false);
         }
         setShowDeleteSuccessToast(true);
+        window.dispatchEvent(new CustomEvent("notification-updated"));
       })
       .catch((err) => {
         console.error("Error al eliminar notificación", err);
@@ -113,6 +134,7 @@ export default function NotificationsList() {
         setSelectedNotification(null);
         setShowModal(false);
         setShowDeleteSuccessToast(true);
+        window.dispatchEvent(new CustomEvent("notification-updated"));
       })
       .catch((err) => {
         console.error("Error al eliminar todas las notificaciones", err);
@@ -186,13 +208,13 @@ export default function NotificationsList() {
   const readNotifications = notifications.filter((n) => n.read_at);
 
   const renderNotificationDetail = (notification: Notification) => {
-    const isEquipo = notification.type.includes('equipo') || 
-                     (notification.data.reserva?.equipos && notification.data.reserva.equipos.length > 0);
-    const isAula = notification.type.includes('aula') || 
-                   (notification.data.reserva?.horario && !isEquipo);
+    const isEquipo = notification.type.includes('equipo') ||
+      (notification.data.reserva?.equipos && notification.data.reserva.equipos.length > 0);
+    const isAula = notification.type.includes('aula') ||
+      (notification.data.reserva?.horario && !isEquipo);
 
     const getEstadoColor = (estado: string) => {
-      switch(estado?.toLowerCase()) {
+      switch (estado?.toLowerCase()) {
         case 'aprobado':
           return 'success';
         case 'pendiente':
@@ -288,7 +310,7 @@ export default function NotificationsList() {
                   <div className="text-muted">
                     {formatDate(
                       notification.data.reserva?.fecha_reserva ??
-                        notification.data.fecha_reserva
+                      notification.data.fecha_reserva
                     )}
                   </div>
                 </Col>
@@ -298,7 +320,7 @@ export default function NotificationsList() {
                   <div className="text-muted">
                     {formatDate(
                       notification.data.reserva?.fecha_entrega ??
-                        notification.data.fecha_entrega
+                      notification.data.fecha_entrega
                     )}
                   </div>
                 </Col>
@@ -366,7 +388,7 @@ export default function NotificationsList() {
           </Row>
 
           <div className="mt-4 d-flex justify-content-end">
-            <Button 
+            <Button
               variant="primary"
               onClick={() => {
                 setShowModal(false);
@@ -402,15 +424,31 @@ export default function NotificationsList() {
           <Card className="shadow rounded-4 border-0">
             <Card.Header className="card-header-dark-red rounded-top-4 d-flex justify-content-between align-items-center">
               <h4 className="mb-0">📩 Notificaciones</h4>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleDeleteAll}
-                disabled={notifications.length === 0}
-              >
-                Eliminar todas
-              </Button>
+              <div className="d-flex gap-2 align-items-center">
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={handleMarkAllAsRead}
+                  disabled={unreadNotifications.length === 0}
+                  className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill shadow-sm"
+                >
+                  ✅
+                  <span>Marcar todas como leídas</span>
+                </Button>
+
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleDeleteAll}
+                  disabled={notifications.length === 0}
+                  className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill shadow-sm"
+                >
+                  🗑️
+                  <span>Eliminar todas</span>
+                </Button>
+              </div>
             </Card.Header>
+
 
             <Card.Body>
               {isLoading ? (
@@ -452,8 +490,8 @@ export default function NotificationsList() {
                               >
                                 <div>
                                   <div className="d-flex align-items-center">
-                                    {notification.type.includes('equipo') ? '📦 ' : 
-                                     notification.type.includes('aula') ? '🏫 ' : '📄 '}
+                                    {notification.type.includes('equipo') ? '📦 ' :
+                                      notification.type.includes('aula') ? '🏫 ' : '📄 '}
                                     <strong className="ms-2">
                                       {notification.data.message ??
                                         "Notificación sin mensaje"}
@@ -497,8 +535,8 @@ export default function NotificationsList() {
                               >
                                 <div>
                                   <div className="d-flex align-items-center">
-                                    {notification.type.includes('equipo') ? '📦 ' : 
-                                     notification.type.includes('aula') ? '🏫 ' : '📄 '}
+                                    {notification.type.includes('equipo') ? '📦 ' :
+                                      notification.type.includes('aula') ? '🏫 ' : '📄 '}
                                     <span className="ms-2 text-muted">
                                       {notification.data.message ??
                                         "Notificación sin mensaje"}
@@ -580,8 +618,8 @@ export default function NotificationsList() {
             <small className="text-muted">Ahora</small>
           </Toast.Header>
           <Toast.Body className="text-white">
-            {showDeleteAllToast ? 
-              "Todas las notificaciones han sido eliminadas correctamente" : 
+            {showDeleteAllToast ?
+              "Todas las notificaciones han sido eliminadas correctamente" :
               "La notificación ha sido eliminada correctamente"}
           </Toast.Body>
         </Toast>
@@ -600,8 +638,8 @@ export default function NotificationsList() {
             <small className="text-muted">Ahora</small>
           </Toast.Header>
           <Toast.Body className="text-white">
-            {showDeleteAllToast ? 
-              "Ocurrió un error al intentar eliminar las notificaciones" : 
+            {showDeleteAllToast ?
+              "Ocurrió un error al intentar eliminar las notificaciones" :
               "Ocurrió un error al intentar eliminar la notificación"}
           </Toast.Body>
         </Toast>

@@ -106,9 +106,8 @@ const NotificationItem = ({
   return (
     <Dropdown.Item
       onClick={handleClick}
-      className={`d-flex justify-content-between align-items-start ${
-        noti.unread ? "bg-unreadnotification" : ""
-      }`}
+      className={`d-flex justify-content-between align-items-start ${noti.unread ? "bg-unreadnotification" : ""
+        }`}
     >
       <div className="flex-grow-1">
         <div className="fw-bold">{noti.data.title}</div>
@@ -248,11 +247,10 @@ const HoverDropdown = ({ title, icon: Icon, children }: HoverDropdownProps) => {
     >
       <Dropdown.Toggle
         as={DesktopToggle}
-        id={`dropdown-${
-          typeof title === "string"
+        id={`dropdown-${typeof title === "string"
             ? title.toLowerCase().replace(" ", "-")
             : "dropdown"
-        }`}
+          }`}
       >
         <Icon className="me-1" /> {title}
       </Dropdown.Toggle>
@@ -295,6 +293,19 @@ const NavbarMenu = () => {
     "/reset-password",
     "/forbidden",
   ];
+
+
+  useEffect(() => {
+    const handleNotificationUpdate = () => {
+      refreshNotifications(); // recarga automáticamente
+    };
+
+    window.addEventListener("notification-updated", handleNotificationUpdate);
+
+    return () => {
+      window.removeEventListener("notification-updated", handleNotificationUpdate);
+    };
+  }, []);
 
   const { darkMode, toggleDarkMode } = useTheme();
 
@@ -540,9 +551,8 @@ const NavbarMenu = () => {
               <FaBell className="me-2" size={16} />
               {unreadCount > 0 && (
                 <span
-                  className={`badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle ${
-                    unreadCount > 9 ? "px-1" : ""
-                  }`}
+                  className={`badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle ${unreadCount > 9 ? "px-1" : ""
+                    }`}
                 >
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>

@@ -4,15 +4,16 @@ import { Button, Form, InputGroup, Spinner } from "react-bootstrap";
 import toast from "react-hot-toast";
 import {
   FaEdit,
-  FaFilter,
   FaTrash,
   FaTimes,
   FaSearch,
   FaCheck,
+  FaUser,
+  FaChevronDown,
+  FaChevronUp,
 } from "react-icons/fa";
 import { getAulas, deleteAula } from "../../services/aulaService";
 import { useNavigate } from "react-router-dom";
-import { APPLARAVEL } from "./../../constants/constant";
 
 export default function AulaList() {
   const [aulas, setAulas] = useState<Aula[]>([]);
@@ -24,8 +25,9 @@ export default function AulaList() {
   const [searchInput, setSearchInput] = useState(filters.search || "");
   const [total, setTotal] = useState(0);
   const [lastPage, setLastPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
+
   const navigate = useNavigate();
 
   const fetchAulas = async () => {
@@ -51,7 +53,7 @@ export default function AulaList() {
       if (searchInput !== filters.search) {
         handleFilterUpdate("search", searchInput);
       }
-    }, 1000);
+    }, 500);
     return () => clearTimeout(delayDebounce);
   }, [searchInput]);
 
@@ -92,13 +94,12 @@ export default function AulaList() {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 
-  const resetFilters = () => {
-    setFilters({ search: "", page: 1, perPage: 5 });
-    setSearchInput("");
-  };
-
   const handlePageChange = (page: number) => {
     setFilters((prev) => ({ ...prev, page }));
+  };
+
+  const toggleExpand = (id: number) => {
+    setExpandedRow(expandedRow === id ? null : id);
   };
 
   return (
@@ -131,14 +132,6 @@ export default function AulaList() {
             )}
           </InputGroup>
         </div>
-
-        {/*  <Button
-          variant="outline-secondary"
-          onClick={() => setShowFilters(!showFilters)}
-          className="d-flex align-items-center gap-2"
-        >
-          <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-        </Button> */}
       </div>
 
       <table className="table table-hover align-middle text-center">
@@ -146,13 +139,14 @@ export default function AulaList() {
           <tr>
             <th className="rounded-top-start">Nombre</th>
             <th>Imagen</th>
+            <th>Encargados</th>
             <th className="rounded-top-end">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={3} className="text-center py-4">
+              <td colSpan={4} className="text-center py-4">
                 <Spinner animation="border" role="status" />
               </td>
             </tr>
@@ -167,8 +161,51 @@ export default function AulaList() {
                     <FaTimes className="text-muted" title="Sin imagen" />
                   )}
                 </td>
+                <td className="text-start">
+                  {aula.encargados.length > 0 && (
+                    <>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => toggleExpand(aula.id)}
+                      >
+                        {expandedRow === aula.id ? (
+                          <>
+                            Ocultar <FaChevronUp />
+                          </>
+                        ) : (
+                          <>
+                            Ver <FaChevronDown />
+                          </>
+                        )}
+                      </Button>
+
+                      {expandedRow === aula.id && (
+                        <ul className="mb-0 mt-2 ps-3">
+                          {aula.encargados.map((enc) => (
+                            <li key={enc.id}>
+                              {enc.first_name} {enc.last_name} (ID: {enc.id})
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  )}
+                  {aula.encargados.length === 0 && (
+                    <label>Sin encargados</label>
+                  )}
+                </td>
                 <td>
                   <div className="d-flex justify-content-center gap-2">
+                    <Button
+                      variant="outline-success"
+                      className="rounded-circle"
+                      style={{ width: 44, height: 44 }}
+                      onClick={() => navigate(`/aulas/encargados/${aula.id}`)}
+                      title="Asignar encargados"
+                    >
+                      <FaUser />
+                    </Button>
                     <Button
                       variant="outline-primary"
                       className="rounded-circle"
@@ -191,7 +228,7 @@ export default function AulaList() {
             ))
           ) : (
             <tr>
-              <td colSpan={3} className="text-muted">
+              <td colSpan={4} className="text-muted">
                 No se encontraron aulas.
               </td>
             </tr>

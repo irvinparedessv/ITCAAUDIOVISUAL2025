@@ -46,6 +46,7 @@ import EquipoEditPage from "./routes/equipoEditPage";
 import PrediccionPorEquipoPage from "./routes/PrediccionPorEquipoPage";
 import AulaList from "./components/attendantadmin/RoomList";
 import EditEquipmentReservationForm from "./components/EditEquipmentReservationForm";
+import AsignarEncargadosForm from "./components/FormEncargadosEspacio";
 
 const router = createBrowserRouter([
   {
@@ -148,6 +149,10 @@ const router = createBrowserRouter([
           {
             path: "reservations-room",
             element: <EspacioListWrapper />,
+          },
+          {
+            path: "aulas/encargados/:aulaId",
+            element: <AsignarEncargadosForm />,
           },
           {
             path: "tipoequipo",

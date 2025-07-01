@@ -23,7 +23,7 @@ type AuthContextType = {
     token: string;
     user: UserLogin;
   }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   checkAccess: (route: string) => boolean;
   setUser: React.Dispatch<React.SetStateAction<UserLogin | null>>;
 };
@@ -53,7 +53,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
         if (response.data.valid) {
-          // Evitar actualizar estado si ya son iguales
           setToken((prev) => (prev !== storedToken ? storedToken : prev));
           setUser((prev) => {
             const parsedUser = JSON.parse(storedUser);
@@ -117,11 +116,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      if (token) {
+        await api.post(
+          "/logout",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
+    } catch (error) {
+      console.warn("Error cerrando sesión en el servidor:", error);
+    } finally {
+      // Desconectar Laravel Echo
+      if (window.Echo) {
+        window.Echo.disconnect();
+      }
+
+      // Eliminar token del frontend
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setToken(null);
+      setUser(null);
+    }
   };
 
   const checkAccess = (route: string) => {
@@ -151,9 +172,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  console.log("useAuth context:", context);
   if (!context) {
-    console.log(context);
     throw new Error("useAuth debe usarse dentro de AuthProvider");
   }
   return context;

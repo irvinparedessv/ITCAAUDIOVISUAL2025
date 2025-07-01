@@ -13,17 +13,8 @@ import toast from "react-hot-toast";
 import api from "../api/axios";
 import { APPLARAVEL } from "~/constants/constant";
 import { Spinner } from "react-bootstrap";
-
-const diasSemana = [
-  { value: "Monday", label: "Lunes" },
-  { value: "Tuesday", label: "Martes" },
-  { value: "Wednesday", label: "Miércoles" },
-  { value: "Thursday", label: "Jueves" },
-  { value: "Friday", label: "Viernes" },
-  { value: "Saturday", label: "Sábado" },
-  { value: "Sunday", label: "Domingo" },
-];
-
+import { diasSemana } from "../constants/day";
+import type { AvailableTime } from "../types/aula";
 export const CreateSpaceForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -32,13 +23,13 @@ export const CreateSpaceForm = () => {
   const [name, setName] = useState("");
   const [renderImages, setRenderImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [availableTimes, setAvailableTimes] = useState<any[]>([]);
-  const [timeInput, setTimeInput] = useState({
+  const [availableTimes, setAvailableTimes] = useState<AvailableTime[]>([]);
+  const [timeInput, setTimeInput] = useState<AvailableTime>({
     start_date: "",
     end_date: "",
     start_time: "",
     end_time: "",
-    days: [] as string[],
+    days: [],
   });
 
   const [loading, setLoading] = useState(isEdit);

@@ -24,6 +24,16 @@ export type UserLogin = {
   estado: number; // ahora obligatorio
 };
 
+export interface User {
+  id: number;
+  first_name: string;
+  last_name: string;
+}
+
+export interface AsignarEncargadosFormProps {
+  aulaId: number;
+}
+
 // Para crear usuarios, incluyendo imagen opcional tipo archivo
 export type UserCreateDTO = Omit<
   User,

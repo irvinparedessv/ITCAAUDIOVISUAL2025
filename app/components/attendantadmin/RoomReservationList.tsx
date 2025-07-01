@@ -59,6 +59,55 @@ const RoomReservationList = () => {
     setInitialRange(initial); // guardar el rango original
   }, []);
 
+  // Escuchar evento force-refresh (cuando ya estamos en /reservations-room)
+ // Escuchar evento force-refresh (cuando ya estamos en /reservations-room)
+useEffect(() => {
+  const handleForceRefresh = async (e: any) => {
+    const { highlightReservaId, page: newPage } = e.detail || {};
+
+    if (!highlightReservaId) return;
+
+    // Establecer la página primero
+    if (newPage && newPage !== page) {
+      setPage(newPage);
+    }
+
+    // Siempre forzamos el highlight
+    setHighlightId(highlightReservaId);
+    initialHighlightHandled.current = false;
+
+    // Buscar si la reserva ya está en la lista actual
+    const existsInList = reservations.some(r => r.id === highlightReservaId);
+
+    // Si no está en la lista actual, recarga los datos forzadamente
+    if (!existsInList) {
+      setIsLoading(true);
+      try {
+        const response = await api.get("/reservas-aula", {
+          params: {
+            from: range.from?.toISOString().split("T")[0],
+            to: range.to?.toISOString().split("T")[0],
+            page: newPage || page,
+            per_page: perPage,
+            search,
+            status,
+          },
+        });
+        setReservations(response.data.data);
+        setTotalPages(response.data.last_page);
+      } catch (error) {
+        console.error("Error al forzar carga de reservas:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  window.addEventListener("force-refresh", handleForceRefresh);
+  return () => window.removeEventListener("force-refresh", handleForceRefresh);
+}, [page, range.from, range.to, search, status, reservations]);
+
+
   // Reset página al cambiar filtros
   useEffect(() => {
     setPage(1);

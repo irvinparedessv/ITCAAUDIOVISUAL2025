@@ -66,6 +66,21 @@ export default function ReservationList() {
   const [endDate, setEndDate] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
+  useEffect(() => {
+  const handleForceRefresh = (e: CustomEvent) => {
+    const { highlightReservaId, page } = e.detail || {};
+    if (page) setCurrentPage(page);
+    if (highlightReservaId) setHighlightId(highlightReservaId);
+    fetchReservations();
+  };
+
+  window.addEventListener("force-refresh", handleForceRefresh as EventListener);
+  return () => {
+    window.removeEventListener("force-refresh", handleForceRefresh as EventListener);
+  };
+}, []);
+
+
   // Efectos
   useEffect(() => {
     if (location.state?.page) setCurrentPage(location.state.page);

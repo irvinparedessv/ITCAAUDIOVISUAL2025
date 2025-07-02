@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import type { Equipo, EquipoCreateDTO } from "~/types/equipo";
-import EquipoForm from "~/components/equipo/EquipoForm";
+import EquipmentForm from "~/components/equipment/EquipmentForm";
 import { getEquipoById, updateEquipo } from "~/services/equipoService";
 import { Spinner } from "react-bootstrap";
 
@@ -88,7 +88,7 @@ export default function EquipmentEditPage() {
   return (
     <div className="container py-4">
 
-      <EquipoForm
+      <EquipmentForm
         equipoEditando={equipo}
         onSubmit={handleSubmit}
         resetEdit={() => navigate("/equipolist")}

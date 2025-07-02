@@ -4,8 +4,7 @@ import { deleteEquipo, getEquipos } from "../../services/equipoService";
 import { getTipoEquipos } from "../../services/tipoEquipoService";
 import type { Equipo } from "app/types/equipo";
 import type { TipoEquipo } from "app/types/tipoEquipo";
-import EquipoList from "../../components/equipo/EquipoList";
-import { Button, Spinner } from "react-bootstrap";
+import EquipmentList from "../../components/equipment/EquipmentList";
 
 export default function EquipmentListPage() {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
@@ -48,7 +47,7 @@ export default function EquipmentListPage() {
 
   return (
     <div className="container mt-4">
-      <EquipoList
+      <EquipmentList
         tipos={tipos}
         onEdit={handleEdit}
         onDelete={handleDelete}

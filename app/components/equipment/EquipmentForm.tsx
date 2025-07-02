@@ -26,7 +26,7 @@ interface Props {
   onDelete?: (id: number) => void;
 }
 
-export default function EquipoForm({
+export default function EquipmentForm({
   onSubmit,
   equipoEditando,
   resetEdit,

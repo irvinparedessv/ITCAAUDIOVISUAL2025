@@ -36,7 +36,7 @@ export type Equipo = {
   };
 };
 
-type CodigoQR = {
+export type CodigoQR = {
   id: string; // GUID
   reserva_id: number;
   created_at: string;

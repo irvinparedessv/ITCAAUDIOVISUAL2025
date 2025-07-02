@@ -71,7 +71,10 @@ const RoomDetailsModal: React.FC<Props> = ({
                 </div>
                 <div className="ps-5">
                   <div className="d-flex align-items-center mb-3">
-                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
+                    <span
+                      className="d-inline-block text-nowrap me-3"
+                      style={{ width: "100px", fontWeight: "500" }}
+                    >
                       <i className="bi bi-person me-2 text-body-emphasis"></i>
                       Nombre
                     </span>
@@ -81,7 +84,10 @@ const RoomDetailsModal: React.FC<Props> = ({
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
+                    <span
+                      className="d-inline-block text-nowrap me-3"
+                      style={{ width: "100px", fontWeight: "500" }}
+                    >
                       <i className="bi bi-envelope me-2 text-body-emphasis"></i>
                       Correo
                     </span>
@@ -90,12 +96,16 @@ const RoomDetailsModal: React.FC<Props> = ({
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
+                    <span
+                      className="d-inline-block text-nowrap me-3"
+                      style={{ width: "100px", fontWeight: "500" }}
+                    >
                       <i className="bi bi-person-gear me-2 text-body-emphasis"></i>
                       Rol
                     </span>
                     <p className="mb-0 fw-semibold flex-grow-1">
-                      {selectedReservation.user?.role?.nombre ?? "Rol desconocido"}
+                      {selectedReservation.user?.role?.nombre ??
+                        "Rol desconocido"}
                     </p>
                   </div>
                 </div>
@@ -117,7 +127,10 @@ const RoomDetailsModal: React.FC<Props> = ({
                 </div>
                 <div className="ps-5">
                   <div className="d-flex align-items-center mb-3">
-                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
+                    <span
+                      className="d-inline-block text-nowrap me-3"
+                      style={{ width: "100px", fontWeight: "500" }}
+                    >
                       <i className="bi bi-door-open me-2 text-body-emphasis"></i>
                       Aula
                     </span>
@@ -126,7 +139,10 @@ const RoomDetailsModal: React.FC<Props> = ({
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
+                    <span
+                      className="d-inline-block text-nowrap me-3"
+                      style={{ width: "100px", fontWeight: "500" }}
+                    >
                       <i className="bi bi-calendar me-2 text-body-emphasis"></i>
                       Fecha
                     </span>
@@ -135,7 +151,10 @@ const RoomDetailsModal: React.FC<Props> = ({
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
+                    <span
+                      className="d-inline-block text-nowrap me-3"
+                      style={{ width: "100px", fontWeight: "500" }}
+                    >
                       <i className="bi bi-clock me-2 text-body-emphasis"></i>
                       Horario
                     </span>
@@ -144,7 +163,10 @@ const RoomDetailsModal: React.FC<Props> = ({
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
+                    <span
+                      className="d-inline-block text-nowrap me-3"
+                      style={{ width: "100px", fontWeight: "500" }}
+                    >
                       <i className="bi bi-info-circle me-2 text-body-emphasis"></i>
                       Estado
                     </span>
@@ -163,7 +185,10 @@ const RoomDetailsModal: React.FC<Props> = ({
                     </Badge>
                   </div>
                   <div className="d-flex align-items-center mb-3">
-                    <span className="d-inline-block text-nowrap me-3" style={{ width: "100px", fontWeight: "500" }}>
+                    <span
+                      className="d-inline-block text-nowrap me-3"
+                      style={{ width: "100px", fontWeight: "500" }}
+                    >
                       <i className="bi bi-chat-left-text me-2 text-body-emphasis"></i>
                       Comentario
                     </span>
@@ -222,7 +247,7 @@ const RoomDetailsModal: React.FC<Props> = ({
                 <div className="text-center">
                   <div className="bg-body-secondary p-3 rounded-3 shadow-sm mb-3 d-inline-block">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.id}&size=300x300`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.codigo_qr.id}&size=300x300`}
                       alt="Código QR de Reserva"
                       style={{
                         maxWidth: "100%",
@@ -238,7 +263,7 @@ const RoomDetailsModal: React.FC<Props> = ({
                 <p className="small bg-body-secondary p-2 rounded text-break">
                   <code className="text-body-secondary">
                     {qrBaseUrl}
-                    {selectedReservation.id}
+                    {selectedReservation.codigo_qr.id}
                   </code>
                 </p>
               </div>

@@ -162,7 +162,7 @@ const RoomDetailsModal: React.FC<Props> = ({
                 <div className="text-center">
                   <div className="bg-body-secondary p-3 rounded-3 shadow-sm mb-3 d-inline-block">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.id}&size=300x300`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${qrBaseUrl}${selectedReservation.codigo_qr.id}&size=300x300`}
                       alt="Código QR de Reserva"
                       style={{
                         maxWidth: "100%",

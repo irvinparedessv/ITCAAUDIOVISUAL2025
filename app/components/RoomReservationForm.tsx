@@ -42,6 +42,16 @@ type Aula = {
 };
 type OptionType = { value: string; label: string };
 
+const messages = {
+  update: {
+    question: "¿Seguro que deseas actualizar esta reserva?",
+    confirmText: "Sí, actualizar",
+    cancelText: "Cancelar",
+    success: "Reserva actualizada correctamente",
+    error: "Error actualizando la reserva"
+  }
+};
+
 export default function ReserveClassroom() {
   const { id } = useParams(); // <-- Para saber si estamos editando
   const navigate = useNavigate();
@@ -50,6 +60,8 @@ export default function ReserveClassroom() {
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
   const [availableClassrooms, setAvailableClassrooms] = useState<Aula[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [prestamistaOptions, setPrestamistaOptions] = useState<OptionType[]>(
     []
   );
@@ -63,6 +75,42 @@ export default function ReserveClassroom() {
 
   const handleBack = () => {
     navigate(-1); // Regresa a la página anterior
+  };
+
+  
+  const showConfirmationToast = () => {
+    return new Promise((resolve) => {
+      toast(
+        (t) => (
+          <div>
+            <p>{messages.update.question}</p>
+            <div className="d-flex justify-content-end gap-2 mt-2">
+              <button
+                className="btn btn-sm btn-success"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  resolve(true);
+                }}
+              >
+                {messages.update.confirmText}
+              </button>
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  resolve(false);
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          duration: 5000,
+        }
+      );
+    });
   };
 
   // === Cargar aulas y usuarios ===
@@ -248,16 +296,19 @@ export default function ReserveClassroom() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validar que campos obligatorios estén llenos
     if (!selectedDate || !selectedTime || !selectedClassroom) {
       toast.error("Completa todos los campos");
       return;
     }
 
-    // En edición solo el horario puede cambiar, no validar aula ni fecha (ya vienen deshabilitados)
     if (!id && (!selectedDate || !selectedTime || !selectedClassroom)) {
       toast.error("Completa todos los campos");
       return;
+    }
+
+    if (id) {
+      const userConfirmed = await showConfirmationToast();
+      if (!userConfirmed) return;
     }
 
     const aula = availableClassrooms.find((c) => c.name === selectedClassroom);
@@ -267,6 +318,8 @@ export default function ReserveClassroom() {
     }
 
     try {
+      setIsUpdating(true);
+
       const payload = {
         aula_id: aula.id,
         fecha: formatDateLocal(selectedDate),
@@ -278,32 +331,49 @@ export default function ReserveClassroom() {
       let response;
       if (id) {
         response = await api.put(`/reservas-aula/${id}`, payload);
-        toast.success("Reserva actualizada");
+        toast.success(messages.update.success);
       } else {
         response = await api.post("/reservasAula", payload);
         toast.success("¡Reserva creada exitosamente!");
       }
-      setTimeout(() => {
-        navigate("/reservations-room");
-      }, 2000);
+
+      // Esperar 2 segundos mostrando el mensaje de éxito
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Navegar y mantener el estado hasta que se complete
+      await navigate("/reservations-room");
+
     } catch (error: any) {
       const message =
-        error.response?.data?.message || "Error al guardar la reserva";
+        error.response?.data?.message || (id ? messages.update.error : "Error al guardar la reserva");
       toast.error(message);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const handleClearOrCancel = () => {
+  const handleClearOrCancel = async () => {
+  try {
+    setIsCancelling(true);
+    
+    // Pequeño delay para feedback visual (opcional)
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
     if (id) {
-      navigate(-1); // En edición, cancelar y regresar
+      // Comportamiento para edición (cancelar)
+      navigate(-1); // Regresar a la página anterior
     } else {
+      // Comportamiento para creación (limpiar)
       setSelectedDate(null);
       setSelectedTime("");
       setSelectedClassroom("");
       setSelectedPrestamista(null);
     }
-  };
-
+    
+  } finally {
+    setIsCancelling(false);
+  }
+};
 
   if (loading) {
     return (
@@ -443,6 +513,7 @@ export default function ReserveClassroom() {
             type="submit"
             className="btn primary-btn"
             disabled={
+              isUpdating || // <-- Deshabilitar mientras se actualiza
               !selectedDate ||
               !selectedTime ||
               !selectedClassroom ||
@@ -450,15 +521,34 @@ export default function ReserveClassroom() {
                 !selectedPrestamista)
             }
           >
-            <FaCheck className="me-2" /> {id ? "Actualizar" : "Reservar"}
+            {isUpdating ? ( // <-- Mostrar texto diferente cuando se está actualizando
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Actualizando...
+              </>
+            ) : (
+              <>
+                <FaCheck className="me-2" /> {id ? "Actualizar" : "Reservar"}
+              </>
+            )}
           </button>
           <button
-            type="button"
-            className="btn secondary-btn"
-            onClick={handleClearOrCancel}
-          >
-            <FaBroom className="me-2" /> {id ? "Cancelar" : "Limpiar"}
-          </button>
+  type="button"
+  className="btn secondary-btn"
+  onClick={handleClearOrCancel}
+  disabled={isUpdating || isCancelling}
+>
+  {isCancelling ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2"></span>
+      {id ? "Cancelando..." : "Limpiando..."}
+    </>
+  ) : (
+    <>
+      <FaBroom className="me-2" /> {id ? "Cancelar" : "Limpiar"}
+    </>
+  )}
+</button>
         </div>
 
       </form>

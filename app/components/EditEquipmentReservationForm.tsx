@@ -17,8 +17,8 @@ import {
     FaLongArrowAltLeft,
 } from "react-icons/fa";
 import { useAuth } from "../hooks/AuthContext";
-import { formatTo12h, timeOptions } from "~/utils/time";
-import { Role } from "~/types/roles";
+import { formatTo12h } from "../utils/time";
+import { Role } from "../types/roles";
 
 type OptionType = { value: number | string; label: string };
 type EquipmentOption = OptionType & {
@@ -459,11 +459,9 @@ export default function EditEquipmentReservationForm() {
                         max={maxDate.toISOString().split("T")[0]}
                         disabled={true}
                     />
-                    {isTodaySelected && (
-                        <small className="form-text text-muted">
-                            La reservación debe hacerse con al menos 30 minutos de anticipación.
-                        </small>
-                    )}
+                    <div className="form-text text-muted">
+                        No se puede cambiar la fecha en modo edición
+                    </div>
                 </div>
 
                 {/* Horas */}
@@ -497,6 +495,9 @@ export default function EditEquipmentReservationForm() {
                         </select>
 
                     </div>
+                    <div className="form-text text-muted">
+                        No se puede cambiar las horas en modo edición
+                    </div>
                 </div>
 
                 {/* USUARIO */}
@@ -514,6 +515,9 @@ export default function EditEquipmentReservationForm() {
                             classNamePrefix="react-select"
                             isDisabled={true}
                         />
+                        <div className="form-text text-muted">
+                            No se puede cambiar el usuario prestamista en modo edición
+                        </div>
                     </div>
                 )}
 
@@ -543,6 +547,9 @@ export default function EditEquipmentReservationForm() {
                             isDisabled={true}
                         />
                     )}
+                    <div className="form-text text-muted">
+                        No se puede cambiar el tipo de reserva en modo edición
+                    </div>
                 </div>
 
                 {/* Documento evento */}

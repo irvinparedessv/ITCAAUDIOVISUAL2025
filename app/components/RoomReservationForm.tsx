@@ -247,7 +247,15 @@ export default function ReserveClassroom() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validar que campos obligatorios estén llenos
     if (!selectedDate || !selectedTime || !selectedClassroom) {
+      toast.error("Completa todos los campos");
+      return;
+    }
+
+    // En edición solo el horario puede cambiar, no validar aula ni fecha (ya vienen deshabilitados)
+    if (!id && (!selectedDate || !selectedTime || !selectedClassroom)) {
       toast.error("Completa todos los campos");
       return;
     }
@@ -273,7 +281,7 @@ export default function ReserveClassroom() {
         toast.success("Reserva actualizada");
       } else {
         response = await api.post("/reservasAula", payload);
-        toast.success("Reserva creada");
+        toast.success("¡Reserva creada exitosamente!");
       }
       setTimeout(() => {
         navigate("/reservations-room");
@@ -285,11 +293,17 @@ export default function ReserveClassroom() {
     }
   };
 
-  const handleClear = () => {
-    setSelectedDate(null);
-    setSelectedTime("");
-    setSelectedClassroom("");
+  const handleClearOrCancel = () => {
+    if (id) {
+      navigate(-1); // En edición, cancelar y regresar
+    } else {
+      setSelectedDate(null);
+      setSelectedTime("");
+      setSelectedClassroom("");
+      setSelectedPrestamista(null);
+    }
   };
+
 
   if (loading) {
     return (
@@ -302,25 +316,23 @@ export default function ReserveClassroom() {
 
   return (
     <div className="form-container position-relative">
-
       {/* Flecha de regresar en esquina superior izquierda */}
       <FaLongArrowAltLeft
         onClick={handleBack}
         title="Regresar"
         style={{
-          position: 'absolute',
-          top: '25px',
-          left: '30px',
-          cursor: 'pointer',
-          fontSize: '2rem',
-          zIndex: 10
+          position: "absolute",
+          top: "25px",
+          left: "30px",
+          cursor: "pointer",
+          fontSize: "2rem",
+          zIndex: 10,
         }}
       />
       <h2 className="mb-4 text-center fw-bold">
         <FaDoorOpen className="me-2" />
         {id ? "Editar Reserva" : "Reserva de Aula"}
       </h2>
-
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -335,8 +347,10 @@ export default function ReserveClassroom() {
               setSelectedClassroom(e.target.value);
               setSelectedDate(null);
               setSelectedTime("");
+              setSelectedPrestamista(null);
             }}
             required
+            disabled={!!id} // DESHABILITADO en edición
           >
             <option value="">Selecciona un aula</option>
             {availableClassrooms.map((aula) => (
@@ -345,6 +359,11 @@ export default function ReserveClassroom() {
               </option>
             ))}
           </select>
+          {id && (
+            <div className="form-text text-muted">
+              No se puede editar el aula en modo edición
+            </div>
+          )}
         </div>
 
         <div className="mb-4">
@@ -365,9 +384,14 @@ export default function ReserveClassroom() {
             dateFormat="dd/MM/yyyy"
             placeholderText="Selecciona la fecha"
             required
-            disabled={!selectedClassroom}
+            disabled={!selectedClassroom || !!id} // DESHABILITADO en edición
             filterDate={isDateEnabled}
           />
+          {id && (
+            <div className="form-text text-muted">
+              No se puede editar la fecha en modo edición
+            </div>
+          )}
         </div>
 
         <div className="mb-4">
@@ -404,23 +428,39 @@ export default function ReserveClassroom() {
                 placeholder="Selecciona un usuario prestamista"
                 className="react-select-container"
                 classNamePrefix="react-select"
-                isDisabled={!isDateTimeComplete}
+                isDisabled={!isDateTimeComplete || !!id} // Deshabilitado en edición
               />
+              {id && (
+                <div className="form-text text-muted">
+                  No se puede cambiar el usuario prestamista en modo edición
+                </div>
+              )}
             </div>
           )}
 
         <div className="form-actions">
-          <button type="submit" className="btn primary-btn">
+          <button
+            type="submit"
+            className="btn primary-btn"
+            disabled={
+              !selectedDate ||
+              !selectedTime ||
+              !selectedClassroom ||
+              ((user?.role === Role.Administrador || user?.role === Role.Encargado) &&
+                !selectedPrestamista)
+            }
+          >
             <FaCheck className="me-2" /> {id ? "Actualizar" : "Reservar"}
           </button>
           <button
             type="button"
             className="btn secondary-btn"
-            onClick={handleClear}
+            onClick={handleClearOrCancel}
           >
-            <FaBroom className="me-2" /> Limpiar
+            <FaBroom className="me-2" /> {id ? "Cancelar" : "Limpiar"}
           </button>
         </div>
+
       </form>
 
       {selectedClassroomData?.image_path && (

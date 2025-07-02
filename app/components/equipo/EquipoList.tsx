@@ -26,7 +26,10 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [selectedImage, setSelectedImage] = useState("");
+  const [selectedEquipment, setSelectedEquipment] = useState<{
+    imageUrl: string;
+    name: string;
+  } | null>(null);
 
   const fetchEquipos = async () => {
     setLoading(false);
@@ -52,8 +55,11 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
     return tipo ? tipo.nombre : "Desconocido";
   };
 
-  const handleImageClick = (imageUrl: string) => {
-    setSelectedImage(imageUrl);
+  const handleImageClick = (imageUrl: string, equipmentName: string) => {
+    setSelectedEquipment({
+      imageUrl,
+      name: equipmentName
+    });
     setShowImageModal(true);
   };
 
@@ -129,24 +135,20 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
         size="lg"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Imagen del equipo</Modal.Title>
+          <Modal.Title>{selectedEquipment?.name || 'Imagen del equipo'}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center">
           <img 
-            src={selectedImage} 
-            alt="Imagen ampliada" 
+            src={selectedEquipment?.imageUrl} 
+            alt={selectedEquipment?.name || 'Imagen ampliada'} 
             style={{ 
               maxWidth: '100%', 
               maxHeight: '70vh',
-              borderRadius: '8px'
+              borderRadius: '8px',
+              objectFit: 'contain'
             }}
           />
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowImageModal(false)}>
-            Cerrar
-          </Button>
-        </Modal.Footer>
       </Modal>
 
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
@@ -323,7 +325,7 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
                           }}
                           onClick={() => {
                             if (equipo.imagen_url) {
-                              handleImageClick(equipo.imagen_url);
+                              handleImageClick(equipo.imagen_url, equipo.nombre);
                             }
                           }}
                         />
@@ -338,7 +340,7 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
                           className="rounded-circle"
                           title="Editar equipo"
                           style={{ width: "44px", height: "44px" }}
-                          onClick={() => navigate(`/equipos/editar/${equipo.id}`)}
+                          onClick={() => onEdit(equipo)}
                         >
                           <FaEdit />
                         </Button>

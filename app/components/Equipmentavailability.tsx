@@ -6,12 +6,16 @@ import {
   Form,
   Alert,
   Spinner,
+  Modal,
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../api/axios";
 import type { AvailabilityData, Equipment, TipoEquipo } from "../types/equipo";
 import { formatTo12h, timeOptions } from "~/utils/time";
+import { FaEye, FaLongArrowAltLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import PaginationComponent from "~/utils/Pagination";
 
 export default function EquipmentAvailabilityList() {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
@@ -20,7 +24,12 @@ export default function EquipmentAvailabilityList() {
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
-
+  const [showImageModal, setShowImageModal] = useState(false);
+  const navigate = useNavigate();
+  const [selectedEquipment, setSelectedEquipment] = useState<{
+    imageUrl: string;
+    name: string;
+  } | null>(null);
   const [availabilityData, setAvailabilityData] = useState<AvailabilityData>({
     fecha: null,
     startTime: "08:00",
@@ -34,6 +43,10 @@ export default function EquipmentAvailabilityList() {
   });
   const [searchTerm, setSearchTerm] = useState(filtros.buscar);
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   const fetchTipoEquipos = async () => {
     try {
       const response = await api.get("/tipoEquipos");
@@ -41,6 +54,14 @@ export default function EquipmentAvailabilityList() {
     } catch (error) {
       console.error("Error al cargar tipos de equipo", error);
     }
+  };
+
+  const handleImageClick = (imageUrl: string, equipmentName: string) => {
+    setSelectedEquipment({
+      imageUrl,
+      name: equipmentName
+    });
+    setShowImageModal(true);
   };
 
   const fetchEquipment = async () => {
@@ -57,7 +78,9 @@ export default function EquipmentAvailabilityList() {
     } catch (err) {
       setError("Error al cargar los equipos");
       console.error(err);
-    } 
+    } finally {
+      setLoading(false);
+    }
   };
 
   const checkAllAvailability = async () => {
@@ -124,18 +147,36 @@ export default function EquipmentAvailabilityList() {
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       setFiltros((prev) => ({ ...prev, buscar: searchTerm, page: 1 }));
-    }, 500); // espera 500ms
+    }, 500);
 
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
 
+  if (loading) {
+    return (
+     <div className="text-center my-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando datos...</p>
+        </div>
+    );
+  }
 
   return (
     <div className="container py-5">
       <div className="table-responsive rounded shadow p-3 mt-4">
-
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h4 className="mb-0">Listado de Equipos Disponibles</h4>
+          <div className="d-flex align-items-center gap-3">
+                    <FaLongArrowAltLeft
+                      onClick={handleBack}
+                      title="Regresar"
+                      style={{
+                        cursor: 'pointer',
+                        fontSize: '2rem',
+                      }}
+                    />
+                    <h2 className="mb-0">Disponibilidad de equipos</h2>
+                  </div>
+          
           <div>
             <Button
               variant="primary"
@@ -149,7 +190,9 @@ export default function EquipmentAvailabilityList() {
                   <span className="ms-2">Verificando...</span>
                 </>
               ) : (
-                "Ver Disponibilidad"
+                <>
+                 <FaEye className="me-1" /> Ver disponibilidad
+                </>
               )}
             </Button>
             <Button variant="outline-secondary" onClick={handleClearFilters}>
@@ -180,12 +223,12 @@ export default function EquipmentAvailabilityList() {
           <div className="col-md-4">
             <Form.Group>
               <Form.Label>Buscar equipo</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Buscar por nombre"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+              <Form.Control
+                type="text"
+                placeholder="Buscar por nombre"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </Form.Group>
           </div>
         </Form>
@@ -227,7 +270,6 @@ export default function EquipmentAvailabilityList() {
                       const [hourStr, minStr] = time.split(":");
                       const hour = Number(hourStr);
                       const minutes = Number(minStr);
-                      // Permitir solo hasta 17:00 (sin 17:30)
                       return hour < 17 || (hour === 17 && minutes === 0);
                     })
                     .map((time) => (
@@ -262,10 +304,8 @@ export default function EquipmentAvailabilityList() {
                         const startMinutes = Number(startMinStr);
                         const timeMinutes = hour * 60 + minutes;
                         const startMinutesTotal = startHour * 60 + startMinutes;
-                        // Solo mostrar horas mayores a la hora de inicio seleccionada
                         if (timeMinutes <= startMinutesTotal) return false;
                       }
-                      // Limitar la hora máxima a 20:00 (sin 20:30)
                       return hour < 20 || (hour === 20 && minutes === 0);
                     })
                     .map((time) => (
@@ -294,6 +334,7 @@ export default function EquipmentAvailabilityList() {
           <thead className="table-dark">
             <tr>
               <th>Nombre</th>
+              <th>Imagen</th>
               <th>Total</th>
               <th>Disponible</th>
               <th>En Reserva</th>
@@ -304,7 +345,7 @@ export default function EquipmentAvailabilityList() {
           <tbody>
             {equipmentList.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center text-muted py-4">
+                <td colSpan={7} className="text-center text-muted py-4">
                   No se encontraron equipos.
                 </td>
               </tr>
@@ -312,6 +353,28 @@ export default function EquipmentAvailabilityList() {
               equipmentList.map((equipment) => (
                 <tr key={equipment.id}>
                   <td className="fw-bold">{equipment.nombre}</td>
+                  <td>
+                    {equipment.imagen_url ? (
+                      <img
+                        src={equipment.imagen_url}
+                        alt={equipment.nombre}
+                        style={{
+                          width: "60px",
+                          height: "60px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          cursor: "pointer"
+                        }}
+                        onClick={() => {
+                          if (equipment.imagen_url) {
+                            handleImageClick(equipment.imagen_url, equipment.nombre);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <span className="text-muted">Sin imagen</span>
+                    )}
+                  </td>
                   <td>{equipment.cantidad}</td>
                   <td>
                     {equipment.disponibilidad
@@ -345,46 +408,36 @@ export default function EquipmentAvailabilityList() {
             )}
           </tbody>
         </table>
-        {totalPages > 1 && (
-          <div className="d-flex justify-content-center mt-3">
-            <ul className="pagination">
-              <li className={`page-item ${filtros.page === 1 ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() =>
-                    setFiltros((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))
-                  }
-                >
-                  Anterior
-                </button>
-              </li>
-              {[...Array(totalPages)].map((_, i) => (
-                <li
-                  key={i}
-                  className={`page-item ${filtros.page === i + 1 ? "active" : ""}`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => setFiltros({ ...filtros, page: i + 1 })}
-                  >
-                    {i + 1}
-                  </button>
-                </li>
-              ))}
-              <li className={`page-item ${filtros.page === totalPages ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() =>
-                    setFiltros((prev) => ({ ...prev, page: Math.min(totalPages, prev.page + 1) }))
-                  }
-                >
-                  Siguiente
-                </button>
-              </li>
-            </ul>
-          </div>
-        )}
+       
+        <PaginationComponent
+          page={filtros.page}
+          totalPages={totalPages}
+          onPageChange={(page) => setFiltros({ ...filtros, page })}
+        />
+
       </div>
+
+      <Modal 
+        show={showImageModal} 
+        onHide={() => setShowImageModal(false)}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>{selectedEquipment?.name || 'Imagen del equipo'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          <img 
+            src={selectedEquipment?.imageUrl} 
+            alt={selectedEquipment?.name || 'Equipo'} 
+            style={{
+              maxWidth: "100%",
+              maxHeight: "70vh",
+              objectFit: "contain"
+            }}
+          />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

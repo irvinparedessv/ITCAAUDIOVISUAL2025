@@ -110,11 +110,12 @@ input[type="time"] {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.2rem 0.5rem;
   background: linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20));
   border: none;
   color: #000;
   cursor: pointer;
+  border-radius: 20px;
 }
 
 /* Contenedor del ícono */

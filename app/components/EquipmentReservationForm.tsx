@@ -347,27 +347,27 @@ export default function EquipmentReservationForm() {
 
 
   const handleClear = () => {
-  setFormData({
-    date: "",
-    startTime: "",
-    endTime: "",
-    tipoReserva: null,
-    equipment: [],
-    aula: null,
-  });
-  setAvailableEquipmentOptions([]);
-  setUploadedFile(null); 
+    setFormData({
+      date: "",
+      startTime: "",
+      endTime: "",
+      tipoReserva: null,
+      equipment: [],
+      aula: null,
+    });
+    setAvailableEquipmentOptions([]);
+    setUploadedFile(null);
     setSelectedPrestamista(null);
 
-};
+  };
 
 
-useEffect(() => {
-  if (formData.tipoReserva?.label !== "Eventos" && uploadedFile) {
-    setUploadedFile(null);
-    toast("ℹ️ Documento eliminado porque el tipo de reserva no es Eventos");
-  }
-}, [formData.tipoReserva, uploadedFile]);
+  useEffect(() => {
+    if (formData.tipoReserva?.label !== "Eventos" && uploadedFile) {
+      setUploadedFile(null);
+      toast("ℹ️ Documento eliminado porque el tipo de reserva no es Eventos");
+    }
+  }, [formData.tipoReserva, uploadedFile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -468,8 +468,8 @@ useEffect(() => {
       toast.success("¡Reserva creada exitosamente!");
 
       setTimeout(() => {
-      navigate('/reservations'); // Cambia esto por tu ruta deseada
-    }, 2000);
+        navigate('/reservations'); // Cambia esto por tu ruta deseada
+      }, 2000);
 
       handleClear();
       setUploadedFile(null);
@@ -733,30 +733,30 @@ useEffect(() => {
         {/* Multiselect Equipos */}
         <div className="mb-4">
           <label className="form-label d-flex align-items-center justify-content-between">
-  <div className="d-flex align-items-center">
-    <FaBoxes className="me-2" />
-    Equipos Disponibles
-    {checkingAvailability && (
-      <span className="ms-2 spinner-border spinner-border-sm"></span>
-    )}
-  </div>
-  <a
-    href="/equipmentavailability"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="btn btn-sm ms-3"
-    style={{
-      backgroundColor: 'rgb(177, 41, 29)',
-      color: '#fff',
-      border: 'none'
-    }}
-  >
-    <FaEye className="me-1" /> Ver disponibilidad
-  </a>
-</label>
+            <div className="d-flex align-items-center">
+              <FaBoxes className="me-2" />
+              Equipos Disponibles
+              {checkingAvailability && (
+                <span className="ms-2 spinner-border spinner-border-sm"></span>
+              )}
+            </div>
+            <a
+              href="/equipmentavailability"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-sm ms-3"
+              style={{
+                backgroundColor: 'rgb(2 71 102)',
+                color: '#fff',
+                border: 'none'
+              }}
+            >
+              <FaEye className="me-1" /> Ver disponibilidad
+            </a>
+          </label>
 
 
-          
+
           {loadingEquipments ? (
             <div className="d-flex justify-content-center">
               <div className="spinner-border" role="status">

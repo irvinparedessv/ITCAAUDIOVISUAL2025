@@ -20,6 +20,16 @@ import { useAuth } from "../hooks/AuthContext";
 import { formatTo12h } from "../utils/time";
 import { Role } from "../types/roles";
 
+const messages = {
+    update: {
+        question: "¿Seguro que deseas actualizar esta reserva?",
+        confirmText: "Sí, actualizar",
+        cancelText: "Cancelar",
+        success: "Reserva actualizada correctamente",
+        error: "Error actualizando la reserva"
+    }
+};
+
 type OptionType = { value: number | string; label: string };
 type EquipmentOption = OptionType & {
     tipoEquipoId?: number;
@@ -68,6 +78,8 @@ export default function EditEquipmentReservationForm() {
     const isDateTimeComplete = formData.date && formData.startTime && formData.endTime;
     const isTodaySelected = formData.date === new Date().toISOString().split("T")[0];
 
+    const isDataLoading = loadingTipoReserva || loadingAulas || loadingEquipments || checkingAvailability || loading;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const maxDate = new Date(today);
@@ -76,7 +88,7 @@ export default function EditEquipmentReservationForm() {
     const cleanTime = (time: string) => time?.slice(0, 5) || "";
 
     const handleBack = () => {
-        navigate(-1); // Regresa a la página anterior
+        navigate(-1);
     };
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -93,7 +105,7 @@ export default function EditEquipmentReservationForm() {
                 return;
             }
 
-            const maxSize = 5 * 1024 * 1024; // 5MB
+            const maxSize = 5 * 1024 * 1024;
             if (file.size > maxSize) {
                 toast.error("El archivo no puede ser mayor a 5MB");
                 return;
@@ -109,7 +121,6 @@ export default function EditEquipmentReservationForm() {
         },
     });
 
-    // 1) Cargar la reserva por ID SOLO cuando cambia 'id'
     useEffect(() => {
         if (!id) return;
 
@@ -122,7 +133,6 @@ export default function EditEquipmentReservationForm() {
                 const startTime = cleanTime(reserva.fecha_reserva.split(" ")[1]);
                 const endTime = cleanTime(reserva.fecha_entrega.split(" ")[1]);
 
-                // Prestamista info
                 const prestamista = {
                     value: reserva.user_id,
                     label: `${reserva.user.first_name} ${reserva.user.last_name} (${reserva.user.email})`
@@ -161,7 +171,6 @@ export default function EditEquipmentReservationForm() {
         fetchData();
     }, [id]);
 
-    // 2) Cargar tipos de reserva, aulas y prestamistas SOLO cuando cambia 'user'
     useEffect(() => {
         const fetchOptions = async () => {
             try {
@@ -198,7 +207,6 @@ export default function EditEquipmentReservationForm() {
         if (user) fetchOptions();
     }, [user]);
 
-    // 3) Cargar equipos según tipo de reserva SOLO cuando cambia 'tipoReserva'
     useEffect(() => {
         if (!formData.tipoReserva?.value) {
             setAvailableEquipmentOptions([]);
@@ -208,7 +216,6 @@ export default function EditEquipmentReservationForm() {
         const fetchEquipmentsByTipoReserva = async () => {
             try {
                 if (!formData.tipoReserva?.value) {
-                    // Si no hay tipoReserva, no haces nada
                     setAvailableEquipmentOptions([]);
                     setAllEquipmentOptions([]);
                     return;
@@ -239,7 +246,6 @@ export default function EditEquipmentReservationForm() {
             }
         };
 
-
         fetchEquipmentsByTipoReserva();
     }, [formData.tipoReserva?.value, isDateTimeComplete]);
 
@@ -254,7 +260,7 @@ export default function EditEquipmentReservationForm() {
                             fecha: formData.date,
                             startTime: formData.startTime,
                             endTime: formData.endTime,
-                            excludeReservationId: id // Excluir la reserva actual al verificar disponibilidad
+                            excludeReservationId: id
                         },
                     });
 
@@ -268,25 +274,17 @@ export default function EditEquipmentReservationForm() {
                         ...equipo,
                         available: false,
                     };
-                } finally {
-                    setCheckingAvailability(false);
-                    setAvailabilityChecked(true); // ⬅️ Esto
                 }
             });
 
             const results = await Promise.all(availabilityChecks);
-            // Obtener los IDs de los equipos originalmente seleccionados
             const selectedIds = formData.equipment.map((eq) => eq.value);
-
-            // Incluir los equipos seleccionados aunque no estén disponibles
             const availableOptions = results.filter(
                 (equipo) => equipo.available || selectedIds.includes(equipo.value)
             );
 
             setAvailableEquipmentOptions(availableOptions);
 
-
-            // Mantener equipos seleccionados incluso si no están disponibles (porque ya estaban reservados)
             const currentSelected = formData.equipment.map(eq => {
                 const available = availableOptions.find(opt => opt.value === eq.value);
                 return {
@@ -296,7 +294,7 @@ export default function EditEquipmentReservationForm() {
             });
 
             setFormData(prev => ({ ...prev, equipment: currentSelected }));
-
+            setAvailabilityChecked(true);
         } catch (error) {
             console.error("Error verificando disponibilidad:", error);
             toast.error("Error al verificar disponibilidad de equipos");
@@ -312,11 +310,46 @@ export default function EditEquipmentReservationForm() {
 
     const selectedTipoIds = formData.equipment.map(eq => eq.tipoEquipoId);
 
-    // Solo mostrar opciones de equipos cuyo tipo aún no fue seleccionado
     const filteredAvailableEquipmentOptions = availableEquipmentOptions.filter(
         (eq) => !selectedTipoIds.includes(eq.tipoEquipoId) ||
             formData.equipment.some(selected => selected.value === eq.value)
     );
+
+    const showConfirmationToast = () => {
+        return new Promise((resolve) => {
+            toast(
+                (t) => (
+                    <div>
+                        <p>{messages.update.question}</p>
+                        <div className="d-flex justify-content-end gap-2 mt-2">
+                            <button
+                                className="btn btn-sm btn-success"
+                                onClick={() => {
+                                    toast.dismiss(t.id);
+                                    resolve(true);
+                                }}
+                            >
+                                {messages.update.confirmText}
+                            </button>
+                            <button
+                                className="btn btn-sm btn-secondary"
+                                onClick={() => {
+                                    toast.dismiss(t.id);
+                                    resolve(false);
+                                }}
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                ),
+                {
+                    duration: 5000,
+                }
+            );
+        });
+    };
+
 
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -327,7 +360,6 @@ export default function EditEquipmentReservationForm() {
             return;
         }
 
-        // Validación general
         if (
             !formData.date ||
             !formData.startTime ||
@@ -340,7 +372,6 @@ export default function EditEquipmentReservationForm() {
             return;
         }
 
-        // Validar roles para cambiar prestamista
         if (
             (user.role !== Role.Administrador && user.role !== Role.Encargado) &&
             selectedPrestamista?.value !== originalPrestamista?.value
@@ -349,13 +380,11 @@ export default function EditEquipmentReservationForm() {
             return;
         }
 
-        // Validar documento si es evento
         if (formData.tipoReserva?.label === "Eventos" && !uploadedFile && !originalPrestamista) {
             toast.error("Debe subir el documento del evento.");
             return;
         }
 
-        // Validar horas
         const startHourMin = parseInt(formData.startTime.split(":")[0]) * 60 +
             parseInt(formData.startTime.split(":")[1]);
         const endHourMin = parseInt(formData.endTime.split(":")[0]) * 60 +
@@ -366,10 +395,13 @@ export default function EditEquipmentReservationForm() {
             return;
         }
 
+        // Mostrar confirmación personalizada
+        const userConfirmed = await showConfirmationToast();
+        if (!userConfirmed) return;
+
         try {
             setLoading(true);
 
-            // ⚡️ Si hay archivo, usar FormData
             if (uploadedFile) {
                 const formPayload = new FormData();
                 formPayload.append("_method", "PUT");
@@ -394,7 +426,6 @@ export default function EditEquipmentReservationForm() {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
             } else {
-                // ✅ Si NO hay archivo, usar JSON normal
                 const payload = {
                     aula: formData.aula?.value,
                     equipo: formData.equipment.map((eq) => ({
@@ -406,11 +437,11 @@ export default function EditEquipmentReservationForm() {
                 await api.put(`/reservas-equipo/${id}`, payload);
             }
 
-            toast.success("Reserva actualizada correctamente");
+            toast.success(messages.update.success);
             navigate("/reservations");
         } catch (error: any) {
             console.error(error);
-            const message = error.response?.data?.message || "Error actualizando la reserva. Intenta nuevamente.";
+            const message = error.response?.data?.message || messages.update.error;
             toast.error(message);
         } finally {
             setLoading(false);
@@ -419,7 +450,6 @@ export default function EditEquipmentReservationForm() {
 
     return (
         <div className="form-container position-relative">
-            {/* Flecha de regresar en esquina superior izquierda */}
             <FaLongArrowAltLeft
                 onClick={handleBack}
                 title="Regresar"
@@ -493,7 +523,6 @@ export default function EditEquipmentReservationForm() {
                                 <option value="">--:--</option>
                             )}
                         </select>
-
                     </div>
                     <div className="form-text text-muted">
                         No se puede cambiar las horas en modo edición
@@ -648,11 +677,10 @@ export default function EditEquipmentReservationForm() {
                     ) : (
                         <Select
                             isMulti
-                            options={filteredAvailableEquipmentOptions} // <== AQUÍ
+                            options={filteredAvailableEquipmentOptions}
                             value={formData.equipment}
                             onChange={(selected) => {
                                 const selectedArray = selected || [];
-
                                 const enriched = selectedArray.map((s) => {
                                     const full = availableEquipmentOptions.find((e) => e.value === s.value);
                                     return {
@@ -662,10 +690,9 @@ export default function EditEquipmentReservationForm() {
                                     };
                                 });
 
-                                // Permitir solo un equipo por tipo
                                 const uniqueByTipo = new Map<number | undefined, EquipmentOption>();
                                 enriched.forEach((item) => {
-                                    uniqueByTipo.set(item.tipoEquipoId, item); // el último reemplaza al anterior
+                                    uniqueByTipo.set(item.tipoEquipoId, item);
                                 });
 
                                 setFormData((prev) => ({
@@ -694,7 +721,6 @@ export default function EditEquipmentReservationForm() {
                             }
                             noOptionsMessage={() => "No hay opciones disponibles"}
                         />
-
                     )}
                 </div>
 
@@ -705,7 +731,7 @@ export default function EditEquipmentReservationForm() {
                     </label>
                     {loadingAulas ? (
                         <div className="d-flex justify-content-center">
-                            <div className="spinner-border text-primary" role="status">
+                            <div className="spinner-border" role="status">
                                 <span className="visually-hidden">Cargando...</span>
                             </div>
                         </div>
@@ -731,29 +757,20 @@ export default function EditEquipmentReservationForm() {
 
                 <div className="form-actions d-flex justify-content-between">
                     <button
-                        type="button"
-                        className="btn secondary-btn"
-                        onClick={handleClear}
-                    >
-                        <FaBroom className="me-2" />
-                        Cancelar
-                    </button>
-                    <button
                         type="submit"
                         className="btn primary-btn"
                         disabled={
-                            loading ||
-                            checkingAvailability ||
+                            isDataLoading ||
                             !isDateTimeComplete ||
                             !formData.tipoReserva ||
                             formData.equipment.length === 0 ||
                             !formData.aula
                         }
                     >
-                        {loading ? (
+                        {isDataLoading ? (
                             <>
                                 <span className="spinner-border spinner-border-sm me-2"></span>
-                                Actualizando...
+                                {loading ? "Actualizando..." : "Cargando datos..."}
                             </>
                         ) : (
                             <>
@@ -762,6 +779,16 @@ export default function EditEquipmentReservationForm() {
                             </>
                         )}
                     </button>
+                    <button
+                        type="button"
+                        className="btn secondary-btn"
+                        onClick={handleClear}
+                        disabled={loading}  // Aquí añades la condición disabled
+                    >
+                        <FaBroom className="me-2" />
+                        Cancelar
+                    </button>
+
                 </div>
             </form>
         </div>

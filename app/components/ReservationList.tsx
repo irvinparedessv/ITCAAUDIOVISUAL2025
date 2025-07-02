@@ -251,52 +251,52 @@ export default function ReservationList() {
   };
 
   const handleCancelReservation = (reservaId: number) => {
-  toast((t) => (
-    <div>
-      <p>¿Deseas cancelar esta reserva?</p>
-      <div className="d-flex justify-content-end gap-2 mt-2">
-        <button
-          className="btn btn-sm btn-danger"
-          onClick={async () => {
-            try {
-              await api.put(`/reservas-equipo/${reservaId}/estado`, {
-                estado: "Cancelado",
-                comentario: "Cancelada por el usuario",
-              });
+    toast((t) => (
+      <div>
+        <p>¿Deseas cancelar esta reserva?</p>
+        <div className="d-flex justify-content-end gap-2 mt-2">
+          <button
+            className="btn btn-sm btn-danger"
+            onClick={async () => {
+              try {
+                await api.put(`/reservas-equipo/${reservaId}/estado`, {
+                  estado: "Cancelado",
+                  comentario: "Cancelada por el usuario",
+                });
 
-              toast.success("Reserva cancelada correctamente");
+                toast.success("Reserva cancelada correctamente");
 
-              setReservations((prev) =>
-                prev.map((r) =>
-                  r.id === reservaId
-                    ? ({ ...r, estado: "Cancelado" } as Reservation)
-                    : r
-                )
-              );
-            } catch (err: any) {
-              toast.error(
-                err?.response?.data?.message ||
+                setReservations((prev) =>
+                  prev.map((r) =>
+                    r.id === reservaId
+                      ? ({ ...r, estado: "Cancelado" } as Reservation)
+                      : r
+                  )
+                );
+              } catch (err: any) {
+                toast.error(
+                  err?.response?.data?.message ||
                   "Error al cancelar la reserva"
-              );
-            }
-            toast.dismiss(t.id);
-          }}
-        >
-          Sí, cancelar
-        </button>
+                );
+              }
+              toast.dismiss(t.id);
+            }}
+          >
+            Sí, cancelar
+          </button>
 
-        <button
-          className="btn btn-sm btn-secondary"
-          onClick={() => toast.dismiss(t.id)}
-        >
-          Cancelar
-        </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancelar
+          </button>
+        </div>
       </div>
-    </div>
-  ), {
-    duration: 8000,
-  });
-};
+    ), {
+      duration: 8000,
+    });
+  };
 
 
   // Render
@@ -480,12 +480,9 @@ export default function ReservationList() {
 
       {/* Loading */}
       {!reservationsLoaded && (
-        <div className="d-flex justify-content-center my-5">
-          <Spinner
-            animation="border"
-            variant="dark"
-            style={{ width: "3rem", height: "3rem" }}
-          />
+        <div className="text-center my-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando datos...</p>
         </div>
       )}
 
@@ -652,13 +649,13 @@ export default function ReservationList() {
           </div>
 
           {/* Paginación */}
-         {totalPages > 1 && (
-  <PaginationComponent
-    page={currentPage}
-    totalPages={totalPages}
-    onPageChange={(p) => setCurrentPage(p)}
-  />
-)}
+          {totalPages > 1 && (
+            <PaginationComponent
+              page={currentPage}
+              totalPages={totalPages}
+              onPageChange={(p) => setCurrentPage(p)}
+            />
+          )}
         </>
       )}
 

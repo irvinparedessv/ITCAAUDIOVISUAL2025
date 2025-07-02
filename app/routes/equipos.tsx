@@ -75,7 +75,6 @@ export default function EquipoPage() {
 
   return (
     <div className="max-w-3xl mx-auto mt-8 px-4">
-      <h1 className="text-2xl font-bold mb-4">Gestión de Equipos</h1>
 
       <EquipoForm
         onSubmit={handleCreateOrUpdate}
@@ -83,12 +82,6 @@ export default function EquipoPage() {
         resetEdit={resetEdit}
       />
 
-      {/* <EquipoList
-        tipos={tipos}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        key={recargarLista ? "reload" : "stable"} // para forzar remount y recarga datos
-      /> */}
     </div>
   );
 }

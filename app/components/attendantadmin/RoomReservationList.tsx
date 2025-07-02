@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Row, Col, Spinner, Table, Badge } from "react-bootstrap";
+import { Row, Col, Spinner, Table, Badge, Button } from "react-bootstrap";
 import api from "../../api/axios";
 import AulaReservacionEstadoModal from "./RoomReservationStateModal";
 import { QRURL } from "~/constants/constant";
 import type { Bitacora } from "~/types/bitacora";
 import RoomDetailsModal from "../applicant/RoomDetailsModal";
 import toast from "react-hot-toast";
-import { FaEdit, FaEye, FaTimes, FaExchangeAlt } from "react-icons/fa";
+import { FaEdit, FaEye, FaTimes, FaExchangeAlt, FaLongArrowAltLeft, FaPlus } from "react-icons/fa";
 import PaginationComponent from "../../utils/Pagination";
 import Filters from "../applicant/RoomReservationList/Filter";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -46,6 +46,10 @@ const RoomReservationList = () => {
     to: Date | null;
   }>({ from: null, to: null });
 
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
+
   const handleEditClick = (reserva: any) => {
     navigate(`/reservas-aula/editar/${reserva.id}`, { state: { page } });
   };
@@ -60,52 +64,52 @@ const RoomReservationList = () => {
   }, []);
 
   // Escuchar evento force-refresh (cuando ya estamos en /reservations-room)
- // Escuchar evento force-refresh (cuando ya estamos en /reservations-room)
-useEffect(() => {
-  const handleForceRefresh = async (e: any) => {
-    const { highlightReservaId, page: newPage } = e.detail || {};
+  // Escuchar evento force-refresh (cuando ya estamos en /reservations-room)
+  useEffect(() => {
+    const handleForceRefresh = async (e: any) => {
+      const { highlightReservaId, page: newPage } = e.detail || {};
 
-    if (!highlightReservaId) return;
+      if (!highlightReservaId) return;
 
-    // Establecer la página primero
-    if (newPage && newPage !== page) {
-      setPage(newPage);
-    }
-
-    // Siempre forzamos el highlight
-    setHighlightId(highlightReservaId);
-    initialHighlightHandled.current = false;
-
-    // Buscar si la reserva ya está en la lista actual
-    const existsInList = reservations.some(r => r.id === highlightReservaId);
-
-    // Si no está en la lista actual, recarga los datos forzadamente
-    if (!existsInList) {
-      setIsLoading(true);
-      try {
-        const response = await api.get("/reservas-aula", {
-          params: {
-            from: range.from?.toISOString().split("T")[0],
-            to: range.to?.toISOString().split("T")[0],
-            page: newPage || page,
-            per_page: perPage,
-            search,
-            status,
-          },
-        });
-        setReservations(response.data.data);
-        setTotalPages(response.data.last_page);
-      } catch (error) {
-        console.error("Error al forzar carga de reservas:", error);
-      } finally {
-        setIsLoading(false);
+      // Establecer la página primero
+      if (newPage && newPage !== page) {
+        setPage(newPage);
       }
-    }
-  };
 
-  window.addEventListener("force-refresh", handleForceRefresh);
-  return () => window.removeEventListener("force-refresh", handleForceRefresh);
-}, [page, range.from, range.to, search, status, reservations]);
+      // Siempre forzamos el highlight
+      setHighlightId(highlightReservaId);
+      initialHighlightHandled.current = false;
+
+      // Buscar si la reserva ya está en la lista actual
+      const existsInList = reservations.some(r => r.id === highlightReservaId);
+
+      // Si no está en la lista actual, recarga los datos forzadamente
+      if (!existsInList) {
+        setIsLoading(true);
+        try {
+          const response = await api.get("/reservas-aula", {
+            params: {
+              from: range.from?.toISOString().split("T")[0],
+              to: range.to?.toISOString().split("T")[0],
+              page: newPage || page,
+              per_page: perPage,
+              search,
+              status,
+            },
+          });
+          setReservations(response.data.data);
+          setTotalPages(response.data.last_page);
+        } catch (error) {
+          console.error("Error al forzar carga de reservas:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    window.addEventListener("force-refresh", handleForceRefresh);
+    return () => window.removeEventListener("force-refresh", handleForceRefresh);
+  }, [page, range.from, range.to, search, status, reservations]);
 
 
   // Reset página al cambiar filtros
@@ -328,11 +332,36 @@ useEffect(() => {
   return (
     <div className="mt-4 px-3">
       <div className="table-responsive rounded shadow p-3 mt-4">
+        {/* Flecha de regresar en esquina superior izquierda */}
         <Row className="align-items-center mb-4">
-          <Col>
-            <h2>Reservas de Aulas</h2>
+          {/* Columna izquierda: ícono + título */}
+          <Col xs={12} md={6}>
+            <div className="d-flex align-items-center gap-3">
+              <FaLongArrowAltLeft
+                onClick={handleBack}
+                title="Regresar"
+                style={{
+                  cursor: 'pointer',
+                  fontSize: '2rem',
+                }}
+              />
+              <h2 className="m-0">Reservas de Aulas</h2>
+            </div>
+          </Col>
+
+          {/* Columna derecha: botón alineado a la derecha */}
+          <Col xs={12} md={6} className="d-flex justify-content-md-end mt-3 mt-md-0">
+            <Button
+              onClick={() => navigate("/reservationsroom")}
+              className="btn btn-success d-flex align-items-center gap-2 px-3 py-2"
+            >
+              <FaPlus />
+              Crear reserva
+            </Button>
           </Col>
         </Row>
+
+
         <Filters
           from={range.from}
           to={range.to}
@@ -371,11 +400,9 @@ useEffect(() => {
           }}
         />
         {isLoading ? (
-          <div
-            className="d-flex justify-content-center align-items-center"
-            style={{ height: "50vh" }}
-          >
-            <Spinner animation="border" />
+          <div className="text-center my-5">
+            <Spinner animation="border" variant="primary" />
+            <p className="mt-3">Cargando datos...</p>
           </div>
         ) : reservations.length === 0 ? (
           <div

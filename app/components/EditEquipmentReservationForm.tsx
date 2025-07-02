@@ -14,6 +14,7 @@ import {
     FaBroom,
     FaUpload,
     FaUser,
+    FaLongArrowAltLeft,
 } from "react-icons/fa";
 import { useAuth } from "../hooks/AuthContext";
 import { formatTo12h, timeOptions } from "~/utils/time";
@@ -73,6 +74,10 @@ export default function EditEquipmentReservationForm() {
     maxDate.setDate(today.getDate() + 6);
 
     const cleanTime = (time: string) => time?.slice(0, 5) || "";
+
+    const handleBack = () => {
+        navigate(-1); // Regresa a la página anterior
+    };
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop: useCallback((acceptedFiles: File[]) => {
@@ -413,8 +418,21 @@ export default function EditEquipmentReservationForm() {
     };
 
     return (
-        <div className="form-container">
-            <h2 className="mb-4 text-center fw-bold">Editar Reservación</h2>
+        <div className="form-container position-relative">
+            {/* Flecha de regresar en esquina superior izquierda */}
+            <FaLongArrowAltLeft
+                onClick={handleBack}
+                title="Regresar"
+                style={{
+                    position: 'absolute',
+                    top: '25px',
+                    left: '30px',
+                    cursor: 'pointer',
+                    fontSize: '2rem',
+                    zIndex: 10
+                }}
+            />
+            <h2 className="mb-4 text-center fw-bold">Editar Reserva</h2>
             <form onSubmit={handleSubmit}>
                 {/* Fecha */}
                 <div className="mb-4">

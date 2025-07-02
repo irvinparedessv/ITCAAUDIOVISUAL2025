@@ -4,7 +4,7 @@ import { Toaster } from "react-hot-toast";
 import { useAuth } from "./hooks/AuthContext";
 import NavbarMenu from "./components/menu/menu";
 import { Spinner } from "react-bootstrap";
-import { ThemeProvider, useTheme } from './components/ThemeContext'; // Ajusta la ruta
+import { ThemeProvider, useTheme } from './hooks/ThemeContext'; // Ajusta la ruta
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();

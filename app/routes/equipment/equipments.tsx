@@ -4,15 +4,14 @@ import {
   createEquipo,
   updateEquipo,
   deleteEquipo,
-} from "../services/equipoService";
-import { getTipoEquipos } from "../services/tipoEquipoService";
+} from "../../services/equipoService";
+import { getTipoEquipos } from "../../services/tipoEquipoService";
 import type { Equipo, EquipoCreateDTO, EquipoUpdateDTO } from "app/types/equipo";
 import type { TipoEquipo } from "app/types/tipoEquipo";
-import EquipoForm from "../components/equipo/EquipoForm";
-import EquipoList from "../components/equipo/EquipoList";
+import EquipoForm from "../../components/equipo/EquipoForm";
 import toast from "react-hot-toast";
 
-export default function EquipoPage() {
+export default function EquipmentPage() {
   const [tipos, setTipos] = useState<TipoEquipo[]>([]);
   const [editando, setEditando] = useState<Equipo | null>(null);
   const [recargarLista, setRecargarLista] = useState(false);
@@ -59,17 +58,6 @@ export default function EquipoPage() {
     toast.error("Error al guardar el equipo");
   }
 };
-
-  const handleDelete = async (id: number) => {
-    try {
-      await deleteEquipo(id);
-      toggleRecarga();
-    } catch (error) {
-      console.error("Error al eliminar el equipo:", error);
-    }
-  };
-
-  const handleEdit = (equipo: Equipo) => setEditando(equipo);
 
   const resetEdit = () => setEditando(null);
 

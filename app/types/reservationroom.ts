@@ -1,4 +1,4 @@
-import type { Role } from "./reservation";
+import type { CodigoQR, Role } from "./reservation";
 
 export interface ReservationRoom {
   id: number;
@@ -10,6 +10,7 @@ export interface ReservationRoom {
   created_at?: string;
   updated_at?: string;
   comentario: string;
+  codigo_qr: CodigoQR;
 }
 export interface Room {
   id: number;

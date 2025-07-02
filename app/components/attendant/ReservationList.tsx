@@ -6,6 +6,7 @@ import { useAuth } from "../../hooks/AuthContext";
 import toast from "react-hot-toast";
 import { FaEye, FaQrcode } from "react-icons/fa";
 import { QRURL } from "~/constants/constant";
+import type { CodigoQR } from "~/types/reservation";
 
 type Role = {
   id: number;
@@ -41,13 +42,6 @@ type Equipo = {
     reserva_equipo_id: number;
     equipo_id: number;
   };
-};
-
-type CodigoQR = {
-  id: string; // GUID
-  reserva_id: number;
-  created_at: string;
-  updated_at: string;
 };
 
 type Reservation = {

@@ -15,14 +15,21 @@ import { APPLARAVEL } from "~/constants/constant";
 import { Spinner } from "react-bootstrap";
 import { diasSemana } from "../constants/day";
 import type { AvailableTime } from "../types/aula";
+import * as exifr from "exifr";
+
+type RenderImageInfo = {
+  file: File;
+  preview: string;
+  is360: boolean;
+};
+
 export const CreateSpaceForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
 
   const [name, setName] = useState("");
-  const [renderImages, setRenderImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [renderImages, setRenderImages] = useState<RenderImageInfo[]>([]);
   const [availableTimes, setAvailableTimes] = useState<AvailableTime[]>([]);
   const [timeInput, setTimeInput] = useState<AvailableTime>({
     start_date: "",
@@ -44,12 +51,14 @@ export const CreateSpaceForm = () => {
           const aula = res.data;
           setName(aula.name);
 
-          const imageUrls = aula.imagenes.map((img: any) =>
-            img.image_path.startsWith("http")
+          const imageUrls = aula.imagenes.map((img: any) => ({
+            file: null,
+            preview: img.image_path.startsWith("http")
               ? img.image_path
-              : `${APPLARAVEL + "/"}${img.image_path}`
-          );
-          setImagePreviews(imageUrls);
+              : `${APPLARAVEL + "/"}${img.image_path}`,
+            is360: false,
+          }));
+          setRenderImages(imageUrls);
 
           const horariosParseados = aula.horarios.map((h: any) => ({
             ...h,
@@ -62,20 +71,73 @@ export const CreateSpaceForm = () => {
     }
   }, [id]);
 
+  const checkIf360ByAspect = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const aspect = img.width / img.height;
+        resolve(Math.abs(aspect - 2) < 0.1);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const checkIf360ByExif = async (file: File): Promise<boolean> => {
+    try {
+      const exif = await exifr.parse(file);
+      return (
+        exif?.ProjectionType === "equirectangular" ||
+        exif?.UsePanoramaViewer === true
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  const handleDropImages = async (acceptedFiles: File[]) => {
+    const validFiles = acceptedFiles.filter((file) =>
+      file.type.match("image.*")
+    );
+    if (validFiles.length !== acceptedFiles.length) {
+      toast.error("Solo se permiten archivos de imagen");
+    }
+
+    const results: RenderImageInfo[] = [];
+
+    for (const file of validFiles) {
+      const [isExif360, isAspect360] = await Promise.all([
+        checkIf360ByExif(file),
+        checkIf360ByAspect(file),
+      ]);
+      const is360 = isExif360 || isAspect360;
+
+      console.log(
+        `${file.name} -> EXIF: ${isExif360} | Aspect: ${isAspect360}`
+      );
+
+      results.push({
+        file,
+        preview: URL.createObjectURL(file),
+        is360,
+      });
+    }
+
+    setRenderImages(results);
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: (acceptedFiles) => {
-      const files = acceptedFiles.filter((file) => file.type.match("image.*"));
-      if (files.length !== acceptedFiles.length) {
-        toast.error("Solo se permiten archivos de imagen");
-      }
-      setRenderImages(files);
-      setImagePreviews(files.map((file) => URL.createObjectURL(file)));
-    },
+    onDrop: handleDropImages,
     accept: {
       "image/*": [".jpeg", ".jpg", ".png", ".gif"],
     },
     multiple: true,
   });
+
+  const handleRemoveImage = (index: number) => {
+    const newImages = [...renderImages];
+    newImages.splice(index, 1);
+    setRenderImages(newImages);
+  };
 
   const handleAddTime = () => {
     const { start_date, end_date, start_time, end_time, days } = timeInput;
@@ -122,15 +184,6 @@ export const CreateSpaceForm = () => {
     });
   };
 
-  const handleRemoveImage = (index: number) => {
-    const newImages = [...renderImages];
-    const newPreviews = [...imagePreviews];
-    newImages.splice(index, 1);
-    newPreviews.splice(index, 1);
-    setRenderImages(newImages);
-    setImagePreviews(newPreviews);
-  };
-
   const handleRemoveTime = (index: number) => {
     const newTimes = [...availableTimes];
     newTimes.splice(index, 1);
@@ -140,7 +193,6 @@ export const CreateSpaceForm = () => {
   const handleClear = () => {
     setName("");
     setRenderImages([]);
-    setImagePreviews([]);
     setAvailableTimes([]);
     setTimeInput({
       start_date: "",
@@ -166,9 +218,11 @@ export const CreateSpaceForm = () => {
 
     const formData = new FormData();
     formData.append("name", name);
-    renderImages.forEach((file, i) =>
-      formData.append(`render_images[${i}]`, file)
-    );
+    renderImages.forEach((img, i) => {
+      if (img.file) {
+        formData.append(`render_images[${i}]`, img.file);
+      }
+    });
     formData.append("available_times", JSON.stringify(availableTimes));
 
     setLoadingSubmit(true);
@@ -239,14 +293,14 @@ export const CreateSpaceForm = () => {
         </div>
 
         <div className="mb-4">
-          <label className="form-label">Imágenes 360° (Opcionales)</label>
+          <label className="form-label">Imágenes 360°</label>
 
-          {imagePreviews.length > 0 ? (
+          {renderImages.length > 0 ? (
             <div className="d-flex flex-wrap justify-content-center gap-4">
-              {imagePreviews.map((src, i) => (
+              {renderImages.map((img, i) => (
                 <div key={i} className="d-flex flex-column align-items-center">
                   <img
-                    src={src}
+                    src={img.preview}
                     alt={`Vista previa ${i + 1}`}
                     className="img-fluid rounded border mb-2"
                     style={{
@@ -255,10 +309,15 @@ export const CreateSpaceForm = () => {
                       objectFit: "cover",
                     }}
                   />
+                  <small className="text-muted mb-1">
+                    {img.is360
+                      ? "✅ Imagen 360° detectada"
+                      : "❌ Imagen NO 360°"}
+                  </small>
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(i)}
-                    className="btn btn-outline-danger btn-sm mt-2"
+                    className="btn btn-outline-danger btn-sm"
                   >
                     <FaTrash className="me-1" />
                     Eliminar imagen
@@ -287,7 +346,7 @@ export const CreateSpaceForm = () => {
                       seleccionar
                     </p>
                     <p className="text-muted small mb-0">
-                      Formatos: JPEG, PNG, GIF (Opcionales)
+                      Formatos: JPEG, PNG, GIF
                     </p>
                   </>
                 )}
@@ -296,8 +355,17 @@ export const CreateSpaceForm = () => {
           )}
         </div>
 
+        {/* Aquí sigues igual con horarios */}
+        {/* No cambio esta parte, es la misma */}
+
+        {/* ... la parte de horarios, igual que antes ... */}
+
+        {/* Reutiliza toda la parte de horarios y submit igual que en tu versión */}
+
+        {/* Horarios */}
         <div className="mb-4">
           <h5 className="mb-3">Horarios disponibles</h5>
+          {/* igual que tu bloque original */}
           <div className="row mb-3">
             <div className="col-md-3 mb-2">
               <label className="form-label">Fecha de inicio</label>

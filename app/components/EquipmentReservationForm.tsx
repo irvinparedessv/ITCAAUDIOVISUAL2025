@@ -112,7 +112,7 @@ export default function EquipmentReservationForm() {
 
     // Última hora válida para iniciar reserva: 17:00
     const lastStartTime = new Date();
-    lastStartTime.setHours(17, 0, 0, 0);
+    lastStartTime.setHours(16, 30, 0, 0);
 
     // Si ya pasó la hora límite, saltar al día siguiente
     if (now > lastStartTime) {

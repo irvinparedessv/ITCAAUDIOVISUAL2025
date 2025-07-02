@@ -19,7 +19,6 @@ import ReservationDetailAdmin from "./routes/reservationDetailAdmin";
 import FormEquipo from "./routes/formEquipo";
 import CreacionEspacio from "./routes/creacionEspacio";
 import FormChat from "./routes/formChat";
-import EquipmentAvailabilityPage from "./routes/EquipmentAvailabilityPage";
 import OptionsReservation from "./routes/optionsReservation";
 import TipoEquipos from "./routes/tipoEquipos";
 import Equipos from "./routes/equipment/equipments";
@@ -41,12 +40,13 @@ import App from "./root";
 import ReservaAulaDetail from "./components/applicant/ReservationRoomDetails";
 import ReserveClassroom from "./components/RoomReservationForm";
 import EspacioListWrapper from "./routes/wrappers/reservations";
-import EquipoListPage from "./routes/equipment/equipmentListPage";
-import EquipoEditPage from "./routes/equipment/equipmentEditPage";
+import EquipmentListPage from "./routes/equipment/equipmentListPage";
+import EquipmentEditPage from "./routes/equipment/equipmentEditPage";
 import PrediccionPorEquipoPage from "./routes/PrediccionPorEquipoPage";
 import AulaList from "./components/attendantadmin/RoomList";
 import EditEquipmentReservationForm from "./components/EditEquipmentReservationForm";
 import AsignarEncargadosForm from "./components/FormEncargadosEspacio";
+import EquipmentAvailabilityListPage from "./routes/EquipmentAvailabilityPage";
 
 const router = createBrowserRouter([
   {
@@ -132,7 +132,7 @@ const router = createBrowserRouter([
           },
           {
             path: "equipmentavailability",
-            element: <EquipmentAvailabilityPage />,
+            element: <EquipmentAvailabilityListPage />,
           },
           {
             path: "menu",
@@ -164,11 +164,11 @@ const router = createBrowserRouter([
           },
           {
             path: "/equipos/editar/:id",
-            element: <EquipoEditPage />,
+            element: <EquipmentEditPage />,
           },
           {
             path: "equipolist",
-            element: <EquipoListPage />,
+            element: <EquipmentListPage />,
           },
           {
             path: "formUsuario",

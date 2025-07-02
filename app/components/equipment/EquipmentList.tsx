@@ -13,7 +13,7 @@ interface Props {
   onDelete: (id: number) => void;
 }
 
-export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
+export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [filters, setFilters] = useState<EquipoFilters>({
     search: "",

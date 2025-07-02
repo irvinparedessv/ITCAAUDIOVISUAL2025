@@ -10,8 +10,8 @@ import {
 } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import api from "../api/axios";
-import type { AvailabilityData, Equipment, TipoEquipo } from "../types/equipo";
+import api from "../../api/axios";
+import type { AvailabilityData, Equipment, TipoEquipo } from "../../types/equipo";
 import { formatTo12h, timeOptions } from "~/utils/time";
 import { FaEye, FaLongArrowAltLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -65,6 +65,7 @@ export default function EquipmentAvailabilityList() {
   };
 
   const fetchEquipment = async () => {
+    setLoading(false);
     try {
       const response = await api.get("/obtenerEquipos", {
         params: {
@@ -79,7 +80,7 @@ export default function EquipmentAvailabilityList() {
       setError("Error al cargar los equipos");
       console.error(err);
     } finally {
-      setLoading(false);
+      setLoading(true);
     }
   };
 
@@ -152,31 +153,22 @@ export default function EquipmentAvailabilityList() {
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
 
-  if (loading) {
-    return (
-     <div className="text-center my-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3">Cargando datos...</p>
-        </div>
-    );
-  }
-
   return (
     <div className="container py-5">
       <div className="table-responsive rounded shadow p-3 mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div className="d-flex align-items-center gap-3">
-                    <FaLongArrowAltLeft
-                      onClick={handleBack}
-                      title="Regresar"
-                      style={{
-                        cursor: 'pointer',
-                        fontSize: '2rem',
-                      }}
-                    />
-                    <h2 className="mb-0">Disponibilidad de equipos</h2>
-                  </div>
-          
+            <FaLongArrowAltLeft
+              onClick={handleBack}
+              title="Regresar"
+              style={{
+                cursor: 'pointer',
+                fontSize: '2rem',
+              }}
+            />
+            <h2 className="mb-0">Disponibilidad de equipos</h2>
+          </div>
+
           <div>
             <Button
               variant="primary"
@@ -191,7 +183,7 @@ export default function EquipmentAvailabilityList() {
                 </>
               ) : (
                 <>
-                 <FaEye className="me-1" /> Ver disponibilidad
+                  <FaEye className="me-1" /> Ver disponibilidad
                 </>
               )}
             </Button>
@@ -327,98 +319,107 @@ export default function EquipmentAvailabilityList() {
             </div>
           )}
         </div>
+        
+        {!loading && (
+          <div className="text-center my-5">
+            <Spinner animation="border" variant="primary" />
+            <p className="mt-3">Cargando datos...</p>
+          </div>
+        )}
 
         {error && <Alert variant="danger">{error}</Alert>}
-
-        <table className="table table-hover align-middle text-center">      
-          <thead className="table-dark">
-            <tr>
-              <th>Nombre</th>
-              <th>Imagen</th>
-              <th>Total</th>
-              <th>Disponible</th>
-              <th>En Reserva</th>
-              <th>Entregado</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {equipmentList.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center text-muted py-4">
-                  No se encontraron equipos.
-                </td>
-              </tr>
-            ) : (
-              equipmentList.map((equipment) => (
-                <tr key={equipment.id}>
-                  <td className="fw-bold">{equipment.nombre}</td>
-                  <td>
-                    {equipment.imagen_url ? (
-                      <img
-                        src={equipment.imagen_url}
-                        alt={equipment.nombre}
-                        style={{
-                          width: "60px",
-                          height: "60px",
-                          objectFit: "cover",
-                          borderRadius: "8px",
-                          cursor: "pointer"
-                        }}
-                        onClick={() => {
-                          if (equipment.imagen_url) {
-                            handleImageClick(equipment.imagen_url, equipment.nombre);
-                          }
-                        }}
-                      />
-                    ) : (
-                      <span className="text-muted">Sin imagen</span>
-                    )}
-                  </td>
-                  <td>{equipment.cantidad}</td>
-                  <td>
-                    {equipment.disponibilidad
-                      ? equipment.disponibilidad.cantidad_disponible
-                      : equipment.cantidad}
-                  </td>
-                  <td>{equipment.disponibilidad?.cantidad_en_reserva ?? 0}</td>
-                  <td>{equipment.disponibilidad?.cantidad_entregada ?? 0}</td>
-                  <td>
-                    <Badge
-                      bg={
-                        (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
-                          ? "danger"
-                          : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) <
-                            equipment.cantidad
-                          ? "warning"
-                          : "success"
-                      }
-                      className="px-3 py-2"
-                    >
-                      {(equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
-                        ? "Agotado"
-                        : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) <
-                          equipment.cantidad
-                        ? "Limitado"
-                        : "Disponible"}
-                    </Badge>
-                  </td>
+        {loading && (
+          <>
+            <table className="table table-hover align-middle text-center">
+              <thead className="table-dark">
+                <tr>
+                  <th>Nombre</th>
+                  <th>Imagen</th>
+                  <th>Total</th>
+                  <th>Disponible</th>
+                  <th>En Reserva</th>
+                  <th>Entregado</th>
+                  <th>Estado</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-       
-        <PaginationComponent
-          page={filtros.page}
-          totalPages={totalPages}
-          onPageChange={(page) => setFiltros({ ...filtros, page })}
-        />
+              </thead>
+              <tbody>
+                {equipmentList.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center text-muted py-4">
+                      No se encontraron equipos.
+                    </td>
+                  </tr>
+                ) : (
+                  equipmentList.map((equipment) => (
+                    <tr key={equipment.id}>
+                      <td className="fw-bold">{equipment.nombre}</td>
+                      <td>
+                        {equipment.imagen_url ? (
+                          <img
+                            src={equipment.imagen_url}
+                            alt={equipment.nombre}
+                            style={{
+                              width: "60px",
+                              height: "60px",
+                              objectFit: "cover",
+                              borderRadius: "8px",
+                              cursor: "pointer"
+                            }}
+                            onClick={() => {
+                              if (equipment.imagen_url) {
+                                handleImageClick(equipment.imagen_url, equipment.nombre);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="text-muted">Sin imagen</span>
+                        )}
+                      </td>
+                      <td>{equipment.cantidad}</td>
+                      <td>
+                        {equipment.disponibilidad
+                          ? equipment.disponibilidad.cantidad_disponible
+                          : equipment.cantidad}
+                      </td>
+                      <td>{equipment.disponibilidad?.cantidad_en_reserva ?? 0}</td>
+                      <td>{equipment.disponibilidad?.cantidad_entregada ?? 0}</td>
+                      <td>
+                        <Badge
+                          bg={
+                            (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
+                              ? "danger"
+                              : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) <
+                                equipment.cantidad
+                                ? "warning"
+                                : "success"
+                          }
+                          className="px-3 py-2"
+                        >
+                          {(equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
+                            ? "Agotado"
+                            : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) <
+                              equipment.cantidad
+                              ? "Limitado"
+                              : "Disponible"}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
 
+            <PaginationComponent
+              page={filtros.page}
+              totalPages={totalPages}
+              onPageChange={(page) => setFiltros({ ...filtros, page })}
+            />
+          </>
+        )}
       </div>
 
-      <Modal 
-        show={showImageModal} 
+      <Modal
+        show={showImageModal}
         onHide={() => setShowImageModal(false)}
         centered
         size="lg"
@@ -427,9 +428,9 @@ export default function EquipmentAvailabilityList() {
           <Modal.Title>{selectedEquipment?.name || 'Imagen del equipo'}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center">
-          <img 
-            src={selectedEquipment?.imageUrl} 
-            alt={selectedEquipment?.name || 'Equipo'} 
+          <img
+            src={selectedEquipment?.imageUrl}
+            alt={selectedEquipment?.name || 'Equipo'}
             style={{
               maxWidth: "100%",
               maxHeight: "70vh",

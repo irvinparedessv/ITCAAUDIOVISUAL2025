@@ -17,7 +17,7 @@ import { FaBell, FaComputer } from "react-icons/fa6";
 import { Role } from "../../types/roles";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../hooks/AuthContext";
-import { useNotificaciones } from "~/hooks/useNotificaciones";
+import { useNotificaciones } from "~/hooks/useNotifications";
 import React from "react";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { FiRefreshCcw } from "react-icons/fi";

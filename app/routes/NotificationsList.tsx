@@ -22,7 +22,7 @@ import {
   SwipeAction,
 } from "react-swipeable-list";
 import "react-swipeable-list/dist/styles.css";
-import { useNotificaciones } from "../hooks/useNotificaciones";
+import { useNotificaciones } from "../hooks/useNotifications";
 
 
 interface Notification {

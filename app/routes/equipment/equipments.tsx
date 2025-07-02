@@ -8,7 +8,7 @@ import {
 import { getTipoEquipos } from "../../services/tipoEquipoService";
 import type { Equipo, EquipoCreateDTO, EquipoUpdateDTO } from "app/types/equipo";
 import type { TipoEquipo } from "app/types/tipoEquipo";
-import EquipoForm from "../../components/equipo/EquipoForm";
+import EquipmentForm from "../../components/equipment/EquipmentForm";
 import toast from "react-hot-toast";
 
 export default function EquipmentPage() {
@@ -64,7 +64,7 @@ export default function EquipmentPage() {
   return (
     <div className="max-w-3xl mx-auto mt-8 px-4">
 
-      <EquipoForm
+      <EquipmentForm
         onSubmit={handleCreateOrUpdate}
         equipoEditando={editando}
         resetEdit={resetEdit}

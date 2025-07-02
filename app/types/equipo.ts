@@ -40,6 +40,8 @@ export type Equipment = {
     cantidad_entregada: number;
     porcentaje_disponible: number;
   };
+  imagen: string;
+  imagen_url?: string;
 };
 
 export type AvailabilityData = {

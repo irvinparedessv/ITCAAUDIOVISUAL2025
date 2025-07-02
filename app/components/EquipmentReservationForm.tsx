@@ -12,6 +12,7 @@ import {
   FaUpload,
   FaTrash,
   FaUser,
+  FaLongArrowAltLeft,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../api/axios";
@@ -19,6 +20,7 @@ import { getTipoReservas } from "../services/tipoReservaService";
 import { formatTo12h, timeOptions } from "~/utils/time";
 import { useDropzone } from "react-dropzone";
 import { Role } from "~/types/roles";
+import { useNavigate } from 'react-router-dom';
 
 export default function EquipmentReservationForm() {
   type OptionType = { value: string; label: string };
@@ -52,6 +54,7 @@ export default function EquipmentReservationForm() {
   const isTodaySelected = formData.date === new Date().toISOString().split("T")[0];
   const [prestamistaOptions, setPrestamistaOptions] = useState<OptionType[]>([]);
   const [selectedPrestamista, setSelectedPrestamista] = useState<SingleValue<OptionType>>(null);
+  const navigate = useNavigate();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -343,16 +346,27 @@ export default function EquipmentReservationForm() {
 
 
   const handleClear = () => {
-    setFormData({
-      date: "",
-      startTime: "",
-      endTime: "",
-      tipoReserva: null,
-      equipment: [],
-      aula: null,
-    });
-    setAvailableEquipmentOptions([]);
-  };
+  setFormData({
+    date: "",
+    startTime: "",
+    endTime: "",
+    tipoReserva: null,
+    equipment: [],
+    aula: null,
+  });
+  setAvailableEquipmentOptions([]);
+  setUploadedFile(null); 
+    setSelectedPrestamista(null);
+
+};
+
+
+useEffect(() => {
+  if (formData.tipoReserva?.label !== "Eventos" && uploadedFile) {
+    setUploadedFile(null);
+    toast("ℹ️ Documento eliminado porque el tipo de reserva no es Eventos");
+  }
+}, [formData.tipoReserva, uploadedFile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -451,6 +465,11 @@ export default function EquipmentReservationForm() {
       });
 
       toast.success("¡Reserva creada exitosamente!");
+
+      setTimeout(() => {
+      navigate('/reservations'); // Cambia esto por tu ruta deseada
+    }, 2000);
+
       handleClear();
       setUploadedFile(null);
       setSelectedPrestamista(null);
@@ -490,9 +509,31 @@ export default function EquipmentReservationForm() {
   };
 
 
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
+
+
   return (
-    <div className="form-container">
-      <h2 className="mb-4 text-center fw-bold">Reservación de Equipos</h2>
+    <div className="form-container position-relative">
+      {/* Flecha de regresar en esquina superior izquierda */}
+      <FaLongArrowAltLeft
+        onClick={handleBack}
+        title="Regresar"
+        style={{
+          position: 'absolute',
+          top: '25px',
+          left: '30px',
+          cursor: 'pointer',
+          fontSize: '2rem',
+          zIndex: 10
+        }}
+      />
+
+      {/* Título centrado */}
+      <div className="mb-4 text-center d-flex align-items-center justify-content-center">
+        <h2 className="fw-bold m-0">Reserva de Equipos</h2>
+      </div>
 
       <form onSubmit={handleSubmit}>
         {/* Fecha */}
@@ -754,7 +795,7 @@ export default function EquipmentReservationForm() {
           </label>
           {loadingAulas ? (
             <div className="d-flex justify-content-center">
-              <div className="spinner-border text-primary" role="status">
+              <div className="spinner-border" role="status">
                 <span className="visually-hidden">Cargando...</span>
               </div>
             </div>

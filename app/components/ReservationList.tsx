@@ -10,7 +10,7 @@ import {
 import api from "../api/axios";
 import { useAuth } from "../hooks/AuthContext";
 import toast from "react-hot-toast";
-import { FaEdit, FaEye, FaFilter, FaSearch, FaTimes } from "react-icons/fa";
+import { FaCalendarAlt, FaCalendarDay, FaEdit, FaExchangeAlt, FaEye, FaFilter, FaLongArrowAltLeft, FaPlus, FaQrcode, FaSearch, FaTimes } from "react-icons/fa";
 import type { TipoReserva } from "app/types/tipoReserva";
 import type { Bitacora } from "app/types/bitacora";
 import { QRURL } from "~/constants/constant";
@@ -20,6 +20,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import "animate.css";
 import ReservacionEstadoModal from "./ReservacionEstado";
 import { Role } from "~/types/roles";
+import QrScanner from "./QrReader";
+import PaginationComponent from "../utils/Pagination";
 
 export default function ReservationList() {
   // Estados de autenticación y navegación
@@ -66,19 +68,23 @@ export default function ReservationList() {
   const [endDate, setEndDate] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  useEffect(() => {
-  const handleForceRefresh = (e: CustomEvent) => {
-    const { highlightReservaId, page } = e.detail || {};
-    if (page) setCurrentPage(page);
-    if (highlightReservaId) setHighlightId(highlightReservaId);
-    fetchReservations();
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
   };
 
-  window.addEventListener("force-refresh", handleForceRefresh as EventListener);
-  return () => {
-    window.removeEventListener("force-refresh", handleForceRefresh as EventListener);
-  };
-}, []);
+  useEffect(() => {
+    const handleForceRefresh = (e: CustomEvent) => {
+      const { highlightReservaId, page } = e.detail || {};
+      if (page) setCurrentPage(page);
+      if (highlightReservaId) setHighlightId(highlightReservaId);
+      fetchReservations();
+    };
+
+    window.addEventListener("force-refresh", handleForceRefresh as EventListener);
+    return () => {
+      window.removeEventListener("force-refresh", handleForceRefresh as EventListener);
+    };
+  }, []);
 
 
   // Efectos
@@ -244,48 +250,107 @@ export default function ReservationList() {
     return rangeWithDots;
   };
 
-  const handleCancelReservation = async (reservaId: number) => {
-    const confirm = window.confirm("¿Estás seguro de cancelar esta reserva?");
-    if (!confirm) return;
+  const handleCancelReservation = (reservaId: number) => {
+  toast((t) => (
+    <div>
+      <p>¿Deseas cancelar esta reserva?</p>
+      <div className="d-flex justify-content-end gap-2 mt-2">
+        <button
+          className="btn btn-sm btn-danger"
+          onClick={async () => {
+            try {
+              await api.put(`/reservas-equipo/${reservaId}/estado`, {
+                estado: "Cancelado",
+                comentario: "Cancelada por el usuario",
+              });
 
-    try {
-      await api.put(`/reservas-equipo/${reservaId}/estado`, {
-        estado: "Cancelado",
-        comentario: "Cancelada por el usuario",
-      });
+              toast.success("Reserva cancelada correctamente");
 
-      toast.success("Reserva cancelada correctamente");
+              setReservations((prev) =>
+                prev.map((r) =>
+                  r.id === reservaId
+                    ? ({ ...r, estado: "Cancelado" } as Reservation)
+                    : r
+                )
+              );
+            } catch (err: any) {
+              toast.error(
+                err?.response?.data?.message ||
+                  "Error al cancelar la reserva"
+              );
+            }
+            toast.dismiss(t.id);
+          }}
+        >
+          Sí, cancelar
+        </button>
 
-      setReservations((prev) =>
-        prev.map((r) =>
-          r.id === reservaId
-            ? ({ ...r, estado: "Cancelado" } as Reservation)
-            : r
-        )
-      );
-    } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message || "Error al cancelar la reserva"
-      );
-    }
-  };
+        <button
+          className="btn btn-sm btn-secondary"
+          onClick={() => toast.dismiss(t.id)}
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  ), {
+    duration: 8000,
+  });
+};
+
 
   // Render
   return (
+
     <div className="table-responsive rounded shadow p-3 mt-4">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4 className="mb-0">Listado de Reservas</h4>
-        {(user?.role === Role.Administrador ||
-          user?.role === Role.Encargado) && (
-            <Button
-              onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
-              className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2"
-            >
-              {mostrarSoloHoy ? "Ver todas las reservas" : "Ver reservas de hoy"}
-            </Button>
+      <div className="d-flex justify-content-between align-items-center mb-4 position-relative">
+        <div className="d-flex align-items-center gap-3">
+          <FaLongArrowAltLeft
+            onClick={handleBack}
+            title="Regresar"
+            style={{
+              cursor: 'pointer',
+              fontSize: '2rem',
+            }}
+          />
+          <h2 className="fw-bold m-0">Listado de Reservas</h2>
+        </div>
+
+
+        {/* Botones alineados a la derecha */}
+        <div className="d-flex flex-wrap gap-2">
+          {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
+            <>
+              <Button
+                onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
+                className="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2"
+              >
+                {mostrarSoloHoy ? <FaCalendarAlt /> : <FaCalendarDay />}
+                {mostrarSoloHoy ? "Todas las reservas" : "Reservas de hoy"}
+              </Button>
+
+              <Button
+                onClick={() => navigate("/qrScan")}
+                className="btn btn-outline-success d-flex align-items-center gap-2 px-3 py-2"
+              >
+                <FaQrcode />
+                Lector QR
+              </Button>
+            </>
           )}
+
+          <Button
+            onClick={() => navigate("/addreservation")}
+            className="btn btn-success d-flex align-items-center gap-2 px-3 py-2"
+          >
+            <FaPlus />
+            Crear reserva
+          </Button>
+        </div>
       </div>
+
+
 
       {/* Buscador con icono y limpiar + botón de filtros */}
       <div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
@@ -506,7 +571,7 @@ export default function ReservationList() {
 
                           {/* BOTÓN NUEVO EDITAR */}
                           <button
-                            className="btn btn-outline-warning rounded-circle"
+                            className="btn btn-outline-warning rounded-circle btn-icon-white-hover"
                             title="Editar reserva"
                             onClick={() => navigate(`/equipmentreservation/edit/${reserva.id}`)}
                             style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out" }}
@@ -516,7 +581,7 @@ export default function ReservationList() {
                             onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
-                            disabled={reserva.estado.toLowerCase() !== "pendiente"} 
+                            disabled={reserva.estado.toLowerCase() !== "pendiente"}
                           >
                             <FaEdit className="fs-5" />
                           </button>
@@ -544,7 +609,7 @@ export default function ReservationList() {
                               title="Actualizar estado"
                               disabled={updatingReservationId === reserva.id}
                             >
-                              <FaEdit className="fs-5" />
+                              <FaExchangeAlt className="fs-5" />
                             </button>
                           )}
                           <button
@@ -587,55 +652,13 @@ export default function ReservationList() {
           </div>
 
           {/* Paginación */}
-          {totalPages > 1 && (
-            <nav className="d-flex justify-content-center mt-4">
-              <ul className="pagination">
-                <li
-                  className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    Anterior
-                  </button>
-                </li>
-                {getPageNumbers().map((page, index) =>
-                  page === "..." ? (
-                    <li key={`dots-${index}`} className="page-item disabled">
-                      <span className="page-link">...</span>
-                    </li>
-                  ) : (
-                    <li
-                      key={page}
-                      className={`page-item ${currentPage === page ? "active" : ""
-                        }`}
-                    >
-                      <button
-                        className="page-link"
-                        onClick={() => setCurrentPage(Number(page))}
-                      >
-                        {page}
-                      </button>
-                    </li>
-                  )
-                )}
-                <li
-                  className={`page-item ${currentPage === totalPages ? "disabled" : ""
-                    }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Siguiente
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          )}
+         {totalPages > 1 && (
+  <PaginationComponent
+    page={currentPage}
+    totalPages={totalPages}
+    onPageChange={(p) => setCurrentPage(p)}
+  />
+)}
         </>
       )}
 

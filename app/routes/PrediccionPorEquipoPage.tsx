@@ -8,7 +8,7 @@ import {
   getPrediccionPorEquipo,
   getTop5PrediccionesPorEquipo,
 } from "../services/prediccionService";
-import { useTheme } from "../components/ThemeContext";
+import { useTheme } from "../hooks/ThemeContext";
 
 type PrediccionRow = {
   mes: string;

@@ -1129,3 +1129,28 @@ input.form-control.border-color-login {
   background-color: #6d0000 !important;
   border-color: #6d0000 !important;
 }
+
+.btn-outline-warning.btn-icon-white-hover:hover {
+  --bs-btn-hover-color: #fff !important;
+}
+
+
+/* Reemplazar el color amarillo por defecto de los botones outline-warning */
+.btn-outline-warning {
+  --bs-btn-color: rgb(195, 144, 0) !important;
+  --bs-btn-border-color: rgb(195, 144, 0) !important;
+  --bs-btn-hover-color: #fff !important;
+  --bs-btn-hover-bg: rgb(195, 144, 0) !important;
+  --bs-btn-hover-border-color: rgb(195, 144, 0) !important;
+  --bs-btn-active-color: #fff !important;
+  --bs-btn-active-bg: rgb(195, 144, 0) !important;
+  --bs-btn-active-border-color: rgb(195, 144, 0) !important;
+  --bs-btn-disabled-color: rgb(195, 144, 0) !important;
+  --bs-btn-disabled-border-color: rgb(195, 144, 0) !important;
+}
+
+
+.bg-warning {
+  background-color: rgb(195, 144, 0) !important;
+  color: #fff !important; /* Texto blanco para mejor contraste */
+}

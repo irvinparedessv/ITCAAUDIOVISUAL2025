@@ -7,7 +7,7 @@ import type { Bitacora } from "~/types/bitacora";
 import RoomDetailsModal from "../applicant/RoomDetailsModal";
 import toast from "react-hot-toast";
 import { FaEdit, FaEye, FaTimes, FaExchangeAlt } from "react-icons/fa";
-import PaginationComponent from "../applicant/RoomReservationList/Pagination";
+import PaginationComponent from "../../utils/Pagination";
 import Filters from "../applicant/RoomReservationList/Filter";
 import { useLocation, useNavigate } from "react-router-dom";
 import "animate.css";

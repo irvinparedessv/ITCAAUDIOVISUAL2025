@@ -3,7 +3,7 @@ import { Button, Spinner, Table, Badge } from "react-bootstrap";
 
 import api from "../../../api/axios";
 import Filters from "./Filter";
-import PaginationComponent from "./Pagination";
+import PaginationComponent from "../../../utils/Pagination";
 import { FaEdit, FaEye, FaTimes } from "react-icons/fa";
 import type { ReservationRoom } from "~/types/reservationroom";
 import RoomDetailsModal from "../RoomDetailsModal";

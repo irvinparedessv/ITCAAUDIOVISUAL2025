@@ -22,7 +22,7 @@ import React from "react";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { FiRefreshCcw } from "react-icons/fi";
 import type { ReactNode, ElementType } from "react";
-import { useTheme } from "../ThemeContext";
+import { useTheme } from "../../hooks/ThemeContext";
 import type {
   AulaNotification,
   Notificacion,

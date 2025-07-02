@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import type { Equipo, EquipoCreateDTO, EquipoUpdateDTO } from "~/types/equipo";
+import type { Equipo, EquipoCreateDTO } from "~/types/equipo";
 import EquipoForm from "~/components/equipo/EquipoForm";
 import { getEquipoById, updateEquipo } from "~/services/equipoService";
 import { Spinner } from "react-bootstrap";
 
-export default function EquipoEditPage() {
+export default function EquipmentEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [equipo, setEquipo] = useState<Equipo | null>(null);

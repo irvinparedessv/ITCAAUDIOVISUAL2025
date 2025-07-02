@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { deleteEquipo, getEquipos } from "../services/equipoService";
-import { getTipoEquipos } from "../services/tipoEquipoService";
+import { deleteEquipo, getEquipos } from "../../services/equipoService";
+import { getTipoEquipos } from "../../services/tipoEquipoService";
 import type { Equipo } from "app/types/equipo";
 import type { TipoEquipo } from "app/types/tipoEquipo";
-import EquipoList from "../components/equipo/EquipoList";
+import EquipoList from "../../components/equipo/EquipoList";
 import { Button, Spinner } from "react-bootstrap";
 
-export default function EquipoListPage() {
+export default function EquipmentListPage() {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [tipos, setTipos] = useState<TipoEquipo[]>([]);
   const [loading, setLoading] = useState(true);

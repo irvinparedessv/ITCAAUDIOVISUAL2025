@@ -13,6 +13,7 @@ import {
   FaTrash,
   FaUser,
   FaLongArrowAltLeft,
+  FaEye,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../api/axios";
@@ -731,13 +732,31 @@ useEffect(() => {
 
         {/* Multiselect Equipos */}
         <div className="mb-4">
-          <label className="form-label d-flex align-items-center">
-            <FaBoxes className="me-2" />
-            Equipos Disponibles
-            {checkingAvailability && (
-              <span className="ms-2 spinner-border spinner-border-sm"></span>
-            )}
-          </label>
+          <label className="form-label d-flex align-items-center justify-content-between">
+  <div className="d-flex align-items-center">
+    <FaBoxes className="me-2" />
+    Equipos Disponibles
+    {checkingAvailability && (
+      <span className="ms-2 spinner-border spinner-border-sm"></span>
+    )}
+  </div>
+  <a
+    href="/equipmentavailability"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="btn btn-sm ms-3"
+    style={{
+      backgroundColor: 'rgb(177, 41, 29)',
+      color: '#fff',
+      border: 'none'
+    }}
+  >
+    <FaEye className="me-1" /> Ver disponibilidad
+  </a>
+</label>
+
+
+          
           {loadingEquipments ? (
             <div className="d-flex justify-content-center">
               <div className="spinner-border" role="status">

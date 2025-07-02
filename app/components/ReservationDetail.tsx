@@ -15,12 +15,14 @@ import api from "../api/axios";
 
 type Reserva = {
   usuario: string;
-  equipo: string[];
+  equipo?: string[]; // opcional si no es room
   aula: string;
   dia: string;
-  horaSalida: string;
-  horaEntrada: string;
+  horaSalida?: string;
+  horaEntrada?: string;
+  horario?: string; // solo si isRoom === true
   estado: "Pendiente" | "Entregado" | "Devuelto";
+  isRoom: boolean;
 };
 
 export default function ReservationDetail() {
@@ -50,18 +52,6 @@ export default function ReservationDetail() {
       minute: "2-digit",
     });
   }
-  useEffect(() => {
-    const verificarUsuario = async () => {
-      try {
-        const res = await api.get("/verificar-rol");
-        console.log("Usuario autenticado:", res.data);
-      } catch (error) {
-        console.error("Error al verificar usuario:", error);
-      }
-    };
-
-    verificarUsuario();
-  }, []);
 
   useEffect(() => {
     if (!idQr) return;
@@ -137,11 +127,11 @@ export default function ReservationDetail() {
     return null;
   }
 
-  const qrData = `Reserva de ${reserva.usuario} - ${reserva.equipo.join(
-    ", "
-  )} en ${reserva.aula} el ${reserva.dia} de ${reserva.horaSalida} a ${
-    reserva.horaEntrada
-  }`;
+  const qrData = reserva.isRoom
+    ? `Reserva de aula para ${reserva.usuario} en ${reserva.aula} el ${reserva.dia}`
+    : `Reserva de ${reserva.usuario} - ${reserva.equipo?.join(", ")} en ${
+        reserva.aula
+      } el ${reserva.dia}`;
 
   return (
     <>
@@ -154,22 +144,34 @@ export default function ReservationDetail() {
             <ListGroup.Item>
               <strong>Usuario:</strong> {reserva.usuario}
             </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Equipos:</strong> {reserva.equipo.join(", ")}
-            </ListGroup.Item>
+            {!reserva.isRoom && reserva.equipo && (
+              <ListGroup.Item>
+                <strong>Equipos:</strong> {reserva.equipo.join(", ")}
+              </ListGroup.Item>
+            )}
             <ListGroup.Item>
               <strong>Aula:</strong> {reserva.aula}
             </ListGroup.Item>
             <ListGroup.Item>
-              <strong>Día:</strong> {formatDayWithDate(reserva.horaSalida)}
+              <strong>Día:</strong> {formatDayWithDate(reserva.dia)}
             </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Hora de Reserva:</strong> {formatTime(reserva.horaSalida)}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Hora de Entrega:</strong>{" "}
-              {formatTime(reserva.horaEntrada)}
-            </ListGroup.Item>
+            {!reserva.isRoom && reserva.horaSalida && (
+              <ListGroup.Item>
+                <strong>Hora de Reserva:</strong>{" "}
+                {formatTime(reserva.horaSalida)}
+              </ListGroup.Item>
+            )}
+            {!reserva.isRoom && reserva.horaEntrada && (
+              <ListGroup.Item>
+                <strong>Hora de Entrega:</strong>{" "}
+                {formatTime(reserva.horaEntrada)}
+              </ListGroup.Item>
+            )}
+            {reserva.isRoom && reserva.horario && (
+              <ListGroup.Item>
+                <strong>Horario:</strong> {reserva.horario}
+              </ListGroup.Item>
+            )}
             <ListGroup.Item>
               <strong>Estado:</strong>{" "}
               <Badge bg={getBadgeColor(reserva.estado)}>{reserva.estado}</Badge>

@@ -4,7 +4,7 @@ import { Button, Spinner, Table, Badge } from "react-bootstrap";
 import api from "../../../api/axios";
 import Filters from "./Filter";
 import PaginationComponent from "../../../utils/Pagination";
-import { FaEdit, FaEye, FaTimes } from "react-icons/fa";
+import { FaEdit, FaEye, FaLongArrowAltLeft, FaPlus, FaTimes } from "react-icons/fa";
 import type { ReservationRoom } from "~/types/reservationroom";
 import RoomDetailsModal from "../RoomDetailsModal";
 import type { Bitacora } from "~/types/bitacora";
@@ -47,6 +47,10 @@ const RoomReservationList = () => {
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const highlightRef = useRef<HTMLTableRowElement>(null);
   const initialHighlightHandled = useRef(false);
+
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
 
   const [totalPages, setTotalPages] = useState(1);
   const [selectedReservation, setSelectedReservation] =
@@ -153,7 +157,7 @@ const RoomReservationList = () => {
     adjustRangeForHighlight();
   }, [highlightId, range.from, range.to]);
 
-   const handleEditClick = (reserva: any) => {
+  const handleEditClick = (reserva: any) => {
     navigate(`/reservas-aula/editar/${reserva.id}`, { state: { page } });
   };
 
@@ -326,8 +330,30 @@ const RoomReservationList = () => {
     <div className="container py-5">
       <div className="table-responsive rounded shadow p-3 mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h4>Listado de Reservas - Espacio</h4>
+          {/* Título + Flecha */}
+          <div className="d-flex align-items-center gap-3">
+            <FaLongArrowAltLeft
+              onClick={handleBack}
+              title="Regresar"
+              style={{
+                cursor: 'pointer',
+                fontSize: '2rem',
+              }}
+            />
+            <h4 className="mb-0">Listado de Reservas - Espacio</h4>
+          </div>
+          <div className="d-flex flex-wrap gap-2">
+            <Button
+              onClick={() => navigate("/reservationsroom")}
+              className="btn btn-success d-flex align-items-center gap-2 px-3 py-2"
+            >
+              <FaPlus />
+              Crear reserva
+            </Button>
+          </div>
         </div>
+
+
 
         <Filters
           from={range.from}
@@ -354,12 +380,9 @@ const RoomReservationList = () => {
         />
 
         {isLoading ? (
-          <div className="d-flex justify-content-center my-5">
-            <Spinner
-              animation="border"
-              variant="dark"
-              style={{ width: "3rem", height: "3rem" }}
-            />
+          <div className="text-center my-5">
+            <Spinner animation="border" variant="primary" />
+            <p className="mt-3">Cargando datos...</p>
           </div>
         ) : reservations.length === 0 ? (
           <div className="d-flex justify-content-center my-5">

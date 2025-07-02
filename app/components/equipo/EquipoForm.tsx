@@ -14,6 +14,7 @@ import {
   FaBroom,
   FaUpload,
   FaTrash,
+  FaLongArrowAltLeft,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -47,6 +48,10 @@ export default function EquipoForm({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [tipoReservas, setTipoReservas] = useState<TipoReserva[]>([]);
   const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -194,6 +199,11 @@ export default function EquipoForm({
       return;
     }
 
+    if (!form.tipo_reserva_id) {
+      toast.error("Debe seleccionar un tipo de reserva");
+      return;
+    }
+
     if (equipoEditando) {
       showConfirmationToast("update", () => {
         onSubmit(form, true, equipoEditando.id);
@@ -203,6 +213,9 @@ export default function EquipoForm({
       onSubmit(form, false);
       toast.success("Equipo creado exitosamente");
       handleClear();
+      setTimeout(() => {
+      navigate('/equipolist'); // Cambia esto por tu ruta deseada
+    }, 2000);
     }
   };
 
@@ -235,10 +248,24 @@ export default function EquipoForm({
   };
 
   return (
-    <div className="form-container">
+    <div className="form-container position-relative">
+      {/* Flecha de regresar en esquina superior izquierda */}
+      <FaLongArrowAltLeft
+        onClick={handleBack}
+        title="Regresar"
+        style={{
+          position: 'absolute',
+          top: '25px',
+          left: '30px',
+          cursor: 'pointer',
+          fontSize: '2rem',
+          zIndex: 10
+        }}
+      />
       <h2 className="mb-4 text-center fw-bold">
         {equipoEditando ? "Editar Equipo" : "Agregar Nuevo Equipo"}
       </h2>
+
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -287,7 +314,7 @@ export default function EquipoForm({
             </select>
           </div>
 
-          
+
 
           <div className="col-md-6">
             <label htmlFor="cantidad" className="form-label">
@@ -330,24 +357,27 @@ export default function EquipoForm({
           ) : (
             <div
               {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
-                isDragActive ? "border-primary bg-light" : ""
-              }`}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : ""
+                }`}
             >
               <input {...getInputProps()} />
               <div className="d-flex flex-column align-items-center justify-content-center">
-                <FaUpload className="text-muted mb-2" />
+                <FaUpload className="text-muted mb-2" size={24} />
                 {isDragActive ? (
                   <p className="text-primary mb-0">Suelta la imagen aquí...</p>
                 ) : (
                   <>
                     <p className="mb-1">
-                      Arrastra y suelta una imagen aquí, o haz clic para
-                      seleccionar
+                      Arrastra y suelta una imagen aquí, o haz clic para seleccionar
                     </p>
                     <p className="text-muted small mb-0">
                       Formatos: JPEG, PNG, GIF (Máx. 5MB)
                     </p>
+                    {equipoEditando?.imagen_url && (
+                      <p className="text-info small mt-2">
+                        Ya hay una imagen cargada para este equipo. Subir una nueva la reemplazará.
+                      </p>
+                    )}
                   </>
                 )}
               </div>
@@ -433,15 +463,8 @@ export default function EquipoForm({
                 <FaBroom className="me-2" />
                 Limpiar
               </button>
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => navigate("/equipolist")}
-              >
-                <FaTimes className="me-2" />
-                Cancelar
-              </button>
-                </>
+
+            </>
           )}
         </div>
 

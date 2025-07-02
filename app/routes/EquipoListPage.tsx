@@ -5,7 +5,7 @@ import { getTipoEquipos } from "../services/tipoEquipoService";
 import type { Equipo } from "app/types/equipo";
 import type { TipoEquipo } from "app/types/tipoEquipo";
 import EquipoList from "../components/equipo/EquipoList";
-import { Button } from "react-bootstrap";
+import { Button, Spinner } from "react-bootstrap";
 
 export default function EquipoListPage() {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
@@ -19,7 +19,7 @@ export default function EquipoListPage() {
         getEquipos({ search: "", page: 1, perPage: 5 }),
         getTipoEquipos(),
       ]);
-      
+
       setEquipos(Array.isArray(equiposData.data) ? equiposData.data : []);
       setTipos(tiposData);
     } catch (error) {
@@ -48,25 +48,11 @@ export default function EquipoListPage() {
 
   return (
     <div className="container mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Listado de Equipos</h2>
-        <Button 
-          variant="primary" 
-          onClick={() => navigate('/equipo')}
-        >
-          Crear Nuevo Equipo
-        </Button>
-      </div>
-
-      {loading ? (
-        <div>Cargando...</div>
-      ) : (
-        <EquipoList 
-          tipos={tipos}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      )}
+      <EquipoList
+        tipos={tipos}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

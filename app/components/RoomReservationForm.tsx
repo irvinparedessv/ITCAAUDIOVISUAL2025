@@ -15,6 +15,7 @@ import {
   FaCheck,
   FaBroom,
   FaUser,
+  FaLongArrowAltLeft,
 } from "react-icons/fa";
 import { useAuth } from "app/hooks/AuthContext";
 import { Role } from "~/types/roles";
@@ -59,6 +60,10 @@ export default function ReserveClassroom() {
   const userId = user?.id;
 
   const isDateTimeComplete = selectedDate && selectedTime;
+
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
 
   // === Cargar aulas y usuarios ===
   useEffect(() => {
@@ -296,11 +301,26 @@ export default function ReserveClassroom() {
   }
 
   return (
-    <div className="form-container">
+    <div className="form-container position-relative">
+
+      {/* Flecha de regresar en esquina superior izquierda */}
+      <FaLongArrowAltLeft
+        onClick={handleBack}
+        title="Regresar"
+        style={{
+          position: 'absolute',
+          top: '25px',
+          left: '30px',
+          cursor: 'pointer',
+          fontSize: '2rem',
+          zIndex: 10
+        }}
+      />
       <h2 className="mb-4 text-center fw-bold">
         <FaDoorOpen className="me-2" />
         {id ? "Editar Reserva" : "Reserva de Aula"}
       </h2>
+
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -373,21 +393,21 @@ export default function ReserveClassroom() {
 
         {(user?.role === Role.Administrador ||
           user?.role === Role.Encargado) && (
-          <div className="mb-4">
-            <label className="form-label d-flex align-items-center">
-              <FaUser className="me-2" /> Seleccionar Usuario
-            </label>
-            <Select
-              options={prestamistaOptions}
-              value={selectedPrestamista}
-              onChange={(selected) => setSelectedPrestamista(selected)}
-              placeholder="Selecciona un usuario prestamista"
-              className="react-select-container"
-              classNamePrefix="react-select"
-              isDisabled={!isDateTimeComplete}
-            />
-          </div>
-        )}
+            <div className="mb-4">
+              <label className="form-label d-flex align-items-center">
+                <FaUser className="me-2" /> Seleccionar Usuario
+              </label>
+              <Select
+                options={prestamistaOptions}
+                value={selectedPrestamista}
+                onChange={(selected) => setSelectedPrestamista(selected)}
+                placeholder="Selecciona un usuario prestamista"
+                className="react-select-container"
+                classNamePrefix="react-select"
+                isDisabled={!isDateTimeComplete}
+              />
+            </div>
+          )}
 
         <div className="form-actions">
           <button type="submit" className="btn primary-btn">

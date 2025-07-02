@@ -56,10 +56,10 @@ export default function Dashboard() {
       {user?.role === Role.Administrador && (
         <Row xs={1} md={2} lg={3} className="g-4">
           <DashboardCard
-            title="Reservar Equipo"
+            title="Reservas de Equipo"
             icon={<FaComputer size={24} style={getIconStyle()} />}
-            link="/addreservation"
-            description="Crear nueva reserva de equipos tecnológicos"
+            link="/reservations"
+            description="Gestionar reserva de equipos"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -67,26 +67,8 @@ export default function Dashboard() {
           <DashboardCard
             title="Reservas de Espacios"
             icon={<FaDoorOpen size={24} style={getIconStyle()} />}
-            link="/reservationsroom"
-            description="Gestionar reservas de espacios físicos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Todas las Reservas Equipos"
-            icon={<FaClipboardList size={24} style={getIconStyle()} />}
-            link="/reservations"
-            description="Ver historial completo de reservaciones de equipos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Todas las Reservas Espacios"
-            icon={<FaClipboardList size={24} style={getIconStyle()} />}
             link="/reservations-room"
-            description="Ver historial completo de reservaciones de espacios"
+            description="Gestionar reservas de espacios físicos"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -94,7 +76,7 @@ export default function Dashboard() {
           <DashboardCard
             title="Gestión de Equipos"
             icon={<FaTools size={24} style={getIconStyle()} />}
-            link="/equipo"
+            link="/equipolist"
             description="Administrar inventario de equipos"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import type { Equipo, EquipoFilters, TipoEquipo } from "app/types/equipo";
-import { Button, Form, InputGroup } from "react-bootstrap";
+import { Button, Form, InputGroup, Spinner, Modal } from "react-bootstrap";
 import toast from "react-hot-toast";
-import { FaEdit, FaFilter, FaTrash, FaTimes, FaSearch } from "react-icons/fa";
+import { FaEdit, FaFilter, FaTrash, FaTimes, FaSearch, FaLongArrowAltLeft, FaPlus } from "react-icons/fa";
 import { getEquipos } from "../../services/equipoService";
 import { useNavigate } from "react-router-dom";
+import PaginationComponent from "~/utils/Pagination";
 
 interface Props {
   tipos: TipoEquipo[];
@@ -23,8 +24,12 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
   const [lastPage, setLastPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
 
   const fetchEquipos = async () => {
+    setLoading(false);
     try {
       const res = await getEquipos(filters);
       setEquipos(Array.isArray(res.data) ? res.data : []);
@@ -33,6 +38,8 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
     } catch (error) {
       toast.error("Error al cargar los equipos");
       console.error("Error fetching equipos:", error);
+    } finally {
+      setLoading(true);
     }
   };
 
@@ -43,6 +50,11 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
   const getTipoNombre = (id: number) => {
     const tipo = tipos.find((t) => t.id === id);
     return tipo ? tipo.nombre : "Desconocido";
+  };
+
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setShowImageModal(true);
   };
 
   const confirmarEliminacion = (id: number) => {
@@ -103,11 +115,63 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
     });
   };
 
-  return (
-    <div className="table-responsive rounded shadow p-3 mt-4">
-      <h4 className="mb-3 text-center">Listado de Equipos</h4>
+  const handleBack = () => {
+    navigate(-1);
+  };
 
-      {/* Buscador con icono y limpiar + botón de filtros */}
+  return (
+    <div className="table-responsive rounded shadow p-3 mt-4 position-relative">
+      {/* Modal para imagen ampliada */}
+      <Modal 
+        show={showImageModal} 
+        onHide={() => setShowImageModal(false)}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Imagen del equipo</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          <img 
+            src={selectedImage} 
+            alt="Imagen ampliada" 
+            style={{ 
+              maxWidth: '100%', 
+              maxHeight: '70vh',
+              borderRadius: '8px'
+            }}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowImageModal(false)}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+        <div className="d-flex align-items-center gap-3">
+          <FaLongArrowAltLeft
+            onClick={handleBack}
+            title="Regresar"
+            style={{
+              cursor: 'pointer',
+              fontSize: '2rem',
+            }}
+          />
+          <h2 className="fw-bold m-0">Listado de Equipos</h2>
+        </div>
+
+        <Button
+          variant="primary"
+          className="d-flex align-items-center gap-2"
+          onClick={() => navigate('/equipo')}
+        >
+          <FaPlus />
+          Crear Nuevo Equipo
+        </Button>
+      </div>
+
       <div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
         <div className="flex-grow-1">
           <InputGroup>
@@ -140,8 +204,13 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
         </Button>
       </div>
 
+      {!loading && (
+        <div className="text-center my-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando datos...</p>
+        </div>
+      )}
 
-      {/* Filtros avanzados */}
       {showFilters && (
         <div className="p-3 rounded mb-4 border border-secondary">
           <div className="row g-3">
@@ -175,8 +244,8 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
                     filters.estado === undefined
                       ? ""
                       : filters.estado
-                      ? "true"
-                      : "false"
+                        ? "true"
+                        : "false"
                   }
                   onChange={(e) =>
                     handleFilterUpdate(
@@ -208,129 +277,100 @@ export default function EquipoList({ tipos, onEdit, onDelete }: Props) {
         </div>
       )}
 
-      {/* Tabla de equipos */}
-      <table className="table table-hover align-middle text-center overflow-hidden">
-        <thead className="table-dark">
-          <tr>
-            <th className="rounded-top-start">Nombre</th>
-            <th>Descripción</th>
-            <th>Estado</th>
-            <th>Cantidad</th>
-            <th>Tipo</th>
-            <th>Imagen</th>
-            <th className="rounded-top-end">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {equipos.length > 0 ? (
-            equipos.map((equipo) => (
-              <tr key={equipo.id}>
-                <td className="fw-bold">{equipo.nombre}</td>
-                <td>{equipo.descripcion}</td>
-                <td>
-                  <span
-                    className={`badge ${
-                      equipo.estado ? "bg-success" : "bg-danger"
-                    }`}
-                  >
-                    {equipo.estado ? "Disponible" : "No disponible"}
-                  </span>
-                </td>
-                <td>{equipo.cantidad}</td>
-                <td>
-                  <em>{getTipoNombre(equipo.tipo_equipo_id)}</em>
-                </td>
-                <td>
-                  {equipo.imagen_url ? (
-                    <img
-                      src={equipo.imagen_url}
-                      alt={equipo.nombre}
-                      style={{
-                        width: "60px",
-                        height: "60px",
-                        objectFit: "cover",
-                        borderRadius: "8px",
-                      }}
-                    />
-                  ) : (
-                    <span className="text-muted">Sin imagen</span>
-                  )}
-                </td>
-                <td>
-                  <div className="d-flex justify-content-center gap-2">
-                    <Button
-                      variant="outline-primary"
-                      className="rounded-circle"
-                      title="Editar equipo"
-                      style={{ width: "44px", height: "44px" }}
-                      onClick={() => navigate(`/equipos/editar/${equipo.id}`)}
-                    >
-                      <FaEdit />
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      className="rounded-circle"
-                      title="Eliminar equipo"
-                      style={{ width: "44px", height: "44px" }}
-                      onClick={() => confirmarEliminacion(equipo.id)}
-                    >
-                      <FaTrash />
-                    </Button>
-                  </div>
-                </td>
+      {loading && (
+        <>
+          <table className="table table-hover align-middle text-center overflow-hidden">
+            <thead className="table-dark">
+              <tr>
+                <th className="rounded-top-start">Nombre</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th>Cantidad</th>
+                <th>Tipo</th>
+                <th>Imagen</th>
+                <th className="rounded-top-end">Acciones</th>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={7} className="text-muted text-center">
-                No se encontraron equipos.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {equipos.length > 0 ? (
+                equipos.map((equipo) => (
+                  <tr key={equipo.id}>
+                    <td className="fw-bold">{equipo.nombre}</td>
+                    <td>{equipo.descripcion}</td>
+                    <td>
+                      <span
+                        className={`badge ${equipo.estado ? "bg-success" : "bg-danger"
+                          }`}
+                      >
+                        {equipo.estado ? "Disponible" : "No disponible"}
+                      </span>
+                    </td>
+                    <td>{equipo.cantidad}</td>
+                    <td>
+                      <em>{getTipoNombre(equipo.tipo_equipo_id)}</em>
+                    </td>
+                    <td>
+                      {equipo.imagen_url ? (
+                        <img
+                          src={equipo.imagen_url}
+                          alt={equipo.nombre}
+                          style={{
+                            width: "60px",
+                            height: "60px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            cursor: "pointer"
+                          }}
+                          onClick={() => {
+                            if (equipo.imagen_url) {
+                              handleImageClick(equipo.imagen_url);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span className="text-muted">Sin imagen</span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="d-flex justify-content-center gap-2">
+                        <Button
+                          variant="outline-primary"
+                          className="rounded-circle"
+                          title="Editar equipo"
+                          style={{ width: "44px", height: "44px" }}
+                          onClick={() => navigate(`/equipos/editar/${equipo.id}`)}
+                        >
+                          <FaEdit />
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          className="rounded-circle"
+                          title="Eliminar equipo"
+                          style={{ width: "44px", height: "44px" }}
+                          onClick={() => confirmarEliminacion(equipo.id)}
+                        >
+                          <FaTrash />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="text-muted text-center">
+                    No se encontraron equipos.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
 
-      {/* Paginación */}
-      {lastPage > 1 && (
-        <nav className="d-flex justify-content-center mt-3">
-          <ul className="pagination">
-            <li className={`page-item ${filters.page === 1 ? "disabled" : ""}`}>
-              <button
-                className="page-link"
-                onClick={() => handlePageChange((filters.page || 1) - 1)}
-              >
-                Anterior
-              </button>
-            </li>
-            {Array.from({ length: lastPage }, (_, i) => i + 1).map((num) => (
-              <li
-                key={num}
-                className={`page-item ${
-                  filters.page === num ? "active" : ""
-                }`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => handlePageChange(num)}
-                >
-                  {num}
-                </button>
-              </li>
-            ))}
-            <li
-              className={`page-item ${
-                filters.page === lastPage ? "disabled" : ""
-              }`}
-            >
-              <button
-                className="page-link"
-                onClick={() => handlePageChange((filters.page || 1) + 1)}
-              >
-                Siguiente
-              </button>
-            </li>
-          </ul>
-        </nav>
+          <PaginationComponent
+            page={filters.page || 1}
+            totalPages={lastPage}
+            onPageChange={handlePageChange}
+          />
+        </>
       )}
     </div>
   );

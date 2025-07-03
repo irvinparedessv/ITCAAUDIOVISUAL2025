@@ -152,117 +152,123 @@ export default function AulaList() {
         </div>
       </div>
 
-      <table className="table table-hover align-middle text-center">
-        <thead className="table-dark">
-          <tr>
-            <th className="rounded-top-start">Nombre</th>
-            <th>Imagen</th>
-            <th>Encargados</th>
-            <th className="rounded-top-end">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan={4} className="text-center py-4">
-                <Spinner animation="border" role="status" />
-              </td>
-            </tr>
-          ) : aulas.length > 0 ? (
-            aulas.map((aula) => (
-              <tr key={aula.id}>
-                <td className="fw-bold">{aula.name}</td>
-                <td>
-                  {aula.has_images ? (
-                    <FaCheck className="text-success" title="Con imagen" />
-                  ) : (
-                    <FaTimes className="text-muted" title="Sin imagen" />
-                  )}
-                </td>
-                <td className="text-start">
-                  {aula.encargados.length > 0 && (
-                    <>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        onClick={() => toggleExpand(aula.id)}
-                      >
-                        {expandedRow === aula.id ? (
-                          <>
-                            Ocultar <FaChevronUp />
-                          </>
-                        ) : (
-                          <>
-                            Ver <FaChevronDown />
-                          </>
-                        )}
-                      </Button>
-
-                      {expandedRow === aula.id && (
-                        <ul className="mb-0 mt-2 ps-3">
-                          {aula.encargados.map((enc) => (
-                            <li key={enc.id}>
-                              {enc.first_name} {enc.last_name} (ID: {enc.id})
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </>
-                  )}
-                  {aula.encargados.length === 0 && (
-                    <label>Sin encargados</label>
-                  )}
-                </td>
-                <td>
-                  <div className="d-flex justify-content-center gap-2">
-                    <Button
-                      variant="outline-success"
-                      className="rounded-circle"
-                      style={{ width: 44, height: 44 }}
-                      onClick={() => navigate(`/aulas/encargados/${aula.id}`)}
-                      title="Asignar encargados"
-                    >
-                      <FaUser />
-                    </Button>
-                    <Button
-                      variant="outline-warning"
-                      className="rounded-circle"
-                      style={{ width: 44, height: 44, transition: "transform 0.2s ease-in-out" }}
-                      title="Editar reserva"
-                      onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                      onClick={() => navigate(`/aulas/editar/${aula.id}`)}
-                    >
-                      <FaEdit />
-                    </Button>
-
-                    <Button
-                      variant="outline-danger"
-                      className="rounded-circle"
-                      style={{ width: 44, height: 44 }}
-                      onClick={() => confirmarEliminacion(aula.id)}
-                    >
-                      <FaTrash />
-                    </Button>
-                  </div>
-                </td>
+      {loading ? (
+        <div className="text-center my-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando datos...</p>
+        </div>
+      ) : (
+        <>
+          <table className="table table-hover align-middle text-center">
+            <thead className="table-dark">
+              <tr>
+                <th className="rounded-top-start">Nombre</th>
+                <th>Imagen</th>
+                <th>Encargados</th>
+                <th className="rounded-top-end">Acciones</th>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={4} className="text-muted">
-                No se encontraron aulas.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {!loading && aulas.length > 0 ? (
+                aulas.map((aula) => (
+                  <tr key={aula.id}>
+                    <td className="fw-bold">{aula.name}</td>
+                    <td>
+                      {aula.has_images ? (
+                        <FaCheck className="text-success" title="Con imagen" />
+                      ) : (
+                        <FaTimes className="text-muted" title="Sin imagen" />
+                      )}
+                    </td>
+                    <td className="text-start">
+                      {aula.encargados.length > 0 ? (
+                        <>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() => toggleExpand(aula.id)}
+                          >
+                            {expandedRow === aula.id ? (
+                              <>
+                                Ocultar <FaChevronUp />
+                              </>
+                            ) : (
+                              <>
+                                Ver <FaChevronDown />
+                              </>
+                            )}
+                          </Button>
+                          {expandedRow === aula.id && (
+                            <ul className="mb-0 mt-2 ps-3">
+                              {aula.encargados.map((enc) => (
+                                <li key={enc.id}>
+                                  {enc.first_name} {enc.last_name} (ID: {enc.id})
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </>
+                      ) : (
+                        <label>Sin encargados</label>
+                      )}
+                    </td>
+                    <td>
+                      <div className="d-flex justify-content-center gap-2">
+                        <Button
+                          variant="outline-success"
+                          className="rounded-circle"
+                          style={{ width: 44, height: 44 }}
+                          onClick={() => navigate(`/aulas/encargados/${aula.id}`)}
+                          title="Asignar encargados"
+                        >
+                          <FaUser />
+                        </Button>
+                        <Button
+                          variant="outline-warning"
+                          className="rounded-circle"
+                          style={{
+                            width: 44,
+                            height: 44,
+                            transition: "transform 0.2s ease-in-out",
+                          }}
+                          title="Editar reserva"
+                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                          onClick={() => navigate(`/aulas/editar/${aula.id}`)}
+                        >
+                          <FaEdit />
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          className="rounded-circle"
+                          style={{ width: 44, height: 44 }}
+                          onClick={() => confirmarEliminacion(aula.id)}
+                        >
+                          <FaTrash />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : !loading ? (
+                <tr>
+                  <td colSpan={4} className="text-muted">
+                    No se encontraron aulas.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+          
+          <PaginationComponent
+            page={filters.page || 1}
+            totalPages={lastPage}
+            onPageChange={handlePageChange}
+          />
 
-      <PaginationComponent
-        page={filters.page || 1}
-        totalPages={lastPage}
-        onPageChange={handlePageChange}
-      />
+        </>
+      )}
+
     </div>
   );
 }

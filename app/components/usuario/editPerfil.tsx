@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDropzone } from "react-dropzone";
-import { FaSave, FaTimes, FaUserCircle, FaTrash } from "react-icons/fa";
+import { FaSave, FaTimes, FaUserCircle, FaTrash, FaLongArrowAltLeft } from "react-icons/fa";
 import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
 import type { Crop, PixelCrop } from "react-image-crop";
 import { getPerfil, updateProfile } from "../../services/userService";
@@ -132,6 +132,10 @@ const EditPerfil = () => {
     setFormErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
+
   const handleBlur = (e: React.FocusEvent<any>) => {
     const { name, value } = e.target;
     const error = validateField(name, value);
@@ -204,13 +208,7 @@ const EditPerfil = () => {
     setFormData((prev) => ({ ...prev, image: "", image_url: "" }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isFormValid()) {
-      toast.error("Por favor corrija los errores antes de enviar");
-      return;
-    }
-
+  const submitUpdate = async () => {
     setSaving(true);
     const form = new FormData();
 
@@ -227,13 +225,49 @@ const EditPerfil = () => {
     try {
       await updateProfile(form);
       toast.success("Perfil actualizado correctamente");
-      navigate("/perfil");
+      setTimeout(() => navigate("/perfil"), 1500);
     } catch (error) {
       toast.error("Error al actualizar el perfil");
       console.error(error);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isFormValid()) {
+      toast.error("Por favor corrija los errores antes de enviar");
+      return;
+    }
+
+    toast(
+      (t) => (
+        <div className="text-center">
+          <p>¿Seguro que deseas actualizar tu perfil?</p>
+          <div className="d-flex justify-content-center gap-3 mt-3">
+            <button
+              className="btn btn-sm btn-success"
+              onClick={() => {
+                submitUpdate();
+                toast.dismiss(t.id);
+              }}
+            >
+              Sí, actualizar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 10000,
+      }
+    );
   };
 
   if (loading) {
@@ -249,7 +283,20 @@ const EditPerfil = () => {
   }
 
   return (
-    <div className="form-container">
+    <div className="form-container position-relative">
+      {/* Flecha de regresar en esquina superior izquierda */}
+      <FaLongArrowAltLeft
+        onClick={handleBack}
+        title="Regresar"
+        style={{
+          position: 'absolute',
+          top: '25px',
+          left: '30px',
+          cursor: 'pointer',
+          fontSize: '2rem',
+          zIndex: 10
+        }}
+      />
       <h2 className="mb-4 text-center fw-bold">Editar Perfil</h2>
 
       <form onSubmit={handleSubmit}>
@@ -265,9 +312,8 @@ const EditPerfil = () => {
               value={formData.first_name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${
-                formErrors.first_name ? "is-invalid" : ""
-              }`}
+              className={`form-control ${formErrors.first_name ? "is-invalid" : ""
+                }`}
             />
             {formErrors.first_name && (
               <div className="invalid-feedback">{formErrors.first_name}</div>
@@ -285,9 +331,8 @@ const EditPerfil = () => {
               value={formData.last_name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${
-                formErrors.last_name ? "is-invalid" : ""
-              }`}
+              className={`form-control ${formErrors.last_name ? "is-invalid" : ""
+                }`}
             />
             {formErrors.last_name && (
               <div className="invalid-feedback">{formErrors.last_name}</div>
@@ -371,9 +416,8 @@ const EditPerfil = () => {
           ) : (
             <div
               {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
-                isDragActive ? "border-primary bg-light" : ""
-              }`}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : ""
+                }`}
             >
               <input {...getInputProps()} />
               <div className="d-flex flex-column align-items-center justify-content-center">
@@ -492,8 +536,6 @@ const EditPerfil = () => {
   );
 };
 
-export default EditPerfil;
-
 // Función auxiliar para el preview del canvas
 function canvasPreview(
   image: HTMLImageElement,
@@ -550,3 +592,5 @@ function canvasPreview(
 
   ctx.restore();
 }
+
+export default EditPerfil;

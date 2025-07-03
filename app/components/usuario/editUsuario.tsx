@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { getUsuarioById, updateUsuario } from "../../services/userService";
 import type { UserUpdateDTO } from "app/types/user";
-import { FaSave, FaTimes, FaUserEdit, FaTrash } from "react-icons/fa";
+import { FaSave, FaTimes, FaUserEdit, FaTrash, FaLongArrowAltLeft } from "react-icons/fa";
 
 const rolesMap = [
   { id: 1, nombre: "Administrador" },
@@ -132,7 +132,7 @@ const EditUsuario = () => {
     toast(
       (t) => (
         <div className="text-center">
-          <p>¿Confirmas que deseas actualizar este usuario?</p>
+          <p>¿Seguro que deseas actualizar este usuario?</p>
           <div className="d-flex justify-content-center gap-3 mt-3">
             <button
               className="btn btn-sm btn-success"
@@ -169,6 +169,10 @@ const EditUsuario = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
+
   const handleCancel = () => {
     navigate("/usuarios");
   };
@@ -184,7 +188,20 @@ const EditUsuario = () => {
   }
 
   return (
-    <div className="form-container">
+    <div className="form-container position-relative">
+      {/* Flecha de regresar en esquina superior izquierda */}
+      <FaLongArrowAltLeft
+        onClick={handleBack}
+        title="Regresar"
+        style={{
+          position: 'absolute',
+          top: '25px',
+          left: '30px',
+          cursor: 'pointer',
+          fontSize: '2rem',
+          zIndex: 10
+        }}
+      />
       <h2 className="mb-4 text-center fw-bold">
         <FaUserEdit className="me-2" />
         Editar Usuario

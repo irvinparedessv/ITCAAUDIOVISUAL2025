@@ -302,29 +302,51 @@ const RoomReservationList = () => {
     initialHighlightHandled.current = false;
   };
 
-  const handleCancelClick = async (reserva: any) => {
-    if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?"))
-      return;
+  const handleCancelClick = (reserva: any) => {
+  toast((t) => (
+    <div>
+      <p>¿Estás seguro de que deseas cancelar esta reserva?</p>
+      <div className="d-flex justify-content-end gap-2 mt-2">
+        <button
+          className="btn btn-sm btn-danger"
+          onClick={async () => {
+            try {
+              const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
+                estado: "Cancelado",
+                comentario: "Cancelado por el prestamista",
+              });
 
-    try {
-      const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
-        estado: "Cancelado",
-        comentario: "Cancelado por el prestamista",
-      });
+              toast.success("Reserva cancelada exitosamente.");
 
-      toast.success("Reserva cancelada exitosamente.");
+              setReservations((prev) =>
+                prev.map((r) => (r.id === data.reserva?.id ? data.reserva : r))
+              );
 
-      setReservations((prev) =>
-        prev.map((r) => (r.id === data.reserva?.id ? data.reserva : r))
-      );
+              if (data.reserva && selectedReservation?.id === data.reserva.id) {
+                setSelectedReservation(data.reserva);
+              }
+            } catch (err) {
+              toast.error("No se pudo cancelar la reserva.");
+            }
 
-      if (data.reserva && selectedReservation?.id === data.reserva.id) {
-        setSelectedReservation(data.reserva);
-      }
-    } catch (err) {
-      toast.error("No se pudo cancelar la reserva.");
-    }
-  };
+            toast.dismiss(t.id);
+          }}
+        >
+          Sí, cancelar
+        </button>
+
+        <button
+          className="btn btn-sm btn-secondary"
+          onClick={() => toast.dismiss(t.id)}
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  ), {
+    duration: 8000,
+  });
+};
 
   return (
     <div className="container py-5">

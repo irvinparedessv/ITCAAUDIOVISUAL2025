@@ -77,7 +77,7 @@ export default function ReserveClassroom() {
     navigate(-1); // Regresa a la página anterior
   };
 
-  
+
   const showConfirmationToast = () => {
     return new Promise((resolve) => {
       toast(
@@ -353,27 +353,27 @@ export default function ReserveClassroom() {
   };
 
   const handleClearOrCancel = async () => {
-  try {
-    setIsCancelling(true);
-    
-    // Pequeño delay para feedback visual (opcional)
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    if (id) {
-      // Comportamiento para edición (cancelar)
-      navigate(-1); // Regresar a la página anterior
-    } else {
-      // Comportamiento para creación (limpiar)
-      setSelectedDate(null);
-      setSelectedTime("");
-      setSelectedClassroom("");
-      setSelectedPrestamista(null);
+    try {
+      setIsCancelling(true);
+
+      // Pequeño delay para feedback visual (opcional)
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      if (id) {
+        // Comportamiento para edición (cancelar)
+        navigate(-1); // Regresar a la página anterior
+      } else {
+        // Comportamiento para creación (limpiar)
+        setSelectedDate(null);
+        setSelectedTime("");
+        setSelectedClassroom("");
+        setSelectedPrestamista(null);
+      }
+
+    } finally {
+      setIsCancelling(false);
     }
-    
-  } finally {
-    setIsCancelling(false);
-  }
-};
+  };
 
   if (loading) {
     return (
@@ -524,7 +524,7 @@ export default function ReserveClassroom() {
             {isUpdating ? ( // <-- Mostrar texto diferente cuando se está actualizando
               <>
                 <span className="spinner-border spinner-border-sm me-2"></span>
-                Actualizando...
+                Guardando...
               </>
             ) : (
               <>
@@ -533,22 +533,22 @@ export default function ReserveClassroom() {
             )}
           </button>
           <button
-  type="button"
-  className="btn secondary-btn"
-  onClick={handleClearOrCancel}
-  disabled={isUpdating || isCancelling}
->
-  {isCancelling ? (
-    <>
-      <span className="spinner-border spinner-border-sm me-2"></span>
-      {id ? "Cancelando..." : "Limpiando..."}
-    </>
-  ) : (
-    <>
-      <FaBroom className="me-2" /> {id ? "Cancelar" : "Limpiar"}
-    </>
-  )}
-</button>
+            type="button"
+            className="btn secondary-btn"
+            onClick={handleClearOrCancel}
+            disabled={isUpdating || isCancelling}
+          >
+            {isCancelling ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                {id ? "Cancelando..." : "Limpiando..."}
+              </>
+            ) : (
+              <>
+                <FaBroom className="me-2" /> {id ? "Cancelar" : "Limpiar"}
+              </>
+            )}
+          </button>
         </div>
 
       </form>

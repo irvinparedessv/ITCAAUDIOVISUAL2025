@@ -64,7 +64,6 @@ const RoomReservationList = () => {
   }, []);
 
   // Escuchar evento force-refresh (cuando ya estamos en /reservations-room)
-  // Escuchar evento force-refresh (cuando ya estamos en /reservations-room)
   useEffect(() => {
     const handleForceRefresh = async (e: any) => {
       const { highlightReservaId, page: newPage } = e.detail || {};
@@ -301,33 +300,55 @@ const RoomReservationList = () => {
     setSelectedReserva(reserva);
     setShowModal(true);
   };
+const handleCancelClick = (reserva: any) => {
+  toast((t) => (
+    <div>
+      <p>¿Estás seguro de que deseas cancelar esta reserva?</p>
+      <div className="d-flex justify-content-end gap-2 mt-2">
+        <button
+          className="btn btn-sm btn-danger"
+          onClick={async () => {
+            try {
+              const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
+                estado: "Cancelado",
+                comentario: "Cancelada por el solicitante",
+              });
 
-  const handleCancelClick = async (reserva: any) => {
-    if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?"))
-      return;
+              toast.success("Reserva cancelada exitosamente.");
 
-    try {
-      const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
-        estado: "Cancelado",
-        comentario: "Cancelada por el solicitante",
-      });
+              const updated = data.reserva;
 
-      toast.success("Reserva cancelada exitosamente.");
+              setReservations((prev) =>
+                prev.map((r) => (r.id === updated.id ? updated : r))
+              );
 
-      const updated = data.reserva;
+              if (selectedReserva?.id === updated.id) {
+                setSelectedReserva(updated);
+                await fetchHistorial(updated.id, true);
+              }
+            } catch (err) {
+              toast.error("No se pudo cancelar la reserva.");
+            }
 
-      setReservations((prev) =>
-        prev.map((r) => (r.id === updated.id ? updated : r))
-      );
+            toast.dismiss(t.id);
+          }}
+        >
+          Sí, cancelar
+        </button>
 
-      if (selectedReserva?.id === updated.id) {
-        setSelectedReserva(updated);
-        await fetchHistorial(updated.id, true);
-      }
-    } catch (err) {
-      toast.error("No se pudo cancelar la reserva.");
-    }
-  };
+        <button
+          className="btn btn-sm btn-secondary"
+          onClick={() => toast.dismiss(t.id)}
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  ), {
+    duration: 8000,
+  });
+};
+
 
   return (
     <div className="mt-4 px-3">

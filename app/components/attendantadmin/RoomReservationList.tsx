@@ -489,25 +489,6 @@ const handleCancelClick = (reserva: any) => {
                           </button>
 
                           <button
-                            className="btn btn-outline-success rounded-circle"
-                            title="Cambiar estado"
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              transition: "transform 0.2s ease-in-out",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                            onClick={() => handleEstadoClick(res)}
-                          >
-                            <FaExchangeAlt className="fs-5" />
-                          </button>
-
-                          <button
                             className="btn btn-outline-warning rounded-circle"
                             title="Editar reserva"
                             style={{
@@ -526,6 +507,27 @@ const handleCancelClick = (reserva: any) => {
                           >
                             <FaEdit className="fs-5" />
                           </button>
+
+                          <button
+                            className="btn btn-outline-success rounded-circle"
+                            title="Cambiar estado"
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => handleEstadoClick(res)}
+                          >
+                            <FaExchangeAlt className="fs-5" />
+                          </button>
+
+                          
 
                           <button
                             className="btn btn-outline-danger rounded-circle"

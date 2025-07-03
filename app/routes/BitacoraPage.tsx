@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import api from "../api/axios";
 import type { Bitacora } from "app/types/bitacora";
 import { Badge } from "react-bootstrap";
-import { FaSearch } from "react-icons/fa";
+import { FaLongArrowAltLeft, FaSearch } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import PaginationComponent from "~/utils/Pagination";
 
 const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
@@ -26,6 +28,12 @@ export default function BitacoraPage() {
   const [fechaFin, setFechaFin] = useState("");
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
+
 
   useEffect(() => {
     const { inicio, fin } = getDefaultDates();
@@ -69,11 +77,19 @@ export default function BitacoraPage() {
   );
 
   return (
+
     <div className="container py-5">
       <div className="table-responsive rounded shadow p-3 mt-4">
+        {/* Encabezado con ícono y título al estilo anterior */}
         <div className="mb-4">
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <h4 className="mb-0">Bitácora del Sistema</h4>
+          <div className="d-flex align-items-center gap-3 mb-2">
+            <FaLongArrowAltLeft
+              onClick={handleBack}
+              title="Regresar"
+              style={{ cursor: "pointer", fontSize: "2rem" }}
+            />
+            <h4 className="mb-0">Bitácora de estados</h4>
+
           </div>
 
           <form className="border rounded p-3">
@@ -139,7 +155,7 @@ export default function BitacoraPage() {
               <div className="col-12 text-end">
                 <button
                   type="button"
-                  className="btn btn-outline-secondary btn-sm"
+                  className="btn btn-outline-danger w-10"
                   onClick={() => {
                     const { inicio, fin } = getDefaultDates();
                     setModuloFiltro("todos");
@@ -151,6 +167,8 @@ export default function BitacoraPage() {
                 >
                   Limpiar filtros
                 </button>
+
+
               </div>
             </div>
           </form>
@@ -210,38 +228,11 @@ export default function BitacoraPage() {
         </table>
 
         {/* Paginación */}
-        {lastPage > 1 && (
-          <nav className="mt-3 d-flex justify-content-center">
-            <ul className="pagination">
-              <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                >
-                  Anterior
-                </button>
-              </li>
-              {Array.from({ length: lastPage }, (_, i) => i + 1).map((num) => (
-                <li
-                  key={num}
-                  className={`page-item ${num === page ? "active" : ""}`}
-                >
-                  <button className="page-link" onClick={() => setPage(num)}>
-                    {num}
-                  </button>
-                </li>
-              ))}
-              <li className={`page-item ${page === lastPage ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => setPage((prev) => Math.min(prev + 1, lastPage))}
-                >
-                  Siguiente
-                </button>
-              </li>
-            </ul>
-          </nav>
-        )}
+        <PaginationComponent
+          page={page}
+          totalPages={lastPage}
+          onPageChange={(newPage) => setPage(newPage)}
+        />
       </div>
     </div>
   );

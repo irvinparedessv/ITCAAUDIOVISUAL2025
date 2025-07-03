@@ -7,6 +7,7 @@ import {
   FaBroom,
   FaUpload,
   FaTrash,
+  FaLongArrowAltLeft,
 } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import toast from "react-hot-toast";
@@ -41,6 +42,10 @@ export const CreateSpaceForm = () => {
 
   const [loading, setLoading] = useState(isEdit);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
 
   useEffect(() => {
     if (isEdit) {
@@ -185,9 +190,42 @@ export const CreateSpaceForm = () => {
   };
 
   const handleRemoveTime = (index: number) => {
-    const newTimes = [...availableTimes];
-    newTimes.splice(index, 1);
-    setAvailableTimes(newTimes);
+    toast(
+      (t) => (
+        <div>
+          <p>¿Eliminar este horario?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={() => {
+                const newTimes = [...availableTimes];
+                newTimes.splice(index, 1);
+                setAvailableTimes(newTimes);
+                toast.dismiss(t.id);
+                toast.success("Horario eliminado");
+              }}
+            >
+              Sí
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: 5000 }
+    );
+  };
+
+  const updateMessages = {
+    question: "¿Seguro que deseas actualizar este espacio?",
+    confirmText: "Sí, actualizar",
+    cancelText: "Cancelar",
+    success: "Espacio actualizado correctamente",
+    error: "Error actualizando el espacio"
   };
 
   const handleClear = () => {
@@ -216,6 +254,42 @@ export const CreateSpaceForm = () => {
       return;
     }
 
+    // Solo mostrar confirmación si es edición
+    if (isEdit) {
+      const confirmed = await new Promise((resolve) => {
+        toast(
+          (t) => (
+            <div>
+              <p>{updateMessages.question}</p>
+              <div className="d-flex justify-content-end gap-2 mt-2">
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => {
+                    toast.dismiss(t.id);
+                    resolve(true);
+                  }}
+                >
+                  {updateMessages.confirmText}
+                </button>
+                <button
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => {
+                    toast.dismiss(t.id);
+                    resolve(false);
+                  }}
+                >
+                  {updateMessages.cancelText}
+                </button>
+              </div>
+            </div>
+          ),
+          { duration: 5000 }
+        );
+      });
+
+      if (!confirmed) return;
+    }
+
     const formData = new FormData();
     formData.append("name", name);
     renderImages.forEach((img, i) => {
@@ -233,19 +307,20 @@ export const CreateSpaceForm = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       toast.success(
-        isEdit
-          ? "Espacio actualizado correctamente"
-          : "Espacio creado correctamente"
+        isEdit ? updateMessages.success : "Espacio creado correctamente"
       );
       if (!isEdit) handleClear();
       navigate("/rooms");
     } catch (err) {
       console.error(err);
-      toast.error("Error al guardar el espacio");
+      toast.error(
+        isEdit ? updateMessages.error : "Error creando el espacio"
+      );
     } finally {
       setLoadingSubmit(false);
     }
   };
+  
 
   if (loading || loadingSubmit) {
     return (
@@ -256,15 +331,15 @@ export const CreateSpaceForm = () => {
         <div className="text-center">
           <Spinner
             animation="border"
-            variant="dark"
+            variant="primary"
             style={{ width: "3rem", height: "3rem" }}
           />
           <div>
             {loading
               ? "Cargando espacio..."
               : isEdit
-              ? "Actualizando espacio..."
-              : "Creando espacio..."}
+                ? "Actualizando espacio..."
+                : "Creando espacio..."}
           </div>
         </div>
       </div>
@@ -272,7 +347,20 @@ export const CreateSpaceForm = () => {
   }
 
   return (
-    <div className="form-container">
+    <div className="form-container position-relative">
+      {/* Flecha de regresar en esquina superior izquierda */}
+      <FaLongArrowAltLeft
+        onClick={handleBack}
+        title="Regresar"
+        style={{
+          position: "absolute",
+          top: "25px",
+          left: "30px",
+          cursor: "pointer",
+          fontSize: "2rem",
+          zIndex: 10,
+        }}
+      />
       <h2 className="mb-4 text-center fw-bold">
         {isEdit ? "Editar Espacio" : "Crear Nuevo Espacio"}
       </h2>
@@ -328,9 +416,8 @@ export const CreateSpaceForm = () => {
           ) : (
             <div
               {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
-                isDragActive ? "border-primary bg-light" : ""
-              }`}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : ""
+                }`}
             >
               <input {...getInputProps()} />
               <div className="d-flex flex-column align-items-center justify-content-center">

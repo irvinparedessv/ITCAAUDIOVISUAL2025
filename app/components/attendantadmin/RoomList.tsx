@@ -11,9 +11,11 @@ import {
   FaUser,
   FaChevronDown,
   FaChevronUp,
+  FaLongArrowAltLeft,
 } from "react-icons/fa";
 import { getAulas, deleteAula } from "../../services/aulaService";
 import { useNavigate } from "react-router-dom";
+import PaginationComponent from "~/utils/Pagination";
 
 export default function AulaList() {
   const [aulas, setAulas] = useState<Aula[]>([]);
@@ -29,6 +31,10 @@ export default function AulaList() {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
 
   const fetchAulas = async () => {
     try {
@@ -104,11 +110,23 @@ export default function AulaList() {
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h4 className="mb-0">Listado de Aulas</h4>
-        <Button variant="success" onClick={() => navigate("/createRoom")}>
-          + Crear Aula
-        </Button>
+      <div className="d-flex justify-content-between align-items-center mb-4 position-relative">
+        <div className="d-flex align-items-center gap-3">
+          <FaLongArrowAltLeft
+            onClick={handleBack}
+            title="Regresar"
+            style={{
+              cursor: 'pointer',
+              fontSize: '2rem',
+            }}
+          />
+          <h2 className="fw-bold m-0">Listado de Aulas</h2>
+        </div>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <Button variant="primary" onClick={() => navigate("/createRoom")}>
+            + Crear Aula
+          </Button>
+        </div>
       </div>
 
       <div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
@@ -207,13 +225,17 @@ export default function AulaList() {
                       <FaUser />
                     </Button>
                     <Button
-                      variant="outline-primary"
+                      variant="outline-warning"
                       className="rounded-circle"
-                      style={{ width: 44, height: 44 }}
+                      style={{ width: 44, height: 44, transition: "transform 0.2s ease-in-out" }}
+                      title="Editar reserva"
+                      onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                       onClick={() => navigate(`/aulas/editar/${aula.id}`)}
                     >
                       <FaEdit />
                     </Button>
+
                     <Button
                       variant="outline-danger"
                       className="rounded-circle"
@@ -236,45 +258,11 @@ export default function AulaList() {
         </tbody>
       </table>
 
-      {lastPage > 1 && (
-        <nav className="d-flex justify-content-center mt-3">
-          <ul className="pagination">
-            <li className={`page-item ${filters.page === 1 ? "disabled" : ""}`}>
-              <button
-                className="page-link"
-                onClick={() => handlePageChange((filters.page || 1) - 1)}
-              >
-                Anterior
-              </button>
-            </li>
-            {Array.from({ length: lastPage }, (_, i) => i + 1).map((num) => (
-              <li
-                key={num}
-                className={`page-item ${filters.page === num ? "active" : ""}`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => handlePageChange(num)}
-                >
-                  {num}
-                </button>
-              </li>
-            ))}
-            <li
-              className={`page-item ${
-                filters.page === lastPage ? "disabled" : ""
-              }`}
-            >
-              <button
-                className="page-link"
-                onClick={() => handlePageChange((filters.page || 1) + 1)}
-              >
-                Siguiente
-              </button>
-            </li>
-          </ul>
-        </nav>
-      )}
+      <PaginationComponent
+        page={filters.page || 1}
+        totalPages={lastPage}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }

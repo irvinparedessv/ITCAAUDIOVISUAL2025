@@ -1,14 +1,6 @@
 import React, { useState, useEffect, type FormEvent } from "react";
-import {
-  Form,
-  Button,
-  ListGroup,
-  Badge,
-  Spinner,
-  Card,
-  Row,
-  Col,
-} from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { FaSave, FaTimes, FaPlus, FaTrash, FaLongArrowAltLeft } from "react-icons/fa";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -31,6 +23,7 @@ export default function AsignarEncargadosForm() {
   const [aula, setAula] = useState<AulaDetalle | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
 
   const { aulaId } = useParams<{ aulaId: string }>();
 
@@ -59,6 +52,10 @@ export default function AsignarEncargadosForm() {
 
     fetchData();
   }, [aulaId]);
+
+  const handleBack = () => {
+    navigate(-1);
+  };
 
   const handleAddEncargado = () => {
     if (!selectedEncargado) return;
@@ -95,6 +92,9 @@ export default function AsignarEncargadosForm() {
     try {
       await api.post(`/aulas/${aulaId}/encargados`, { user_ids: ids });
       toast.success("Encargados asignados correctamente");
+      setTimeout(() => {
+        navigate(-1);
+      }, 1500);
     } catch {
       toast.error("Error al asignar encargados");
     } finally {
@@ -102,10 +102,17 @@ export default function AsignarEncargadosForm() {
     }
   };
 
+  const handleClear = () => {
+    setEncargados([]);
+    setSelectedEncargado("");
+  };
+
   if (loading) {
     return (
       <div className="d-flex flex-column align-items-center justify-content-center my-5">
-        <Spinner animation="border" variant="primary" />
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
         <p className="mt-3 text-muted">Cargando datos del aula...</p>
       </div>
     );
@@ -116,120 +123,119 @@ export default function AsignarEncargadosForm() {
   );
 
   return (
-    <div className="container py-4">
-      <Card className="shadow-sm border-0">
-        <Card.Body>
-          <h3 className="mb-4 text-primary">Asignar Encargados</h3>
+    <div className="form-container position-relative">
+      <FaLongArrowAltLeft 
+        onClick={handleBack}
+        className="back-arrow"
+        title="Regresar"
+      />
 
-          {aula && (
-            <Row className="mb-4">
-              <Col md={8}>
-                <h5 className="fw-bold">{aula.name}</h5>
-              </Col>
-              <Col md={4}>
-                {aula.primeraImagen?.image_path && (
-                  <img
-                    src={aula.primeraImagen.image_path}
-                    alt="Imagen del aula"
-                    className="img-fluid rounded shadow-sm"
-                  />
-                )}
-              </Col>
-            </Row>
+      <h2 className="mb-4 text-center fw-bold">Asignar Encargados</h2>
+
+      {aula && (
+        <div className="mb-4 aula-info">
+          <h5 className="fw-bold">{aula.name}</h5>
+          {aula.primeraImagen?.image_path && (
+            <img
+              src={aula.primeraImagen.image_path}
+              alt="Imagen del aula"
+              className="img-fluid rounded shadow-sm mt-2 aula-image"
+            />
           )}
+        </div>
+      )}
 
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-4">
-              <Form.Label className="fw-semibold">
-                Selecciona un encargado
-              </Form.Label>
-              <Row>
-                <Col md={8}>
-                  <Form.Select
-                    value={selectedEncargado}
-                    onChange={(e) =>
-                      setSelectedEncargado(Number(e.target.value))
-                    }
-                    disabled={encargadosDisponibles.length === 0}
-                  >
-                    <option value="">-- Selecciona --</option>
-                    {encargadosDisponibles.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.first_name} {u.last_name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Col>
-                <Col md={4} className="mt-2 mt-md-0">
-                  <Button
-                    variant="outline-primary"
-                    className="w-100"
-                    onClick={handleAddEncargado}
-                    disabled={
-                      !selectedEncargado || encargadosDisponibles.length === 0
-                    }
-                  >
-                    + Agregar
-                  </Button>
-                </Col>
-              </Row>
-            </Form.Group>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label htmlFor="encargado" className="form-label">
+            Selecciona un encargado
+          </label>
+          <div className="row">
+            <div className="col-md-8 mb-2 mb-md-0">
+              <select
+                id="encargado"
+                value={selectedEncargado}
+                onChange={(e) => setSelectedEncargado(Number(e.target.value))}
+                className="form-select"
+                disabled={encargadosDisponibles.length === 0}
+              >
+                <option value="">-- Selecciona un encargado --</option>
+                {encargadosDisponibles.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.first_name} {u.last_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-4">
+              <button
+                type="button"
+                className="btn primary-btn w-100"
+                onClick={handleAddEncargado}
+                disabled={!selectedEncargado || encargadosDisponibles.length === 0}
+              >
+                <FaPlus className="me-2" />
+                Agregar
+              </button>
+            </div>
+          </div>
+        </div>
 
-            {encargados.length > 0 && (
-              <div className="mb-4">
-                <h6 className="fw-semibold">Encargados asignados</h6>
-                <ListGroup variant="flush">
-                  {encargados.map((e) => (
-                    <ListGroup.Item
-                      key={e.id}
-                      className="d-flex justify-content-between align-items-center border-bottom py-2"
-                    >
-                      <div>
-                        <strong>
-                          {e.first_name} {e.last_name}
-                        </strong>{" "}
-                        <Badge bg="secondary" className="ms-2">
-                          ID: {e.id}
-                        </Badge>
-                      </div>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => handleRemoveEncargado(e.id)}
-                      >
-                        Quitar
-                      </Button>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              </div>
+        {encargados.length > 0 && (
+          <div className="mb-4">
+            <label className="form-label">Encargados asignados</label>
+            <div className="list-group">
+              {encargados.map((e) => (
+                <div
+                  key={e.id}
+                  className="list-group-item d-flex justify-content-between align-items-center"
+                >
+                  <div>
+                    <strong>{e.first_name} {e.last_name}</strong>
+                    <span className="badge bg-secondary ms-2">ID: {e.id}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={() => handleRemoveEncargado(e.id)}
+                  >
+                    <FaTrash />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="btn primary-btn me-2"
+            disabled={saving || encargados.length === 0}
+          >
+            {saving ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <FaSave className="me-2" />
+                Guardar encargados
+              </>
             )}
-
-            <Button
-              type="submit"
-              variant="primary"
-              className="px-4"
-              disabled={saving || encargados.length === 0}
-            >
-              {saving ? (
-                <>
-                  <Spinner
-                    as="span"
-                    animation="border"
-                    size="sm"
-                    role="status"
-                    aria-hidden="true"
-                    className="me-2"
-                  />
-                  Guardando...
-                </>
-              ) : (
-                "Guardar encargados"
-              )}
-            </Button>
-          </Form>
-        </Card.Body>
-      </Card>
+          </button>
+          <button
+            type="button"
+            className="btn secondary-btn"
+            onClick={handleClear}
+            disabled={encargados.length === 0}
+          >
+            <FaTimes className="me-2" />
+            Limpiar
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

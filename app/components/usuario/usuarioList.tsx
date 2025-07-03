@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { Button, Form, InputGroup } from "react-bootstrap";
+import { Button, Form, InputGroup, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import {
   getUsuarios,
@@ -39,12 +39,14 @@ export default function UsuarioList() {
   const [lastPage, setLastPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleBack = () => {
     navigate(-1); // Regresa a la página anterior
   };
 
   const cargarUsuarios = async () => {
+    setLoading(true);
     try {
       const response = await getUsuarios(filters);
       setUsuarios(response?.data || []);
@@ -52,6 +54,8 @@ export default function UsuarioList() {
     } catch (error) {
       toast.error("Error al cargar usuarios");
       setUsuarios([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -265,105 +269,114 @@ export default function UsuarioList() {
           </div>
         </div>
       )}
-
-      <table className="table table-hover align-middle text-center">
-        <thead className="table-dark">
-          <tr>
-            <th>Imagen</th>
-            <th>Nombre</th>
-            <th>Correo</th>
-            <th>Teléfono</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {usuarios.length > 0 ? (
-            usuarios.map((user) => (
-              <tr key={user.id}>
-                <td>
-                  {user.image_url ? (
-                    <img
-                      src={user.image_url}
-                      alt={user.email}
-                      style={{
-                        width: "60px",
-                        height: "60px",
-                        objectFit: "cover",
-                        borderRadius: "50%",
-                      }}
-                    />
-                  ) : (
-                    <FaUserCircle size={50} className="text-secondary" />
-                  )}
-                </td>
-                <td>{user.first_name} {user.last_name}</td>
-                <td>{user.email}</td>
-                <td>{user.phone || "-"}</td>
-                <td>{rolesMap[user.role_id] || "Desconocido"}</td>
-                <td>
-                  <span
-                    className={`badge ${user.estado === 1
-                        ? "bg-success"
-                        : user.estado === 0
-                          ? "bg-danger"
-                          : "bg-warning text-dark"
-                      }`}
-                  >
-                    {user.estado === 1
-                      ? "Activo"
-                      : user.estado === 0
-                        ? "Inactivo"
-                        : "Pendiente"}
-                  </span>
-                </td>
-                <td>
-                  <div className="d-flex justify-content-center gap-2">
-                    <Button
-                      variant="outline-primary"
-                      className="rounded-circle"
-                      title="Editar usuario"
-                      onClick={() => navigate(`/editarUsuario/${user.id}`)}
-                      style={{ width: "44px", height: "44px" }}
-                    >
-                      <FaEdit />
-                    </Button>
-                    <Button
-                      variant="outline-warning"
-                      className="rounded-circle"
-                      title="Restablecer contraseña"
-                      onClick={() => handleResetPassword(user.id, user.email)}
-                      style={{ width: "44px", height: "44px" }}
-                    >
-                      <FaKey />
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      className="rounded-circle"
-                      title="Eliminar usuario"
-                      onClick={() => confirmarEliminacion(user.id)}
-                      style={{ width: "44px", height: "44px" }}
-                    >
-                      <FaTrash />
-                    </Button>
-                  </div>
-                </td>
+      {loading ? (
+        <div className="text-center my-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando datos...</p>
+        </div>
+      ) : (
+        <>
+          <table className="table table-hover align-middle text-center">
+            <thead className="table-dark">
+              <tr>
+                <th>Imagen</th>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={7}>No se encontraron usuarios.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {usuarios.length > 0 ? (
+                usuarios.map((user) => (
+                  <tr key={user.id}>
+                    <td>
+                      {user.image_url ? (
+                        <img
+                          src={user.image_url}
+                          alt={user.email}
+                          style={{
+                            width: "60px",
+                            height: "60px",
+                            objectFit: "cover",
+                            borderRadius: "50%",
+                          }}
+                        />
+                      ) : (
+                        <FaUserCircle size={50} className="text-secondary" />
+                      )}
+                    </td>
+                    <td>{user.first_name} {user.last_name}</td>
+                    <td>{user.email}</td>
+                    <td>{user.phone || "-"}</td>
+                    <td>{rolesMap[user.role_id] || "Desconocido"}</td>
+                    <td>
+                      <span
+                        className={`badge ${user.estado === 1
+                          ? "bg-success"
+                          : user.estado === 0
+                            ? "bg-danger"
+                            : "bg-warning text-dark"
+                          }`}
+                      >
+                        {user.estado === 1
+                          ? "Activo"
+                          : user.estado === 0
+                            ? "Inactivo"
+                            : "Pendiente"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="d-flex justify-content-center gap-2">
+                        <Button
+                          variant="outline-primary"
+                          className="rounded-circle"
+                          title="Editar usuario"
+                          onClick={() => navigate(`/editarUsuario/${user.id}`)}
+                          style={{ width: "44px", height: "44px" }}
+                        >
+                          <FaEdit />
+                        </Button>
+                        <Button
+                          variant="outline-warning"
+                          className="rounded-circle"
+                          title="Restablecer contraseña"
+                          onClick={() => handleResetPassword(user.id, user.email)}
+                          style={{ width: "44px", height: "44px" }}
+                        >
+                          <FaKey />
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          className="rounded-circle"
+                          title="Eliminar usuario"
+                          onClick={() => confirmarEliminacion(user.id)}
+                          style={{ width: "44px", height: "44px" }}
+                        >
+                          <FaTrash />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7}>No se encontraron usuarios.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
 
-      <PaginationComponent
-        page={filters.page || 1}
-        totalPages={lastPage}
-        onPageChange={handlePageChange}
-      />
+          <PaginationComponent
+            page={filters.page || 1}
+            totalPages={lastPage}
+            onPageChange={handlePageChange}
+          />
+
+        </>
+      )}
     </div>
   );
 }

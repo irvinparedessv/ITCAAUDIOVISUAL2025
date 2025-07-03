@@ -1,5 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import AulaReservacionEstadoModal from "../components/attendantadmin/RoomReservationStateModal";
+import ReservacionEstadoModal from "./ReservacionEstado";
+
 import {
   Card,
   ListGroup,
@@ -7,21 +10,23 @@ import {
   Spinner,
   Alert,
   Button,
-  Modal,
-  Form,
 } from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
 import api from "../api/axios";
+import type { Room } from "~/types/reservationroom";
+import type { ReservationStatus } from "~/types/reservation";
 
 type Reserva = {
   usuario: string;
-  equipo?: string[]; // opcional si no es room
+  equipo?: string[];
   aula: string;
+  espacio: Room;
   dia: string;
+  id: number;
   horaSalida?: string;
   horaEntrada?: string;
-  horario?: string; // solo si isRoom === true
-  estado: "Pendiente" | "Entregado" | "Devuelto";
+  horario?: string;
+  estado: ReservationStatus;
   isRoom: boolean;
 };
 
@@ -86,23 +91,22 @@ export default function ReservationDetail() {
     if (!reserva) return;
 
     try {
+      const nuevoEstado: ReservationStatus =
+        accion === "Aprobar" ? "Aprobado" : "Rechazado";
+
       await api.post(`/reservas/${idQr}/estado`, {
-        estado: accion === "Aprobar" ? "Entregado" : "Rechazado",
+        estado: nuevoEstado,
         comentario,
       });
-      alert(
-        `Reserva ${
-          accion === "Aprobar" ? "aprobada" : "rechazada"
-        } correctamente.`
-      );
+
       setReserva({
         ...reserva,
-        estado: accion === "Aprobar" ? "Entregado" : "Devuelto",
+        estado: nuevoEstado,
       });
+
       setShowModal(false);
     } catch (err) {
       console.error(err);
-      alert("Funcionamiento en proceso.");
     }
   };
 
@@ -123,12 +127,10 @@ export default function ReservationDetail() {
     );
   }
 
-  if (!reserva) {
-    return null;
-  }
+  if (!reserva) return null;
 
   const qrData = reserva.isRoom
-    ? `Reserva de aula para ${reserva.usuario} en ${reserva.aula} el ${reserva.dia}`
+    ? `Reserva de aula para ${reserva.usuario} en ${reserva.espacio.name} el ${reserva.dia}`
     : `Reserva de ${reserva.usuario} - ${reserva.equipo?.join(", ")} en ${
         reserva.aula
       } el ${reserva.dia}`;
@@ -137,114 +139,118 @@ export default function ReservationDetail() {
     <>
       <Card className="shadow-lg my-4">
         <Card.Header className="bg-primary text-white text-center">
-          <h5>Detalle de Reserva</h5>
+          <h5>Detalle de Reserva {reserva.isRoom ? "Espacio" : "Equipo"}</h5>
         </Card.Header>
         <Card.Body>
           <ListGroup variant="flush">
             <ListGroup.Item>
               <strong>Usuario:</strong> {reserva.usuario}
             </ListGroup.Item>
+
             {!reserva.isRoom && reserva.equipo && (
               <ListGroup.Item>
                 <strong>Equipos:</strong> {reserva.equipo.join(", ")}
               </ListGroup.Item>
             )}
-            <ListGroup.Item>
-              <strong>Aula:</strong> {reserva.aula}
-            </ListGroup.Item>
+
+            {reserva.isRoom && (
+              <ListGroup.Item>
+                <strong>Espacio:</strong> {reserva.espacio.name}
+              </ListGroup.Item>
+            )}
+
+            {!reserva.isRoom && (
+              <ListGroup.Item>
+                <strong>Aula:</strong> {reserva.aula}
+              </ListGroup.Item>
+            )}
+
             <ListGroup.Item>
               <strong>Día:</strong> {formatDayWithDate(reserva.dia)}
             </ListGroup.Item>
+
             {!reserva.isRoom && reserva.horaSalida && (
               <ListGroup.Item>
                 <strong>Hora de Reserva:</strong>{" "}
                 {formatTime(reserva.horaSalida)}
               </ListGroup.Item>
             )}
+
             {!reserva.isRoom && reserva.horaEntrada && (
               <ListGroup.Item>
                 <strong>Hora de Entrega:</strong>{" "}
                 {formatTime(reserva.horaEntrada)}
               </ListGroup.Item>
             )}
+
             {reserva.isRoom && reserva.horario && (
               <ListGroup.Item>
                 <strong>Horario:</strong> {reserva.horario}
               </ListGroup.Item>
             )}
+
             <ListGroup.Item>
               <strong>Estado:</strong>{" "}
               <Badge bg={getBadgeColor(reserva.estado)}>{reserva.estado}</Badge>
             </ListGroup.Item>
+
             <ListGroup.Item className="text-center">
               <strong>Código QR de la Reserva:</strong>
               <div className="mt-2">
                 <QRCodeSVG value={qrData} size={128} />
               </div>
             </ListGroup.Item>
-            {reserva.estado === "Pendiente" && (
-              <ListGroup.Item className="text-center mt-3">
-                <Button
-                  variant="success"
-                  className="mx-2"
-                  onClick={() => handleAbrirModal("Aprobar")}
-                >
-                  Aprobar
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={() => handleAbrirModal("Rechazar")}
-                >
-                  Rechazar
-                </Button>
-              </ListGroup.Item>
-            )}
+
+            <ListGroup.Item className="text-center mt-3">
+              <Button
+                variant="success"
+                className="mx-2"
+                onClick={() => handleAbrirModal("Aprobar")}
+              >
+                Actualizar Estado
+              </Button>
+            </ListGroup.Item>
           </ListGroup>
         </Card.Body>
       </Card>
 
-      <Modal show={showModal} onHide={handleCerrarModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>{accion} Reserva</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="comentario">
-              <Form.Label>Comentario</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={comentario}
-                onChange={(e) => setComentario(e.target.value)}
-                placeholder={`Escribe un comentario para ${accion?.toLowerCase()} la reserva...`}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCerrarModal}>
-            Cancelar
-          </Button>
-          <Button
-            variant={accion === "Aprobar" ? "success" : "danger"}
-            onClick={handleEnviar}
-          >
-            {accion}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {reserva.isRoom ? (
+        <AulaReservacionEstadoModal
+          show={showModal}
+          onHide={handleCerrarModal}
+          reservationId={reserva.id}
+          currentStatus={reserva.estado}
+          onSuccess={async () => {
+            await handleEnviar();
+          }}
+        />
+      ) : (
+        <ReservacionEstadoModal
+          show={showModal}
+          onHide={handleCerrarModal}
+          reservationId={reserva.id}
+          currentStatus={reserva.estado}
+          onSuccess={async (newEstado) => {
+            setReserva({ ...reserva, estado: newEstado });
+            setShowModal(false);
+          }}
+        />
+      )}
     </>
   );
 }
 
-function getBadgeColor(estado: "Pendiente" | "Entregado" | "Devuelto") {
-  switch (estado) {
-    case "Pendiente":
+function getBadgeColor(estado: ReservationStatus) {
+  switch (estado.toLowerCase()) {
+    case "pendiente":
       return "warning";
-    case "Entregado":
+    case "aprobado":
       return "primary";
-    case "Devuelto":
-      return "success";
+    case "devuelto":
+      return "info";
+    case "cancelado":
+      return "danger";
+    case "rechazado":
     default:
       return "secondary";
   }

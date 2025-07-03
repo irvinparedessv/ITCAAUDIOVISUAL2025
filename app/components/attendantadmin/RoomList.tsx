@@ -224,7 +224,7 @@ export default function AulaList() {
                           <FaUser />
                         </Button>
                         <Button
-                          variant="outline-warning"
+                          variant="outline-primary"
                           className="rounded-circle"
                           style={{
                             width: 44,
@@ -259,7 +259,7 @@ export default function AulaList() {
               ) : null}
             </tbody>
           </table>
-          
+
           <PaginationComponent
             page={filters.page || 1}
             totalPages={lastPage}

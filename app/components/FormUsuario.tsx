@@ -11,6 +11,7 @@ import {
   FaUpload,
   FaTrash,
   FaUserCircle,
+  FaLongArrowAltLeft,
 } from "react-icons/fa";
 import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
 import type { Crop, PixelCrop } from "react-image-crop";
@@ -61,6 +62,10 @@ export default function FormUsuario() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
 
   // Validation regex patterns
   const nameRegex = /^[a-zA-Z\s]{2,}$/;
@@ -214,88 +219,88 @@ export default function FormUsuario() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  // Validación inicial del formulario
-  if (!isFormValid()) {
-    toast.error("Por favor corrija los errores antes de enviar");
-    return;
-  }
+    e.preventDefault();
 
-  setIsLoading(true);
+    // Validación inicial del formulario
+    if (!isFormValid()) {
+      toast.error("Por favor corrija los errores antes de enviar");
+      return;
+    }
 
-  const formDataToSend = new FormData();
-  Object.entries(formData).forEach(([key, value]) => {
-    if (value !== null) {
-      if (key === "role_id") {
-        formDataToSend.append(key, Number(value).toString());
-      } else if (key !== "image") {
-        formDataToSend.append(key, value.toString());
+    setIsLoading(true);
+
+    const formDataToSend = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null) {
+        if (key === "role_id") {
+          formDataToSend.append(key, Number(value).toString());
+        } else if (key !== "image") {
+          formDataToSend.append(key, value.toString());
+        }
       }
+    });
+
+    if (formData.image) {
+      formDataToSend.append("image", formData.image);
     }
-  });
-  
-  if (formData.image) {
-    formDataToSend.append("image", formData.image);
-  }
-  formDataToSend.append("estado", "0");
+    formDataToSend.append("estado", "0");
 
-  // Mostrar loading solo si pasa todas las validaciones
-  const loadingToastId = toast.loading("Estamos creando el usuario. Por favor, espere un momento...", {
-    position: 'top-right'
-  });
-
-  try {
-    const response = await createUsuario(formDataToSend);
-    
-    // Cerrar toast de loading
-    toast.dismiss(loadingToastId);
-    
-    // Mostrar éxito
-    toast.success("Usuario creado con éxito", {
-      position: 'top-right',
-      duration: 3000
-    });
-    
-    handleClear();
-    navigate("/usuarios");
-    
-  } catch (error: any) {
-    // Cerrar toast de loading primero
-    toast.dismiss(loadingToastId);
-    
-    // Manejo de errores
-    const errorData = error.response?.data;
-    const isEmailExists = errorData?.error === 'email_exists';
-    const errorMessage = isEmailExists 
-      ? "El correo electrónico ya está registrado"
-      : errorData?.message || "Error al crear el usuario";
-
-    // Mostrar error
-    toast.error(errorMessage, {
-      position: 'top-right',
-      duration: 5000
+    // Mostrar loading solo si pasa todas las validaciones
+    const loadingToastId = toast.loading("Estamos creando el usuario. Por favor, espere un momento...", {
+      position: 'top-right'
     });
 
-    // Marcar error en campo si es email duplicado
-    if (isEmailExists) {
-      setFormErrors(prev => ({
-        ...prev,
-        email: errorMessage
-      }));
+    try {
+      const response = await createUsuario(formDataToSend);
+
+      // Cerrar toast de loading
+      toast.dismiss(loadingToastId);
+
+      // Mostrar éxito
+      toast.success("Usuario creado con éxito", {
+        position: 'top-right',
+        duration: 3000
+      });
+
+      handleClear();
+      navigate("/usuarios");
+
+    } catch (error: any) {
+      // Cerrar toast de loading primero
+      toast.dismiss(loadingToastId);
+
+      // Manejo de errores
+      const errorData = error.response?.data;
+      const isEmailExists = errorData?.error === 'email_exists';
+      const errorMessage = isEmailExists
+        ? "El correo electrónico ya está registrado"
+        : errorData?.message || "Error al crear el usuario";
+
+      // Mostrar error
+      toast.error(errorMessage, {
+        position: 'top-right',
+        duration: 5000
+      });
+
+      // Marcar error en campo si es email duplicado
+      if (isEmailExists) {
+        setFormErrors(prev => ({
+          ...prev,
+          email: errorMessage
+        }));
+      }
+
+      // Debug
+      console.error('Error al crear usuario:', {
+        status: error.response?.status,
+        data: errorData,
+        message: error.message
+      });
+
+    } finally {
+      setIsLoading(false);
     }
-
-    // Debug
-    console.error('Error al crear usuario:', {
-      status: error.response?.status,
-      data: errorData,
-      message: error.message
-    });
-    
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleClear = () => {
     setFormData({
@@ -318,7 +323,20 @@ export default function FormUsuario() {
   ];
 
   return (
-    <div className="form-container">
+    <div className="form-container position-relative">
+      {/* Flecha de regresar en esquina superior izquierda */}
+      <FaLongArrowAltLeft
+        onClick={handleBack}
+        title="Regresar"
+        style={{
+          position: 'absolute',
+          top: '25px',
+          left: '30px',
+          cursor: 'pointer',
+          fontSize: '2rem',
+          zIndex: 10
+        }}
+      />
       <h2 className="mb-4 text-center fw-bold">Crear Nuevo Usuario</h2>
 
       <form onSubmit={handleSubmit}>
@@ -334,9 +352,8 @@ export default function FormUsuario() {
               value={formData.first_name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${
-                formErrors.first_name ? "is-invalid" : ""
-              }`}
+              className={`form-control ${formErrors.first_name ? "is-invalid" : ""
+                }`}
             />
             {formErrors.first_name && (
               <div className="invalid-feedback">{formErrors.first_name}</div>
@@ -354,9 +371,8 @@ export default function FormUsuario() {
               value={formData.last_name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${
-                formErrors.last_name ? "is-invalid" : ""
-              }`}
+              className={`form-control ${formErrors.last_name ? "is-invalid" : ""
+                }`}
             />
             {formErrors.last_name && (
               <div className="invalid-feedback">{formErrors.last_name}</div>
@@ -468,9 +484,8 @@ export default function FormUsuario() {
           ) : (
             <div
               {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
-                isDragActive ? "border-primary bg-light" : ""
-              }`}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : ""
+                }`}
             >
               <input {...getInputProps()} />
               <div className="d-flex flex-column align-items-center justify-content-center">

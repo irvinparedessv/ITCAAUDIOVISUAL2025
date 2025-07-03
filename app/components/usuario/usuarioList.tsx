@@ -17,7 +17,9 @@ import {
   FaFilter,
   FaTimes,
   FaPlus,
+  FaLongArrowAltLeft,
 } from "react-icons/fa";
+import PaginationComponent from "~/utils/Pagination";
 
 const rolesMap: Record<number, string> = {
   1: "Administrador",
@@ -37,6 +39,10 @@ export default function UsuarioList() {
   const [lastPage, setLastPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate(-1); // Regresa a la página anterior
+  };
 
   const cargarUsuarios = async () => {
     try {
@@ -149,7 +155,18 @@ export default function UsuarioList() {
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h4 className="text-center flex-grow-1">Listado de Usuarios</h4>
+        <div className="d-flex align-items-center gap-3">
+          <FaLongArrowAltLeft
+            onClick={handleBack}
+            title="Regresar"
+            style={{
+              cursor: 'pointer',
+              fontSize: '2rem',
+            }}
+          />
+          <h2 className="fw-bold m-0">Listado de Usuarios</h2>
+        </div>
+
         <Button
           variant="primary"
           onClick={() => navigate("/formUsuario")}
@@ -219,8 +236,8 @@ export default function UsuarioList() {
                   filters.estado === undefined
                     ? ""
                     : filters.estado === 1
-                    ? "1"
-                    : "0"
+                      ? "1"
+                      : "0"
                 }
                 onChange={(e) =>
                   handleFilterUpdate(
@@ -287,19 +304,18 @@ export default function UsuarioList() {
                 <td>{rolesMap[user.role_id] || "Desconocido"}</td>
                 <td>
                   <span
-                    className={`badge ${
-                      user.estado === 1
+                    className={`badge ${user.estado === 1
                         ? "bg-success"
                         : user.estado === 0
-                        ? "bg-danger"
-                        : "bg-warning text-dark"
-                    }`}
+                          ? "bg-danger"
+                          : "bg-warning text-dark"
+                      }`}
                   >
                     {user.estado === 1
                       ? "Activo"
                       : user.estado === 0
-                      ? "Inactivo"
-                      : "Pendiente"}
+                        ? "Inactivo"
+                        : "Pendiente"}
                   </span>
                 </td>
                 <td>
@@ -343,45 +359,11 @@ export default function UsuarioList() {
         </tbody>
       </table>
 
-      {lastPage > 1 && (
-        <nav className="d-flex justify-content-center mt-3">
-          <ul className="pagination">
-            <li className={`page-item ${filters.page === 1 ? "disabled" : ""}`}>
-              <button
-                className="page-link"
-                onClick={() => handlePageChange(filters.page - 1)}
-              >
-                Anterior
-              </button>
-            </li>
-            {Array.from({ length: lastPage }, (_, i) => i + 1).map((num) => (
-              <li
-                key={num}
-                className={`page-item ${filters.page === num ? "active" : ""}`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => handlePageChange(num)}
-                >
-                  {num}
-                </button>
-              </li>
-            ))}
-            <li
-              className={`page-item ${
-                filters.page === lastPage ? "disabled" : ""
-              }`}
-            >
-              <button
-                className="page-link"
-                onClick={() => handlePageChange(filters.page + 1)}
-              >
-                Siguiente
-              </button>
-            </li>
-          </ul>
-        </nav>
-      )}
+      <PaginationComponent
+        page={filters.page || 1}
+        totalPages={lastPage}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }

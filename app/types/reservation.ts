@@ -65,3 +65,9 @@ export type HistorialItem = {
   created_at: string;
   accion: string;
 };
+export type ReservationStatus =
+  | "Pendiente"
+  | "Aprobado"
+  | "Devuelto"
+  | "Rechazado"
+  | "Cancelado";

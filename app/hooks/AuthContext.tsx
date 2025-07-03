@@ -80,6 +80,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loadCredentials();
   }, []);
 
+  // Escuchar cambios en localStorage para detectar logout desde otra pestaña
+useEffect(() => {
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === "logout") {
+      console.log("Logout detectado desde otra pestaña");
+
+      // Limpiar sesión en esta pestaña
+      setToken(null);
+      setUser(null);
+
+      // Redirigir al login
+      window.location.href = "/login"; // O usa navigate si estás dentro de un componente con router
+    }
+  };
+
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+  };
+}, []);
+
+
   useEffect(() => {
     console.log("Valor actual del token:", token);
     console.log("Valor de isAuthenticated:", isAuthenticated);
@@ -115,35 +138,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(false);
     }
   };
-
-  const logout = async () => {
-    try {
-      if (token) {
-        await api.post(
-          "/logout",
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      }
-    } catch (error) {
-      console.warn("Error cerrando sesión en el servidor:", error);
-    } finally {
-      // Desconectar Laravel Echo
-      if (window.Echo) {
-        window.Echo.disconnect();
-      }
-
-      // Eliminar token del frontend
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      setToken(null);
-      setUser(null);
+const logout = async () => {
+  try {
+    if (token) {
+      await api.post(
+        "/logout",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
     }
-  };
+  } catch (error) {
+    console.warn("Error cerrando sesión en el servidor:", error);
+  } finally {
+    // Desconectar Laravel Echo
+    if (window.Echo) {
+      window.Echo.disconnect();
+    }
+
+    // Notificar a otras pestañas del logout
+    localStorage.setItem("logout", Date.now().toString());
+
+    // Eliminar token del frontend
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setToken(null);
+    setUser(null);
+  }
+};
 
   const checkAccess = (route: string) => {
     if (!user) return false;

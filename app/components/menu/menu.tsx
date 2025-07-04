@@ -87,16 +87,13 @@ const NotificationItem = ({
       ? "/reservations-room"
       : "/reservations";
 
-    // ⚠️ Detectar si ya estás en la misma ruta
     if (location.pathname === targetRoute) {
-      // 🔁 Forzar actualización sin navegar
       window.dispatchEvent(
         new CustomEvent("force-refresh", {
           detail: { highlightReservaId: reservaId, page },
         })
       );
     } else {
-      // 🚀 Navegación normal con estado
       navigate(targetRoute, {
         state: { highlightReservaId: reservaId, page },
       });
@@ -106,81 +103,91 @@ const NotificationItem = ({
   return (
     <Dropdown.Item
       onClick={handleClick}
-      className={`d-flex justify-content-between align-items-start ${noti.unread ? "bg-unreadnotification" : ""
-        }`}
+      className={`${noti.unread ? "bg-unreadnotification" : ""}`}
+      style={{
+        maxHeight: "300px",
+        overflowY: "auto",
+      }}
     >
-      <div className="flex-grow-1">
-        <div className="fw-bold">{noti.data.title}</div>
-        <div className="small">{noti.data.message}</div>
+      <div className="d-flex justify-content-between align-items-start">
+        {/* Contenido principal */}
+        <div className="flex-grow-1 me-2">
+          <div className={`fw-bold d-flex align-items-center gap-2 ${noti.unread ? "text-unread-title" : ""}`}>
+            {noti.unread && <FaBell/>}
+            {noti.data.title}
+          </div>
 
-        {isAulaNotification ? (
-          <>
-            <small className="d-block">
-              Aula:{" "}
-              {(reservaData as AulaNotification).aula || "No especificada"}
-              {userRole === Role.Prestamista && (
-                <>
-                  {" "}
-                  - Estado:{" "}
-                  <span className={estadoStyle.className}>
-                    {estadoStyle.displayText}
-                  </span>
-                </>
-              )}
-            </small>
-            <small className="d-block">
-              Fecha:{" "}
-              {(reservaData as AulaNotification).fecha || "No especificada"}
-            </small>
-            <small className="d-block">
-              Horario:{" "}
-              {(reservaData as AulaNotification).horario || "No especificado"}
-            </small>
-          </>
-        ) : (
-          <>
-            <small className="d-block">
-              Aula:{" "}
-              {(reservaData as ReservaNotification).aula || "No especificada"}
-              {userRole === Role.Prestamista && (
-                <>
-                  {" "}
-                  - Estado:{" "}
-                  <span className={estadoStyle.className}>
-                    {estadoStyle.displayText}
-                  </span>
-                </>
-              )}
-            </small>
-            {(reservaData as ReservaNotification).equipos && (
-              <small className="d-block">
-                Equipos:{" "}
-                {(reservaData as ReservaNotification).equipos
-                  ?.map((e) => e.nombre)
-                  .join(", ")}
+          <div className="small text-dark">{noti.data.message}</div>
+
+          {isAulaNotification ? (
+            <>
+              <div className="d-flex align-items-center gap-1 mt-1">
+                <small className="text-dark">Aula: {(reservaData as AulaNotification).aula || "No especificada"}</small>
+                {userRole === Role.Prestamista && (
+                  <>
+                    <span className="mx-1">-</span>
+                    <span className={`badge ${estadoStyle.badgeClass} px-2 py-1`}>
+                      {estadoStyle.displayText}
+                    </span>
+                  </>
+                )}
+              </div>
+              <small className="d-block text-dark">
+                Fecha: {(reservaData as AulaNotification).fecha || "No especificada"}
               </small>
-            )}
-          </>
-        )}
+              <small className="d-block text-dark">
+                Horario: {(reservaData as AulaNotification).horario || "No especificado"}
+              </small>
+            </>
+          ) : (
+            <>
+              <div className="d-flex align-items-center gap-1 mt-1">
+                <small className="text-dark">Aula: {(reservaData as ReservaNotification).aula || "No especificada"}</small>
+                {userRole === Role.Prestamista && (
+                  <>
+                    <span className="mx-1">-</span>
+                    <span className={`badge ${estadoStyle.badgeClass} px-2 py-1`}>
+                      {estadoStyle.displayText}
+                    </span>
+                  </>
+                )}
+              </div>
+              {(reservaData as ReservaNotification).equipos && (
+                <small className="d-block text-dark">
+                  Equipos:{" "}
+                  {(reservaData as ReservaNotification).equipos
+                    ?.map((e) => e.nombre)
+                    .join(", ")}
+                </small>
+              )}
+            </>
+          )}
 
-        <div className="small mt-1 notification-date">
-          {noti.createdAt.toLocaleString()}
+          <div className="small mt-1 notification-date">
+            {noti.createdAt.toLocaleString()}
+          </div>
+        </div>
+
+        {/* Botón eliminar */}
+        <div className="flex-shrink-0 mt-1">
+          <button
+            className="btn btn-sm btn-outline-danger"
+            onClick={(e) => {
+              e.stopPropagation();
+              removeNotification(noti.id);
+            }}
+            title="Eliminar notificación"
+            style={{ padding: "0.15rem 0.3rem" }}
+          >
+            <FaTimes size={12} />
+          </button>
         </div>
       </div>
-      <button
-        className="btn btn-sm btn-outline-danger ms-2"
-        onClick={(e) => {
-          e.stopPropagation();
-          removeNotification(noti.id);
-        }}
-        title="Eliminar notificación"
-        style={{ padding: "0.15rem 0.3rem" }}
-      >
-        <FaTimes size={12} />
-      </button>
     </Dropdown.Item>
   );
 };
+
+
 
 // Componentes CustomToggle
 const CustomToggle = React.forwardRef<
@@ -551,7 +558,7 @@ const NavbarMenu = () => {
               <FaBell className="me-2" size={16} />
               {unreadCount > 0 && (
                 <span
-                  className={`badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle ${unreadCount > 9 ? "px-1" : ""
+                  className={`badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle-custom-mobile ${unreadCount > 9 ? "px-1" : ""
                     }`}
                 >
                   {unreadCount > 9 ? "9+" : unreadCount}
@@ -1200,6 +1207,7 @@ const NavbarMenu = () => {
 function getEstadoStyle(estado: string): {
   className: string;
   displayText: string;
+  badgeClass: string; // Nueva propiedad para las clases del badge
 } {
   const estadoLower = estado.toLowerCase();
 
@@ -1208,6 +1216,7 @@ function getEstadoStyle(estado: string): {
       return {
         className: "text-warning",
         displayText: "Pendiente",
+        badgeClass: "bg-warning text-dark"
       };
     case "approved":
     case "aprobado":
@@ -1215,12 +1224,14 @@ function getEstadoStyle(estado: string): {
       return {
         className: "text-success",
         displayText: "Aprobado",
+        badgeClass: "bg-primary text-white"
       };
     case "rejected":
     case "rechazado":
       return {
         className: "text-danger",
         displayText: "Rechazado",
+        badgeClass: "bg-danger text-white"
       };
     case "returned":
     case "devuelto":
@@ -1228,16 +1239,19 @@ function getEstadoStyle(estado: string): {
       return {
         className: "text-info",
         displayText: "Completada",
+        badgeClass: "bg-success text-white"
       };
     case "cancelado":
       return {
         className: "text-secondary",
         displayText: "Cancelado",
+        badgeClass: "bg-secondary text-white"
       };
     default:
       return {
         className: "",
         displayText: estado,
+        badgeClass: "bg-secondary text-white"
       };
   }
 }

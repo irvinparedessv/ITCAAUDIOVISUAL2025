@@ -537,7 +537,6 @@ export default function EquipmentReservationForm() {
         title="Regresar"
         style={{
           position: "absolute",
-          top: "25px",
           left: "30px",
           cursor: "pointer",
           fontSize: "2rem",

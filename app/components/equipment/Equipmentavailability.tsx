@@ -155,7 +155,7 @@ export default function EquipmentAvailabilityList() {
 
   return (
     <div className="container py-5">
-      <div className="table-responsive rounded shadow p-3 mt-4">
+      <div className="rounded shadow p-3 mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div className="d-flex align-items-center gap-3">
             <FaLongArrowAltLeft
@@ -175,6 +175,16 @@ export default function EquipmentAvailabilityList() {
               className="me-2"
               onClick={checkAllAvailability}
               disabled={!availabilityData.fecha || checkingAvailability}
+              style={{ 
+                transition: "transform 0.2s ease-in-out",
+                minWidth: "180px"
+              }}
+              onMouseEnter={(e) => 
+                (e.currentTarget.style.transform = "scale(1.03)")
+              }
+              onMouseLeave={(e) => 
+                (e.currentTarget.style.transform = "scale(1)")
+              }
             >
               {checkingAvailability ? (
                 <>
@@ -187,7 +197,19 @@ export default function EquipmentAvailabilityList() {
                 </>
               )}
             </Button>
-            <Button variant="outline-secondary" onClick={handleClearFilters}>
+            <Button 
+              variant="outline-secondary" 
+              onClick={handleClearFilters}
+              style={{ 
+                transition: "transform 0.2s ease-in-out"
+              }}
+              onMouseEnter={(e) => 
+                (e.currentTarget.style.transform = "scale(1.03)")
+              }
+              onMouseLeave={(e) => 
+                (e.currentTarget.style.transform = "scale(1)")
+              }
+            >
               Limpiar Filtros
             </Button>
           </div>
@@ -330,84 +352,96 @@ export default function EquipmentAvailabilityList() {
         {error && <Alert variant="danger">{error}</Alert>}
         {loading && (
           <>
-            <table className="table table-hover align-middle text-center">
-              <thead className="table-dark">
-                <tr>
-                  <th>Nombre</th>
-                  <th>Imagen</th>
-                  <th>Total</th>
-                  <th>Disponible</th>
-                  <th>En Reserva</th>
-                  <th>Entregado</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {equipmentList.length === 0 ? (
+            <div className="table-container" style={{ 
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              marginBottom: '1rem',
+              borderRadius: '0.375rem',
+              border: '1px solid #dee2e6'
+            }}>
+              <table className="table table-hover align-middle text-center mb-0" style={{ 
+                minWidth: '800px',
+                width: '100%',
+                marginBottom: 0
+              }}>
+                <thead className="table-dark">
                   <tr>
-                    <td colSpan={7} className="text-center text-muted py-4">
-                      No se encontraron equipos.
-                    </td>
+                    <th>Nombre</th>
+                    <th>Imagen</th>
+                    <th>Total</th>
+                    <th>Disponible</th>
+                    <th>En Reserva</th>
+                    <th>Entregado</th>
+                    <th>Estado</th>
                   </tr>
-                ) : (
-                  equipmentList.map((equipment) => (
-                    <tr key={equipment.id}>
-                      <td className="fw-bold">{equipment.nombre}</td>
-                      <td>
-                        {equipment.imagen_url ? (
-                          <img
-                            src={equipment.imagen_url}
-                            alt={equipment.nombre}
-                            style={{
-                              width: "60px",
-                              height: "60px",
-                              objectFit: "cover",
-                              borderRadius: "8px",
-                              cursor: "pointer"
-                            }}
-                            onClick={() => {
-                              if (equipment.imagen_url) {
-                                handleImageClick(equipment.imagen_url, equipment.nombre);
-                              }
-                            }}
-                          />
-                        ) : (
-                          <span className="text-muted">Sin imagen</span>
-                        )}
-                      </td>
-                      <td>{equipment.cantidad}</td>
-                      <td>
-                        {equipment.disponibilidad
-                          ? equipment.disponibilidad.cantidad_disponible
-                          : equipment.cantidad}
-                      </td>
-                      <td>{equipment.disponibilidad?.cantidad_en_reserva ?? 0}</td>
-                      <td>{equipment.disponibilidad?.cantidad_entregada ?? 0}</td>
-                      <td>
-                        <Badge
-                          bg={
-                            (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
-                              ? "danger"
-                              : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) <
-                                equipment.cantidad
-                                ? "warning"
-                                : "success"
-                          }
-                          className="px-3 py-2"
-                        >
-                          {(equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
-                            ? "Agotado"
-                            : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) <
-                              equipment.cantidad
-                              ? "Limitado"
-                              : "Disponible"}
-                        </Badge>
+                </thead>
+                <tbody>
+                  {equipmentList.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center text-muted py-4">
+                        No se encontraron equipos.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    equipmentList.map((equipment) => (
+                      <tr key={equipment.id}>
+                        <td className="fw-bold">{equipment.nombre}</td>
+                        <td>
+                          {equipment.imagen_url ? (
+                            <img
+                              src={equipment.imagen_url}
+                              alt={equipment.nombre}
+                              style={{
+                                width: "60px",
+                                height: "60px",
+                                objectFit: "cover",
+                                borderRadius: "8px",
+                                cursor: "pointer"
+                              }}
+                              onClick={() => {
+                                if (equipment.imagen_url) {
+                                  handleImageClick(equipment.imagen_url, equipment.nombre);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="text-muted">Sin imagen</span>
+                          )}
+                        </td>
+                        <td>{equipment.cantidad}</td>
+                        <td>
+                          {equipment.disponibilidad
+                            ? equipment.disponibilidad.cantidad_disponible
+                            : equipment.cantidad}
+                        </td>
+                        <td>{equipment.disponibilidad?.cantidad_en_reserva ?? 0}</td>
+                        <td>{equipment.disponibilidad?.cantidad_entregada ?? 0}</td>
+                        <td>
+                          <Badge
+                            bg={
+                              (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
+                                ? "danger"
+                                : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) <
+                                  equipment.cantidad
+                                  ? "warning"
+                                  : "success"
+                            }
+                            className="px-3 py-2"
+                          >
+                            {(equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) === 0
+                              ? "Agotado"
+                              : (equipment.disponibilidad?.cantidad_disponible ?? equipment.cantidad) <
+                                equipment.cantidad
+                                ? "Limitado"
+                                : "Disponible"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
             <PaginationComponent
               page={filtros.page}

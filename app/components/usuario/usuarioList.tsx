@@ -32,7 +32,7 @@ export default function UsuarioList() {
   const [filters, setFilters] = useState<any>({
     search: "",
     page: 1,
-    per_page: 10, // ✅ Usar snake_case compatible con Laravel
+    per_page: 10,
     role_id: undefined,
     estado: undefined,
   });
@@ -42,7 +42,7 @@ export default function UsuarioList() {
   const [loading, setLoading] = useState(false);
 
   const handleBack = () => {
-    navigate(-1); // Regresa a la página anterior
+    navigate(-1);
   };
 
   const cargarUsuarios = async () => {
@@ -72,13 +72,13 @@ export default function UsuarioList() {
             <button
               className="btn btn-sm btn-primary"
               onClick={async () => {
+                toast.dismiss(t.id);
+                toast.loading("Enviando enlace...", { id: "loading-reset" });
                 try {
                   await forgotPassword(email);
-                  toast.success(`Enlace enviado a ${email}`);
-                  toast.dismiss(t.id);
+                  toast.success(`Enlace enviado a ${email}`, { id: "loading-reset" });
                 } catch {
-                  toast.error("Error al enviar el enlace");
-                  toast.dismiss(t.id);
+                  toast.error("Error al enviar el enlace", { id: "loading-reset" });
                 }
               }}
             >
@@ -157,7 +157,7 @@ export default function UsuarioList() {
   };
 
   return (
-    <div className="table-responsive rounded shadow p-3 mt-4">
+    <div className="rounded shadow p-3 mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="d-flex align-items-center gap-3">
           <FaLongArrowAltLeft
@@ -175,12 +175,21 @@ export default function UsuarioList() {
           variant="primary"
           onClick={() => navigate("/formUsuario")}
           className="d-flex align-items-center gap-2"
+          style={{ 
+            transition: "transform 0.2s ease-in-out"
+          }}
+          onMouseEnter={(e) => 
+            (e.currentTarget.style.transform = "scale(1.03)")
+          }
+          onMouseLeave={(e) => 
+            (e.currentTarget.style.transform = "scale(1)")
+          }
         >
           <FaPlus /> Crear Usuario
         </Button>
       </div>
 
-      <div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
+      <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
         <div className="flex-grow-1">
           <InputGroup>
             <InputGroup.Text>
@@ -207,6 +216,15 @@ export default function UsuarioList() {
           variant="outline-secondary"
           onClick={() => setShowFilters(!showFilters)}
           className="d-flex align-items-center gap-2"
+          style={{ 
+            transition: "transform 0.2s ease-in-out"
+          }}
+          onMouseEnter={(e) => 
+            (e.currentTarget.style.transform = "scale(1.03)")
+          }
+          onMouseLeave={(e) => 
+            (e.currentTarget.style.transform = "scale(1)")
+          }
         >
           <FaFilter />
           {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
@@ -234,33 +252,43 @@ export default function UsuarioList() {
             </div>
 
             <div className="col-md-6">
-              <Form.Label>Estado</Form.Label>
-              <Form.Select
-                value={
-                  filters.estado === undefined
-                    ? ""
-                    : filters.estado === 1
-                      ? "1"
-                      : "0"
-                }
-                onChange={(e) =>
-                  handleFilterUpdate(
-                    "estado",
-                    e.target.value === "" ? undefined : Number(e.target.value)
-                  )
-                }
-              >
-                <option value="">Todos</option>
-                <option value="1">Activo</option>
-                <option value="0">Inactivo</option>
-              </Form.Select>
-            </div>
+  <Form.Label>Estado</Form.Label>
+  <Form.Select
+    value={
+      filters.estado === undefined
+        ? ""
+        : filters.estado === 1
+        ? "1"
+        : "0"
+    }
+    onChange={(e) =>
+      handleFilterUpdate(
+        "estado",
+        e.target.value === "" ? undefined : Number(e.target.value)
+      )
+    }
+  >
+    <option value="">Todos</option>
+    <option value="1">Activo</option>
+    <option value="0">Inactivo</option>
+  </Form.Select>
+</div>
+
 
             <div className="col-12">
               <Button
                 variant="outline-danger"
                 onClick={resetFilters}
                 className="w-100"
+                style={{ 
+                  transition: "transform 0.2s ease-in-out"
+                }}
+                onMouseEnter={(e) => 
+                  (e.currentTarget.style.transform = "scale(1.03)")
+                }
+                onMouseLeave={(e) => 
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
               >
                 <FaTimes className="me-2" />
                 Limpiar filtros
@@ -269,6 +297,7 @@ export default function UsuarioList() {
           </div>
         </div>
       )}
+
       {loading ? (
         <div className="text-center my-5">
           <Spinner animation="border" variant="primary" />
@@ -276,105 +305,148 @@ export default function UsuarioList() {
         </div>
       ) : (
         <>
-          <table className="table table-hover align-middle text-center">
-            <thead className="table-dark">
-              <tr>
-                <th>Imagen</th>
-                <th>Nombre</th>
-                <th>Correo</th>
-                <th>Teléfono</th>
-                <th>Rol</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.length > 0 ? (
-                usuarios.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      {user.image_url ? (
-                        <img
-                          src={user.image_url}
-                          alt={user.email}
-                          style={{
-                            width: "60px",
-                            height: "60px",
-                            objectFit: "cover",
-                            borderRadius: "50%",
-                          }}
-                        />
-                      ) : (
-                        <FaUserCircle size={50} className="text-secondary" />
-                      )}
-                    </td>
-                    <td>{user.first_name} {user.last_name}</td>
-                    <td>{user.email}</td>
-                    <td>{user.phone || "-"}</td>
-                    <td>{rolesMap[user.role_id] || "Desconocido"}</td>
-                    <td>
-                      <span
-                        className={`badge ${user.estado === 1
-                          ? "bg-success"
-                          : user.estado === 0
-                            ? "bg-danger"
-                            : "bg-warning text-dark"
-                          }`}
-                      >
-                        {user.estado === 1
-                          ? "Activo"
-                          : user.estado === 0
-                            ? "Inactivo"
-                            : "Pendiente"}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="d-flex justify-content-center gap-2">
-                        <Button
-                          variant="outline-primary"
-                          className="rounded-circle"
-                          title="Editar usuario"
-                          onClick={() => navigate(`/editarUsuario/${user.id}`)}
-                          style={{ width: "44px", height: "44px" }}
+          <div className="table-container" style={{ 
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            marginBottom: '1rem',
+            borderRadius: '0.375rem',
+            border: '1px solid #dee2e6'
+          }}>
+            <table className="table table-hover align-middle text-center mb-0" style={{ 
+              minWidth: '800px',
+              width: '100%',
+              marginBottom: 0
+            }}>
+              <thead className="table-dark">
+                <tr>
+                  <th>Imagen</th>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>Teléfono</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usuarios.length > 0 ? (
+                  usuarios.map((user) => (
+                    <tr key={user.id}>
+                      <td>
+                        {user.image_url ? (
+                          <img
+                            src={user.image_url}
+                            alt={user.email}
+                            style={{
+                              width: "60px",
+                              height: "60px",
+                              objectFit: "cover",
+                              borderRadius: "50%",
+                            }}
+                          />
+                        ) : (
+                          <FaUserCircle size={50} className="text-secondary" />
+                        )}
+                      </td>
+                      <td>{user.first_name} {user.last_name}</td>
+                      <td>{user.email}</td>
+                      <td>{user.phone || "-"}</td>
+                      <td>{rolesMap[user.role_id] || "Desconocido"}</td>
+                      <td>
+                        <span
+                          className={`badge ${user.estado === 1
+                            ? "bg-success"
+                            : user.estado === 0
+                              ? "bg-danger"
+                              : "bg-warning text-dark"
+                            }`}
                         >
-                          <FaEdit />
-                        </Button>
-                        <Button
-                          variant="outline-warning"
-                          className="rounded-circle"
-                          title="Restablecer contraseña"
-                          onClick={() => handleResetPassword(user.id, user.email)}
-                          style={{ width: "44px", height: "44px" }}
-                        >
-                          <FaKey />
-                        </Button>
-                        <Button
-                          variant="outline-danger"
-                          className="rounded-circle"
-                          title="Eliminar usuario"
-                          onClick={() => confirmarEliminacion(user.id)}
-                          style={{ width: "44px", height: "44px" }}
-                        >
-                          <FaTrash />
-                        </Button>
-                      </div>
+                          {user.estado === 1
+                            ? "Activo"
+                            : user.estado === 0
+                              ? "Inactivo"
+                              : "Pendiente"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="d-flex justify-content-center gap-2">
+                          <Button
+                            variant="outline-primary"
+                            className="rounded-circle"
+                            title="Editar usuario"
+                            onClick={() => navigate(`/editarUsuario/${user.id}`)}
+                            style={{ 
+                              width: "44px", 
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out"
+                            }}
+                            onMouseEnter={(e) => 
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) => 
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                          >
+                            <FaEdit />
+                          </Button>
+                          <Button
+                            variant="outline-warning"
+                            className="rounded-circle"
+                            title="Restablecer contraseña"
+                            onClick={() => handleResetPassword(user.id, user.email)}
+                            style={{ 
+                              width: "44px", 
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out"
+                            }}
+                            onMouseEnter={(e) => 
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) => 
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                          >
+                            <FaKey />
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            className="rounded-circle"
+                            title="Eliminar usuario"
+                            onClick={() => confirmarEliminacion(user.id)}
+                            style={{ 
+                              width: "44px", 
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out"
+                            }}
+                            onMouseEnter={(e) => 
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) => 
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                          >
+                            <FaTrash />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="text-center py-4 text-muted">
+                      No se encontraron usuarios.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7}>No se encontraron usuarios.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           <PaginationComponent
             page={filters.page || 1}
             totalPages={lastPage}
             onPageChange={handlePageChange}
           />
-
         </>
       )}
     </div>

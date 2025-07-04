@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaChartLine, FaBook, FaRegFileAlt } from 'react-icons/fa';
+import { FaUsers, FaChartLine, FaBook, FaRegFileAlt, FaLongArrowAltLeft } from 'react-icons/fa';
 import { Card } from 'react-bootstrap';
 
 const opciones = [
@@ -41,11 +41,36 @@ const OpcionesAdministrativas = () => {
       : "#8B0000"
   });
 
+  const handleBack = () => {
+  navigate('/'); // Redirige a la ruta de inicio
+};
+
   return (
-    <div className="min-h-screen bg-gray-50 p-5">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-4">Opciones Administrativas</h1>
-        <p className="text-muted mb-5">Gestiona todas las funciones del sistema</p>
+    <div className="min-h-screen bg-gray-50">
+  <div className="max-w-6xl mx-auto">
+    {/* Contenedor flex principal (flecha + título) */}
+    <div 
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px', 
+          marginBottom: '20px',
+          padding: '10px',
+          maxWidth: '600px'
+        }}
+      >
+        <FaLongArrowAltLeft 
+          onClick={handleBack} 
+          style={{ fontSize: '2rem', cursor: 'pointer' }} 
+        />
+        <h1>
+          Opciones Administrativas
+        </h1>
+      </div>
+
+      <p style={{ marginTop: 0 }}>
+        Gestiona todas las funciones del sistema
+      </p>
 
         <div className="d-flex flex-wrap gap-4">
           {opciones.map((opcion) => (

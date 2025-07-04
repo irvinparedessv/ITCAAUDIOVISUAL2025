@@ -47,7 +47,12 @@ import AulaList from "./components/attendantadmin/RoomList";
 import EditEquipmentReservationForm from "./components/EditEquipmentReservationForm";
 import AsignarEncargadosForm from "./components/FormEncargadosEspacio";
 import EquipmentAvailabilityListPage from "./routes/EquipmentAvailabilityPage";
-import ReporteReservasPorFecha from "./routes/ReporteReservasPorFecha";
+import ReporteReservasPorFecha from "./routes/reports/ReporteReservasPorFecha";
+import ReporteReservasPorUsuario from "./routes/reports/ReporteReservasPorUsuario";
+import ReporteUsoAulas from "./routes/reports/ReporteUsoAulas";
+import ReporteUsoEquipos from "./routes/reports/ReporteUsoEquipos";
+import ReporteHorariosSolicitados from "./routes/reports/ReporteHorariosSolicitados";
+import ReporteInventarioEquipos from "./routes/reports/ReporteInventarioEquipos";
 
 const router = createBrowserRouter([
   {
@@ -235,7 +240,26 @@ const router = createBrowserRouter([
             path: "reporteReservas",
             element: <ReporteReservasPorFecha />,
           },
-
+          {
+            path: "reporteUsuarios",
+            element: <ReporteReservasPorUsuario />,
+          },
+          {
+            path: "reporteAulas",
+            element: <ReporteUsoAulas />,
+          },
+          {
+            path: "reporteEquipos",
+            element: <ReporteUsoEquipos />,
+          },
+          {
+            path: "reporteHorarios",
+            element: <ReporteHorariosSolicitados />,
+          },
+          {
+            path: "reporteInventario",
+            element: <ReporteInventarioEquipos />,
+          },
         ],
       },
     ],

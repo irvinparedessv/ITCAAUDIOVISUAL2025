@@ -47,6 +47,7 @@ import AulaList from "./components/attendantadmin/RoomList";
 import EditEquipmentReservationForm from "./components/EditEquipmentReservationForm";
 import AsignarEncargadosForm from "./components/FormEncargadosEspacio";
 import EquipmentAvailabilityListPage from "./routes/EquipmentAvailabilityPage";
+import ReporteReservasPorFecha from "./routes/ReporteReservasPorFecha";
 
 const router = createBrowserRouter([
   {
@@ -230,6 +231,11 @@ const router = createBrowserRouter([
             path: "opcionesReportes",
             element: <OpcionesReportes />,
           },
+          {
+            path: "reporteReservas",
+            element: <ReporteReservasPorFecha />,
+          },
+
         ],
       },
     ],

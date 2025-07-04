@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../api/axios";
+import api from "../../api/axios";
 import { Table, Button, Form, Spinner } from "react-bootstrap";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";

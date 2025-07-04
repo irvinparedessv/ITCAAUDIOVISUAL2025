@@ -126,10 +126,10 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
   };
 
   return (
-    <div className="table-responsive rounded shadow p-3 mt-4 position-relative">
+    <div className="rounded shadow p-3 mt-4 position-relative">
       {/* Modal para imagen ampliada */}
-      <Modal 
-        show={showImageModal} 
+      <Modal
+        show={showImageModal}
         onHide={() => setShowImageModal(false)}
         centered
         size="lg"
@@ -138,11 +138,11 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
           <Modal.Title>{selectedEquipment?.name || 'Imagen del equipo'}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center">
-          <img 
-            src={selectedEquipment?.imageUrl} 
-            alt={selectedEquipment?.name || 'Imagen ampliada'} 
-            style={{ 
-              maxWidth: '100%', 
+          <img
+            src={selectedEquipment?.imageUrl}
+            alt={selectedEquipment?.name || 'Imagen ampliada'}
+            style={{
+              maxWidth: '100%',
               maxHeight: '70vh',
               borderRadius: '8px',
               objectFit: 'contain'
@@ -166,7 +166,7 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
 
         <Button
           variant="primary"
-          className="d-flex align-items-center gap-2"
+          className="d-flex align-items-center gap-2 ms-md-0 ms-auto"
           onClick={() => navigate('/equipo')}
         >
           <FaPlus />
@@ -174,9 +174,11 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
         </Button>
       </div>
 
-      <div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
-        <div className="flex-grow-1">
-          <InputGroup>
+      {/* Buscador + botón de filtros */}
+      <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
+        {/* Input con ícono */}
+        <div className="d-flex flex-grow-1">
+          <InputGroup className="flex-grow-1">
             <InputGroup.Text>
               <FaSearch />
             </InputGroup.Text>
@@ -197,10 +199,12 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
           </InputGroup>
         </div>
 
+        {/* Botón de filtros */}
         <Button
           variant="outline-secondary"
           onClick={() => setShowFilters(!showFilters)}
-          className="d-flex align-items-center gap-2"
+          className="d-flex align-items-center gap-2 flex-shrink-0 text-nowrap align-self-end align-self-md-center w-auto"
+          style={{ whiteSpace: 'nowrap' }}
         >
           <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
         </Button>
@@ -281,91 +285,123 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
 
       {loading && (
         <>
-          <table className="table table-hover align-middle text-center overflow-hidden">
-            <thead className="table-dark">
-              <tr>
-                <th className="rounded-top-start">Nombre</th>
-                <th>Descripción</th>
-                <th>Estado</th>
-                <th>Cantidad</th>
-                <th>Tipo</th>
-                <th>Imagen</th>
-                <th className="rounded-top-end">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {equipos.length > 0 ? (
-                equipos.map((equipo) => (
-                  <tr key={equipo.id}>
-                    <td className="fw-bold">{equipo.nombre}</td>
-                    <td>{equipo.descripcion}</td>
-                    <td>
-                      <span
-                        className={`badge ${equipo.estado ? "bg-success" : "bg-danger"
-                          }`}
-                      >
-                        {equipo.estado ? "Disponible" : "No disponible"}
-                      </span>
-                    </td>
-                    <td>{equipo.cantidad}</td>
-                    <td>
-                      <em>{getTipoNombre(equipo.tipo_equipo_id)}</em>
-                    </td>
-                    <td>
-                      {equipo.imagen_url ? (
-                        <img
-                          src={equipo.imagen_url}
-                          alt={equipo.nombre}
-                          style={{
-                            width: "60px",
-                            height: "60px",
-                            objectFit: "cover",
-                            borderRadius: "8px",
-                            cursor: "pointer"
-                          }}
-                          onClick={() => {
-                            if (equipo.imagen_url) {
-                              handleImageClick(equipo.imagen_url, equipo.nombre);
+          <div className="table-container" style={{ 
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            marginBottom: '1rem',
+            borderRadius: '0.375rem',
+            border: '1px solid #dee2e6'
+          }}>
+            <table className="table table-hover align-middle text-center mb-0" style={{ 
+              minWidth: '800px',
+              width: '100%',
+              marginBottom: 0
+            }}>
+              <thead className="table-dark">
+                <tr>
+                  <th className="rounded-top-start">Nombre</th>
+                  <th>Descripción</th>
+                  <th>Estado</th>
+                  <th>Cantidad</th>
+                  <th>Tipo</th>
+                  <th>Imagen</th>
+                  <th className="rounded-top-end">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {equipos.length > 0 ? (
+                  equipos.map((equipo) => (
+                    <tr key={equipo.id}>
+                      <td className="fw-bold">{equipo.nombre}</td>
+                      <td>{equipo.descripcion}</td>
+                      <td>
+                        <span
+                          className={`badge ${equipo.estado ? "bg-success" : "bg-danger"
+                            }`}
+                        >
+                          {equipo.estado ? "Disponible" : "No disponible"}
+                        </span>
+                      </td>
+                      <td>{equipo.cantidad}</td>
+                      <td>
+                        <em>{getTipoNombre(equipo.tipo_equipo_id)}</em>
+                      </td>
+                      <td>
+                        {equipo.imagen_url ? (
+                          <img
+                            src={equipo.imagen_url}
+                            alt={equipo.nombre}
+                            style={{
+                              width: "60px",
+                              height: "60px",
+                              objectFit: "cover",
+                              borderRadius: "8px",
+                              cursor: "pointer"
+                            }}
+                            onClick={() => {
+                              if (equipo.imagen_url) {
+                                handleImageClick(equipo.imagen_url, equipo.nombre);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="text-muted">Sin imagen</span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="d-flex justify-content-center gap-2">
+                          <Button
+                            variant="outline-primary"
+                            className="rounded-circle"
+                            title="Editar equipo"
+                            style={{ 
+                              width: "44px", 
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out"
+                            }}
+                            onMouseEnter={(e) => 
+                              (e.currentTarget.style.transform = "scale(1.15)")
                             }
-                          }}
-                        />
-                      ) : (
-                        <span className="text-muted">Sin imagen</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="d-flex justify-content-center gap-2">
-                        <Button
-                          variant="outline-primary"
-                          className="rounded-circle"
-                          title="Editar equipo"
-                          style={{ width: "44px", height: "44px" }}
-                          onClick={() => onEdit(equipo)}
-                        >
-                          <FaEdit />
-                        </Button>
-                        <Button
-                          variant="outline-danger"
-                          className="rounded-circle"
-                          title="Eliminar equipo"
-                          style={{ width: "44px", height: "44px" }}
-                          onClick={() => confirmarEliminacion(equipo.id)}
-                        >
-                          <FaTrash />
-                        </Button>
-                      </div>
+                            onMouseLeave={(e) => 
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => onEdit(equipo)}
+                          >
+                            <FaEdit />
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            className="rounded-circle"
+                            title="Eliminar equipo"
+                            style={{ 
+                              width: "44px", 
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out"
+                            }}
+                            onMouseEnter={(e) => 
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) => 
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => confirmarEliminacion(equipo.id)}
+                          >
+                            <FaTrash />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="text-muted text-center">
+                      No se encontraron equipos.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className="text-muted text-center">
-                    No se encontraron equipos.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           <PaginationComponent
             page={filters.page || 1}

@@ -12,6 +12,7 @@ import {
   FaChevronDown,
   FaChevronUp,
   FaLongArrowAltLeft,
+  FaPlus,
 } from "react-icons/fa";
 import { getAulas, deleteAula } from "../../services/aulaService";
 import { useNavigate } from "react-router-dom";
@@ -33,7 +34,7 @@ export default function AulaList() {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate(-1); // Regresa a la página anterior
+    navigate(-1);
   };
 
   const fetchAulas = async () => {
@@ -109,7 +110,7 @@ export default function AulaList() {
   };
 
   return (
-    <div className="table-responsive rounded shadow p-3 mt-4">
+    <div className="rounded shadow p-3 mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4 position-relative">
         <div className="d-flex align-items-center gap-3">
           <FaLongArrowAltLeft
@@ -122,14 +123,17 @@ export default function AulaList() {
           />
           <h2 className="fw-bold m-0">Listado de Aulas</h2>
         </div>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <Button variant="primary" onClick={() => navigate("/createRoom")}>
-            + Crear Aula
-          </Button>
-        </div>
+        <Button 
+          variant="primary" 
+          onClick={() => navigate("/createRoom")}
+          className="d-flex align-items-center gap-2"
+        >
+          <FaPlus />
+          Crear Aula
+        </Button>
       </div>
 
-      <div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
+      <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
         <div className="flex-grow-1">
           <InputGroup>
             <InputGroup.Text>
@@ -159,116 +163,152 @@ export default function AulaList() {
         </div>
       ) : (
         <>
-          <table className="table table-hover align-middle text-center">
-            <thead className="table-dark">
-              <tr>
-                <th className="rounded-top-start">Nombre</th>
-                <th>Imagen</th>
-                <th>Encargados</th>
-                <th className="rounded-top-end">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {!loading && aulas.length > 0 ? (
-                aulas.map((aula) => (
-                  <tr key={aula.id}>
-                    <td className="fw-bold">{aula.name}</td>
-                    <td>
-                      {aula.has_images ? (
-                        <FaCheck className="text-success" title="Con imagen" />
-                      ) : (
-                        <FaTimes className="text-muted" title="Sin imagen" />
-                      )}
-                    </td>
-                    <td className="text-start">
-                      {aula.encargados.length > 0 ? (
-                        <>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={() => toggleExpand(aula.id)}
-                          >
-                            {expandedRow === aula.id ? (
-                              <>
-                                Ocultar <FaChevronUp />
-                              </>
-                            ) : (
-                              <>
-                                Ver <FaChevronDown />
-                              </>
+          <div className="table-container" style={{ 
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            marginBottom: '1rem',
+            borderRadius: '0.375rem',
+            border: '1px solid #dee2e6'
+          }}>
+            <table className="table table-hover align-middle text-center mb-0" style={{ 
+              minWidth: '800px',
+              width: '100%',
+              marginBottom: 0
+            }}>
+              <thead className="table-dark">
+                <tr>
+                  <th className="rounded-top-start">Nombre</th>
+                  <th>Imagen</th>
+                  <th>Encargados</th>
+                  <th className="rounded-top-end">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {aulas.length > 0 ? (
+                  aulas.map((aula) => (
+                    <tr key={aula.id}>
+                      <td className="fw-bold">{aula.name}</td>
+                      <td>
+                        {aula.has_images ? (
+                          <FaCheck className="text-success" title="Con imagen" />
+                        ) : (
+                          <FaTimes className="text-muted" title="Sin imagen" />
+                        )}
+                      </td>
+                      <td className="text-start">
+                        {aula.encargados.length > 0 ? (
+                          <>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              onClick={() => toggleExpand(aula.id)}
+                              className="d-flex align-items-center gap-1"
+                            >
+                              {expandedRow === aula.id ? (
+                                <>
+                                  Ocultar <FaChevronUp />
+                                </>
+                              ) : (
+                                <>
+                                  Ver <FaChevronDown />
+                                </>
+                              )}
+                            </Button>
+                            {expandedRow === aula.id && (
+                              <ul className="mb-0 mt-2 ps-3">
+                                {aula.encargados.map((enc) => (
+                                  <li key={enc.id}>
+                                    {enc.first_name} {enc.last_name} (ID: {enc.id})
+                                  </li>
+                                ))}
+                              </ul>
                             )}
+                          </>
+                        ) : (
+                          <label>Sin encargados</label>
+                        )}
+                      </td>
+                      <td>
+                        <div className="d-flex justify-content-center gap-2">
+                          <Button
+                            variant="outline-success"
+                            className="rounded-circle"
+                            style={{ 
+                              width: "44px", 
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out"
+                            }}
+                            onMouseEnter={(e) => 
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) => 
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => navigate(`/aulas/encargados/${aula.id}`)}
+                            title="Asignar encargados"
+                          >
+                            <FaUser />
                           </Button>
-                          {expandedRow === aula.id && (
-                            <ul className="mb-0 mt-2 ps-3">
-                              {aula.encargados.map((enc) => (
-                                <li key={enc.id}>
-                                  {enc.first_name} {enc.last_name} (ID: {enc.id})
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </>
-                      ) : (
-                        <label>Sin encargados</label>
-                      )}
-                    </td>
-                    <td>
-                      <div className="d-flex justify-content-center gap-2">
-                        <Button
-                          variant="outline-success"
-                          className="rounded-circle"
-                          style={{ width: 44, height: 44 }}
-                          onClick={() => navigate(`/aulas/encargados/${aula.id}`)}
-                          title="Asignar encargados"
-                        >
-                          <FaUser />
-                        </Button>
-                        <Button
-                          variant="outline-primary"
-                          className="rounded-circle"
-                          style={{
-                            width: 44,
-                            height: 44,
-                            transition: "transform 0.2s ease-in-out",
-                          }}
-                          title="Editar reserva"
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                          onClick={() => navigate(`/aulas/editar/${aula.id}`)}
-                        >
-                          <FaEdit />
-                        </Button>
-                        <Button
-                          variant="outline-danger"
-                          className="rounded-circle"
-                          style={{ width: 44, height: 44 }}
-                          onClick={() => confirmarEliminacion(aula.id)}
-                        >
-                          <FaTrash />
-                        </Button>
-                      </div>
+                          <Button
+                            variant="outline-primary"
+                            className="rounded-circle"
+                            style={{ 
+                              width: "44px", 
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out"
+                            }}
+                            onMouseEnter={(e) => 
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) => 
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => navigate(`/aulas/editar/${aula.id}`)}
+                            title="Editar aula"
+                          >
+                            <FaEdit />
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            className="rounded-circle"
+                            style={{ 
+                              width: "44px", 
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out"
+                            }}
+                            onMouseEnter={(e) => 
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) => 
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => confirmarEliminacion(aula.id)}
+                            title="Eliminar aula"
+                          >
+                            <FaTrash />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="text-muted">
+                      No se encontraron aulas.
                     </td>
                   </tr>
-                ))
-              ) : !loading ? (
-                <tr>
-                  <td colSpan={4} className="text-muted">
-                    No se encontraron aulas.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           <PaginationComponent
             page={filters.page || 1}
             totalPages={lastPage}
             onPageChange={handlePageChange}
           />
-
         </>
       )}
-
     </div>
   );
 }

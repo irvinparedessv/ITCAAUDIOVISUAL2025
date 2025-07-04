@@ -72,9 +72,6 @@ input[type="time"] {
   box-shadow: none !important;
 }
 
-.bg-unreadnotification {
-  background-color: rgb(255 189 36) !important;
-}
 
 .notification-date {
   font-style: italic;
@@ -947,13 +944,20 @@ input.form-control.border-color-login {
 
 /* Estilo para notificaciones no leídas */
 .bg-unreadnotification {
-  background-color: rgba(255, 193, 7, 0.2) !important;
+  background-color: rgb(212, 158, 23) !important;
 }
 
 /* Estilo para el footer de notificaciones */
 .notification-footer {
   background-color: rgba(255, 193, 7, 0.1) !important;
 }
+
+@media (max-width: 768px) {
+  .translate-middle-custom-mobile {
+    transform: translate(-85%, -45%) !important;
+  }
+}
+
 
 /* Estilo para los botones de notificaciones */
 .btn-notification-link {

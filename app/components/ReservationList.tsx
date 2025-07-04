@@ -304,89 +304,93 @@ export default function ReservationList() {
 
     <div className="table-responsive rounded shadow p-3 mt-4">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4 position-relative">
-        <div className="d-flex align-items-center gap-3">
-          <FaLongArrowAltLeft
-            onClick={handleBack}
-            title="Regresar"
-            style={{
-              cursor: 'pointer',
-              fontSize: '2rem',
-            }}
-          />
-          <h2 className="fw-bold m-0">Listado de Reservas</h2>
-        </div>
+     <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 position-relative">
+  {/* Título con flecha */}
+  <div className="d-flex align-items-center gap-2 gap-md-3 mb-3 mb-md-0">
+    <FaLongArrowAltLeft
+      onClick={handleBack}
+      title="Regresar"
+      style={{
+        cursor: 'pointer',
+        fontSize: '2rem',
+      }}
+    />
+    <h2 className="fw-bold m-0">Listado de Reservas</h2>
+  </div>
 
+  {/* Botones alineados a la derecha incluso en mobile */}
+  <div className="d-flex flex-column flex-md-row flex-wrap gap-2 align-self-end align-self-md-auto">
+    {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
+      <>
+        <Button
+          onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
+          className="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2"
+        >
+          {mostrarSoloHoy ? <FaCalendarAlt /> : <FaCalendarDay />}
+          {mostrarSoloHoy ? "Todas las reservas" : "Reservas de hoy"}
+        </Button>
 
-        {/* Botones alineados a la derecha */}
-        <div className="d-flex flex-wrap gap-2">
-          {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
-            <>
-              <Button
-                onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
-                className="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2"
-              >
-                {mostrarSoloHoy ? <FaCalendarAlt /> : <FaCalendarDay />}
-                {mostrarSoloHoy ? "Todas las reservas" : "Reservas de hoy"}
-              </Button>
+        <Button
+          onClick={() => navigate("/qrScan")}
+          className="btn btn-outline-success d-flex align-items-center gap-2 px-3 py-2"
+        >
+          <FaQrcode />
+          Lector QR
+        </Button>
+      </>
+    )}
 
-              <Button
-                onClick={() => navigate("/qrScan")}
-                className="btn btn-outline-success d-flex align-items-center gap-2 px-3 py-2"
-              >
-                <FaQrcode />
-                Lector QR
-              </Button>
-            </>
-          )}
+    <Button
+      onClick={() => navigate("/addreservation")}
+      className="btn btn-success d-flex align-items-center gap-2 px-3 py-2"
+    >
+      <FaPlus />
+      Crear reserva
+    </Button>
+  </div>
+</div>
 
-          <Button
-            onClick={() => navigate("/addreservation")}
-            className="btn btn-success d-flex align-items-center gap-2 px-3 py-2"
-          >
-            <FaPlus />
-            Crear reserva
-          </Button>
-        </div>
-      </div>
 
 
 
       {/* Buscador con icono y limpiar + botón de filtros */}
-      <div className="d-flex flex-wrap justify-content-between mb-3 gap-2">
-        <div className="flex-grow-1">
-          <InputGroup>
-            <InputGroup.Text>
-              <FaSearch />
-            </InputGroup.Text>
-            <Form.Control
-              type="text"
-              placeholder="Buscar por usuario, aula, equipo, estado..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-            {searchTerm && (
-              <Button
-                variant="outline-secondary"
-                onClick={() => setSearchTerm("")}
-              >
-                <FaTimes />
-              </Button>
-            )}
-          </InputGroup>
-        </div>
-
+<div className="d-flex flex-column flex-md-row justify-content-between mb-3 gap-2">
+  {/* Buscador: ocupa toda la fila en mobile */}
+  <div className="flex-grow-1">
+    <InputGroup>
+      <InputGroup.Text>
+        <FaSearch />
+      </InputGroup.Text>
+      <Form.Control
+        type="text"
+        placeholder="Buscar por usuario, aula, equipo, estado..."
+        value={searchTerm}
+        onChange={(e) => {
+          setSearchTerm(e.target.value);
+          setCurrentPage(1);
+        }}
+      />
+      {searchTerm && (
         <Button
           variant="outline-secondary"
-          onClick={() => setShowFilters(!showFilters)}
-          className="d-flex align-items-center gap-2"
+          onClick={() => setSearchTerm("")}
         >
-          <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+          <FaTimes />
         </Button>
-      </div>
+      )}
+    </InputGroup>
+  </div>
+
+  {/* Botón de filtros: alineado a la derecha en mobile */}
+  <Button
+    variant="outline-secondary"
+    onClick={() => setShowFilters(!showFilters)}
+    className="d-flex align-items-center gap-2 ms-md-0 ms-auto"
+  >
+    <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+  </Button>
+</div>
+
 
       {showFilters && !isFirstLoad && (
         <div className="p-3 rounded mb-4 border border-secondary">

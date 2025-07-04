@@ -392,7 +392,6 @@ export default function ReserveClassroom() {
         title="Regresar"
         style={{
           position: "absolute",
-          top: "25px",
           left: "30px",
           cursor: "pointer",
           fontSize: "2rem",

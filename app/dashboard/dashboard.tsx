@@ -47,7 +47,7 @@ export default function Dashboard() {
   };
 
   return (
-    <Container className="py-5">
+    <Container>
       <h1 className="mb-4">Panel de Control</h1>
       <p className="text-muted mb-5">
         Bienvenido, {user?.first_name}. Selecciona una opción:

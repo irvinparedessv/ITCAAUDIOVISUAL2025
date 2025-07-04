@@ -21,7 +21,7 @@ import { getTipoReservas } from "../services/tipoReservaService";
 import { formatTo12h, timeOptions } from "~/utils/time";
 import { useDropzone } from "react-dropzone";
 import { Role } from "~/types/roles";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 export default function EquipmentReservationForm() {
   type OptionType = { value: string; label: string };
@@ -42,19 +42,29 @@ export default function EquipmentReservationForm() {
     aula: null as SingleValue<OptionType>,
   });
 
-  const [allEquipmentOptions, setAllEquipmentOptions] = useState<EquipmentOption[]>([]);
-  const [availableEquipmentOptions, setAvailableEquipmentOptions] = useState<EquipmentOption[]>([]);
+  const [allEquipmentOptions, setAllEquipmentOptions] = useState<
+    EquipmentOption[]
+  >([]);
+  const [availableEquipmentOptions, setAvailableEquipmentOptions] = useState<
+    EquipmentOption[]
+  >([]);
   const [aulaOptions, setAulaOptions] = useState<OptionType[]>([]);
   const [loadingEquipments, setLoadingEquipments] = useState(false);
   const [loadingAulas, setLoadingAulas] = useState(true);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
-  const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>([]);
+  const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>(
+    []
+  );
   const [loadingTipoReserva, setLoadingTipoReserva] = useState(true);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const { user } = useAuth();
-  const isTodaySelected = formData.date === new Date().toISOString().split("T")[0];
-  const [prestamistaOptions, setPrestamistaOptions] = useState<OptionType[]>([]);
-  const [selectedPrestamista, setSelectedPrestamista] = useState<SingleValue<OptionType>>(null);
+  const isTodaySelected =
+    formData.date === new Date().toISOString().split("T")[0];
+  const [prestamistaOptions, setPrestamistaOptions] = useState<OptionType[]>(
+    []
+  );
+  const [selectedPrestamista, setSelectedPrestamista] =
+    useState<SingleValue<OptionType>>(null);
   const navigate = useNavigate();
 
   const today = new Date();
@@ -63,7 +73,6 @@ export default function EquipmentReservationForm() {
   const maxDate = new Date(today);
   maxDate.setDate(today.getDate() + 6); // Hoy + 6 = 7 días incluyendo hoy
 
-
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -71,20 +80,20 @@ export default function EquipmentReservationForm() {
     if (file) {
       // Validar tipo de archivo
       const validTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       ];
 
       if (!validTypes.includes(file.type)) {
-        toast.error('Solo se permiten archivos PDF o Word');
+        toast.error("Solo se permiten archivos PDF o Word");
         return;
       }
 
       // Validar tamaño
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
-        toast.error('El archivo no puede ser mayor a 5MB');
+        toast.error("El archivo no puede ser mayor a 5MB");
         return;
       }
 
@@ -95,14 +104,14 @@ export default function EquipmentReservationForm() {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'application/pdf': ['.pdf'],
-      'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+      "application/pdf": [".pdf"],
+      "application/msword": [".doc"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        [".docx"],
     },
     maxFiles: 1,
-    multiple: false
+    multiple: false,
   });
-
 
   const isDateTimeComplete =
     formData.date && formData.startTime && formData.endTime;
@@ -133,8 +142,6 @@ export default function EquipmentReservationForm() {
     return max;
   };
 
-
-
   useEffect(() => {
     const min = getMinDate().toISOString().split("T")[0];
     if (formData.date && formData.date < min) {
@@ -151,7 +158,6 @@ export default function EquipmentReservationForm() {
       setSelectedPrestamista(null);
     }
   }, [formData.date]);
-
 
   useEffect(() => {
     const fetchAulas = async () => {
@@ -202,7 +208,9 @@ export default function EquipmentReservationForm() {
 
       try {
         setLoadingEquipments(true);
-        const response = await api.get(`/equiposPorTipo/${formData.tipoReserva.value}`);
+        const response = await api.get(
+          `/equiposPorTipo/${formData.tipoReserva.value}`
+        );
         const data = response.data;
         const options: EquipmentOption[] = data.map((item: any) => ({
           value: item.id,
@@ -230,23 +238,23 @@ export default function EquipmentReservationForm() {
 
   useEffect(() => {
     const fetchPrestamistas = async () => {
-      if (user?.role !== Role.Administrador && user?.role !== Role.Encargado) return;
+      if (user?.role !== Role.Administrador && user?.role !== Role.Encargado)
+        return;
 
       try {
-        const res = await api.get('/usuarios/rol/Prestamista');
+        const res = await api.get("/usuarios/rol/Prestamista");
         const options = res.data.map((u: any) => ({
           value: u.id,
           label: `${u.first_name} ${u.last_name} (${u.email})`,
         }));
         setPrestamistaOptions(options);
       } catch (err) {
-        toast.error('Error al cargar usuarios prestamistas');
+        toast.error("Error al cargar usuarios prestamistas");
       }
     };
 
     fetchPrestamistas();
   }, [user]);
-
 
   useEffect(() => {
     if (!formData.equipment || formData.equipment.length === 0) {
@@ -282,20 +290,26 @@ export default function EquipmentReservationForm() {
 
       const availabilityChecks = equipments.map(async (equipo) => {
         try {
-          const response = await api.get(`/equipos/${equipo.value}/disponibilidad`, {
-            params: {
-              fecha: formData.date,
-              startTime: formData.startTime,
-              endTime: formData.endTime,
-            },
-          });
+          const response = await api.get(
+            `/equipos/${equipo.value}/disponibilidad`,
+            {
+              params: {
+                fecha: formData.date,
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+              },
+            }
+          );
 
           return {
             ...equipo,
             available: response.data.disponibilidad.cantidad_disponible > 0,
           };
         } catch (error) {
-          console.error(`Error verificando disponibilidad para equipo ${equipo.value}`, error);
+          console.error(
+            `Error verificando disponibilidad para equipo ${equipo.value}`,
+            error
+          );
           return {
             ...equipo,
             available: false,
@@ -345,7 +359,6 @@ export default function EquipmentReservationForm() {
     }
   };
 
-
   const handleClear = () => {
     setFormData({
       date: "",
@@ -358,9 +371,7 @@ export default function EquipmentReservationForm() {
     setAvailableEquipmentOptions([]);
     setUploadedFile(null);
     setSelectedPrestamista(null);
-
   };
-
 
   useEffect(() => {
     if (formData.tipoReserva?.label !== "Eventos" && uploadedFile) {
@@ -381,31 +392,37 @@ export default function EquipmentReservationForm() {
 
     const selectedDate = new Date(formData.date + "T" + formData.startTime);
     const dateOnly = new Date(formData.date);
-    const daysDiff = (dateOnly.getTime() - now.setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24);
+    const daysDiff =
+      (dateOnly.getTime() - now.setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24);
 
     // ➤ Validar máximo 7 días de anticipación
     if (daysDiff > 7) {
-      toast.error("Solo se pueden hacer reservas con hasta una semana de anticipación.");
+      toast.error(
+        "Solo se pueden hacer reservas con hasta una semana de anticipación."
+      );
       return;
     }
 
     console.log("Ahora:", new Date());
     console.log("Inicio de reserva:", selectedDate);
-    console.log("Diferencia en minutos:", (selectedDate.getTime() - Date.now()) / 60000);
+    console.log(
+      "Diferencia en minutos:",
+      (selectedDate.getTime() - Date.now()) / 60000
+    );
     // ➤ Validar que hoy sea al menos 1 hora antes
-    const isToday =
-      new Date().toISOString().split("T")[0] === formData.date;
+    const isToday = new Date().toISOString().split("T")[0] === formData.date;
 
     if (isToday) {
       const now = new Date();
       const diffInMinutes = (selectedDate.getTime() - now.getTime()) / 60000;
 
       if (diffInMinutes < 30) {
-        toast.error("Si reservas para hoy, debe ser al menos con 30 minutos de anticipación.");
+        toast.error(
+          "Si reservas para hoy, debe ser al menos con 30 minutos de anticipación."
+        );
         return;
       }
     }
-
 
     // Resto de validaciones y envío del formulario
     if (formData.equipment.length === 0) {
@@ -432,7 +449,6 @@ export default function EquipmentReservationForm() {
       toast.error("Debe subir el documento del evento.");
       return;
     }
-
 
     // Continúa con el envío como ya lo tienes...
     const formPayload = new FormData();
@@ -468,7 +484,7 @@ export default function EquipmentReservationForm() {
       toast.success("¡Reserva creada exitosamente!");
 
       setTimeout(() => {
-        navigate('/reservations'); // Cambia esto por tu ruta deseada
+        navigate("/reservations"); // Cambia esto por tu ruta deseada
       }, 2000);
 
       handleClear();
@@ -477,12 +493,12 @@ export default function EquipmentReservationForm() {
     } catch (error: any) {
       console.error(error);
       const message =
-        error.response?.data?.message || "Error al crear la reserva. Intenta nuevamente.";
+        error.response?.data?.message ||
+        "Error al crear la reserva. Intenta nuevamente.";
       toast.error(message);
     } finally {
       setLoadingSubmit(false);
     }
-
   };
 
   const getStartTimeOptions = (): string[] => {
@@ -497,7 +513,7 @@ export default function EquipmentReservationForm() {
       const minute = Number(minuteStr);
 
       // Limita el rango a 7:00 - 17:00
-      if (hour < 7 || (hour > 17 || (hour === 17 && minute > 0))) return false;
+      if (hour < 7 || hour > 17 || (hour === 17 && minute > 0)) return false;
 
       if (isTodaySelected) {
         const selectedTime = new Date(`${selectedDateStr}T${time}`);
@@ -509,11 +525,9 @@ export default function EquipmentReservationForm() {
     });
   };
 
-
   const handleBack = () => {
     navigate(-1); // Regresa a la página anterior
   };
-
 
   return (
     <div className="form-container position-relative">
@@ -522,12 +536,12 @@ export default function EquipmentReservationForm() {
         onClick={handleBack}
         title="Regresar"
         style={{
-          position: 'absolute',
-          top: '25px',
-          left: '30px',
-          cursor: 'pointer',
-          fontSize: '2rem',
-          zIndex: 10
+          position: "absolute",
+          top: "25px",
+          left: "30px",
+          cursor: "pointer",
+          fontSize: "2rem",
+          zIndex: 10,
         }}
       />
 
@@ -554,10 +568,10 @@ export default function EquipmentReservationForm() {
             required
           />
 
-
           {isTodaySelected && (
             <small className="form-text text-muted">
-              La reservación debe hacerse con al menos 30 minutos de anticipación.
+              La reservación debe hacerse con al menos 30 minutos de
+              anticipación.
             </small>
           )}
         </div>
@@ -606,7 +620,8 @@ export default function EquipmentReservationForm() {
                   const minutes = Number(minStr);
                   // Solo mostrar horas mayores a la hora de inicio seleccionada
                   if (formData.startTime) {
-                    const [startHourStr, startMinStr] = formData.startTime.split(":");
+                    const [startHourStr, startMinStr] =
+                      formData.startTime.split(":");
                     const startHour = Number(startHourStr);
                     const startMinutes = Number(startMinStr);
                     const timeHourMin = hour * 60 + minutes;
@@ -626,7 +641,8 @@ export default function EquipmentReservationForm() {
         </div>
 
         {/* USUARIO */}
-        {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
+        {(user?.role === Role.Administrador ||
+          user?.role === Role.Encargado) && (
           <div className="mb-4">
             <label className="form-label d-flex align-items-center">
               <FaUser className="me-2" />
@@ -645,7 +661,6 @@ export default function EquipmentReservationForm() {
               classNamePrefix="react-select"
               isDisabled={!isDateTimeComplete}
             />
-
           </div>
         )}
 
@@ -707,17 +722,25 @@ export default function EquipmentReservationForm() {
             ) : (
               <div
                 {...getRootProps()}
-                className={`border rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : "border-secondary-subtle"
-                  }`}
+                className={`border rounded p-4 text-center cursor-pointer ${
+                  isDragActive
+                    ? "border-primary bg-light"
+                    : "border-secondary-subtle"
+                }`}
               >
                 <input {...getInputProps()} />
                 <div className="d-flex flex-column align-items-center justify-content-center">
                   <FaUpload className="text-muted mb-2" size={24} />
                   {isDragActive ? (
-                    <p className="text-primary mb-0">Suelta el documento aquí...</p>
+                    <p className="text-primary mb-0">
+                      Suelta el documento aquí...
+                    </p>
                   ) : (
                     <>
-                      <p className="mb-1">Arrastra y suelta un documento aquí, o haz clic para seleccionar</p>
+                      <p className="mb-1">
+                        Arrastra y suelta un documento aquí, o haz clic para
+                        seleccionar
+                      </p>
                       <p className="text-muted small mb-0">
                         Formatos: PDF, DOC, DOCX (Máx. 5MB)
                       </p>
@@ -728,7 +751,6 @@ export default function EquipmentReservationForm() {
             )}
           </div>
         )}
-
 
         {/* Multiselect Equipos */}
         <div className="mb-4">
@@ -746,16 +768,14 @@ export default function EquipmentReservationForm() {
               rel="noopener noreferrer"
               className="btn btn-sm ms-3"
               style={{
-                backgroundColor: 'rgb(2 71 102)',
-                color: '#fff',
-                border: 'none'
+                backgroundColor: "rgb(2 71 102)",
+                color: "#fff",
+                border: "none",
               }}
             >
               <FaEye className="me-1" /> Ver disponibilidad
             </a>
           </label>
-
-
 
           {loadingEquipments ? (
             <div className="d-flex justify-content-center">
@@ -771,7 +791,9 @@ export default function EquipmentReservationForm() {
               onChange={(selected) => {
                 // Enriquecer con tipoEquipoId desde allEquipmentOptions
                 const enriched = selected.map((s: any) => {
-                  const full = allEquipmentOptions.find((e: any) => e.value === s.value);
+                  const full = allEquipmentOptions.find(
+                    (e: any) => e.value === s.value
+                  );
                   return {
                     ...s,
                     tipoEquipoId: full?.tipoEquipoId,
@@ -792,12 +814,12 @@ export default function EquipmentReservationForm() {
                 !isDateTimeComplete
                   ? "Selecciona fecha y hora primero"
                   : !formData.tipoReserva
-                    ? "Selecciona un tipo de reserva primero"
-                    : checkingAvailability
-                      ? "Verificando disponibilidad..."
-                      : availableEquipmentOptions.length === 0
-                        ? "No hay equipos disponibles para este tipo"
-                        : "Selecciona equipos disponibles"
+                  ? "Selecciona un tipo de reserva primero"
+                  : checkingAvailability
+                  ? "Verificando disponibilidad..."
+                  : availableEquipmentOptions.length === 0
+                  ? "No hay equipos disponibles para este tipo"
+                  : "Selecciona equipos disponibles"
               }
               className="react-select-container"
               classNamePrefix="react-select"
@@ -810,7 +832,7 @@ export default function EquipmentReservationForm() {
         <div className="mb-4">
           <label className="form-label d-flex align-items-center">
             <FaSchool className="me-2" />
-            Aula
+            Espacio
           </label>
           {loadingAulas ? (
             <div className="d-flex justify-content-center">

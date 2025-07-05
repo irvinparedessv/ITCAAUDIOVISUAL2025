@@ -371,7 +371,8 @@ const handleCancelClick = (reserva: any) => {
           </Col>
 
           {/* Columna derecha: botón alineado a la derecha */}
-          <Col xs={12} md={6} className="d-flex justify-content-md-end mt-3 mt-md-0">
+          <Col xs={12} md={6} className="d-flex justify-content-end mt-3 mt-md-0">
+
             <Button
               onClick={() => navigate("/reservationsroom")}
               className="btn btn-success d-flex align-items-center gap-2 px-3 py-2"
@@ -434,8 +435,9 @@ const handleCancelClick = (reserva: any) => {
           </div>
         ) : (
           <>
-            <Table striped bordered hover responsive>
-              <thead>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle text-center">
+              <thead className="table-dark">
                 <tr>
                   <th>Aula</th>
                   <th>Fecha</th>
@@ -554,7 +556,8 @@ const handleCancelClick = (reserva: any) => {
                   );
                 })}
               </tbody>
-            </Table>
+            </table>
+            </div>
             <PaginationComponent
               page={page}
               totalPages={totalPages}

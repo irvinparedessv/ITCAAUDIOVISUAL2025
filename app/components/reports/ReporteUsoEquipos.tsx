@@ -18,6 +18,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { FaLongArrowAltLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 interface EquipoUsoReporte {
   equipo: string;
@@ -32,6 +34,7 @@ const ReporteUsoEquipos = () => {
   const [equipos, setEquipos] = useState<EquipoUsoReporte[]>([]);
   const [tiposEquipo, setTiposEquipo] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate()
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -263,9 +266,24 @@ const ReporteUsoEquipos = () => {
   );
 };
 
+   const handleBack = () => {
+    navigate(-1); // Redirige a la ruta de inicio
+  };
+
   return (
     <div className="container mt-4">
-      <h3 className="mb-4">Reporte de Uso de Equipos</h3>
+       <div className="d-flex align-items-center gap-3 mb-4">
+                                <FaLongArrowAltLeft
+                                  onClick={handleBack}
+                                  title="Regresar"
+                                  style={{
+                                    cursor: 'pointer',
+                                    fontSize: '2rem',
+                                    marginTop: '2px' // Ajuste fino para alinear visualmente el icono con el texto
+                                  }}
+                                />
+                                <h3 className="mb-0">Reporte de uso de equipos</h3>
+                              </div>
 
       {/* Filtros */}
       <div className="d-flex gap-3 align-items-end flex-wrap mb-4">

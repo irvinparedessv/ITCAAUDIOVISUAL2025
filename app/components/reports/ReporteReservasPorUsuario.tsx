@@ -7,6 +7,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import toast from "react-hot-toast";
 import PaginationComponent from "~/utils/Pagination";
+import { FaLongArrowAltLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 interface ReservaReporte {
     id: number;
@@ -33,7 +35,7 @@ const ReporteReservasPorUsuario = () => {
     const [loading, setLoading] = useState(false);
     const [tiposReserva, setTiposReserva] = useState<string[]>([]);
     const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-
+    const navigate = useNavigate()
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [perPage] = useState(20);
@@ -254,7 +256,7 @@ const ReporteReservasPorUsuario = () => {
                                                             doc
                                                                 .setFontSize(10)
                                                                 .text(`Generado: ${fechaStr} - ${horaStr}`, 60, 25)
-                                                                .text(`Filtros: Usuario: ${nombreUsuario}, Estado: ${estado || "Todos"}, Tipo: ${tipoReserva || "Todos"}`, 60, 30)
+                                                                .text(`Usuario: ${nombreUsuario}, Estado: ${estado || "Todos"}, Tipo: ${tipoReserva || "Todos"}`, 60, 30)
                                                                 .text(
                                                                     `Rango fechas: ${fechaInicio || "N/A"} a ${fechaFin || "N/A"}`,
                                                                     60,
@@ -320,92 +322,144 @@ const ReporteReservasPorUsuario = () => {
             { duration: 10000 }
         );
     };
-
+    const handleBack = () => {
+        navigate(-1); // Redirige a la ruta de inicio
+    };
 
     return (
         <div className="container mt-4">
-            <h3 className="mb-4">Reporte de Reservas por Usuario</h3>
 
-            <div className="d-flex gap-3 align-items-end flex-wrap mb-4">
-                <Form.Group>
-                    <Form.Label>Usuario</Form.Label>
-                    <Form.Select
-                        value={usuarioId}
-                        onChange={(e) => setUsuarioId(e.target.value)}
-                    >
-                        <option value="">Selecciona...</option>
-                        {usuarios.map((u) => (
-                            <option key={u.id} value={u.id}>
-                                {u.first_name} {u.last_name}
-                            </option>
-                        ))}
-                    </Form.Select>
-                </Form.Group>
+            <div className="d-flex align-items-center gap-3 mb-4">
+                <FaLongArrowAltLeft
+                    onClick={handleBack}
+                    title="Regresar"
+                    style={{
+                        cursor: 'pointer',
+                        fontSize: '2rem',
+                        marginTop: '2px' // Ajuste fino para alinear visualmente el icono con el texto
+                    }}
+                />
+                <h3 className="mb-0">Reporte de reservas de equipos por usuario</h3>
+            </div>
 
-                <Form.Group>
-                    <Form.Label>Estado</Form.Label>
-                    <Form.Select value={estado} onChange={(e) => setEstado(e.target.value)}>
-                        <option value="">Todos</option>
-                        {["Pendiente", "Aprobado", "Rechazado", "Cancelado", "Devuelto"].map(
-                            (s) => (
-                                <option key={s} value={s}>
-                                    {s}
+
+            <div className="row g-3 align-items-end mb-4">
+                {/* Filtro de Usuario */}
+                <div className="col-md-3">
+                    <Form.Group controlId="usuarioId">
+                        <Form.Label>Usuario</Form.Label>
+                        <Form.Select
+                            value={usuarioId}
+                            onChange={(e) => setUsuarioId(e.target.value)}
+                            disabled={loading}
+                        >
+                            <option value="">Seleccione un usuario...</option>
+                            {usuarios.map((u) => (
+                                <option key={u.id} value={u.id}>
+                                    {u.first_name} {u.last_name}
                                 </option>
-                            )
-                        )}
-                    </Form.Select>
-                </Form.Group>
+                            ))}
+                        </Form.Select>
+                    </Form.Group>
+                </div>
 
-                <Form.Group>
-                    <Form.Label>Tipo</Form.Label>
-                    <Form.Select
-                        value={tipoReserva}
-                        onChange={(e) => setTipoReserva(e.target.value)}
+                {/* Filtro de Estado */}
+                <div className="col-md-2">
+                    <Form.Group controlId="estado">
+                        <Form.Label>Estado</Form.Label>
+                        <Form.Select
+                            value={estado}
+                            onChange={(e) => setEstado(e.target.value)}
+                            disabled={loading}
+                        >
+                            <option value="">Todos los estados</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Aprobado">Aprobado</option>
+                            <option value="Rechazado">Rechazado</option>
+                            <option value="Cancelado">Cancelado</option>
+                            <option value="Devuelto">Devuelto</option>
+                        </Form.Select>
+                    </Form.Group>
+                </div>
+
+                {/* Filtro de Tipo de Reserva */}
+                <div className="col-md-2">
+                    <Form.Group controlId="tipoReserva">
+                        <Form.Label>Tipo de Reserva</Form.Label>
+                        <Form.Select
+                            value={tipoReserva}
+                            onChange={(e) => setTipoReserva(e.target.value)}
+                            disabled={loading}
+                        >
+                            <option value="">Todos los tipos</option>
+                            {tiposReserva.map((t) => (
+                                <option key={t} value={t}>
+                                    {t}
+                                </option>
+                            ))}
+                        </Form.Select>
+                    </Form.Group>
+                </div>
+
+                {/* Filtro de Fecha Inicio */}
+                <div className="col-md-2">
+                    <Form.Group controlId="fechaInicio">
+                        <Form.Label>Desde</Form.Label>
+                        <Form.Control
+                            type="date"
+                            value={fechaInicio}
+                            onChange={(e) => setFechaInicio(e.target.value)}
+                            disabled={loading}
+                            max={fechaFin || undefined}
+                        />
+                    </Form.Group>
+                </div>
+
+                {/* Filtro de Fecha Fin */}
+                <div className="col-md-2">
+                    <Form.Group controlId="fechaFin">
+                        <Form.Label>Hasta</Form.Label>
+                        <Form.Control
+                            type="date"
+                            value={fechaFin}
+                            onChange={(e) => setFechaFin(e.target.value)}
+                            disabled={loading}
+                            min={fechaInicio || undefined}
+                        />
+                    </Form.Group>
+                </div>
+
+                {/* Botones de Acción */}
+                <div className="col-md-1 d-flex gap-2">
+                    <Button
+                        onClick={handleBuscar}
+                        disabled={loading || !usuarioId}
+                        className="flex-fill"
+                        variant="primary"
                     >
-                        <option value="">Todos</option>
-                        {tiposReserva.map((t) => (
-                            <option key={t} value={t}>
-                                {t}
-                            </option>
-                        ))}
-                    </Form.Select>
-                </Form.Group>
-
-                <Form.Group>
-                    <Form.Label>Fecha inicio</Form.Label>
-                    <Form.Control
-                        type="date"
-                        value={fechaInicio}
-                        onChange={(e) => setFechaInicio(e.target.value)}
-                    />
-                </Form.Group>
-
-                <Form.Group>
-                    <Form.Label>Fecha fin</Form.Label>
-                    <Form.Control
-                        type="date"
-                        value={fechaFin}
-                        onChange={(e) => setFechaFin(e.target.value)}
-                    />
-                </Form.Group>
-
-                <Button onClick={handleBuscar} disabled={loading}>
-                    {loading ? <Spinner size="sm" animation="border" /> : "Buscar"}
-                </Button>
-
-                <Button variant="outline-danger" onClick={limpiar}>
-                    Limpiar
-                </Button>
-
-                <div className="ms-auto d-flex gap-2">
-                    <Button variant="success" onClick={exportarExcel}>
-                        Excel
-                    </Button>
-                    <Button variant="danger" onClick={exportarPDF}>
-                        PDF
+                        {loading ? <Spinner size="sm" animation="border" /> : "Buscar"}
                     </Button>
                 </div>
+
+                <div className="d-flex justify-content-end gap-2 mb-3">
+                    <Button
+                        variant="outline-secondary"
+                        onClick={limpiar}
+                        disabled={loading}
+                    >
+                        Limpiar
+                    </Button>
+
+                    <Button variant="success" onClick={exportarExcel} disabled={loading}>
+                        Exportar Excel
+                    </Button>
+                    <Button variant="danger" onClick={exportarPDF} disabled={loading}>
+                        Exportar PDF
+                    </Button>
+                </div>
+
             </div>
+
 
             <Table striped bordered hover responsive>
                 <thead>

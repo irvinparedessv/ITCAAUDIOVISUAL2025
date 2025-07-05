@@ -12,7 +12,7 @@ const opciones = [
   {
     nombre: 'Análisis',
     descripcion: 'Predicción y estadísticas',
-    ruta: '/prediccion',
+    ruta: '/opcionesAnalisis',
     icono: <FaChartLine size={24} />,
   },
   {

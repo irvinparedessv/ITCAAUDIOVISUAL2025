@@ -18,6 +18,8 @@ import {
     CartesianGrid,
 } from "recharts";
 import { useTheme } from "~/hooks/ThemeContext";
+import { FaLongArrowAltLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 interface HorarioMasSolicitado {
     horario: string;
@@ -46,6 +48,7 @@ const ReporteHorariosSolicitados = () => {
     const [data, setData] = useState<HorarioMasSolicitado[]>([]);
     const [loading, setLoading] = useState(false);
     const { darkMode } = useTheme();
+    const navigate = useNavigate()
     // Paginación tabla
     const [currentPage, setCurrentPage] = useState(1);
     const perPage = 10;
@@ -301,12 +304,27 @@ const ReporteHorariosSolicitados = () => {
         ), { duration: 10000 });
     };
 
+    const handleBack = () => {
+    navigate(-1); // Redirige a la ruta de inicio
+  };
+
 
     const paginatedData = data.slice((currentPage - 1) * perPage, currentPage * perPage);
 
     return (
         <div className="container mt-4">
-            <h3 className="mb-4">Reporte de Horarios Más Solicitados</h3>
+                  <div className="d-flex align-items-center gap-3 mb-4">
+                    <FaLongArrowAltLeft
+                      onClick={handleBack}
+                      title="Regresar"
+                      style={{
+                        cursor: 'pointer',
+                        fontSize: '2rem',
+                        marginTop: '2px' // Ajuste fino para alinear visualmente el icono con el texto
+                      }}
+                    />
+                    <h3 className="mb-0">Reporte de horarios más solicitados</h3>
+                  </div>
 
             {/* Filtros */}
             <div className="d-flex gap-3 align-items-end flex-wrap mb-4">

@@ -1,31 +1,43 @@
 import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaChartLine, FaBook, FaRegFileAlt } from 'react-icons/fa';
+import { FaUsers, FaChartLine, FaBook, FaRegFileAlt, FaLongArrowAltLeft } from 'react-icons/fa';
 import { Card } from 'react-bootstrap';
 
 const opciones = [
   {
-    nombre: 'Reportes 1',
-    descripcion: 'Reportes generales del sistema',
-    ruta: '/opcionesReportes',
+    nombre: 'Reporte de reservas equipo',
+    descripcion: 'Reporte de reserva por fechas',
+    ruta: '/reporteReservas',
     icono: <FaRegFileAlt size={24} />,
   },
   {
-    nombre: 'Análisis por tipo de equipo',
-    descripcion: 'Predicción y estadísticas',
-    ruta: '/prediccion',
+    nombre: 'Reporte de reservas equipo',
+    descripcion: 'Reporte de reserva por usuarios',
+    ruta: '/reporteUsuarios',
+    icono: <FaRegFileAlt size={24} />,
+  },
+  {
+    nombre: 'Reporte de reservas aulas',
+    descripcion: 'Reporte de uso de aulas',
+    ruta: '/reporteAulas',
+    icono: <FaRegFileAlt size={24} />,
+  },
+  {
+    nombre: 'Reporte de horarios solicitados',
+    descripcion: 'Reporte de horarios más solicitados por tipo de reserva',
+    ruta: '/reporteHorarios',
     icono: <FaChartLine size={24} />,
   },
   {
-    nombre: 'Análisis por equipo',
-    descripcion: 'Predicción y estadísticas',
-    ruta: '/prediccionPorEquipoPage',
+    nombre: 'Reporte de equipos',
+    descripcion: 'Reporte de uso de equipos',
+    ruta: '/reporteEquipos',
     icono: <FaChartLine size={24} />,
   },
   {
-    nombre: 'Bitácora',
-    descripcion: 'Historial de acciones del sistema',
-    ruta: '/bitacora',
-    icono: <FaBook size={24} />,
+    nombre: 'Reporte de inventario',
+    descripcion: 'Reporte de inventario de equipos',
+    ruta: '/reporteInventario',
+    icono: <FaRegFileAlt size={24} />,
   },
 ];
 
@@ -47,11 +59,36 @@ const OpcionesReporte = () => {
       : "#8B0000"
   });
 
+  const handleBack = () => {
+  navigate(-1); // Redirige a la ruta de inicio
+};
+
   return (
-    <div className="min-h-screen bg-gray-50 p-5">
+     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-4">Opciones Administrativas</h1>
-        <p className="text-muted mb-5">Gestiona todas las funciones del sistema</p>
+        {/* Contenedor flex principal (flecha + título) */}
+        <div 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              marginBottom: '20px',
+              padding: '10px',
+              maxWidth: '600px'
+            }}
+          >
+            <FaLongArrowAltLeft 
+              onClick={handleBack} 
+              style={{ fontSize: '2rem', cursor: 'pointer' }} 
+            />
+            <h1>
+              Opciones de Reportes
+            </h1>
+          </div>
+    
+          <p style={{ marginTop: 0 }}>
+            Gestiona todas los reportes del sistema
+          </p>
 
         <div className="d-flex flex-wrap gap-4">
           {opciones.map((opcion) => (

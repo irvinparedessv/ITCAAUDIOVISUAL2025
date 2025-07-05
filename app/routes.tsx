@@ -47,12 +47,13 @@ import AulaList from "./components/attendantadmin/RoomList";
 import EditEquipmentReservationForm from "./components/EditEquipmentReservationForm";
 import AsignarEncargadosForm from "./components/FormEncargadosEspacio";
 import EquipmentAvailabilityListPage from "./routes/EquipmentAvailabilityPage";
-import ReporteReservasPorFecha from "./routes/reports/ReporteReservasPorFecha";
-import ReporteReservasPorUsuario from "./routes/reports/ReporteReservasPorUsuario";
-import ReporteUsoAulas from "./routes/reports/ReporteUsoAulas";
-import ReporteUsoEquipos from "./routes/reports/ReporteUsoEquipos";
-import ReporteHorariosSolicitados from "./routes/reports/ReporteHorariosSolicitados";
-import ReporteInventarioEquipos from "./routes/reports/ReporteInventarioEquipos";
+import ReporteReservasPorFecha from "./components/reports/ReporteReservasPorFecha";
+import ReporteReservasPorUsuario from "./components/reports/ReporteReservasPorUsuario";
+import ReporteUsoAulas from "./components/reports/ReporteUsoAulas";
+import ReporteUsoEquipos from "./components/reports/ReporteUsoEquipos";
+import ReporteHorariosSolicitados from "./components/reports/ReporteHorariosSolicitados";
+import ReporteInventarioEquipos from "./components/reports/ReporteInventarioEquipos";
+import OpcionesAnalisis from "./dashboard/OpcionesAnalisis";
 
 const router = createBrowserRouter([
   {
@@ -235,6 +236,10 @@ const router = createBrowserRouter([
           {
             path: "opcionesReportes",
             element: <OpcionesReportes />,
+          },
+          {
+            path: "opcionesAnalisis",
+            element: <OpcionesAnalisis />,
           },
           {
             path: "reporteReservas",

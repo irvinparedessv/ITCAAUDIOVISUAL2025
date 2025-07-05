@@ -70,9 +70,12 @@ const Filters: React.FC<FiltersProps> = ({
           />
         </Col>
       </Row>
-      <Button variant="outline-danger" onClick={onReset}>
-        Limpiar filtros
-      </Button>
+      <div className="d-flex justify-content-end">
+  <Button variant="outline-danger" onClick={onReset}>
+    Limpiar filtros
+  </Button>
+</div>
+
     </div>
   );
 };

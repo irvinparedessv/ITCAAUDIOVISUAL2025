@@ -157,8 +157,9 @@ export default function UsuarioList() {
   };
 
   return (
-    <div className="rounded shadow p-3 mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
+    <div className="table-responsive rounded shadow p-3 mt-4">
+
+        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4">
         <div className="d-flex align-items-center gap-3">
           <FaLongArrowAltLeft
             onClick={handleBack}
@@ -305,18 +306,8 @@ export default function UsuarioList() {
         </div>
       ) : (
         <>
-          <div className="table-container" style={{ 
-            overflowX: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            marginBottom: '1rem',
-            borderRadius: '0.375rem',
-            border: '1px solid #dee2e6'
-          }}>
-            <table className="table table-hover align-middle text-center mb-0" style={{ 
-              minWidth: '800px',
-              width: '100%',
-              marginBottom: 0
-            }}>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle text-center">
               <thead className="table-dark">
                 <tr>
                   <th>Imagen</th>

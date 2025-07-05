@@ -154,66 +154,69 @@ export default function EquipmentAvailabilityList() {
   }, [searchTerm]);
 
   return (
-    <div className="container py-5">
-      <div className="rounded shadow p-3 mt-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <div className="d-flex align-items-center gap-3">
-            <FaLongArrowAltLeft
-              onClick={handleBack}
-              title="Regresar"
-              style={{
-                cursor: 'pointer',
-                fontSize: '2rem',
-              }}
-            />
-            <h2 className="mb-0">Disponibilidad de equipos</h2>
-          </div>
+    <div className="table-responsive rounded shadow p-3 mt-4">
 
-          <div>
-            <Button
-              variant="primary"
-              className="me-2"
-              onClick={checkAllAvailability}
-              disabled={!availabilityData.fecha || checkingAvailability}
-              style={{ 
-                transition: "transform 0.2s ease-in-out",
-                minWidth: "180px"
-              }}
-              onMouseEnter={(e) => 
-                (e.currentTarget.style.transform = "scale(1.03)")
-              }
-              onMouseLeave={(e) => 
-                (e.currentTarget.style.transform = "scale(1)")
-              }
-            >
-              {checkingAvailability ? (
-                <>
-                  <Spinner as="span" size="sm" animation="border" />
-                  <span className="ms-2">Verificando...</span>
-                </>
-              ) : (
-                <>
-                  <FaEye className="me-1" /> Ver disponibilidad
-                </>
-              )}
-            </Button>
-            <Button 
-              variant="outline-secondary" 
-              onClick={handleClearFilters}
-              style={{ 
-                transition: "transform 0.2s ease-in-out"
-              }}
-              onMouseEnter={(e) => 
-                (e.currentTarget.style.transform = "scale(1.03)")
-              }
-              onMouseLeave={(e) => 
-                (e.currentTarget.style.transform = "scale(1)")
-              }
-            >
-              Limpiar Filtros
-            </Button>
-          </div>
-        </div>
+        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4">
+  {/* Flecha y título */}
+  <div className="d-flex align-items-center gap-3">
+    <FaLongArrowAltLeft
+      onClick={handleBack}
+      title="Regresar"
+      style={{
+        cursor: 'pointer',
+        fontSize: '2rem',
+      }}
+    />
+    <h2 className="mb-0">Disponibilidad de equipos</h2>
+  </div>
+
+  {/* Botones alineados a la derecha */}
+  <div className="d-flex flex-column flex-sm-row gap-2 mt-3 mt-sm-0 ms-auto">
+    <Button
+      variant="primary"
+      onClick={checkAllAvailability}
+      disabled={!availabilityData.fecha || checkingAvailability}
+      style={{
+        transition: 'transform 0.2s ease-in-out',
+        minWidth: '180px',
+      }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.transform = 'scale(1.03)')
+      }
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.transform = 'scale(1)')
+      }
+    >
+      {checkingAvailability ? (
+        <>
+          <Spinner as="span" size="sm" animation="border" />
+          <span className="ms-2">Verificando...</span>
+        </>
+      ) : (
+        <>
+          <FaEye className="me-1" /> Ver disponibilidad
+        </>
+      )}
+    </Button>
+
+    <Button
+      variant="outline-secondary"
+      onClick={handleClearFilters}
+      style={{
+        transition: 'transform 0.2s ease-in-out',
+      }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.transform = 'scale(1.03)')
+      }
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.transform = 'scale(1)')
+      }
+    >
+      Limpiar Filtros
+    </Button>
+  </div>
+</div>
+
 
         <Form className="row g-3 mb-4" onSubmit={(e) => e.preventDefault()}>
           <div className="col-md-4">
@@ -352,18 +355,8 @@ export default function EquipmentAvailabilityList() {
         {error && <Alert variant="danger">{error}</Alert>}
         {loading && (
           <>
-            <div className="table-container" style={{ 
-              overflowX: 'auto',
-              WebkitOverflowScrolling: 'touch',
-              marginBottom: '1rem',
-              borderRadius: '0.375rem',
-              border: '1px solid #dee2e6'
-            }}>
-              <table className="table table-hover align-middle text-center mb-0" style={{ 
-                minWidth: '800px',
-                width: '100%',
-                marginBottom: 0
-              }}>
+            <div className="table-responsive">
+              <table className="table table-hover align-middle text-center">
                 <thead className="table-dark">
                   <tr>
                     <th>Nombre</th>
@@ -450,7 +443,7 @@ export default function EquipmentAvailabilityList() {
             />
           </>
         )}
-      </div>
+
 
       <Modal
         show={showImageModal}

@@ -209,30 +209,40 @@ const EditPerfil = () => {
   };
 
   const submitUpdate = async () => {
-    setSaving(true);
-    const form = new FormData();
+  setSaving(true);
+  const form = new FormData();
 
-    Object.entries(formData).forEach(([key, value]) => {
-      if (key === "image") {
-        if (value instanceof File) {
-          form.append("image", value);
-        }
-      } else {
-        form.append(key, value?.toString() ?? "");
+  Object.entries(formData).forEach(([key, value]) => {
+    if (key === "image") {
+      if (value instanceof File) {
+        form.append("image", value);
       }
-    });
-
-    try {
-      await updateProfile(form);
-      toast.success("Perfil actualizado correctamente");
-      setTimeout(() => navigate("/perfil"), 1500);
-    } catch (error) {
-      toast.error("Error al actualizar el perfil");
-      console.error(error);
-    } finally {
-      setSaving(false);
+    } else {
+      form.append(key, value?.toString() ?? "");
     }
-  };
+  });
+
+  try {
+    await updateProfile(form);
+    toast.success("Perfil actualizado correctamente");
+    
+    // Emitir evento con los nuevos datos
+    window.dispatchEvent(new CustomEvent('userProfileUpdated', {
+      detail: {
+        image: formData.image_url,
+        firstName: formData.first_name,
+        lastName: formData.last_name
+      }
+    }));
+    
+    setTimeout(() => navigate("/perfil"), 1500);
+  } catch (error) {
+    toast.error("Error al actualizar el perfil");
+    console.error(error);
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -131,10 +131,17 @@ export const getPerfil = async (): Promise<User> => {
 // Actualizar perfil del usuario autenticado
 export const updateProfile = async (formData: FormData): Promise<any> => {
   try {
-    const res = await api.put("/user/profile", formData);
+    formData.append("_method", "PUT"); // Laravel reconocerá esto como PUT
+
+    const res = await api.post("/user/profile", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return res.data;
   } catch (error) {
     console.error("Error al actualizar el perfil:", error);
     throw error;
   }
 };
+

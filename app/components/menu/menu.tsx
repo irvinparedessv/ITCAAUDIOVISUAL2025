@@ -436,16 +436,7 @@ const NavbarMenu = () => {
       {/* Menu encargado mobile */}
       {user?.role === Role.Encargado && (
         <>
-          {checkAccess("/reservations") && (
-            <Nav.Link
-              as={Link}
-              to="/createRoom"
-              className="px-3 py-2 rounded text-dark"
-              onClick={handleCloseSidebar}
-            >
-              <FaList className="me-1" /> Reservas
-            </Nav.Link>
-          )}
+          
 
           {checkAccess("/reservations") && (
             <Dropdown className="mb-2 offcanvas-dropdown">
@@ -462,14 +453,7 @@ const NavbarMenu = () => {
                   <FaComputer className="me-2" /> Reserva de Equipos
                 </Dropdown.Item>
 
-                <Dropdown.Item
-                  as={Link}
-                  to="/reservationsroom"
-                  className="d-flex align-items-center gap-2 text-dark"
-                  onClick={handleCloseSidebar}
-                >
-                  <FaDoorOpen className="me-2" /> Reserva de Espacios
-                </Dropdown.Item>
+                
 
                 <Dropdown.Item
                   as={Link}
@@ -990,15 +974,7 @@ const NavbarMenu = () => {
       {/* Menu encargado desktop */}
       {user?.role === Role.Encargado && (
         <>
-          {checkAccess("/reservations") && (
-            <Nav.Link
-              as={Link}
-              to="/createRoom"
-              className="px-3 py-2 rounded text-dark"
-            >
-              <FaList className="me-1" /> Reservas
-            </Nav.Link>
-          )}
+         
           {checkAccess("/reservations") && (
             <HoverDropdown
               title={
@@ -1016,17 +992,6 @@ const NavbarMenu = () => {
                 <FaComputer className="me-2" />
                 <div>
                   <div className="fw-bold">Reserva de Equipos</div>
-                </div>
-              </Dropdown.Item>
-
-              <Dropdown.Item
-                as={Link}
-                to="/reservationsroom"
-                className="d-flex align-items-start text-dark"
-              >
-                <FaDoorOpen className="me-2" />
-                <div>
-                  <div className="fw-bold">Reserva de Espacios</div>
                 </div>
               </Dropdown.Item>
 

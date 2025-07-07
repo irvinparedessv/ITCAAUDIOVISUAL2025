@@ -1,4 +1,3 @@
-import { steps } from "framer-motion";
 import { Steps } from "./steps";
 import type { ReservaDataRoom } from "./types";
 
@@ -33,37 +32,112 @@ const InputBox = ({
   completarReservaAula,
   addBotMessage,
 }: Props) => {
+  const validateDate = (selectedDateStr: string) => {
+    const [year, month, day] = selectedDateStr.split("-").map(Number);
+    const selectedDate = new Date(year, month - 1, day); // local time
+    selectedDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + 7);
+    maxDate.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      addBotMessage("No puedes seleccionar una fecha pasada.");
+      return false;
+    }
+    if (selectedDate > maxDate) {
+      addBotMessage("Solo puedes reservar hasta 7 días desde hoy.");
+      return false;
+    }
+    return true;
+  };
+
+  const validateStartDateTime = (dateStr: string, timeStr: string) => {
+    if (!dateStr || !timeStr) return false;
+
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    const startDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+    const now = new Date();
+    const minAllowed = new Date(now.getTime() + 30 * 60 * 1000); // ahora + 30 minutos
+
+    if (startDateTime < minAllowed) {
+      addBotMessage(
+        "La hora de inicio debe ser al menos 30 minutos después de la hora actual."
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const validateTimeDiff = (start: string, end: string) => {
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    const startMins = sh * 60 + sm;
+    const endMins = eh * 60 + em;
+    const diff = endMins - startMins;
+    if (diff < 30) {
+      addBotMessage("Debe haber mínimo 30 minutos entre inicio y fin.");
+      return false;
+    }
+    return true;
+  };
+
   const handleNext = () => {
     if (step === "fechaEquipo") {
-      setMessages((prev) => [
+      if (!validateDate(reservaData.fecha)) return;
+      setMessages((prev: any) => [
         ...prev,
         { id: prev.length + 1, text: reservaData.fecha, sender: "user" },
       ]);
       addBotMessage("Perfecto, Seleccione la hora de inicio.");
       setStep("horaInicioEquipo");
     } else if (step === "horaInicioEquipo") {
-      setMessages((prev) => [
+      if (!validateStartDateTime(reservaData.fecha, reservaData.horaInicio))
+        return;
+
+      setMessages((prev: any) => [
         ...prev,
         { id: prev.length + 1, text: reservaData.horaInicio, sender: "user" },
       ]);
-      addBotMessage("Perfecto, Seleccione la hora de finalizacion.");
+      addBotMessage("Perfecto, Seleccione la hora de finalización.");
       setStep("horaFinEquipo");
     } else if (step === "horaFinEquipo") {
-      setMessages((prev) => [
+      if (reservaData.horaFin <= reservaData.horaInicio) {
+        addBotMessage("La hora de fin debe ser mayor a la hora de inicio.");
+        return;
+      }
+      if (!validateTimeDiff(reservaData.horaInicio, reservaData.horaFin))
+        return;
+
+      setMessages((prev: any) => [
         ...prev,
         { id: prev.length + 1, text: reservaData.horaFin, sender: "user" },
       ]);
       addBotMessage("Perfecto, Seleccione el tipo de evento.");
       setStep("mostrarTipoEventos");
     } else if (step === Steps.SeleccionarFechaAula) {
-      setMessages((prev) => [
+      if (!validateDate(reservaDataRoom.fecha)) return;
+      setMessages((prev: any) => [
         ...prev,
         { id: prev.length + 1, text: reservaDataRoom.fecha, sender: "user" },
       ]);
       addBotMessage("Perfecto, Seleccione la hora de inicio");
       setStep(Steps.SeleccionarHoraInicioAula);
     } else if (step === Steps.SeleccionarHoraInicioAula) {
-      setMessages((prev) => [
+      if (
+        !validateStartDateTime(
+          reservaDataRoom.fecha,
+          reservaDataRoom.horarioInicio
+        )
+      )
+        return;
+
+      setMessages((prev: any) => [
         ...prev,
         {
           id: prev.length + 1,
@@ -71,10 +145,22 @@ const InputBox = ({
           sender: "user",
         },
       ]);
-      addBotMessage("Perfecto, Seleccione la hora de finalizacion");
+      addBotMessage("Perfecto, Seleccione la hora de finalización");
       setStep(Steps.SeleccionarHoraFinAula);
     } else if (step === Steps.SeleccionarHoraFinAula) {
-      setMessages((prev) => [
+      if (reservaDataRoom.horarioFin <= reservaDataRoom.horarioInicio) {
+        addBotMessage("La hora de fin debe ser mayor a la hora de inicio.");
+        return;
+      }
+      if (
+        !validateTimeDiff(
+          reservaDataRoom.horarioInicio,
+          reservaDataRoom.horarioFin
+        )
+      )
+        return;
+
+      setMessages((prev: any) => [
         ...prev,
         {
           id: prev.length + 1,
@@ -87,11 +173,18 @@ const InputBox = ({
   };
 
   if (step === "fechaEquipo") {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const maxDateStr = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+
     return (
       <div className="chat-input">
         <input
           type="date"
           value={reservaData.fecha || ""}
+          min={todayStr}
+          max={maxDateStr}
           onChange={(e) =>
             setReservaData((prev: any) => ({
               ...prev,
@@ -145,12 +238,13 @@ const InputBox = ({
       </div>
     );
   }
+
   if (step === Steps.MostrarEquipos) {
     return (
       <div className="chat-input">
         <button
           onClick={() => {
-            setMessages((prev) => [
+            setMessages((prev: any) => [
               ...prev,
               {
                 id: prev.length + 1,
@@ -174,6 +268,7 @@ const InputBox = ({
       </div>
     );
   }
+
   if (step === Steps.Resumen) {
     return (
       <div className="chat-input">
@@ -189,6 +284,7 @@ const InputBox = ({
       </div>
     );
   }
+
   if (step === Steps.SeleccionarFechaAula) {
     return (
       <div className="chat-input">
@@ -248,6 +344,7 @@ const InputBox = ({
       </div>
     );
   }
+
   if (step === Steps.ResumenAula) {
     return (
       <div className="chat-input">
@@ -257,21 +354,22 @@ const InputBox = ({
             setStep(Steps.SeleccionarAula);
           }}
         >
-          Volver a seleccion de aula
+          Volver a selección de aula
         </button>{" "}
         <button
           onClick={completarReservaAula}
-          disabled={reservaDataRoom.aula.length === 0}
+          disabled={!reservaDataRoom.aula || reservaDataRoom.aula.length === 0}
         >
           Confirmar reserva
         </button>
       </div>
     );
   }
+
   if (step === Steps.Initial) {
     return null;
   }
-  // Input tradicional
+
   return (
     <div className="chat-input">
       <input

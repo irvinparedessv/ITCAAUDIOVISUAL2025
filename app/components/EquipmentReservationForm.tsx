@@ -383,33 +383,31 @@ export default function EquipmentReservationForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const toastId = "reservation-submit";
+
+    // Elimina toasts anteriores con el mismo ID
+    toast.dismiss(toastId);
+
     if (!user) {
-      toast.error("No se ha encontrado el usuario. Por favor inicie sesión.");
+      toast.error("No se ha encontrado el usuario. Por favor inicie sesión.", {
+        id: toastId,
+      });
       return;
     }
 
     const now = new Date();
-
     const selectedDate = new Date(formData.date + "T" + formData.startTime);
     const dateOnly = new Date(formData.date);
     const daysDiff =
       (dateOnly.getTime() - now.setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24);
 
-    // ➤ Validar máximo 7 días de anticipación
     if (daysDiff > 7) {
-      toast.error(
-        "Solo se pueden hacer reservas con hasta una semana de anticipación."
-      );
+      toast.error("Solo se pueden hacer reservas con hasta una semana de anticipación.", {
+        id: toastId,
+      });
       return;
     }
 
-    console.log("Ahora:", new Date());
-    console.log("Inicio de reserva:", selectedDate);
-    console.log(
-      "Diferencia en minutos:",
-      (selectedDate.getTime() - Date.now()) / 60000
-    );
-    // ➤ Validar que hoy sea al menos 1 hora antes
     const isToday = new Date().toISOString().split("T")[0] === formData.date;
 
     if (isToday) {
@@ -418,39 +416,40 @@ export default function EquipmentReservationForm() {
 
       if (diffInMinutes < 30) {
         toast.error(
-          "Si reservas para hoy, debe ser al menos con 30 minutos de anticipación."
+          "Si reservas para hoy, debe ser al menos con 30 minutos de anticipación.",
+          { id: toastId }
         );
         return;
       }
     }
 
-    // Resto de validaciones y envío del formulario
+    // Validaciones adicionales
     if (formData.equipment.length === 0) {
-      toast.error("Debe seleccionar al menos un equipo");
+      toast.error("Debe seleccionar al menos un equipo", { id: toastId });
       return;
     }
 
     if (!formData.aula) {
-      toast.error("Debe seleccionar un aula");
+      toast.error("Debe seleccionar un aula", { id: toastId });
       return;
     }
 
     if (!formData.date) {
-      toast.error("La fecha de reserva es obligatoria");
+      toast.error("La fecha de reserva es obligatoria", { id: toastId });
       return;
     }
 
     if (!formData.startTime || !formData.endTime) {
-      toast.error("Las horas de inicio y fin son obligatorias");
+      toast.error("Las horas de inicio y fin son obligatorias", { id: toastId });
       return;
     }
 
     if (formData.tipoReserva?.label === "Eventos" && !uploadedFile) {
-      toast.error("Debe subir el documento del evento.");
+      toast.error("Debe subir el documento del evento.", { id: toastId });
       return;
     }
 
-    // Continúa con el envío como ya lo tienes...
+    // Construcción del payload
     const formPayload = new FormData();
 
     formPayload.append(
@@ -467,7 +466,6 @@ export default function EquipmentReservationForm() {
       formPayload.append("documento_evento", uploadedFile);
     }
 
-    // ✅ Enviar equipos como array para que Laravel lo entienda
     formData.equipment.forEach((eq, index) => {
       formPayload.append(`equipo[${index}][id]`, eq.value.toString());
       formPayload.append(`equipo[${index}][cantidad]`, "1");
@@ -475,16 +473,17 @@ export default function EquipmentReservationForm() {
 
     try {
       setLoadingSubmit(true);
+
       const response = await api.post("/reservas", formPayload, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
-      toast.success("¡Reserva creada exitosamente!");
+      toast.success("¡Reserva creada exitosamente!", { id: toastId });
 
       setTimeout(() => {
-        navigate("/reservations"); // Cambia esto por tu ruta deseada
+        navigate("/reservations");
       }, 2000);
 
       handleClear();
@@ -495,11 +494,13 @@ export default function EquipmentReservationForm() {
       const message =
         error.response?.data?.message ||
         "Error al crear la reserva. Intenta nuevamente.";
-      toast.error(message);
+      toast.error(message, { id: toastId });
     } finally {
       setLoadingSubmit(false);
     }
   };
+
+
 
   const getStartTimeOptions = (): string[] => {
     const now = new Date();
@@ -526,7 +527,7 @@ export default function EquipmentReservationForm() {
   };
 
   const handleBack = () => {
-    navigate(-1); // Regresa a la página anterior
+    navigate("/reservations"); // Regresa a la página anterior
   };
 
   return (
@@ -642,26 +643,26 @@ export default function EquipmentReservationForm() {
         {/* USUARIO */}
         {(user?.role === Role.Administrador ||
           user?.role === Role.Encargado) && (
-          <div className="mb-4">
-            <label className="form-label d-flex align-items-center">
-              <FaUser className="me-2" />
-              Seleccionar Usuario
-            </label>
-            <Select
-              options={prestamistaOptions}
-              value={selectedPrestamista}
-              onChange={(selected) => setSelectedPrestamista(selected)}
-              placeholder={
-                !formData.date
-                  ? "Selecciona primero una fecha"
-                  : "Selecciona un usuario prestamista"
-              }
-              className="react-select-container"
-              classNamePrefix="react-select"
-              isDisabled={!isDateTimeComplete}
-            />
-          </div>
-        )}
+            <div className="mb-4">
+              <label className="form-label d-flex align-items-center">
+                <FaUser className="me-2" />
+                Seleccionar Usuario
+              </label>
+              <Select
+                options={prestamistaOptions}
+                value={selectedPrestamista}
+                onChange={(selected) => setSelectedPrestamista(selected)}
+                placeholder={
+                  !formData.date
+                    ? "Selecciona primero una fecha"
+                    : "Selecciona un usuario prestamista"
+                }
+                className="react-select-container"
+                classNamePrefix="react-select"
+                isDisabled={!isDateTimeComplete}
+              />
+            </div>
+          )}
 
         {/* TIPO RESERVA */}
         <div className="mb-4">
@@ -721,11 +722,10 @@ export default function EquipmentReservationForm() {
             ) : (
               <div
                 {...getRootProps()}
-                className={`border rounded p-4 text-center cursor-pointer ${
-                  isDragActive
+                className={`border rounded p-4 text-center cursor-pointer ${isDragActive
                     ? "border-primary bg-light"
                     : "border-secondary-subtle"
-                }`}
+                  }`}
               >
                 <input {...getInputProps()} />
                 <div className="d-flex flex-column align-items-center justify-content-center">
@@ -813,12 +813,12 @@ export default function EquipmentReservationForm() {
                 !isDateTimeComplete
                   ? "Selecciona fecha y hora primero"
                   : !formData.tipoReserva
-                  ? "Selecciona un tipo de reserva primero"
-                  : checkingAvailability
-                  ? "Verificando disponibilidad..."
-                  : availableEquipmentOptions.length === 0
-                  ? "No hay equipos disponibles para este tipo"
-                  : "Selecciona equipos disponibles"
+                    ? "Selecciona un tipo de reserva primero"
+                    : checkingAvailability
+                      ? "Verificando disponibilidad..."
+                      : availableEquipmentOptions.length === 0
+                        ? "No hay equipos disponibles para este tipo"
+                        : "Selecciona equipos disponibles"
               }
               className="react-select-container"
               classNamePrefix="react-select"

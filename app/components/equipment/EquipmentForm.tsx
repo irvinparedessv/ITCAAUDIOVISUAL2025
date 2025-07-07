@@ -50,7 +50,7 @@ export default function EquipmentForm({
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate(-1); // Regresa a la página anterior
+    navigate("/equipolist"); // Regresa a la página anterior
   };
 
   const onDrop = useCallback(
@@ -108,34 +108,38 @@ export default function EquipmentForm({
 
     const { question, confirmText, success } = messages[action];
 
-    toast(
-      (t) => (
-        <div>
-          <p>{question}</p>
-          <div className="d-flex justify-content-end gap-2 mt-2">
-            <button
-              className="btn btn-sm btn-success"
-              onClick={() => {
-                onConfirm();
-                toast.dismiss(t.id);
-                toast.success(success);
-              }}
-            >
-              {confirmText}
-            </button>
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ),
-      {
-        duration: 5000,
-      }
-    );
+    toast.dismiss("confirmation-toast"); // 👈 Cierra uno previo si existe
+
+toast(
+  (t) => (
+    <div>
+      <p>{question}</p>
+      <div className="d-flex justify-content-end gap-2 mt-2">
+        <button
+          className="btn btn-sm btn-success"
+          onClick={() => {
+            onConfirm();
+            toast.dismiss(t.id);
+            toast.success(success, { id: "action-success" }); // opcional: evita duplicados de éxito también
+          }}
+        >
+          {confirmText}
+        </button>
+        <button
+          className="btn btn-sm btn-secondary"
+          onClick={() => toast.dismiss(t.id)}
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  ),
+  {
+    duration: 5000,
+    id: "confirmation-toast", // 👈 ID único para evitar múltiples toasts simultáneos
+  }
+);
+
   };
 
   useEffect(() => {
@@ -177,47 +181,54 @@ export default function EquipmentForm({
   }, [equipoEditando]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!form.nombre.trim()) {
-      toast.error("El nombre es obligatorio");
-      return;
-    }
+  // Cierra cualquier toast anterior de submit
+  toast.dismiss("submit-toast");
 
-    if (!form.descripcion.trim()) {
-      toast.error("La descripción es obligatoria");
-      return;
-    }
+  // Validaciones
+  if (!form.nombre.trim()) {
+    toast.error("El nombre es obligatorio", { id: "submit-toast" });
+    return;
+  }
 
-    if (form.cantidad <= 0) {
-      toast.error("La cantidad debe ser mayor a cero");
-      return;
-    }
+  if (!form.descripcion.trim()) {
+    toast.error("La descripción es obligatoria", { id: "submit-toast" });
+    return;
+  }
 
-    if (!form.tipo_equipo_id) {
-      toast.error("Debe seleccionar un tipo de equipo");
-      return;
-    }
+  if (form.cantidad <= 0) {
+    toast.error("La cantidad debe ser mayor a cero", { id: "submit-toast" });
+    return;
+  }
 
-    if (!form.tipo_reserva_id) {
-      toast.error("Debe seleccionar un tipo de reserva");
-      return;
-    }
+  if (!form.tipo_equipo_id) {
+    toast.error("Debe seleccionar un tipo de equipo", { id: "submit-toast" });
+    return;
+  }
 
-    if (equipoEditando) {
-      showConfirmationToast("update", () => {
-        onSubmit(form, true, equipoEditando.id);
-        handleClear();
-      });
-    } else {
-      onSubmit(form, false);
-      toast.success("Equipo creado exitosamente");
+  if (!form.tipo_reserva_id) {
+    toast.error("Debe seleccionar un tipo de reserva", { id: "submit-toast" });
+    return;
+  }
+
+  // Edición con confirmación
+  if (equipoEditando) {
+    showConfirmationToast("update", () => {
+      onSubmit(form, true, equipoEditando.id);
       handleClear();
-      setTimeout(() => {
-      navigate('/equipolist'); // Cambia esto por tu ruta deseada
+    });
+  } else {
+    // Creación directa
+    onSubmit(form, false);
+    toast.success("Equipo creado exitosamente", { id: "submit-toast" });
+    handleClear();
+    setTimeout(() => {
+      navigate("/equipolist"); // Ajusta según ruta real
     }, 2000);
-    }
-  };
+  }
+};
+
 
   const handleDelete = () => {
     if (!equipoEditando || !onDelete) return;

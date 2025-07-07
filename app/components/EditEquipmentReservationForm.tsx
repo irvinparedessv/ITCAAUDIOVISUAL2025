@@ -88,7 +88,7 @@ export default function EditEquipmentReservationForm() {
     const cleanTime = (time: string) => time?.slice(0, 5) || "";
 
     const handleBack = () => {
-        navigate(-1);
+        navigate("/reservations"); // Regresa a la página anterior
     };
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -316,6 +316,9 @@ export default function EditEquipmentReservationForm() {
     );
 
     const showConfirmationToast = () => {
+        const toastId = "confirmation-toast"; // ID único para evitar duplicados
+        toast.dismiss(toastId); // Cierra cualquier toast anterior con el mismo ID
+
         return new Promise((resolve) => {
             toast(
                 (t) => (
@@ -345,6 +348,7 @@ export default function EditEquipmentReservationForm() {
                 ),
                 {
                     duration: 5000,
+                    id: toastId, // Usamos el ID para evitar múltiples toasts
                 }
             );
         });
@@ -352,11 +356,16 @@ export default function EditEquipmentReservationForm() {
 
 
 
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        const toastId = "reservation-edit";
+
+        toast.dismiss(toastId); // Cierra cualquier toast activo con ese ID
+
         if (!user) {
-            toast.error("Usuario no autenticado");
+            toast.error("Usuario no autenticado", { id: toastId });
             return;
         }
 
@@ -368,7 +377,9 @@ export default function EditEquipmentReservationForm() {
             !formData.aula?.value ||
             formData.equipment.length === 0
         ) {
-            toast.error("Por favor completa todos los campos obligatorios");
+            toast.error("Por favor completa todos los campos obligatorios", {
+                id: toastId,
+            });
             return;
         }
 
@@ -376,22 +387,34 @@ export default function EditEquipmentReservationForm() {
             (user.role !== Role.Administrador && user.role !== Role.Encargado) &&
             selectedPrestamista?.value !== originalPrestamista?.value
         ) {
-            toast.error("No puedes cambiar el prestamista de esta reserva");
+            toast.error("No puedes cambiar el prestamista de esta reserva", {
+                id: toastId,
+            });
             return;
         }
 
-        if (formData.tipoReserva?.label === "Eventos" && !uploadedFile && !originalPrestamista) {
-            toast.error("Debe subir el documento del evento.");
+        if (
+            formData.tipoReserva?.label === "Eventos" &&
+            !uploadedFile &&
+            !originalPrestamista
+        ) {
+            toast.error("Debe subir el documento del evento.", {
+                id: toastId,
+            });
             return;
         }
 
-        const startHourMin = parseInt(formData.startTime.split(":")[0]) * 60 +
+        const startHourMin =
+            parseInt(formData.startTime.split(":")[0]) * 60 +
             parseInt(formData.startTime.split(":")[1]);
-        const endHourMin = parseInt(formData.endTime.split(":")[0]) * 60 +
+        const endHourMin =
+            parseInt(formData.endTime.split(":")[0]) * 60 +
             parseInt(formData.endTime.split(":")[1]);
 
         if (endHourMin <= startHourMin) {
-            toast.error("La hora de entrega debe ser posterior a la hora de inicio");
+            toast.error("La hora de entrega debe ser posterior a la hora de inicio", {
+                id: toastId,
+            });
             return;
         }
 
@@ -408,7 +431,10 @@ export default function EditEquipmentReservationForm() {
                 formPayload.append("fecha_reserva", formData.date);
                 formPayload.append("startTime", formData.startTime);
                 formPayload.append("endTime", formData.endTime);
-                formPayload.append("tipo_reserva_id", formData.tipoReserva?.value.toString() || "");
+                formPayload.append(
+                    "tipo_reserva_id",
+                    formData.tipoReserva?.value.toString() || ""
+                );
                 formPayload.append("aula", formData.aula?.value.toString() || "");
 
                 if (selectedPrestamista) {
@@ -437,16 +463,18 @@ export default function EditEquipmentReservationForm() {
                 await api.put(`/reservas-equipo/${id}`, payload);
             }
 
-            toast.success(messages.update.success);
+            toast.success(messages.update.success, { id: toastId });
             navigate("/reservations");
         } catch (error: any) {
             console.error(error);
-            const message = error.response?.data?.message || messages.update.error;
-            toast.error(message);
+            const message =
+                error.response?.data?.message || messages.update.error;
+            toast.error(message, { id: toastId });
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <div className="form-container position-relative">

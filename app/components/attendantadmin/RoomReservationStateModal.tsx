@@ -49,8 +49,12 @@ export default function RoomReservationStateModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const toastId = "update-estado-aula";
+
+    toast.dismiss(toastId); // Cierra cualquier toast previo con ese ID
+
     if (!newStatus) {
-      toast.error("Debes seleccionar un nuevo estado");
+      toast.error("Debes seleccionar un nuevo estado", { id: toastId });
       return;
     }
 
@@ -63,18 +67,19 @@ export default function RoomReservationStateModal({
         comentario: comment,
       });
 
-      toast.success("Estado actualizado correctamente");
+      toast.success("Estado actualizado correctamente", { id: toastId });
 
       onSuccess?.(newStatus);
       onHide();
     } catch (error) {
       console.error(error);
-      toast.error("Error al actualizar el estado");
+      toast.error("Error al actualizar el estado", { id: toastId });
     } finally {
       setLoading(false);
       onAfter?.();
     }
   };
+
 
   const statusOptions = getStatusOptions();
   const isReadOnly =

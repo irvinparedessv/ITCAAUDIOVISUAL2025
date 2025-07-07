@@ -9,6 +9,7 @@ import type {
 } from "./types";
 import { getTipoReservas } from "../../services/tipoReservaService";
 import { Steps } from "./steps";
+import dayjs from "dayjs";
 
 export const useChatbotLogic = (user: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,6 +51,7 @@ export const useChatbotLogic = (user: any) => {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
   useEffect(() => {
     const fetchEquipments = async () => {
       const response = await api.get("/equiposReserva");
@@ -91,6 +93,7 @@ export const useChatbotLogic = (user: any) => {
 
     return () => observer.disconnect();
   }, []);
+
   useEffect(() => {
     const fetchTipos = async () => {
       const tipos = await getTipoReservas();
@@ -104,6 +107,7 @@ export const useChatbotLogic = (user: any) => {
 
     fetchTipos();
   }, []);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -121,6 +125,7 @@ export const useChatbotLogic = (user: any) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
+
   const resetChat = () => {
     setStep("initial");
     setInputMessage("");
@@ -157,6 +162,26 @@ export const useChatbotLogic = (user: any) => {
       ...prev,
       { id: prev.length + 1, text, sender: "bot" },
     ]);
+  };
+
+  const validarReserva = (fecha: string, horaInicio: string) => {
+    const ahora = dayjs();
+    const fechaReserva = dayjs(
+      fecha.split("/").reverse().join("-") + " " + horaInicio,
+      "YYYY-MM-DD HH:mm"
+    );
+
+    if (ahora.isSame(fechaReserva, "day")) {
+      if (fechaReserva.diff(ahora, "minute") < 30) {
+        return "La reserva debe hacerse con al menos 30 minutos de anticipación.";
+      }
+    }
+
+    if (fechaReserva.diff(ahora, "day") > 7) {
+      return "No puedes reservar con más de 7 días de anticipación.";
+    }
+
+    return null;
   };
 
   const handleSendMessage = () => {
@@ -209,7 +234,6 @@ export const useChatbotLogic = (user: any) => {
       api
         .post("/chatGPT", { question: userText })
         .then((response) => {
-          console.log(response);
           if (response.data.error) {
             addBotMessage(response.data.error.message);
           } else {
@@ -226,8 +250,7 @@ export const useChatbotLogic = (user: any) => {
             } else addBotMessage(response.data.reply);
           }
         })
-        .catch((error) => {
-          console.error("Error al consultar ChatGPT:", error);
+        .catch(() => {
           addBotMessage("Ocurrió un error al procesar tu consulta.");
         });
     }
@@ -262,6 +285,7 @@ export const useChatbotLogic = (user: any) => {
     addBotMessage("Gracias. Ahora selecciona los equipos que deseas reservar:");
     setStep("mostrarEquipos");
   };
+
   const handleTipoClick = (tipo: string, label: string) => {
     setMessages((prev) => [
       ...prev,
@@ -283,6 +307,7 @@ export const useChatbotLogic = (user: any) => {
     addBotMessage("Gracias. Ahora selecciona una fecha disponible:");
     setStep(Steps.SeleccionarFechaAula);
   };
+
   const handleAulaFechaClick = (ubicacion: string) => {
     setMessages((prev) => [
       ...prev,
@@ -292,6 +317,7 @@ export const useChatbotLogic = (user: any) => {
     addBotMessage("Gracias. Ahora selecciona un horario disponible:");
     setStep("horaAula");
   };
+
   const handleEquipoClick = (equipo: string) => {
     const yaSeleccionado = reservaData.equipos.includes(equipo);
     setReservaData((prev) => ({
@@ -322,20 +348,25 @@ export const useChatbotLogic = (user: any) => {
       setStep("initial");
       return;
     }
+    const errorValidacion = validarReserva(
+      reservaData.fecha,
+      reservaData.horaInicio
+    );
+    if (errorValidacion) {
+      addBotMessage(errorValidacion);
+      return;
+    }
+
     if (reservaData.equipos.length === 0) {
       addBotMessage("No has seleccionado ningún equipo.");
       setStep("mostrarEquipos");
       return;
     }
 
-    // Aquí podrías llamar a un API para guardar la reserva.
     addBotMessage("Procesando tu reserva...");
     const payload = {
       user_id: user?.id,
-      equipo: reservaData.equipos.map((id) => ({
-        id,
-        cantidad: 1,
-      })),
+      equipo: reservaData.equipos.map((id) => ({ id, cantidad: 1 })),
       aula: reservaData.ubicacion,
       fecha_reserva: reservaData.fecha,
       startTime: reservaData.horaInicio,
@@ -343,21 +374,11 @@ export const useChatbotLogic = (user: any) => {
       tipo_reserva_id: reservaData.tipo,
     };
 
-    api
-      .post("/reservas", payload)
-      .then((response) => {
-        console.log(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    api.post("/reservas", payload).catch(console.error);
 
     setTimeout(() => {
       const equiposSeleccionados = reservaData.equipos
-        .map((id) => {
-          const equipo = equipmentOptions.find((e) => e.value === id);
-          return equipo?.label || id;
-        })
+        .map((id) => equipmentOptions.find((e) => e.value === id)?.label || id)
         .join(", ");
 
       addBotMessage(
@@ -374,7 +395,7 @@ export const useChatbotLogic = (user: any) => {
     if (
       !reservaDataRoom.fecha ||
       !reservaDataRoom.horarioInicio ||
-      !reservaDataRoom.horarioInicio ||
+      !reservaDataRoom.horarioFin ||
       !reservaDataRoom.aula
     ) {
       addBotMessage(
@@ -383,25 +404,36 @@ export const useChatbotLogic = (user: any) => {
       setStep("initial");
       return;
     }
-    // Aquí podrías llamar a un API para guardar la reserva.
+
+    const errorValidacion = validarReserva(
+      reservaDataRoom.fecha,
+      reservaDataRoom.horarioInicio
+    );
+    if (errorValidacion) {
+      addBotMessage(errorValidacion);
+      return;
+    }
+
     addBotMessage("Procesando tu reserva...");
     const payload = {
       user_id: user?.id,
       aula_id: reservaDataRoom.aula,
       fecha: reservaDataRoom.fecha,
-      horario: reservaDataRoom.horarioInicio + "-" + reservaDataRoom.horarioFin,
+      horario: `${reservaDataRoom.horarioInicio}-${reservaDataRoom.horarioFin}`,
       estado: "pendiente",
     };
+
     try {
       await api.post("/reservasAula", payload);
     } catch (error) {
       console.error(error);
     }
+
     const aula = aulaOptions.find((e) => e.value === reservaDataRoom.aula);
 
     setTimeout(() => {
       addBotMessage(
-        `✅ ¡Reserva creada con éxito!\n📍 Ubicación: ${aula?.value}\n\n📅 Fecha: ${reservaDataRoom.fecha}\n🕒 Hora: ${reservaDataRoom.horarioInicio} - ${reservaDataRoom.horarioFin}\n`
+        `✅ ¡Reserva creada con éxito!\n📍 Ubicación: ${aula?.value}\n\n📅 Fecha: ${reservaDataRoom.fecha}\n🕒 Hora: ${reservaDataRoom.horarioInicio} - ${reservaDataRoom.horarioFin}`
       );
       addBotMessage(
         `¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?`
@@ -409,8 +441,8 @@ export const useChatbotLogic = (user: any) => {
       setStep(Steps.Initial);
     }, 1000);
   };
+
   return {
-    // estados
     isOpen,
     isDarkMode,
     inputMessage,
@@ -422,16 +454,13 @@ export const useChatbotLogic = (user: any) => {
     reservaDataRoom,
     messagesEndRef,
     tipoReservaOptions,
-    chatRef, // <---
-    // setters
+    chatRef,
     setIsOpen,
     setInputMessage,
     setMessages,
     setReservaData,
     setReservaDataRoom,
     setStep,
-
-    // funciones
     addBotMessage,
     handleSendMessage,
     handleOptionClick,

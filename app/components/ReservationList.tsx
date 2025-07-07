@@ -69,7 +69,7 @@ export default function ReservationList() {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   const handleBack = () => {
-    navigate(-1); // Regresa a la página anterior
+    navigate("/"); // Regresa a la página anterior
   };
 
   useEffect(() => {
@@ -251,6 +251,9 @@ export default function ReservationList() {
   };
 
   const handleCancelReservation = (reservaId: number) => {
+    // Primero cerramos cualquier toast existente con el mismo ID
+    toast.dismiss(`cancel-toast-${reservaId}`);
+
     toast((t) => (
       <div>
         <p>¿Deseas cancelar esta reserva?</p>
@@ -265,11 +268,10 @@ export default function ReservationList() {
                 });
 
                 toast.success("Reserva cancelada correctamente");
-
-                setReservations((prev) =>
-                  prev.map((r) =>
+                setReservations(prev =>
+                  prev.map(r =>
                     r.id === reservaId
-                      ? ({ ...r, estado: "Cancelado" } as Reservation)
+                      ? { ...r, estado: "Cancelado" }
                       : r
                   )
                 );
@@ -295,6 +297,7 @@ export default function ReservationList() {
       </div>
     ), {
       duration: 8000,
+      id: `cancel-toast-${reservaId}`,
     });
   };
 
@@ -304,92 +307,92 @@ export default function ReservationList() {
 
     <div className="table-responsive rounded shadow p-3 mt-4">
       {/* Header */}
-     <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 position-relative">
-  {/* Título con flecha */}
-  <div className="d-flex align-items-center gap-2 gap-md-3 mb-3 mb-md-0">
-    <FaLongArrowAltLeft
-      onClick={handleBack}
-      title="Regresar"
-      style={{
-        cursor: 'pointer',
-        fontSize: '2rem',
-      }}
-    />
-    <h2 className="fw-bold m-0">Listado de Reservas</h2>
-  </div>
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 position-relative">
+        {/* Título con flecha */}
+        <div className="d-flex align-items-center gap-2 gap-md-3 mb-3 mb-md-0">
+          <FaLongArrowAltLeft
+            onClick={handleBack}
+            title="Regresar"
+            style={{
+              cursor: 'pointer',
+              fontSize: '2rem',
+            }}
+          />
+          <h2 className="fw-bold m-0">Listado de Reservas</h2>
+        </div>
 
-  {/* Botones alineados a la derecha incluso en mobile */}
-  <div className="d-flex flex-column flex-md-row flex-wrap gap-2 align-self-end align-self-md-auto">
-    {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
-      <>
-        <Button
-          onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
-          className="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2"
-        >
-          {mostrarSoloHoy ? <FaCalendarAlt /> : <FaCalendarDay />}
-          {mostrarSoloHoy ? "Todas las reservas" : "Reservas de hoy"}
-        </Button>
+        {/* Botones alineados a la derecha incluso en mobile */}
+        <div className="d-flex flex-column flex-md-row flex-wrap gap-2 align-self-end align-self-md-auto">
+          {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
+            <>
+              <Button
+                onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
+                className="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2"
+              >
+                {mostrarSoloHoy ? <FaCalendarAlt /> : <FaCalendarDay />}
+                {mostrarSoloHoy ? "Todas las reservas" : "Reservas de hoy"}
+              </Button>
 
-        <Button
-          onClick={() => navigate("/qrScan")}
-          className="btn btn-outline-success d-flex align-items-center gap-2 px-3 py-2"
-        >
-          <FaQrcode />
-          Lector QR
-        </Button>
-      </>
-    )}
+              <Button
+                onClick={() => navigate("/qrScan")}
+                className="btn btn-outline-success d-flex align-items-center gap-2 px-3 py-2"
+              >
+                <FaQrcode />
+                Lector QR
+              </Button>
+            </>
+          )}
 
-    <Button
-      onClick={() => navigate("/addreservation")}
-      className="btn btn-success d-flex align-items-center gap-2 px-3 py-2"
-    >
-      <FaPlus />
-      Crear reserva
-    </Button>
-  </div>
-</div>
+          <Button
+            onClick={() => navigate("/addreservation")}
+            className="btn btn-success d-flex align-items-center gap-2 px-3 py-2"
+          >
+            <FaPlus />
+            Crear reserva
+          </Button>
+        </div>
+      </div>
 
 
 
 
       {/* Buscador con icono y limpiar + botón de filtros */}
-<div className="d-flex flex-column flex-md-row justify-content-between mb-3 gap-2">
-  {/* Buscador: ocupa toda la fila en mobile */}
-  <div className="flex-grow-1">
-    <InputGroup>
-      <InputGroup.Text>
-        <FaSearch />
-      </InputGroup.Text>
-      <Form.Control
-        type="text"
-        placeholder="Buscar por usuario, aula, equipo, estado..."
-        value={searchTerm}
-        onChange={(e) => {
-          setSearchTerm(e.target.value);
-          setCurrentPage(1);
-        }}
-      />
-      {searchTerm && (
+      <div className="d-flex flex-column flex-md-row justify-content-between mb-3 gap-2">
+        {/* Buscador: ocupa toda la fila en mobile */}
+        <div className="flex-grow-1">
+          <InputGroup>
+            <InputGroup.Text>
+              <FaSearch />
+            </InputGroup.Text>
+            <Form.Control
+              type="text"
+              placeholder="Buscar por usuario, aula, equipo, estado..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            {searchTerm && (
+              <Button
+                variant="outline-secondary"
+                onClick={() => setSearchTerm("")}
+              >
+                <FaTimes />
+              </Button>
+            )}
+          </InputGroup>
+        </div>
+
+        {/* Botón de filtros: alineado a la derecha en mobile */}
         <Button
           variant="outline-secondary"
-          onClick={() => setSearchTerm("")}
+          onClick={() => setShowFilters(!showFilters)}
+          className="d-flex align-items-center gap-2 ms-md-0 ms-auto"
         >
-          <FaTimes />
+          <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
         </Button>
-      )}
-    </InputGroup>
-  </div>
-
-  {/* Botón de filtros: alineado a la derecha en mobile */}
-  <Button
-    variant="outline-secondary"
-    onClick={() => setShowFilters(!showFilters)}
-    className="d-flex align-items-center gap-2 ms-md-0 ms-auto"
-  >
-    <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-  </Button>
-</div>
+      </div>
 
 
       {showFilters && !isFirstLoad && (

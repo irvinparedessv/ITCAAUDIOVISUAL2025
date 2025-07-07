@@ -64,34 +64,41 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
   };
 
   const confirmarEliminacion = (id: number) => {
-    toast(
-      (t) => (
-        <div>
-          <p>¿Seguro que deseas eliminar este equipo?</p>
-          <div className="d-flex justify-content-end gap-2 mt-2">
-            <button
-              className="btn btn-sm btn-danger"
-              onClick={() => {
-                onDelete(id);
-                toast.dismiss(t.id);
-                toast.success("Equipo eliminado");
-                fetchEquipos();
-              }}
-            >
-              Sí, eliminar
-            </button>
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancelar
-            </button>
-          </div>
+  // Cierra cualquier toast de eliminación previo
+  toast.dismiss("delete-confirmation");
+
+  toast(
+    (t) => (
+      <div>
+        <p>¿Seguro que deseas eliminar este equipo?</p>
+        <div className="d-flex justify-content-end gap-2 mt-2">
+          <button
+            className="btn btn-sm btn-danger"
+            onClick={() => {
+              onDelete(id);
+              toast.dismiss(t.id);
+              toast.success("Equipo eliminado");
+              fetchEquipos();
+            }}
+          >
+            Sí, eliminar
+          </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancelar
+          </button>
         </div>
-      ),
-      { duration: 5000 }
-    );
-  };
+      </div>
+    ),
+    {
+      duration: 5000,
+      id: "delete-confirmation", // ✅ evita múltiples confirmaciones
+    }
+  );
+};
+
 
   const handleFilterUpdate = <K extends keyof EquipoFilters>(
     key: K,
@@ -122,7 +129,7 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
   };
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/");
   };
 
   return (

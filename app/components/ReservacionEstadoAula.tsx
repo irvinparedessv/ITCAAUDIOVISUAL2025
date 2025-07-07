@@ -21,26 +21,35 @@ export default function AulaReservaEstado({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const toastId = "update-estado-reserva";
+
+    // Cierra cualquier toast activo con el mismo ID
+    toast.dismiss(toastId);
+
     if (!newStatus) {
-      toast.error("Debes seleccionar un nuevo estado");
+      toast.error("Debes seleccionar un nuevo estado", { id: toastId });
       return;
     }
 
     try {
       setLoading(true);
+
       await api.put(`/reservas-aula/${reservationId}/estado`, {
         estado: newStatus,
         comentario: comment,
       });
-      toast.success("Estado actualizado correctamente");
+
+      toast.success("Estado actualizado correctamente", { id: toastId });
+
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error(error);
-      toast.error("Error al actualizar el estado");
+      toast.error("Error al actualizar el estado", { id: toastId });
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="form-container">

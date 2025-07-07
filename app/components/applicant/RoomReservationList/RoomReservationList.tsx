@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Spinner, Table, Badge } from "react-bootstrap";
+import { Button, Spinner, Table, Badge, Row, Col } from "react-bootstrap";
 
 import api from "../../../api/axios";
 import Filters from "./Filter";
@@ -303,77 +303,101 @@ const RoomReservationList = () => {
   };
 
   const handleCancelClick = (reserva: any) => {
-  toast((t) => (
-    <div>
-      <p>¿Estás seguro de que deseas cancelar esta reserva?</p>
-      <div className="d-flex justify-content-end gap-2 mt-2">
-        <button
-          className="btn btn-sm btn-danger"
-          onClick={async () => {
-            try {
-              const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
-                estado: "Cancelado",
-                comentario: "Cancelado por el prestamista",
-              });
+    const toastId = `cancel-reserva-aula-${reserva.id}`;
 
-              toast.success("Reserva cancelada exitosamente.");
+    // Cierra cualquier toast activo para esta reserva
+    toast.dismiss(toastId);
 
-              setReservations((prev) =>
-                prev.map((r) => (r.id === data.reserva?.id ? data.reserva : r))
-              );
+    toast(
+      (t) => (
+        <div>
+          <p>¿Estás seguro de que deseas cancelar esta reserva?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={async () => {
+                try {
+                  const { data } = await api.put(
+                    `/reservas-aula/${reserva.id}/estado`,
+                    {
+                      estado: "Cancelado",
+                      comentario: "Cancelado por el prestamista",
+                    }
+                  );
 
-              if (data.reserva && selectedReservation?.id === data.reserva.id) {
-                setSelectedReservation(data.reserva);
-              }
-            } catch (err) {
-              toast.error("No se pudo cancelar la reserva.");
-            }
+                  toast.success("Reserva cancelada exitosamente.", {
+                    id: toastId,
+                  });
 
-            toast.dismiss(t.id);
-          }}
-        >
-          Sí, cancelar
-        </button>
+                  setReservations((prev) =>
+                    prev.map((r) => (r.id === data.reserva?.id ? data.reserva : r))
+                  );
 
-        <button
-          className="btn btn-sm btn-secondary"
-          onClick={() => toast.dismiss(t.id)}
-        >
-          Cancelar
-        </button>
-      </div>
-    </div>
-  ), {
-    duration: 8000,
-  });
-};
+                  if (data.reserva && selectedReservation?.id === data.reserva.id) {
+                    setSelectedReservation(data.reserva);
+                  }
+                } catch (err) {
+                  toast.error("No se pudo cancelar la reserva.", { id: toastId });
+                }
+
+                toast.dismiss(t.id);
+              }}
+            >
+              Sí, cancelar
+            </button>
+
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 8000,
+        id: toastId, // ← identificador único para evitar duplicados
+      }
+    );
+  };
+
 
   return (
-    <div className="container py-5">
+    <div className="container">
       <div className="table-responsive rounded shadow p-3 mt-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          {/* Título + Flecha */}
-          <div className="d-flex align-items-center gap-3">
+        {/* Flecha de regresar en esquina superior izquierda */}
+        <Row className="align-items-center mb-4">
+          {/* Columna izquierda: ícono + título */}
+          <Col xs={12} md={8} className="d-flex align-items-center gap-3">
             <FaLongArrowAltLeft
               onClick={handleBack}
               title="Regresar"
               style={{
                 cursor: 'pointer',
                 fontSize: '2rem',
+                flexShrink: 0,
               }}
             />
-            <h4 className="mb-0">Listado de Reservas - Espacio</h4>
-          </div>
-          <div className="d-flex flex-wrap gap-2">
+            <h2 className="m-0">Reservas de Aulas - Listado</h2>
+          </Col>
+
+          {/* Columna derecha: botón alineado a la derecha */}
+          <Col
+            xs={12}
+            md={4}
+            className="d-flex justify-content-md-end justify-content-end mt-3 mt-md-0"
+          >
             <Button
               onClick={() => navigate("/reservationsroom")}
-              className="btn btn-success d-flex align-items-center gap-2 px-3 py-2"
+              className="btn btn-success d-flex align-items-center gap-2 px-3 py-2 ms-md-auto"
             >
               <FaPlus />
               Crear reserva
             </Button>
-          </div>
-        </div>
+          </Col>
+        </Row>
+
 
 
 

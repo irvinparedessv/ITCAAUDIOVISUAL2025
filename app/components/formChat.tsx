@@ -9,6 +9,7 @@ import {
   ListGroup,
 } from "react-bootstrap";
 
+
 export default function FormChat() {
   const [messages, setMessages] = useState<string[]>([
     "Hola, ¿en qué te puedo ayudar hoy?",

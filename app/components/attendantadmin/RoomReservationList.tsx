@@ -6,7 +6,7 @@ import { QRURL } from "~/constants/constant";
 import type { Bitacora } from "~/types/bitacora";
 import RoomDetailsModal from "../applicant/RoomDetailsModal";
 import toast from "react-hot-toast";
-import { FaEdit, FaEye, FaTimes, FaExchangeAlt, FaLongArrowAltLeft, FaPlus } from "react-icons/fa";
+import { FaEdit, FaEye, FaTimes, FaExchangeAlt, FaLongArrowAltLeft, FaPlus, FaQrcode } from "react-icons/fa";
 import PaginationComponent from "../../utils/Pagination";
 import Filters from "../applicant/RoomReservationList/Filter";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -47,7 +47,7 @@ const RoomReservationList = () => {
   }>({ from: null, to: null });
 
   const handleBack = () => {
-    navigate(-1); // Regresa a la página anterior
+    navigate("/");
   };
 
   const handleEditClick = (reserva: any) => {
@@ -300,54 +300,71 @@ const RoomReservationList = () => {
     setSelectedReserva(reserva);
     setShowModal(true);
   };
-const handleCancelClick = (reserva: any) => {
-  toast((t) => (
-    <div>
-      <p>¿Estás seguro de que deseas cancelar esta reserva?</p>
-      <div className="d-flex justify-content-end gap-2 mt-2">
-        <button
-          className="btn btn-sm btn-danger"
-          onClick={async () => {
-            try {
-              const { data } = await api.put(`/reservas-aula/${reserva.id}/estado`, {
-                estado: "Cancelado",
-                comentario: "Cancelada por el solicitante",
-              });
+  const handleCancelClick = (reserva: any) => {
+    const toastId = `cancel-reserva-${reserva.id}`;
 
-              toast.success("Reserva cancelada exitosamente.");
+    // Cierra cualquier toast abierto para esta reserva
+    toast.dismiss(toastId);
 
-              const updated = data.reserva;
+    toast(
+      (t) => (
+        <div>
+          <p>¿Estás seguro de que deseas cancelar esta reserva?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={async () => {
+                try {
+                  const { data } = await api.put(
+                    `/reservas-aula/${reserva.id}/estado`,
+                    {
+                      estado: "Cancelado",
+                      comentario: "Cancelada por el solicitante",
+                    }
+                  );
 
-              setReservations((prev) =>
-                prev.map((r) => (r.id === updated.id ? updated : r))
-              );
+                  toast.success("Reserva cancelada exitosamente.", {
+                    id: toastId,
+                  });
 
-              if (selectedReserva?.id === updated.id) {
-                setSelectedReserva(updated);
-                await fetchHistorial(updated.id, true);
-              }
-            } catch (err) {
-              toast.error("No se pudo cancelar la reserva.");
-            }
+                  const updated = data.reserva;
 
-            toast.dismiss(t.id);
-          }}
-        >
-          Sí, cancelar
-        </button>
+                  setReservations((prev) =>
+                    prev.map((r) => (r.id === updated.id ? updated : r))
+                  );
 
-        <button
-          className="btn btn-sm btn-secondary"
-          onClick={() => toast.dismiss(t.id)}
-        >
-          Cancelar
-        </button>
-      </div>
-    </div>
-  ), {
-    duration: 8000,
-  });
-};
+                  if (selectedReserva?.id === updated.id) {
+                    setSelectedReserva(updated);
+                    await fetchHistorial(updated.id, true);
+                  }
+                } catch (err) {
+                  toast.error("No se pudo cancelar la reserva.", {
+                    id: toastId,
+                  });
+                }
+
+                toast.dismiss(t.id);
+              }}
+            >
+              Sí, cancelar
+            </button>
+
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 8000,
+        id: toastId,
+      }
+    );
+  };
+
 
 
   return (
@@ -372,7 +389,13 @@ const handleCancelClick = (reserva: any) => {
 
           {/* Columna derecha: botón alineado a la derecha */}
           <Col xs={12} md={6} className="d-flex justify-content-end mt-3 mt-md-0">
-
+            <Button
+              onClick={() => navigate("/qrScan")}
+              className="btn btn-outline-success d-flex align-items-center gap-2 px-3 py-2 me-3"
+            >
+              <FaQrcode />
+              Lector QR
+            </Button>
             <Button
               onClick={() => navigate("/reservationsroom")}
               className="btn btn-success d-flex align-items-center gap-2 px-3 py-2"
@@ -381,6 +404,7 @@ const handleCancelClick = (reserva: any) => {
               Crear reserva
             </Button>
           </Col>
+
         </Row>
 
 
@@ -435,128 +459,128 @@ const handleCancelClick = (reserva: any) => {
           </div>
         ) : (
           <>
-          <div className="table-responsive">
-            <table className="table table-hover align-middle text-center">
-              <thead className="table-dark">
-                <tr>
-                  <th>Aula</th>
-                  <th>Fecha</th>
-                  <th>Horario</th>
-                  <th>Reservado por</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reservations.map((res: any) => {
-                  const isHighlighted = res.id === highlightId;
-                  return (
-                    <tr
-                      key={res.id}
-                      ref={isHighlighted ? highlightRef : null}
-                      className={
-                        isHighlighted
-                          ? "table-warning animate__animated animate__flash"
-                          : ""
-                      }
-                    >
-                      <td>{res.aula?.name || "Aula Desconocida"}</td>
-                      <td>{formatDate(res.fecha)}</td>
-                      <td>{res.horario}</td>
-                      <td>{res.user?.first_name || "Desconocido"}</td>
-                      <td>
-                        <Badge bg={getEstadoVariant(res.estado)}>
-                          {res.estado}
-                        </Badge>
-                      </td>
-                      <td>
-                        <div className="d-flex justify-content-center gap-2">
-                          <button
-                            className="btn btn-outline-primary rounded-circle"
-                            title="Ver detalles"
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              transition: "transform 0.2s ease-in-out",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                            onClick={() => handleDetailClick(res)}
-                          >
-                            <FaEye className="fs-5" />
-                          </button>
+            <div className="table-responsive">
+              <table className="table table-hover align-middle text-center">
+                <thead className="table-dark">
+                  <tr>
+                    <th>Aula</th>
+                    <th>Fecha</th>
+                    <th>Horario</th>
+                    <th>Reservado por</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reservations.map((res: any) => {
+                    const isHighlighted = res.id === highlightId;
+                    return (
+                      <tr
+                        key={res.id}
+                        ref={isHighlighted ? highlightRef : null}
+                        className={
+                          isHighlighted
+                            ? "table-warning animate__animated animate__flash"
+                            : ""
+                        }
+                      >
+                        <td>{res.aula?.name || "Aula Desconocida"}</td>
+                        <td>{formatDate(res.fecha)}</td>
+                        <td>{res.horario}</td>
+                        <td>{res.user?.first_name || "Desconocido"}</td>
+                        <td>
+                          <Badge bg={getEstadoVariant(res.estado)}>
+                            {res.estado}
+                          </Badge>
+                        </td>
+                        <td>
+                          <div className="d-flex justify-content-center gap-2">
+                            <button
+                              className="btn btn-outline-primary rounded-circle"
+                              title="Ver detalles"
+                              style={{
+                                width: "44px",
+                                height: "44px",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.transform = "scale(1.15)")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.transform = "scale(1)")
+                              }
+                              onClick={() => handleDetailClick(res)}
+                            >
+                              <FaEye className="fs-5" />
+                            </button>
 
-                          <button
-                            className="btn btn-outline-warning rounded-circle"
-                            title="Editar reserva"
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              transition: "transform 0.2s ease-in-out",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                            onClick={() => handleEditClick(res)}
-                            disabled={res.estado.toLowerCase() !== "pendiente"}
-                          >
-                            <FaEdit className="fs-5" />
-                          </button>
+                            <button
+                              className="btn btn-outline-warning rounded-circle"
+                              title="Editar reserva"
+                              style={{
+                                width: "44px",
+                                height: "44px",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.transform = "scale(1.15)")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.transform = "scale(1)")
+                              }
+                              onClick={() => handleEditClick(res)}
+                              disabled={res.estado.toLowerCase() !== "pendiente"}
+                            >
+                              <FaEdit className="fs-5" />
+                            </button>
 
-                          <button
-                            className="btn btn-outline-success rounded-circle"
-                            title="Cambiar estado"
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              transition: "transform 0.2s ease-in-out",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                            onClick={() => handleEstadoClick(res)}
-                          >
-                            <FaExchangeAlt className="fs-5" />
-                          </button>
+                            <button
+                              className="btn btn-outline-success rounded-circle"
+                              title="Cambiar estado"
+                              style={{
+                                width: "44px",
+                                height: "44px",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.transform = "scale(1.15)")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.transform = "scale(1)")
+                              }
+                              onClick={() => handleEstadoClick(res)}
+                            >
+                              <FaExchangeAlt className="fs-5" />
+                            </button>
 
-                          
 
-                          <button
-                            className="btn btn-outline-danger rounded-circle"
-                            title="Cancelar reserva"
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              transition: "transform 0.2s ease-in-out",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                            onClick={() => handleCancelClick(res)}
-                            disabled={res.estado.toLowerCase() !== "pendiente"}
-                          >
-                            <FaTimes className="fs-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+
+                            <button
+                              className="btn btn-outline-danger rounded-circle"
+                              title="Cancelar reserva"
+                              style={{
+                                width: "44px",
+                                height: "44px",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.transform = "scale(1.15)")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.transform = "scale(1)")
+                              }
+                              onClick={() => handleCancelClick(res)}
+                              disabled={res.estado.toLowerCase() !== "pendiente"}
+                            >
+                              <FaTimes className="fs-5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
             <PaginationComponent
               page={page}

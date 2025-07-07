@@ -20,9 +20,11 @@ type PrediccionRow = {
 
 type EquipoData = {
   nombre: string;
+  total_reservas: number;
   prediccion: PrediccionRow[];
   precision: number | null;
 };
+
 
 export default function PrediccionPorEquipoPage() {
   const { darkMode } = useTheme();
@@ -69,8 +71,8 @@ export default function PrediccionPorEquipoPage() {
       backgroundColor: isSelected
         ? (darkMode ? "#555" : "#d3d3d3")
         : isFocused
-        ? (darkMode ? "#444" : "#e6e6e6")
-        : "transparent",
+          ? (darkMode ? "#444" : "#e6e6e6")
+          : "transparent",
       color: darkMode ? "#f8f9fa" : "#212529",
       cursor: "pointer",
     }),
@@ -83,12 +85,14 @@ export default function PrediccionPorEquipoPage() {
         const resultadosTop5 = await getTop5PrediccionesPorEquipo();
         setTop5(resultadosTop5.map(item => ({
           nombre: item.equipo?.nombre ?? "Equipo desconocido",
+          total_reservas: item.equipo?.total_reservas ?? 0,
           prediccion: [
             ...(item.prediccion?.historico ?? []),
             ...(item.prediccion?.predicciones ?? [])
           ].sort((a, b) => a.mes_numero - b.mes_numero),
           precision: item.prediccion?.precision ?? null,
         })));
+
       } catch (e) {
         console.error(e);
       } finally {
@@ -176,12 +180,14 @@ export default function PrediccionPorEquipoPage() {
                 <div key={eq.nombre} className="accordion-item">
                   <h2 className="accordion-header">
                     <button
-                      className={`accordion-button ${!equiposAbiertos.includes(eq.nombre) ? "collapsed" : ""}`}
-                      onClick={() => toggleEquipo(eq.nombre)}
-                    >
-                      {eq.nombre}
-                    </button>
+  className={`accordion-button ${!equiposAbiertos.includes(eq.nombre) ? "collapsed" : ""}`}
+  onClick={() => toggleEquipo(eq.nombre)}
+>
+  {eq.nombre} — {eq.total_reservas} reservas en 6 meses
+</button>
+
                   </h2>
+
                   <div className={`accordion-collapse collapse ${equiposAbiertos.includes(eq.nombre) ? "show" : ""}`}>
                     <div className="accordion-body p-0">
                       <table className="table table-sm table-bordered mb-0 text-center">

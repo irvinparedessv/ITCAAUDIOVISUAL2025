@@ -130,7 +130,7 @@ export default function ReserveClassroom() {
     };
 
     const fetchPrestamistas = async () => {
-      if (user?.role === Role.Administrador || user?.role === Role.Encargado) {
+      if (user?.role === Role.Administrador || user?.role === Role.EspacioEncargado) {
         try {
           const res = await api.get("/usuarios/rol/Prestamista");
           const options = res.data.map((u: any) => ({
@@ -491,7 +491,7 @@ export default function ReserveClassroom() {
         </div>
 
         {(user?.role === Role.Administrador ||
-          user?.role === Role.Encargado) && (
+          user?.role === Role.EspacioEncargado) && (
             <div className="mb-4">
               <label className="form-label d-flex align-items-center">
                 <FaUser className="me-2" /> Seleccionar Usuario
@@ -522,7 +522,7 @@ export default function ReserveClassroom() {
               !selectedDate ||
               !selectedTime ||
               !selectedClassroom ||
-              ((user?.role === Role.Administrador || user?.role === Role.Encargado) &&
+              ((user?.role === Role.Administrador || user?.role === Role.EspacioEncargado) &&
                 !selectedPrestamista)
             }
           >

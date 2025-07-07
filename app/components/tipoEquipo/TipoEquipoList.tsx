@@ -1,8 +1,10 @@
 import type { TipoEquipo } from "app/types/tipoEquipo";
 import TipoEquipoForm from "./TipoEquipoForm";
 import toast from "react-hot-toast";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaLongArrowAltLeft } from "react-icons/fa";
 import { useState } from "react";
+import { Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   tipos: TipoEquipo[];
@@ -20,6 +22,7 @@ export default function TipoEquipoList({
   const [tipoEditado, setTipoEditado] = useState<TipoEquipo | undefined>(
     undefined
   );
+  const navigate = useNavigate();
 
   const handleEdit = (tipo: TipoEquipo) => {
     setTipoEditado(tipo);
@@ -30,39 +33,72 @@ export default function TipoEquipoList({
     setTipoEditado(undefined);
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   const confirmarEliminacion = (id: number) => {
     toast(
       (t) => (
         <div>
           <p>¿Seguro que deseas eliminar este tipo de equipo?</p>
           <div className="d-flex justify-content-end gap-2 mt-2">
-            <button
-              className="btn btn-sm btn-danger"
+            <Button
+              variant="danger"
+              size="sm"
               onClick={() => {
                 onDelete(id);
                 toast.dismiss(t.id);
-                toast.success("Tipo de equipo eliminado");
+                toast.success("Tipo de equipo eliminado", {
+                  style: {
+                    background: "#363636",
+                    color: "#fff",
+                  },
+                });
               }}
+              style={{ 
+                transition: "transform 0.2s ease-in-out"
+              }}
+              onMouseEnter={(e) => 
+                (e.currentTarget.style.transform = "scale(1.03)")
+              }
+              onMouseLeave={(e) => 
+                (e.currentTarget.style.transform = "scale(1)")
+              }
             >
               Sí, eliminar
-            </button>
-            <button
-              className="btn btn-sm btn-secondary"
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => toast.dismiss(t.id)}
+              style={{ 
+                transition: "transform 0.2s ease-in-out"
+              }}
+              onMouseEnter={(e) => 
+                (e.currentTarget.style.transform = "scale(1.03)")
+              }
+              onMouseLeave={(e) => 
+                (e.currentTarget.style.transform = "scale(1)")
+              }
             >
               Cancelar
-            </button>
+            </Button>
           </div>
         </div>
       ),
-      {
-        duration: 5000,
+      { 
+        duration: 8000,
+        style: {
+          background: "#363636",
+          color: "#fff",
+        }
       }
     );
   };
 
   return (
-    <div className="container py-5">
+    <div className="container">
       <TipoEquipoForm
         tipoEditado={tipoEditado}
         onSuccess={() => {
@@ -73,7 +109,11 @@ export default function TipoEquipoList({
       />
 
       <div className="table-responsive rounded shadow p-3 mt-4">
-        <h4 className="mb-3 text-center">Listado de Tipos de Equipo</h4>
+        <div className="d-flex align-items-center gap-3 mb-4">
+        
+          <h4 className="fw-bold m-0">Listado de Tipos de Equipo</h4>
+        </div>
+
         <table
           className="table table-hover align-middle text-center overflow-hidden"
           style={{ borderRadius: "0.8rem" }}

@@ -9,6 +9,7 @@ const rolesMap = [
   { id: 1, nombre: "Administrador" },
   { id: 2, nombre: "Encargado" },
   { id: 3, nombre: "Prestamista" },
+  { id: 4, nombre: "Encargado Espacio" },
 ];
 
 const estadosMap = [
@@ -21,6 +22,7 @@ const EditUsuario = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Nuevo estado para controlar el envío
 
   const [formData, setFormData] = useState<UserUpdateDTO>({
     first_name: "",
@@ -49,55 +51,60 @@ const EditUsuario = () => {
   }, [id]);
 
   const validateForm = (): boolean => {
-    let isValid = true;
+  let isValid = true;
+  let firstError: string | null = null;
 
-    // Validación de nombres
-    if (!formData.first_name.trim()) {
-      toast.error("El nombre es obligatorio");
-      isValid = false;
-    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.first_name)) {
-      toast.error("El nombre solo puede contener letras");
-      isValid = false;
-    }
+  // Validación de nombres
+  if (!formData.first_name.trim()) {
+    firstError = "El nombre es obligatorio";
+    isValid = false;
+  } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.first_name)) {
+    firstError = "El nombre solo puede contener letras";
+    isValid = false;
+  }
 
-    // Validación de apellidos
-    if (!formData.last_name.trim()) {
-      toast.error("El apellido es obligatorio");
-      isValid = false;
-    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.last_name)) {
-      toast.error("El apellido solo puede contener letras");
-      isValid = false;
-    }
+  // Validación de apellidos
+  else if (!formData.last_name.trim()) {
+    firstError = "El apellido es obligatorio";
+    isValid = false;
+  } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.last_name)) {
+    firstError = "El apellido solo puede contener letras";
+    isValid = false;
+  }
 
-    // Validación de email (correo institucional)
-    if (!formData.email.trim()) {
-      toast.error("El correo electrónico es obligatorio");
-      isValid = false;
-    } else if (
-      !/^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)?(edu\.sv|esdu\.edu\.sv)$/.test(
-        formData.email
-      )
-    ) {
-      toast.error(
-        "Debe ingresar un correo institucional válido (terminado en .edu.sv o esdu.edu.sv)"
-      );
-      isValid = false;
-    }
+  // Validación de email (correo institucional)
+  else if (!formData.email.trim()) {
+    firstError = "El correo electrónico es obligatorio";
+    isValid = false;
+  } else if (
+    !/^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)?(edu\.sv|esdu\.edu\.sv)$/.test(formData.email)
+  ) {
+    firstError = "Debe ingresar un correo institucional válido (terminado en .edu.sv o esdu.edu.sv)";
+    isValid = false;
+  }
 
-    // Validación de teléfono
-    if (formData.phone && !/^\d{4}-\d{4}$/.test(formData.phone)) {
-      toast.error("El teléfono debe tener el formato 0000-0000");
-      isValid = false;
-    }
+  // Validación de teléfono
+  else if (formData.phone && !/^\d{4}-\d{4}$/.test(formData.phone)) {
+    firstError = "El teléfono debe tener el formato 0000-0000";
+    isValid = false;
+  }
 
-    // Validación de dirección
-    if (formData.address && formData.address.length < 5) {
-      toast.error("La dirección debe tener al menos 5 caracteres");
-      isValid = false;
-    }
+  // Validación de dirección
+  else if (formData.address && formData.address.length < 5) {
+    firstError = "La dirección debe tener al menos 5 caracteres";
+    isValid = false;
+  }
 
-    return isValid;
-  };
+  if (!isValid && firstError) {
+    toast.dismiss("form-validation-toast");
+    toast.error(firstError, {
+      id: "form-validation-toast",
+    });
+  }
+
+  return isValid;
+};
+
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -125,41 +132,56 @@ const EditUsuario = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!validateForm()) return;
-    if (!id) return;
+  if (!validateForm()) return;
+  if (!id) return;
 
-    toast(
-      (t) => (
-        <div className="text-center">
-          <p>¿Seguro que deseas actualizar este usuario?</p>
-          <div className="d-flex justify-content-center gap-3 mt-3">
-            <button
-              className="btn btn-sm btn-success"
-              onClick={() => {
-                submitUpdate();
-                toast.dismiss(t.id);
-              }}
-            >
-              Sí, actualizar
-            </button>
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancelar
-            </button>
-          </div>
+  // Evita que se abra más de un toast de confirmación de actualización
+  toast.dismiss(`update-toast-${id}`);
+
+  toast(
+    (t) => (
+      <div className="text-center">
+        <p>¿Seguro que deseas actualizar este usuario?</p>
+        <div className="d-flex justify-content-center gap-3 mt-3">
+          <button
+            className="btn btn-sm btn-success"
+            onClick={() => {
+              submitUpdate();
+              toast.dismiss(t.id);
+            }}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <span
+                className="spinner-border spinner-border-sm me-1"
+                role="status"
+                aria-hidden="true"
+              ></span>
+            ) : null}
+            Sí, actualizar
+          </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => toast.dismiss(t.id)}
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </button>
         </div>
-      ),
-      {
-        duration: 10000,
-      }
-    );
-  };
+      </div>
+    ),
+    {
+      duration: 5000,
+      id: `update-toast-${id}`,
+    }
+  );
+};
+
 
   const submitUpdate = async () => {
+    setIsSubmitting(true); // Comienza el envío
     try {
       await updateUsuario(Number(id), formData);
       toast.success("Usuario actualizado correctamente");
@@ -167,15 +189,21 @@ const EditUsuario = () => {
     } catch (error) {
       console.error("Error al actualizar usuario:", error);
       toast.error("Error al actualizar usuario");
+    } finally {
+      setIsSubmitting(false); // Finaliza el envío (éxito o error)
     }
   };
 
   const handleBack = () => {
-    navigate("/usuarios"); // Regresa a la página anterior
+    if (!isSubmitting) { // Solo permite retroceder si no se está enviando
+      navigate("/usuarios");
+    }
   };
 
   const handleCancel = () => {
-    navigate("/usuarios");
+    if (!isSubmitting) { // Solo permite cancelar si no se está enviando
+      navigate("/usuarios");
+    }
   };
 
   if (loading) {
@@ -198,9 +226,10 @@ const EditUsuario = () => {
           position: 'absolute',
           top: '25px',
           left: '30px',
-          cursor: 'pointer',
+          cursor: isSubmitting ? 'not-allowed' : 'pointer',
           fontSize: '2rem',
-          zIndex: 10
+          zIndex: 10,
+          opacity: isSubmitting ? 0.5 : 1
         }}
       />
       <h2 className="mb-4 text-center fw-bold">
@@ -221,7 +250,6 @@ const EditUsuario = () => {
               className="form-control"
               value={formData.first_name}
               onChange={handleChange}
-              required
             />
           </div>
 
@@ -236,7 +264,6 @@ const EditUsuario = () => {
               className="form-control"
               value={formData.last_name}
               onChange={handleChange}
-              required
             />
           </div>
         </div>
@@ -252,7 +279,7 @@ const EditUsuario = () => {
             className="form-control"
             value={formData.email}
             onChange={handleChange}
-            required
+            disabled
           />
           <small className="text-muted">
             El correo institucional no puede modificarse
@@ -331,14 +358,28 @@ const EditUsuario = () => {
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="btn primary-btn">
-            <FaSave className="me-2" />
-            Guardar Cambios
+          <button 
+            type="submit" 
+            className="btn primary-btn"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <FaSave className="me-2" />
+                Guardar Cambios
+              </>
+            )}
           </button>
           <button
             type="button"
             className="btn secondary-btn"
             onClick={handleCancel}
+            disabled={isSubmitting}
           >
             <FaTimes className="me-2" />
             Cancelar

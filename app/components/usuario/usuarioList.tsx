@@ -25,6 +25,7 @@ const rolesMap: Record<number, string> = {
   1: "Administrador",
   2: "Encargado",
   3: "Prestamista",
+  4: "Encargado Espacio"
 };
 
 export default function UsuarioList() {

@@ -19,7 +19,7 @@ import type { AvailableTime } from "../types/aula";
 import * as exifr from "exifr";
 
 type RenderImageInfo = {
-  file: File;
+  file: File | null;
   preview: string;
   is360: boolean;
 };
@@ -44,14 +44,14 @@ export const CreateSpaceForm = () => {
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
   const handleBack = () => {
-    navigate("/rooms"); // Regresa a la página anterior
+    navigate("/rooms");
   };
+
   useEffect(() => {
-    toast.dismiss(); // limpia cualquier confirmación colgada
+    toast.dismiss();
   }, []);
 
   useEffect(() => {
-
     if (isEdit) {
       setLoading(true);
       api
@@ -65,7 +65,7 @@ export const CreateSpaceForm = () => {
             preview: img.image_path.startsWith("http")
               ? img.image_path
               : `${APPLARAVEL + "/"}${img.image_path}`,
-            is360: false,
+            is360: img.is360 ?? false,
           }));
           setRenderImages(imageUrls);
 
@@ -151,20 +151,32 @@ export const CreateSpaceForm = () => {
   const handleAddTime = () => {
     const { start_date, end_date, start_time, end_time, days } = timeInput;
 
-    toast.dismiss("add-time-error"); // cierro posibles toasts previos
+    toast.dismiss("add-time-error");
 
-    if (!start_date || !end_date || !start_time || !end_time || days.length === 0) {
-      toast.error("Completa todos los campos y selecciona al menos un día.", { id: "add-time-error" });
+    if (
+      !start_date ||
+      !end_date ||
+      !start_time ||
+      !end_time ||
+      days.length === 0
+    ) {
+      toast.error("Completa todos los campos y selecciona al menos un día.", {
+        id: "add-time-error",
+      });
       return;
     }
 
     if (end_date < start_date) {
-      toast.error("La fecha fin no puede ser menor a la fecha inicio.", { id: "add-time-error" });
+      toast.error("La fecha fin no puede ser menor a la fecha inicio.", {
+        id: "add-time-error",
+      });
       return;
     }
 
     if (end_time <= start_time) {
-      toast.error("La hora fin debe ser mayor a la hora inicio.", { id: "add-time-error" });
+      toast.error("La hora fin debe ser mayor a la hora inicio.", {
+        id: "add-time-error",
+      });
       return;
     }
 
@@ -175,7 +187,9 @@ export const CreateSpaceForm = () => {
     });
 
     if (isOverlap) {
-      toast.error("Ya existe un rango con fechas y días similares.", { id: "add-time-error" });
+      toast.error("Ya existe un rango con fechas y días similares.", {
+        id: "add-time-error",
+      });
       return;
     }
 
@@ -189,11 +203,10 @@ export const CreateSpaceForm = () => {
     });
   };
 
-
   const handleRemoveTime = (index: number) => {
-    const toastId = `remove-time-${index}`;  // ID único por horario
+    const toastId = `remove-time-${index}`;
 
-    toast.dismiss(toastId);  // Cierra cualquier toast de confirmación previa para este índice
+    toast.dismiss(toastId);
 
     toast(
       (t) => (
@@ -209,7 +222,7 @@ export const CreateSpaceForm = () => {
                 toast.dismiss(t.id);
                 toast.success("Horario eliminado", {
                   id: `${toastId}-success`,
-                  duration: 2000  // Mensaje breve de éxito
+                  duration: 2000,
                 });
               }}
             >
@@ -225,7 +238,7 @@ export const CreateSpaceForm = () => {
         </div>
       ),
       {
-        duration: 5000,  // Duración más larga para dar tiempo a decidir
+        duration: 5000,
         id: toastId,
       }
     );
@@ -236,7 +249,7 @@ export const CreateSpaceForm = () => {
     confirmText: "Sí, actualizar",
     cancelText: "Cancelar",
     success: "Espacio actualizado correctamente",
-    error: "Error actualizando el espacio"
+    error: "Error actualizando el espacio",
   };
 
   const handleClear = () => {
@@ -257,17 +270,20 @@ export const CreateSpaceForm = () => {
     const errorToastId = "submit-error";
     const confirmToastId = "edit-confirm-toast";
 
-    // Cerrar cualquier toast de error o confirmación previos
     toast.dismiss(errorToastId);
     toast.dismiss(confirmToastId);
 
     if (!name.trim()) {
-      toast.error("El nombre del espacio es obligatorio", { id: errorToastId });
+      toast.error("El nombre del espacio es obligatorio", {
+        id: errorToastId,
+      });
       return;
     }
 
     if (availableTimes.length === 0) {
-      toast.error("Debes agregar al menos un horario disponible", { id: errorToastId });
+      toast.error("Debes agregar al menos un horario disponible", {
+        id: errorToastId,
+      });
       return;
     }
 
@@ -311,13 +327,22 @@ export const CreateSpaceForm = () => {
 
     const formData = new FormData();
     formData.append("name", name);
-    renderImages.forEach((img, i) => {
+
+    // 🚫 NO uses index fijo del forEach: solo indexa reales
+    let fileIndex = 0;
+
+    renderImages.forEach((img) => {
       if (img.file) {
-        formData.append(`render_images[${i}]`, img.file);
+        formData.append(`render_images[${fileIndex}]`, img.file);
+        formData.append(
+          `render_images_is360[${fileIndex}]`,
+          img.is360 ? "1" : "0"
+        );
+        fileIndex++;
       }
     });
-    formData.append("available_times", JSON.stringify(availableTimes));
 
+    formData.append("available_times", JSON.stringify(availableTimes));
     setLoadingSubmit(true);
 
     try {
@@ -325,21 +350,20 @@ export const CreateSpaceForm = () => {
       await api.post(endpoint, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      toast.success(isEdit ? updateMessages.success : "Espacio creado correctamente");
+      toast.success(
+        isEdit ? updateMessages.success : "Espacio creado correctamente"
+      );
       if (!isEdit) handleClear();
       navigate("/rooms");
     } catch (err) {
       console.error(err);
-      toast.error(
-        isEdit ? updateMessages.error : "Error creando el espacio",
-        { id: errorToastId }
-      );
+      toast.error(isEdit ? updateMessages.error : "Error creando el espacio", {
+        id: errorToastId,
+      });
     } finally {
       setLoadingSubmit(false);
     }
   };
-
-
 
   if (loading || loadingSubmit) {
     return (
@@ -357,8 +381,8 @@ export const CreateSpaceForm = () => {
             {loading
               ? "Cargando espacio..."
               : isEdit
-                ? "Actualizando espacio..."
-                : "Creando espacio..."}
+              ? "Actualizando espacio..."
+              : "Creando espacio..."}
           </div>
         </div>
       </div>
@@ -367,7 +391,6 @@ export const CreateSpaceForm = () => {
 
   return (
     <div className="form-container position-relative">
-      {/* Flecha de regresar en esquina superior izquierda */}
       <FaLongArrowAltLeft
         onClick={handleBack}
         title="Regresar"
@@ -435,8 +458,9 @@ export const CreateSpaceForm = () => {
           ) : (
             <div
               {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : ""
-                }`}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
+                isDragActive ? "border-primary bg-light" : ""
+              }`}
             >
               <input {...getInputProps()} />
               <div className="d-flex flex-column align-items-center justify-content-center">
@@ -461,17 +485,8 @@ export const CreateSpaceForm = () => {
           )}
         </div>
 
-        {/* Aquí sigues igual con horarios */}
-        {/* No cambio esta parte, es la misma */}
-
-        {/* ... la parte de horarios, igual que antes ... */}
-
-        {/* Reutiliza toda la parte de horarios y submit igual que en tu versión */}
-
-        {/* Horarios */}
         <div className="mb-4">
           <h5 className="mb-3">Horarios disponibles</h5>
-          {/* igual que tu bloque original */}
           <div className="row mb-3">
             <div className="col-md-3 mb-2">
               <label className="form-label">Fecha de inicio</label>
@@ -503,7 +518,7 @@ export const CreateSpaceForm = () => {
                 onChange={(e) =>
                   setTimeInput({ ...timeInput, start_time: e.target.value })
                 }
-                className="form-control"
+                className="form-control timeForm"
               />
             </div>
             <div className="col-md-3 mb-2">
@@ -514,7 +529,7 @@ export const CreateSpaceForm = () => {
                 onChange={(e) =>
                   setTimeInput({ ...timeInput, end_time: e.target.value })
                 }
-                className="form-control"
+                className="form-control timeForm"
               />
             </div>
           </div>
@@ -537,7 +552,7 @@ export const CreateSpaceForm = () => {
                         ...prev,
                         days: checked
                           ? [...prev.days, day]
-                          : prev.days.filter((d) => d !== day),
+                          : prev.days.filter((x) => x !== day),
                       }));
                     }}
                   />
@@ -614,5 +629,3 @@ export const CreateSpaceForm = () => {
     </div>
   );
 };
-
-

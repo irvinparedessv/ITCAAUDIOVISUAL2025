@@ -33,6 +33,7 @@ const EditUsuario = () => {
   });
 
   useEffect(() => {
+    toast.dismiss(); // limpia cualquier confirmación colgada
     if (id) {
       getUsuarioById(id)
         .then((data) => {

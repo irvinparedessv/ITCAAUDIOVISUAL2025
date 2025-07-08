@@ -46,8 +46,12 @@ export const CreateSpaceForm = () => {
   const handleBack = () => {
     navigate("/rooms"); // Regresa a la página anterior
   };
+  useEffect(() => {
+    toast.dismiss(); // limpia cualquier confirmación colgada
+  }, []);
 
   useEffect(() => {
+
     if (isEdit) {
       setLoading(true);
       api
@@ -145,87 +149,87 @@ export const CreateSpaceForm = () => {
   };
 
   const handleAddTime = () => {
-  const { start_date, end_date, start_time, end_time, days } = timeInput;
+    const { start_date, end_date, start_time, end_time, days } = timeInput;
 
-  toast.dismiss("add-time-error"); // cierro posibles toasts previos
+    toast.dismiss("add-time-error"); // cierro posibles toasts previos
 
-  if (!start_date || !end_date || !start_time || !end_time || days.length === 0) {
-    toast.error("Completa todos los campos y selecciona al menos un día.", { id: "add-time-error" });
-    return;
-  }
+    if (!start_date || !end_date || !start_time || !end_time || days.length === 0) {
+      toast.error("Completa todos los campos y selecciona al menos un día.", { id: "add-time-error" });
+      return;
+    }
 
-  if (end_date < start_date) {
-    toast.error("La fecha fin no puede ser menor a la fecha inicio.", { id: "add-time-error" });
-    return;
-  }
+    if (end_date < start_date) {
+      toast.error("La fecha fin no puede ser menor a la fecha inicio.", { id: "add-time-error" });
+      return;
+    }
 
-  if (end_time <= start_time) {
-    toast.error("La hora fin debe ser mayor a la hora inicio.", { id: "add-time-error" });
-    return;
-  }
+    if (end_time <= start_time) {
+      toast.error("La hora fin debe ser mayor a la hora inicio.", { id: "add-time-error" });
+      return;
+    }
 
-  const isOverlap = availableTimes.some((t) => {
-    const dateOverlap = !(end_date < t.start_date || start_date > t.end_date);
-    const dayOverlap = t.days.some((d: string) => days.includes(d));
-    return dateOverlap && dayOverlap;
-  });
+    const isOverlap = availableTimes.some((t) => {
+      const dateOverlap = !(end_date < t.start_date || start_date > t.end_date);
+      const dayOverlap = t.days.some((d: string) => days.includes(d));
+      return dateOverlap && dayOverlap;
+    });
 
-  if (isOverlap) {
-    toast.error("Ya existe un rango con fechas y días similares.", { id: "add-time-error" });
-    return;
-  }
+    if (isOverlap) {
+      toast.error("Ya existe un rango con fechas y días similares.", { id: "add-time-error" });
+      return;
+    }
 
-  setAvailableTimes([...availableTimes, { ...timeInput }]);
-  setTimeInput({
-    start_date: "",
-    end_date: "",
-    start_time: "",
-    end_time: "",
-    days: [],
-  });
-};
+    setAvailableTimes([...availableTimes, { ...timeInput }]);
+    setTimeInput({
+      start_date: "",
+      end_date: "",
+      start_time: "",
+      end_time: "",
+      days: [],
+    });
+  };
 
 
   const handleRemoveTime = (index: number) => {
-  const toastId = `remove-time-${index}`;  // ID único por horario
+    const toastId = `remove-time-${index}`;  // ID único por horario
 
-  toast.dismiss(toastId);  // Cierra cualquier toast de confirmación previa para este índice
+    toast.dismiss(toastId);  // Cierra cualquier toast de confirmación previa para este índice
 
-  toast(
-    (t) => (
-      <div>
-        <p>¿Desea eliminar este horario?</p>
-        <div className="d-flex justify-content-end gap-2 mt-2">
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={() => {
-              const newTimes = [...availableTimes];
-              newTimes.splice(index, 1);
-              setAvailableTimes(newTimes);
-              toast.dismiss(t.id);
-              toast.success("Horario eliminado", { 
-                id: `${toastId}-success`,
-                duration: 2000  // Mensaje breve de éxito
-              });
-            }}
-          >
-            Sí, eliminar
-          </button>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
+    toast(
+      (t) => (
+        <div>
+          <p>¿Desea eliminar este horario?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={() => {
+                const newTimes = [...availableTimes];
+                newTimes.splice(index, 1);
+                setAvailableTimes(newTimes);
+                toast.dismiss(t.id);
+                toast.success("Horario eliminado", {
+                  id: `${toastId}-success`,
+                  duration: 2000  // Mensaje breve de éxito
+                });
+              }}
+            >
+              Sí, eliminar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ),
-    {
-      duration: 5000,  // Duración más larga para dar tiempo a decidir
-      id: toastId,
-    }
-  );
-};
+      ),
+      {
+        duration: 5000,  // Duración más larga para dar tiempo a decidir
+        id: toastId,
+      }
+    );
+  };
 
   const updateMessages = {
     question: "¿Seguro que deseas actualizar este espacio?",
@@ -249,90 +253,93 @@ export const CreateSpaceForm = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const toastId = "submit-error"; // ID único para el toast de error
+    e.preventDefault();
+    const errorToastId = "submit-error";
+    const confirmToastId = "edit-confirm-toast";
 
-  // Cerrar cualquier toast de error previo
-  toast.dismiss(toastId);
+    // Cerrar cualquier toast de error o confirmación previos
+    toast.dismiss(errorToastId);
+    toast.dismiss(confirmToastId);
 
-  if (!name.trim()) {
-    toast.error("El nombre del espacio es obligatorio", { id: toastId });
-    return;
-  }
-
-  if (availableTimes.length === 0) {
-    toast.error("Debes agregar al menos un horario disponible", { id: toastId });
-    return;
-  }
-
-  // Solo mostrar confirmación si es edición
-  if (isEdit) {
-    const confirmed = await new Promise((resolve) => {
-      toast(
-        (t) => (
-          <div>
-            <p>{updateMessages.question}</p>
-            <div className="d-flex justify-content-end gap-2 mt-2">
-              <button
-                className="btn btn-sm btn-success"
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  resolve(true);
-                }}
-              >
-                {updateMessages.confirmText}
-              </button>
-              <button
-                className="btn btn-sm btn-secondary"
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  resolve(false);
-                }}
-              >
-                {updateMessages.cancelText}
-              </button>
-            </div>
-          </div>
-        ),
-        { duration: 5000 }
-      );
-    });
-
-    if (!confirmed) return;
-  }
-
-  const formData = new FormData();
-  formData.append("name", name);
-  renderImages.forEach((img, i) => {
-    if (img.file) {
-      formData.append(`render_images[${i}]`, img.file);
+    if (!name.trim()) {
+      toast.error("El nombre del espacio es obligatorio", { id: errorToastId });
+      return;
     }
-  });
-  formData.append("available_times", JSON.stringify(availableTimes));
 
-  setLoadingSubmit(true);
+    if (availableTimes.length === 0) {
+      toast.error("Debes agregar al menos un horario disponible", { id: errorToastId });
+      return;
+    }
 
-  try {
-    const endpoint = isEdit ? `/aulas/${id}/update` : "/aulas";
-    await api.post(endpoint, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+    if (isEdit) {
+      const confirmed = await new Promise<boolean>((resolve) => {
+        toast(
+          (t) => (
+            <div>
+              <p>{updateMessages.question}</p>
+              <div className="d-flex justify-content-end gap-2 mt-2">
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => {
+                    toast.dismiss(t.id);
+                    resolve(true);
+                  }}
+                >
+                  {updateMessages.confirmText}
+                </button>
+                <button
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => {
+                    toast.dismiss(t.id);
+                    resolve(false);
+                  }}
+                >
+                  {updateMessages.cancelText}
+                </button>
+              </div>
+            </div>
+          ),
+          {
+            id: confirmToastId,
+            duration: 8000,
+          }
+        );
+      });
+
+      if (!confirmed) return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", name);
+    renderImages.forEach((img, i) => {
+      if (img.file) {
+        formData.append(`render_images[${i}]`, img.file);
+      }
     });
-    toast.success(
-      isEdit ? updateMessages.success : "Espacio creado correctamente"
-    );
-    if (!isEdit) handleClear();
-    navigate("/rooms");
-  } catch (err) {
-    console.error(err);
-    toast.error(
-      isEdit ? updateMessages.error : "Error creando el espacio",
-      { id: toastId } // Usamos el mismo ID para el toast de error
-    );
-  } finally {
-    setLoadingSubmit(false);
-  }
-};
-  
+    formData.append("available_times", JSON.stringify(availableTimes));
+
+    setLoadingSubmit(true);
+
+    try {
+      const endpoint = isEdit ? `/aulas/${id}/update` : "/aulas";
+      await api.post(endpoint, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success(isEdit ? updateMessages.success : "Espacio creado correctamente");
+      if (!isEdit) handleClear();
+      navigate("/rooms");
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        isEdit ? updateMessages.error : "Error creando el espacio",
+        { id: errorToastId }
+      );
+    } finally {
+      setLoadingSubmit(false);
+    }
+  };
+
+
 
   if (loading || loadingSubmit) {
     return (
@@ -607,3 +614,5 @@ export const CreateSpaceForm = () => {
     </div>
   );
 };
+
+

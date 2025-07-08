@@ -63,41 +63,45 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
     setShowImageModal(true);
   };
 
-  const confirmarEliminacion = (id: number) => {
-  // Cierra cualquier toast de eliminación previo
-  toast.dismiss("delete-confirmation");
+  const confirmarEliminacion = (id: number, nombre: string) => {
+    const toastId = `delete-confirmation-${id}`;
 
-  toast(
-    (t) => (
-      <div>
-        <p>¿Seguro que deseas eliminar este equipo?</p>
-        <div className="d-flex justify-content-end gap-2 mt-2">
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={() => {
-              onDelete(id);
-              toast.dismiss(t.id);
-              toast.success("Equipo eliminado");
-              fetchEquipos();
-            }}
-          >
-            Sí, eliminar
-          </button>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
+    // Cierra todas las alertas activas antes de mostrar la nueva
+    toast.dismiss();
+
+    toast(
+      (t) => (
+        <div>
+          <p>¿Seguro que deseas eliminar el equipo <strong>{nombre}</strong>?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={() => {
+                onDelete(id); // Llamada a la función de eliminación
+                toast.dismiss(t.id); // Cierra el toast de confirmación
+                toast.success(`Equipo "${nombre}" eliminado`, { id: toastId });
+                fetchEquipos(); // Actualiza la lista de equipos
+              }}
+            >
+              Sí, eliminar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)} // Cierra el toast si se cancela
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ),
-    {
-      duration: 5000,
-      id: "delete-confirmation", // ✅ evita múltiples confirmaciones
-    }
-  );
-};
+      ),
+      {
+        duration: 5000,
+        id: toastId, // ID único para cada eliminación
+      }
+    );
+  };
+
+
 
 
   const handleFilterUpdate = <K extends keyof EquipoFilters>(
@@ -351,15 +355,15 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
                             variant="outline-primary"
                             className="rounded-circle"
                             title="Editar equipo"
-                            style={{ 
-                              width: "44px", 
+                            style={{
+                              width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out"
                             }}
-                            onMouseEnter={(e) => 
+                            onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
-                            onMouseLeave={(e) => 
+                            onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                             onClick={() => onEdit(equipo)}
@@ -370,18 +374,18 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
                             variant="outline-danger"
                             className="rounded-circle"
                             title="Eliminar equipo"
-                            style={{ 
-                              width: "44px", 
+                            style={{
+                              width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out"
                             }}
-                            onMouseEnter={(e) => 
+                            onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
-                            onMouseLeave={(e) => 
+                            onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
-                            onClick={() => confirmarEliminacion(equipo.id)}
+                            onClick={() => confirmarEliminacion(equipo.id, equipo.nombre)}
                           >
                             <FaTrash />
                           </Button>

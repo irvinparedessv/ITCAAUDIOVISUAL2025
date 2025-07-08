@@ -71,6 +71,7 @@ export default function ReservationList() {
   const handleBack = () => {
     navigate("/"); // Regresa a la página anterior
   };
+  // Efectos
 
   useEffect(() => {
     const handleForceRefresh = (e: CustomEvent) => {
@@ -87,7 +88,8 @@ export default function ReservationList() {
   }, []);
 
 
-  // Efectos
+
+
   useEffect(() => {
     if (location.state?.page) setCurrentPage(location.state.page);
     if (location.state?.highlightReservaId)
@@ -202,6 +204,7 @@ export default function ReservationList() {
 
   // Handlers
   const handleDetailClick = (reservation: Reservation) => {
+    toast.dismiss();
     console.log("Abriendo modal con reserva:", reservation);
     setHistorial([]);
     setSelectedReservation(reservation);
@@ -251,12 +254,16 @@ export default function ReservationList() {
   };
 
   const handleCancelReservation = (reservaId: number) => {
-    // Primero cerramos cualquier toast existente con el mismo ID
-    toast.dismiss(`cancel-toast-${reservaId}`);
+    const toastId = `cancel-toast-${reservaId}`;
+
+    // Cierra todos los toasts activos (igual que confirmarEliminacion)
+    toast.dismiss();
 
     toast((t) => (
       <div>
-        <p>¿Deseas cancelar esta reserva?</p>
+        <p>
+          ¿Deseas cancelar la reserva <strong>#{reservaId}</strong>?
+        </p>
         <div className="d-flex justify-content-end gap-2 mt-2">
           <button
             className="btn btn-sm btn-danger"
@@ -267,7 +274,11 @@ export default function ReservationList() {
                   comentario: "Cancelada por el usuario",
                 });
 
-                toast.success("Reserva cancelada correctamente");
+                toast.dismiss(t.id);
+                toast.success(`Reserva #${reservaId} cancelada correctamente`, {
+                  id: `${toastId}-success`,
+                });
+
                 setReservations(prev =>
                   prev.map(r =>
                     r.id === reservaId
@@ -276,12 +287,15 @@ export default function ReservationList() {
                   )
                 );
               } catch (err: any) {
+                toast.dismiss(t.id);
                 toast.error(
                   err?.response?.data?.message ||
-                  "Error al cancelar la reserva"
+                  `Error al cancelar la reserva #${reservaId}`,
+                  {
+                    id: `${toastId}-error`,
+                  }
                 );
               }
-              toast.dismiss(t.id);
             }}
           >
             Sí, cancelar
@@ -297,7 +311,7 @@ export default function ReservationList() {
       </div>
     ), {
       duration: 8000,
-      id: `cancel-toast-${reservaId}`,
+      id: toastId,
     });
   };
 

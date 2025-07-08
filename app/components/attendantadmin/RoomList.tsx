@@ -64,15 +64,15 @@ export default function AulaList() {
     return () => clearTimeout(delayDebounce);
   }, [searchInput]);
 
-  const confirmarEliminacion = (id: number) => {
+  const confirmarEliminacion = (id: number, name: string) => {
     const toastId = `delete-aula-${id}`; // ID único por aula
 
-    toast.dismiss(toastId); // Cierra cualquier toast previo de eliminación de esa aula
+    toast.dismiss(); // Cierra cualquier toast abierto anteriormente
 
     toast(
       (t) => (
         <div>
-          <p>¿Desea eliminar esta aula?</p>
+          <p>¿Desea eliminar el aula <strong>{name}</strong>?</p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button
               className="btn btn-sm btn-danger"
@@ -80,11 +80,15 @@ export default function AulaList() {
                 try {
                   await deleteAula(id);
                   toast.dismiss(t.id);
-                  toast.success("Aula eliminada", { id: `${toastId}-success` });
+                  toast.success(`Aula "${name}" eliminada`, {
+                    id: `${toastId}-success`,
+                  });
                   fetchAulas();
                 } catch (error) {
                   toast.dismiss(t.id);
-                  toast.error("Error al eliminar el aula", { id: `${toastId}-error` });
+                  toast.error(`Error al eliminar el aula "${name}"`, {
+                    id: `${toastId}-error`,
+                  });
                 }
               }}
             >
@@ -101,10 +105,11 @@ export default function AulaList() {
       ),
       {
         duration: 5000,
-        id: toastId, // Asignamos el ID al toast
+        id: toastId,
       }
     );
   };
+
 
 
   const handleFilterUpdate = <K extends keyof AulaFilters>(
@@ -313,7 +318,7 @@ export default function AulaList() {
                             onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
-                            onClick={() => confirmarEliminacion(aula.id)}
+                            onClick={() => confirmarEliminacion(aula.id, aula.name)}
                             title="Eliminar aula"
                           >
                             <FaTrash />

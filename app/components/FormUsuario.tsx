@@ -75,6 +75,7 @@ export default function FormUsuario() {
   const maxImageSize = 2 * 1024 * 1024;
 
   useEffect(() => {
+    toast.dismiss(); // limpia cualquier confirmación colgada
     if (
       completedCrop?.width &&
       completedCrop?.height &&
@@ -219,89 +220,89 @@ export default function FormUsuario() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!isFormValid()) {
-    toast.error("Por favor corrija los errores antes de enviar", {
-      id: "submit-toast"
-    });
-    return;
-  }
+    if (!isFormValid()) {
+      toast.error("Por favor corrija los errores antes de enviar", {
+        id: "submit-toast"
+      });
+      return;
+    }
 
-  setIsLoading(true);
+    setIsLoading(true);
 
-  const formDataToSend = new FormData();
-  Object.entries(formData).forEach(([key, value]) => {
-    if (value !== null) {
-      if (key === "role_id") {
-        formDataToSend.append(key, Number(value).toString());
-      } else if (key !== "image") {
-        formDataToSend.append(key, value.toString());
+    const formDataToSend = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null) {
+        if (key === "role_id") {
+          formDataToSend.append(key, Number(value).toString());
+        } else if (key !== "image") {
+          formDataToSend.append(key, value.toString());
+        }
       }
+    });
+
+    if (formData.image) {
+      formDataToSend.append("image", formData.image);
     }
-  });
 
-  if (formData.image) {
-    formDataToSend.append("image", formData.image);
-  }
+    formDataToSend.append("estado", "0");
 
-  formDataToSend.append("estado", "0");
-
-  // ✅ Descartar cualquier toast anterior con el mismo ID
-  toast.dismiss("submit-toast");
-
-  // ✅ Mostrar loading toast con ID único
-  toast.loading("Estamos creando el usuario. Por favor, espere un momento...", {
-    position: 'top-right',
-    id: "submit-toast"
-  });
-
-  try {
-    const response = await createUsuario(formDataToSend);
-
+    // ✅ Descartar cualquier toast anterior con el mismo ID
     toast.dismiss("submit-toast");
 
-    toast.success("Usuario creado con éxito", {
+    // ✅ Mostrar loading toast con ID único
+    toast.loading("Estamos creando el usuario. Por favor, espere un momento...", {
       position: 'top-right',
-      duration: 3000,
       id: "submit-toast"
     });
 
-    handleClear();
-    navigate("/usuarios");
+    try {
+      const response = await createUsuario(formDataToSend);
 
-  } catch (error: any) {
-    toast.dismiss("submit-toast");
+      toast.dismiss("submit-toast");
 
-    const errorData = error.response?.data;
-    const isEmailExists = errorData?.error === 'email_exists';
-    const errorMessage = isEmailExists
-      ? "El correo electrónico ya está registrado"
-      : errorData?.message || "Error al crear el usuario";
+      toast.success("Usuario creado con éxito", {
+        position: 'top-right',
+        duration: 3000,
+        id: "submit-toast"
+      });
 
-    toast.error(errorMessage, {
-      position: 'top-right',
-      duration: 5000,
-      id: "submit-toast"
-    });
+      handleClear();
+      navigate("/usuarios");
 
-    if (isEmailExists) {
-      setFormErrors(prev => ({
-        ...prev,
-        email: errorMessage
-      }));
+    } catch (error: any) {
+      toast.dismiss("submit-toast");
+
+      const errorData = error.response?.data;
+      const isEmailExists = errorData?.error === 'email_exists';
+      const errorMessage = isEmailExists
+        ? "El correo electrónico ya está registrado"
+        : errorData?.message || "Error al crear el usuario";
+
+      toast.error(errorMessage, {
+        position: 'top-right',
+        duration: 5000,
+        id: "submit-toast"
+      });
+
+      if (isEmailExists) {
+        setFormErrors(prev => ({
+          ...prev,
+          email: errorMessage
+        }));
+      }
+
+      console.error('Error al crear usuario:', {
+        status: error.response?.status,
+        data: errorData,
+        message: error.message
+      });
+
+    } finally {
+      setIsLoading(false);
     }
-
-    console.error('Error al crear usuario:', {
-      status: error.response?.status,
-      data: errorData,
-      message: error.message
-    });
-
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
 
   const handleClear = () => {

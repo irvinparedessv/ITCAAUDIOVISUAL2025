@@ -4,11 +4,9 @@ import { toast } from "react-hot-toast";
 import { createUsuario } from "../services/userService";
 import { useNavigate } from "react-router-dom";
 import {
-  FaSave,
   FaTimes,
   FaPlus,
   FaBroom,
-  FaUpload,
   FaTrash,
   FaUserCircle,
   FaLongArrowAltLeft,
@@ -64,7 +62,7 @@ export default function FormUsuario() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleBack = () => {
-    navigate("/usuarios"); // Regresa a la página anterior
+    navigate("/usuarios");
   };
 
   // Validation regex patterns
@@ -75,7 +73,7 @@ export default function FormUsuario() {
   const maxImageSize = 2 * 1024 * 1024;
 
   useEffect(() => {
-    toast.dismiss(); // limpia cualquier confirmación colgada
+    toast.dismiss();
     if (
       completedCrop?.width &&
       completedCrop?.height &&
@@ -197,6 +195,11 @@ export default function FormUsuario() {
       }
     }
 
+    // Convertir email a minúsculas
+    if (name === "email") {
+      newValue = newValue.toLowerCase();
+    }
+
     setFormData((prev) => ({ ...prev, [name]: newValue }));
     setFormErrors((prev) => ({ ...prev, [name]: "" }));
   };
@@ -248,10 +251,7 @@ export default function FormUsuario() {
 
     formDataToSend.append("estado", "0");
 
-    // ✅ Descartar cualquier toast anterior con el mismo ID
     toast.dismiss("submit-toast");
-
-    // ✅ Mostrar loading toast con ID único
     toast.loading("Estamos creando el usuario. Por favor, espere un momento...", {
       position: 'top-right',
       id: "submit-toast"
@@ -261,7 +261,6 @@ export default function FormUsuario() {
       const response = await createUsuario(formDataToSend);
 
       toast.dismiss("submit-toast");
-
       toast.success("Usuario creado con éxito", {
         position: 'top-right',
         duration: 3000,
@@ -304,7 +303,6 @@ export default function FormUsuario() {
     }
   };
 
-
   const handleClear = () => {
     setFormData({
       first_name: "",
@@ -323,11 +321,11 @@ export default function FormUsuario() {
     { id: 1, name: "Administrador" },
     { id: 2, name: "Encargado" },
     { id: 3, name: "Prestamista" },
+    { id: 4, name: "Encargado Espacio" },
   ];
 
   return (
     <div className="form-container position-relative">
-      {/* Flecha de regresar en esquina superior izquierda */}
       <FaLongArrowAltLeft
         onClick={handleBack}
         title="Regresar"
@@ -479,6 +477,7 @@ export default function FormUsuario() {
                 type="button"
                 onClick={removeImage}
                 className="btn btn-outline-danger btn-sm"
+                disabled={isLoading}
               >
                 <FaTrash className="me-1" />
                 Eliminar imagen
@@ -521,7 +520,10 @@ export default function FormUsuario() {
             disabled={isLoading}
           >
             {isLoading ? (
-              "Procesando..."
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Procesando...
+              </>
             ) : (
               <>
                 <FaPlus className="me-2" />
@@ -533,6 +535,7 @@ export default function FormUsuario() {
             type="button"
             className="btn secondary-btn"
             onClick={handleClear}
+            disabled={isLoading}
           >
             <FaBroom className="me-2" />
             Limpiar
@@ -541,6 +544,7 @@ export default function FormUsuario() {
             type="button"
             className="btn btn-outline-secondary"
             onClick={() => navigate("/usuarios")}
+            disabled={isLoading}
           >
             <FaTimes className="me-2" />
             Cancelar
@@ -562,6 +566,7 @@ export default function FormUsuario() {
                 type="button"
                 className="btn-close"
                 onClick={() => setShowCropModal(false)}
+                disabled={isLoading}
               ></button>
             </div>
             <div className="modal-body">
@@ -604,6 +609,7 @@ export default function FormUsuario() {
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setShowCropModal(false)}
+                disabled={isLoading}
               >
                 Cancelar
               </button>
@@ -611,6 +617,7 @@ export default function FormUsuario() {
                 type="button"
                 className="btn btn-primary"
                 onClick={handleSaveCroppedImage}
+                disabled={isLoading}
               >
                 Guardar Recorte
               </button>
@@ -647,10 +654,6 @@ function canvasPreview(
   const cropY = crop.y * scaleY;
   const cropWidth = crop.width * scaleX;
   const cropHeight = crop.height * scaleY;
-
-  const centerX = image.naturalWidth / 2;
-  const centerY = image.naturalHeight / 2;
-  const maxSquareHalf = Math.min(image.naturalWidth, image.naturalHeight) / 2;
 
   ctx.save();
   ctx.beginPath();

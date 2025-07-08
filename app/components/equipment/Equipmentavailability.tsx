@@ -44,7 +44,7 @@ export default function EquipmentAvailabilityList() {
   const [searchTerm, setSearchTerm] = useState(filtros.buscar);
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/");
   };
 
   const fetchTipoEquipos = async () => {

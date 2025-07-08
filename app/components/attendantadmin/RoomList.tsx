@@ -34,7 +34,7 @@ export default function AulaList() {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/");
   };
 
   const fetchAulas = async () => {
@@ -65,18 +65,27 @@ export default function AulaList() {
   }, [searchInput]);
 
   const confirmarEliminacion = (id: number) => {
+    const toastId = `delete-aula-${id}`; // ID único por aula
+
+    toast.dismiss(toastId); // Cierra cualquier toast previo de eliminación de esa aula
+
     toast(
       (t) => (
         <div>
-          <p>¿Eliminar esta aula?</p>
+          <p>¿Desea eliminar esta aula?</p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button
               className="btn btn-sm btn-danger"
               onClick={async () => {
-                await deleteAula(id);
-                toast.dismiss(t.id);
-                toast.success("Aula eliminada");
-                fetchAulas();
+                try {
+                  await deleteAula(id);
+                  toast.dismiss(t.id);
+                  toast.success("Aula eliminada", { id: `${toastId}-success` });
+                  fetchAulas();
+                } catch (error) {
+                  toast.dismiss(t.id);
+                  toast.error("Error al eliminar el aula", { id: `${toastId}-error` });
+                }
               }}
             >
               Sí
@@ -90,9 +99,13 @@ export default function AulaList() {
           </div>
         </div>
       ),
-      { duration: 5000 }
+      {
+        duration: 5000,
+        id: toastId, // Asignamos el ID al toast
+      }
     );
   };
+
 
   const handleFilterUpdate = <K extends keyof AulaFilters>(
     key: K,
@@ -111,7 +124,8 @@ export default function AulaList() {
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
-      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4">
+      <div className="mb-4">
+        {/* Título y flecha */}
         <div className="d-flex align-items-center gap-3">
           <FaLongArrowAltLeft
             onClick={handleBack}
@@ -121,17 +135,22 @@ export default function AulaList() {
               fontSize: '2rem',
             }}
           />
-          <h2 className="fw-bold m-0">Listado de Aulas</h2>
+          <h2 className="fw-bold m-0 flex-grow-1">Listado de Aulas</h2>
         </div>
-        <Button 
-          variant="primary" 
-          onClick={() => navigate("/createRoom")}
-          className="d-flex align-items-center gap-2"
-        >
-          <FaPlus />
-          Crear Aula
-        </Button>
+
+        {/* Botón, separado y alineado en mobile y desktop */}
+        <div className="text-end mt-3">
+          <Button
+            variant="primary"
+            onClick={() => navigate("/createRoom")}
+            className="d-inline-flex align-items-center gap-2"
+          >
+            <FaPlus />
+            Crear Aula
+          </Button>
+        </div>
       </div>
+
 
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
         <div className="flex-grow-1">
@@ -155,6 +174,26 @@ export default function AulaList() {
           </InputGroup>
         </div>
       </div>
+      <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
+
+
+        {/* Filtro por imagen */}
+        <Form.Select
+          value={filters.has_images === null ? "" : filters.has_images ? "yes" : "no"}
+          onChange={(e) => {
+            const val = e.target.value;
+            handleFilterUpdate(
+              "has_images",
+              val === "yes" ? true : val === "no" ? false : null
+            );
+          }}
+        >
+          <option value="">Todas</option>
+          <option value="yes">Con imagen</option>
+          <option value="no">Sin imagen</option>
+        </Form.Select>
+      </div>
+
 
       {loading ? (
         <div className="text-center my-5">
@@ -188,32 +227,34 @@ export default function AulaList() {
                       <td className="text-start">
                         {aula.encargados.length > 0 ? (
                           <>
-                            <Button
-                              variant="link"
-                              size="sm"
-                              onClick={() => toggleExpand(aula.id)}
-                              className="d-flex align-items-center gap-1"
-                            >
-                              {expandedRow === aula.id ? (
-                                <>
-                                  Ocultar <FaChevronUp />
-                                </>
-                              ) : (
-                                <>
-                                  Ver <FaChevronDown />
-                                </>
-                              )}
-                            </Button>
-                            {expandedRow === aula.id && (
-                              <ul className="mb-0 mt-2 ps-3">
+                            {aula.encargados.length > 0 && (
+                              <ul
+                                className="mb-0 ps-3"
+                                style={{
+                                  listStyleType: "disc",
+                                  marginTop: "0.5rem",
+                                }}
+                              >
                                 {aula.encargados.map((enc) => (
-                                  <li key={enc.id}>
-                                    {enc.first_name} {enc.last_name} (ID: {enc.id})
+                                  <li
+                                    key={enc.id}
+                                    style={{
+                                      marginBottom: "0.3rem",
+                                      fontWeight: 500,
+                                      color: "var(--bs-body-color)",
+                                    }}
+                                    title={`ID: ${enc.id}`}
+                                  >
+                                    {enc.first_name} {enc.last_name}{" "}
+                                    <small style={{ color: "var(--bs-secondary-text)", fontWeight: 400 }}>
+                                      (ID: {enc.id})
+                                    </small>
                                   </li>
                                 ))}
                               </ul>
                             )}
                           </>
+
                         ) : (
                           <label>Sin encargados</label>
                         )}
@@ -223,15 +264,15 @@ export default function AulaList() {
                           <Button
                             variant="outline-success"
                             className="rounded-circle"
-                            style={{ 
-                              width: "44px", 
+                            style={{
+                              width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out"
                             }}
-                            onMouseEnter={(e) => 
+                            onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
-                            onMouseLeave={(e) => 
+                            onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                             onClick={() => navigate(`/aulas/encargados/${aula.id}`)}
@@ -242,15 +283,15 @@ export default function AulaList() {
                           <Button
                             variant="outline-primary"
                             className="rounded-circle"
-                            style={{ 
-                              width: "44px", 
+                            style={{
+                              width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out"
                             }}
-                            onMouseEnter={(e) => 
+                            onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
-                            onMouseLeave={(e) => 
+                            onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                             onClick={() => navigate(`/aulas/editar/${aula.id}`)}
@@ -261,15 +302,15 @@ export default function AulaList() {
                           <Button
                             variant="outline-danger"
                             className="rounded-circle"
-                            style={{ 
-                              width: "44px", 
+                            style={{
+                              width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out"
                             }}
-                            onMouseEnter={(e) => 
+                            onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
-                            onMouseLeave={(e) => 
+                            onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                             onClick={() => confirmarEliminacion(aula.id)}

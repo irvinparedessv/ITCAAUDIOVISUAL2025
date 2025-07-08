@@ -170,7 +170,7 @@ const EditUsuario = () => {
   };
 
   const handleBack = () => {
-    navigate(-1); // Regresa a la página anterior
+    navigate("/usuarios"); // Regresa a la página anterior
   };
 
   const handleCancel = () => {

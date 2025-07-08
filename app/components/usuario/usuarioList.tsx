@@ -42,7 +42,7 @@ export default function UsuarioList() {
   const [loading, setLoading] = useState(false);
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/");
   };
 
   const cargarUsuarios = async () => {
@@ -64,72 +64,87 @@ export default function UsuarioList() {
   }, [filters]);
 
   const handleResetPassword = async (userId: number, email: string) => {
-    toast(
-      (t) => (
-        <div>
-          <p>¿Estás seguro que deseas restablecer la contraseña de {email}?</p>
-          <div className="d-flex justify-content-end gap-2 mt-2">
-            <button
-              className="btn btn-sm btn-primary"
-              onClick={async () => {
-                toast.dismiss(t.id);
-                toast.loading("Enviando enlace...", { id: "loading-reset" });
-                try {
-                  await forgotPassword(email);
-                  toast.success(`Enlace enviado a ${email}`, { id: "loading-reset" });
-                } catch {
-                  toast.error("Error al enviar el enlace", { id: "loading-reset" });
-                }
-              }}
-            >
-              Sí, restablecer
-            </button>
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancelar
-            </button>
-          </div>
+  // Cerramos cualquier toast de confirmación previo para este usuario
+  toast.dismiss(`reset-toast-${userId}`);
+
+  toast(
+    (t) => (
+      <div>
+        <p>¿Estás seguro que deseas restablecer la contraseña de {email}?</p>
+        <div className="d-flex justify-content-end gap-2 mt-2">
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={async () => {
+              toast.dismiss(t.id); // Cerramos el toast de confirmación
+              toast.loading("Enviando enlace...", { id: `loading-reset-${userId}` });
+
+              try {
+                await forgotPassword(email);
+                toast.success(`Enlace enviado a ${email}`, { id: `loading-reset-${userId}` });
+              } catch {
+                toast.error("Error al enviar el enlace", { id: `loading-reset-${userId}` });
+              }
+            }}
+          >
+            Sí, restablecer
+          </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancelar
+          </button>
         </div>
-      ),
-      { duration: 10000 }
-    );
-  };
+      </div>
+    ),
+    {
+      duration: 10000,
+      id: `reset-toast-${userId}` // ID único por usuario
+    }
+  );
+};
+
 
   const confirmarEliminacion = (id: number) => {
-    toast(
-      (t) => (
-        <div>
-          <p>¿Deseas desactivar este usuario?</p>
-          <div className="d-flex justify-content-end gap-2 mt-2">
-            <button
-              className="btn btn-sm btn-danger"
-              onClick={async () => {
-                try {
-                  await deleteUsuario(id);
-                  toast.success("Usuario desactivado");
-                  cargarUsuarios();
-                } catch {
-                  toast.error("Error al desactivar usuario");
-                }
-                toast.dismiss(t.id);
-              }}
-            >
-              Sí, desactivar
-            </button>
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancelar
-            </button>
-          </div>
+  // Cerramos cualquier toast existente con el mismo ID
+  toast.dismiss(`delete-toast-${id}`);
+
+  toast(
+    (t) => (
+      <div>
+        <p>¿Deseas desactivar este usuario?</p>
+        <div className="d-flex justify-content-end gap-2 mt-2">
+          <button
+            className="btn btn-sm btn-danger"
+            onClick={async () => {
+              try {
+                await deleteUsuario(id);
+                toast.success("Usuario desactivado");
+                cargarUsuarios();
+              } catch {
+                toast.error("Error al desactivar usuario");
+              }
+              toast.dismiss(t.id);
+            }}
+          >
+            Sí, desactivar
+          </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancelar
+          </button>
         </div>
-      ),
-      { duration: 8000 }
-    );
-  };
+      </div>
+    ),
+    {
+      duration: 8000,
+      id: `delete-toast-${id}`, // ID único para el toast
+    }
+  );
+};
+
 
   const handleFilterUpdate = (key: string, value: any) => {
     setFilters((prev: any) => ({

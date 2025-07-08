@@ -54,7 +54,7 @@ export default function AsignarEncargadosForm() {
   }, [aulaId]);
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/rooms");
   };
 
   const handleAddEncargado = () => {
@@ -124,13 +124,21 @@ export default function AsignarEncargadosForm() {
 
   return (
     <div className="form-container position-relative">
-      <FaLongArrowAltLeft 
-        onClick={handleBack}
-        className="back-arrow"
-        title="Regresar"
-      />
 
-      <h2 className="mb-4 text-center fw-bold">Asignar Encargados</h2>
+    <div className="d-flex align-items-center gap-3">
+          <FaLongArrowAltLeft
+            onClick={handleBack}
+            title="Regresar"
+            style={{
+              cursor: 'pointer',
+              fontSize: '2rem',
+            }}
+          />
+          <h2 className="fw-bold m-0 flex-grow-1">Asignar Encargados</h2>
+        </div>
+        <br />
+
+
 
       {aula && (
         <div className="mb-4 aula-info">

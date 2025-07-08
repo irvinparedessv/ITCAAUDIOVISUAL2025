@@ -24,9 +24,11 @@ export type Aula = {
 
 export interface AulaFilters {
   search?: string;
+  has_images?: boolean | null; // true = con imagen, false = sin imagen, null = ambos
   page?: number;
   perPage?: number;
 }
+
 export interface AvailableTime {
   start_date: string;
   end_date: string;

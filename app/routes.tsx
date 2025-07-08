@@ -54,6 +54,7 @@ import ReporteUsoEquipos from "./components/reports/ReporteUsoEquipos";
 import ReporteHorariosSolicitados from "./components/reports/ReporteHorariosSolicitados";
 import ReporteInventarioEquipos from "./components/reports/ReporteInventarioEquipos";
 import OpcionesAnalisis from "./dashboard/OpcionesAnalisis";
+import ReporteReservasPorAula from "./components/reports/ReporteReservasPorAula";
 
 const router = createBrowserRouter([
   {
@@ -242,11 +243,11 @@ const router = createBrowserRouter([
             element: <OpcionesAnalisis />,
           },
           {
-            path: "reporteReservas",
+            path: "reporteReservasEquipo",
             element: <ReporteReservasPorFecha />,
           },
           {
-            path: "reporteUsuarios",
+            path: "reporteReservasUsuarios",
             element: <ReporteReservasPorUsuario />,
           },
           {
@@ -264,6 +265,10 @@ const router = createBrowserRouter([
           {
             path: "reporteInventario",
             element: <ReporteInventarioEquipos />,
+          },
+          {
+            path: "reporteReservasAulas",
+            element: <ReporteReservasPorAula />,
           },
         ],
       },

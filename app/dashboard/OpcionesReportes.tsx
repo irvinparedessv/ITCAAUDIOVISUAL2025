@@ -6,18 +6,24 @@ const opciones = [
   {
     nombre: 'Reporte de reservas equipo',
     descripcion: 'Reporte de reserva por fechas',
-    ruta: '/reporteReservas',
+    ruta: '/reporteReservasEquipo',
     icono: <FaRegFileAlt size={24} />,
   },
   {
     nombre: 'Reporte de reservas equipo',
     descripcion: 'Reporte de reserva por usuarios',
-    ruta: '/reporteUsuarios',
+    ruta: '/reporteReservasUsuarios',
     icono: <FaRegFileAlt size={24} />,
   },
   {
     nombre: 'Reporte de reservas aulas',
-    descripcion: 'Reporte de uso de aulas',
+    descripcion: 'Reporte de uso de aulas por aulas',
+    ruta: '/reporteReservasAulas',
+    icono: <FaRegFileAlt size={24} />,
+  },
+  {
+    nombre: 'Reporte de reservas aulas',
+    descripcion: 'Reporte de uso de aulas por usuarios',
     ruta: '/reporteAulas',
     icono: <FaRegFileAlt size={24} />,
   },

@@ -19,18 +19,17 @@ interface ReservaAulaReporte {
   estado: string;
 }
 
-interface Usuario {
+interface Aula {
   id: number;
-  first_name: string;
-  last_name: string;
+  name: string;
 }
 
-const ReporteUsoAulas = () => {
+const ReporteReservasPorAula = () => {
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
   const [estado, setEstado] = useState("");
-  const [usuarioId, setUsuarioId] = useState<number | null>(null);
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [aulaId, setAulaId] = useState<number | null>(null);
+  const [aulas, setAulas] = useState<Aula[]>([]);
   const [reservas, setReservas] = useState<ReservaAulaReporte[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -40,37 +39,32 @@ const ReporteUsoAulas = () => {
   const [perPage] = useState(20);
 
   useEffect(() => {
-    const fetchUsuarios = async () => {
+    const fetchAulas = async () => {
       try {
-        const res = await api.get("/usuarios/rol/Prestamista");
-        setUsuarios(res.data);
+        const res = await api.get("/aulas");
+        setAulas(res.data);
       } catch (error) {
-        console.error("Error cargando usuarios", error);
+        console.error("Error cargando aulas", error);
       }
     };
 
-    fetchUsuarios();
+    fetchAulas();
   }, []);
 
   const fetchReservas = async (page = 1) => {
-    if (!usuarioId) {
-      toast.error("Debes seleccionar un usuario");
-      return;
-    }
-
-    if (!fechaInicio || !fechaFin) {
-      toast.error("Selecciona ambas fechas");
+    if (!fechaInicio || !fechaFin || !aulaId) {
+      toast.error("Selecciona aula y ambas fechas");
       return;
     }
 
     try {
       setLoading(true);
-      const res = await api.get("/reportes/uso-aulas", {
+      const res = await api.get("/reportes/reservas-por-aula", {
         params: {
           fecha_inicio: fechaInicio,
           fecha_fin: fechaFin,
           estado: estado || undefined,
-          usuario_id: usuarioId,
+          aula_id: aulaId,
           per_page: perPage,
           page,
         },
@@ -81,7 +75,7 @@ const ReporteUsoAulas = () => {
       setTotalPages(res.data.last_page);
     } catch (err) {
       console.error(err);
-      toast.error("Error al obtener el reporte de uso de aulas");
+      toast.error("Error al obtener el reporte");
     } finally {
       setLoading(false);
     }
@@ -94,12 +88,12 @@ const ReporteUsoAulas = () => {
 
     try {
       do {
-        const res = await api.get("/reportes/uso-aulas", {
+        const res = await api.get("/reportes/reservas-por-aula", {
           params: {
             fecha_inicio: fechaInicio,
             fecha_fin: fechaFin,
             estado: estado || undefined,
-            usuario_id: usuarioId,
+            aula_id: aulaId,
             per_page: 100,
             page: currentPage,
           },
@@ -117,43 +111,10 @@ const ReporteUsoAulas = () => {
     return allReservas;
   };
 
-  const handleBuscarClick = () => {
-    if (!usuarioId) {
-      toast.error("Debes seleccionar un usuario");
-      return;
-    }
-
-    if (!fechaInicio || !fechaFin) {
-      toast.error("Selecciona ambas fechas");
-      return;
-    }
-
-    setCurrentPage(1);
-    fetchReservas(1);
-  };
-
-  const limpiarFiltros = () => {
-    setFechaInicio("");
-    setFechaFin("");
-    setEstado("");
-    setUsuarioId(null);
-    setReservas([]);
-  };
-
   const exportarExcel = async () => {
-    if (!usuarioId) {
-      toast.error("Debes seleccionar un usuario antes de exportar");
-      return;
-    }
-
-    if (!fechaInicio || !fechaFin) {
-      toast.error("Selecciona ambas fechas antes de exportar");
-      return;
-    }
-
     toast((t) => (
       <div>
-        <p>¿Estás seguro que deseas descargar el reporte en formato Excel?</p>
+        <p>¿Descargar el reporte en formato Excel?</p>
         <div className="d-flex justify-content-end gap-2 mt-2">
           <button
             className="btn btn-sm btn-primary"
@@ -179,41 +140,28 @@ const ReporteUsoAulas = () => {
 
                 const ws = XLSX.utils.json_to_sheet(datos);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Uso de Aulas");
+                XLSX.utils.book_append_sheet(wb, ws, "Uso de Aulas por Aula");
                 const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-                saveAs(new Blob([buffer], { type: "application/octet-stream" }), "ReporteUsoAulas.xlsx");
+                saveAs(new Blob([buffer], { type: "application/octet-stream" }), "ReporteReservasPorAula.xlsx");
 
-                toast.success("Excel descargado correctamente", { id: "excel-download" });
+                toast.success("Excel descargado", { id: "excel-download" });
               } catch (error) {
-                console.error(error);
                 toast.error("Error al generar el Excel", { id: "excel-download" });
               }
             }}
-          >
-            Sí, descargar
-          </button>
+          >Sí, descargar</button>
           <button className="btn btn-sm btn-secondary" onClick={() => toast.dismiss(t.id)}>
             Cancelar
           </button>
         </div>
       </div>
-    ), { duration: 10000 });
+    ));
   };
 
   const exportarPDF = async () => {
-    if (!usuarioId) {
-      toast.error("Debes seleccionar un usuario antes de exportar");
-      return;
-    }
-
-    if (!fechaInicio || !fechaFin) {
-      toast.error("Selecciona ambas fechas antes de exportar");
-      return;
-    }
-
     toast((t) => (
       <div>
-        <p>¿Estás seguro que deseas descargar el reporte en formato PDF?</p>
+        <p>¿Descargar el reporte en formato PDF?</p>
         <div className="d-flex justify-content-end gap-2 mt-2">
           <button
             className="btn btn-sm btn-primary"
@@ -241,13 +189,9 @@ const ReporteUsoAulas = () => {
                         hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true
                       });
 
-                      const usuarioTexto = usuarioId
-                        ? `Usuario: ${usuarios.find((u) => u.id === usuarioId)?.first_name} ${usuarios.find((u) => u.id === usuarioId)?.last_name}`
-                        : "Usuario: Todos";
+                      const aulaNombre = aulas.find((a) => a.id === aulaId)?.name || "";
 
-                      const body = all.map((r) => [
-                        r.id, r.usuario, r.aula, r.fecha, r.horario, r.estado
-                      ]);
+                      const body = all.map((r) => [r.id, r.usuario, r.aula, r.fecha, r.horario, r.estado]);
 
                       let startY = 45;
 
@@ -257,58 +201,49 @@ const ReporteUsoAulas = () => {
                         startY,
                         styles: { fontSize: 8, cellPadding: 3 },
                         headStyles: { fillColor: [107, 0, 0], textColor: 255, fontStyle: "bold" },
-                        margin: { top: 10 },
                         didDrawPage: (data) => {
                           if (data.pageNumber === 1) {
                             doc.addImage(logo, "PNG", 15, 15, 40, 11);
-                            doc.setFontSize(16).text("Reporte de Uso de Aulas por Usuario", 60, 18);
+                            doc.setFontSize(16).text("Reporte de Uso de Aulas por Aula", 60, 18);
                             doc.setFontSize(10)
                               .text(`Generado: ${fechaStr} - ${horaStr}`, 60, 25)
                               .text(`Rango: ${fechaInicio} a ${fechaFin}`, 60, 30)
-                              .text(`Estado: ${estado || "Todos"}`, 60, 35)
-                              .text(usuarioTexto, 60, 40);
+                              .text(`Aula: ${aulaNombre}`, 60, 35)
+                              .text(`Estado: ${estado || "Todos"}`, 60, 40);
                           }
-
                           const pageSize = doc.internal.pageSize;
-                          const pageHeight = typeof pageSize.getHeight === "function"
-                            ? pageSize.getHeight()
-                            : pageSize.height;
+                          const pageHeight = typeof pageSize.getHeight === "function" ? pageSize.getHeight() : pageSize.height;
                           const total = doc.getNumberOfPages();
-                          doc.setFontSize(8)
-                            .text(`Página ${data.pageNumber} de ${total}`, pageSize.width - 40, pageHeight - 10);
+                          doc.setFontSize(8).text(`Página ${data.pageNumber} de ${total}`, pageSize.width - 40, pageHeight - 10);
                         },
-                        willDrawPage: (data) => {
-                          if (data.pageNumber > 1) {
-                            data.settings.startY = 20;
-                          }
-                        }
                       });
 
-                      doc.save("ReporteUsoAulas.pdf");
+                      doc.save("ReporteReservasPorAula.pdf");
                       resolve();
                     } catch (error) {
                       reject(error);
                     }
                   };
-
                   logo.onerror = () => reject(new Error("No se pudo cargar el logo"));
                 });
 
-                toast.success("PDF descargado correctamente", { id: "pdf-download" });
+                toast.success("PDF descargado", { id: "pdf-download" });
               } catch (error) {
-                console.error(error);
                 toast.error("Error al generar el PDF", { id: "pdf-download" });
               }
             }}
-          >
-            Sí, descargar
-          </button>
+          >Sí, descargar</button>
           <button className="btn btn-sm btn-secondary" onClick={() => toast.dismiss(t.id)}>
             Cancelar
           </button>
         </div>
       </div>
-    ), { duration: 10000 });
+    ));
+  };
+
+  const handleBuscarClick = () => {
+    setCurrentPage(1);
+    fetchReservas(1);
   };
 
   const handleBack = () => navigate(-1);
@@ -317,24 +252,17 @@ const ReporteUsoAulas = () => {
     <div className="container mt-4">
       <div className="d-flex align-items-center gap-3 mb-4">
         <FaLongArrowAltLeft onClick={handleBack} title="Regresar" style={{ cursor: 'pointer', fontSize: '2rem', marginTop: '2px' }} />
-        <h3 className="mb-0">Reporte de uso de aulas por usuario</h3>
+        <h3 className="mb-0">Reporte de uso de aulas por aula</h3>
       </div>
 
       <div className="row g-3 align-items-end mb-4">
         <div className="col-md-3">
-          <Form.Group controlId="usuario">
-            <Form.Label>Usuario <span className="text-danger">*</span></Form.Label>
-            <Form.Select
-              value={usuarioId ?? ""}
-              onChange={(e) => setUsuarioId(e.target.value ? parseInt(e.target.value) : null)}
-              disabled={loading}
-              required
-            >
-              <option value="">Seleccione un usuario</option>
-              {usuarios.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.first_name} {u.last_name}
-                </option>
+          <Form.Group controlId="aula">
+            <Form.Label>Aula</Form.Label>
+            <Form.Select value={aulaId ?? ""} onChange={(e) => setAulaId(e.target.value ? parseInt(e.target.value) : null)} disabled={loading}>
+              <option value="">Seleccione un aula</option>
+              {aulas.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </Form.Select>
           </Form.Group>
@@ -342,14 +270,14 @@ const ReporteUsoAulas = () => {
 
         <div className="col-md-2">
           <Form.Group controlId="fechaInicio">
-            <Form.Label>Desde <span className="text-danger">*</span></Form.Label>
+            <Form.Label>Desde</Form.Label>
             <Form.Control type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} disabled={loading} max={fechaFin || undefined} />
           </Form.Group>
         </div>
 
         <div className="col-md-2">
           <Form.Group controlId="fechaFin">
-            <Form.Label>Hasta <span className="text-danger">*</span></Form.Label>
+            <Form.Label>Hasta</Form.Label>
             <Form.Control type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} disabled={loading} min={fechaInicio || undefined} />
           </Form.Group>
         </div>
@@ -372,18 +300,12 @@ const ReporteUsoAulas = () => {
           <Button variant="primary" onClick={handleBuscarClick} disabled={loading} className="flex-fill">
             {loading ? <Spinner size="sm" animation="border" /> : "Buscar"}
           </Button>
-          <Button variant="outline-secondary" onClick={limpiarFiltros} disabled={loading}>
-            Limpiar
-          </Button>
+          <Button variant="outline-secondary" onClick={() => { setFechaInicio(""); setFechaFin(""); setEstado(""); setAulaId(null); setReservas([]); }} disabled={loading}>Limpiar</Button>
         </div>
 
         <div className="col-md-2 d-flex gap-2 ms-auto">
-          <Button variant="success" onClick={exportarExcel} disabled={loading}>
-            Exportar Excel
-          </Button>
-          <Button variant="danger" onClick={exportarPDF} disabled={loading}>
-            Exportar PDF
-          </Button>
+          <Button variant="success" onClick={exportarExcel} disabled={loading}>Exportar Excel</Button>
+          <Button variant="danger" onClick={exportarPDF} disabled={loading}>Exportar PDF</Button>
         </div>
       </div>
 
@@ -423,4 +345,4 @@ const ReporteUsoAulas = () => {
   );
 };
 
-export default ReporteUsoAulas;
+export default ReporteReservasPorAula;

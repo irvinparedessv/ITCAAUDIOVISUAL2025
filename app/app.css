@@ -40,7 +40,10 @@ input[type="time"] {
 .spinner-border.text-primary {
   color: #a52a2a !important; /* Cambia el color */
 }
-
+.timeForm {
+  height: 60% !important;
+  text-align: center;
+}
 /* Hovers (dependiendo del modo) */
 .navbar-nav .nav-link:hover,
 .nav-dropdown-toggle:hover,
@@ -71,7 +74,6 @@ input[type="time"] {
   outline: none;
   box-shadow: none !important;
 }
-
 
 .notification-date {
   font-style: italic;
@@ -958,7 +960,6 @@ input.form-control.border-color-login {
   }
 }
 
-
 /* Estilo para los botones de notificaciones */
 .btn-notification-link {
   color: #212529;
@@ -1139,7 +1140,6 @@ input.form-control.border-color-login {
   --bs-btn-hover-color: #fff !important;
 }
 
-
 /* Reemplazar el color amarillo por defecto de los botones outline-warning */
 .btn-outline-warning {
   --bs-btn-color: rgb(195, 144, 0) !important;
@@ -1153,7 +1153,6 @@ input.form-control.border-color-login {
   --bs-btn-disabled-color: rgb(195, 144, 0) !important;
   --bs-btn-disabled-border-color: rgb(195, 144, 0) !important;
 }
-
 
 .bg-warning {
   background-color: rgb(195, 144, 0) !important;

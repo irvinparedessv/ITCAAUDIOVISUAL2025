@@ -305,13 +305,13 @@ const RoomReservationList = () => {
   const handleCancelClick = (reserva: any) => {
     const toastId = `cancel-reserva-aula-${reserva.id}`;
 
-    // Cierra cualquier toast activo para esta reserva
-    toast.dismiss(toastId);
+    // Cierra cualquier toast activo (globalmente y el específico si existiera)
+    toast.dismiss();
 
     toast(
       (t) => (
         <div>
-          <p>¿Estás seguro de que deseas cancelar esta reserva?</p>
+          <p>¿Estás seguro de que deseas cancelar esta reserva <strong>#{reserva.id}</strong>?</p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button
               className="btn btn-sm btn-danger"
@@ -325,22 +325,27 @@ const RoomReservationList = () => {
                     }
                   );
 
+                  toast.dismiss(t.id); // Cierra el toast de confirmación
                   toast.success("Reserva cancelada exitosamente.", {
-                    id: toastId,
+                    id: `${toastId}-success`,
                   });
 
+                  // Actualiza la lista de reservas
                   setReservations((prev) =>
                     prev.map((r) => (r.id === data.reserva?.id ? data.reserva : r))
                   );
 
+                  // Actualiza la reserva seleccionada si corresponde
                   if (data.reserva && selectedReservation?.id === data.reserva.id) {
                     setSelectedReservation(data.reserva);
                   }
-                } catch (err) {
-                  toast.error("No se pudo cancelar la reserva.", { id: toastId });
+                } catch (err: any) {
+                  toast.dismiss(t.id);
+                  toast.error(
+                    err?.response?.data?.message || "No se pudo cancelar la reserva.",
+                    { id: `${toastId}-error` }
+                  );
                 }
-
-                toast.dismiss(t.id);
               }}
             >
               Sí, cancelar
@@ -356,11 +361,12 @@ const RoomReservationList = () => {
         </div>
       ),
       {
-        duration: 8000,
-        id: toastId, // ← identificador único para evitar duplicados
+        duration: 5000,
+        id: toastId, // ID único para evitar múltiples toasts para la misma reserva
       }
     );
   };
+
 
 
   return (
@@ -439,6 +445,7 @@ const RoomReservationList = () => {
             <Table striped bordered hover responsive>
               <thead>
                 <tr>
+                  <th>#</th>
                   <th>Aula</th>
                   <th>Fecha</th>
                   <th>Horario</th>
@@ -460,6 +467,7 @@ const RoomReservationList = () => {
                           : ""
                       }
                     >
+                      <td>{res.id}</td>
                       <td>{res.aula?.name || "Aula Desconocida"}</td>
                       <td>{formatDate(res.fecha)}</td>
                       <td>{res.horario}</td>

@@ -1,7 +1,7 @@
 import type { TipoEquipo } from "app/types/tipoEquipo";
 import TipoEquipoForm from "./TipoEquipoForm";
 import toast from "react-hot-toast";
-import { FaEdit, FaTrash, FaLongArrowAltLeft } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import { useState } from "react";
 import { Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
@@ -33,15 +33,23 @@ export default function TipoEquipoList({
     setTipoEditado(undefined);
   };
 
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   const confirmarEliminacion = (id: number) => {
+    const tipoAEliminar = tipos.find(tipo => tipo.id === id);
+
+    if (!tipoAEliminar) return;
+
+    const toastId = `eliminar-tipo-${id}`;
+
+    // Cierra todas las alertas activas
+    toast.dismiss();
+
     toast(
       (t) => (
         <div>
-          <p>¿Seguro que deseas eliminar este tipo de equipo?</p>
+          <p>
+            ¿Seguro que deseas eliminar el tipo de equipo{" "}
+            <strong>{tipoAEliminar.nombre}</strong>?
+          </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <Button
               variant="danger"
@@ -49,20 +57,20 @@ export default function TipoEquipoList({
               onClick={() => {
                 onDelete(id);
                 toast.dismiss(t.id);
-                toast.success("Tipo de equipo eliminado", {
+                toast.success(`Tipo de equipo ${tipoAEliminar.nombre} eliminado`, {
                   style: {
                     background: "#363636",
                     color: "#fff",
                   },
                 });
               }}
-              style={{ 
-                transition: "transform 0.2s ease-in-out"
+              style={{
+                transition: "transform 0.2s ease-in-out",
               }}
-              onMouseEnter={(e) => 
+              onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
-              onMouseLeave={(e) => 
+              onMouseLeave={(e) =>
                 (e.currentTarget.style.transform = "scale(1)")
               }
             >
@@ -72,13 +80,13 @@ export default function TipoEquipoList({
               variant="secondary"
               size="sm"
               onClick={() => toast.dismiss(t.id)}
-              style={{ 
-                transition: "transform 0.2s ease-in-out"
+              style={{
+                transition: "transform 0.2s ease-in-out",
               }}
-              onMouseEnter={(e) => 
+              onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
-              onMouseLeave={(e) => 
+              onMouseLeave={(e) =>
                 (e.currentTarget.style.transform = "scale(1)")
               }
             >
@@ -87,12 +95,13 @@ export default function TipoEquipoList({
           </div>
         </div>
       ),
-      { 
+      {
         duration: 8000,
         style: {
           background: "#363636",
           color: "#fff",
-        }
+        },
+        id: toastId,
       }
     );
   };
@@ -110,7 +119,6 @@ export default function TipoEquipoList({
 
       <div className="table-responsive rounded shadow p-3 mt-4">
         <div className="d-flex align-items-center gap-3 mb-4">
-        
           <h4 className="fw-bold m-0">Listado de Tipos de Equipo</h4>
         </div>
 

@@ -12,6 +12,7 @@ export default function QrScanner() {
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
+    toast.dismiss(); // limpia cualquier confirmación colgada
     let isActive = true;
 
     if (scanning && videoRef.current) {

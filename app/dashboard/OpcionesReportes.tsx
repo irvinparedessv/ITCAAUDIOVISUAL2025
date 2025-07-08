@@ -60,7 +60,7 @@ const OpcionesReporte = () => {
   });
 
   const handleBack = () => {
-  navigate(-1); // Redirige a la ruta de inicio
+  navigate("/administracion"); // Redirige a la ruta de inicio
 };
 
   return (

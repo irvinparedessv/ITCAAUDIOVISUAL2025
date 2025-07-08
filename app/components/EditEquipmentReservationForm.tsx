@@ -15,6 +15,7 @@ import {
     FaUpload,
     FaUser,
     FaLongArrowAltLeft,
+    FaEye,
 } from "react-icons/fa";
 import { useAuth } from "../hooks/AuthContext";
 import { formatTo12h } from "../utils/time";
@@ -90,6 +91,9 @@ export default function EditEquipmentReservationForm() {
     const handleBack = () => {
         navigate("/reservations"); // Regresa a la página anterior
     };
+    useEffect(() => {
+        toast.dismiss(); // limpia cualquier confirmación colgada
+    }, []);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop: useCallback((acceptedFiles: File[]) => {
@@ -684,18 +688,38 @@ export default function EditEquipmentReservationForm() {
 
                 {/* Equipos */}
                 <div className="mb-4">
-                    <label className="form-label d-flex align-items-center">
-                        <FaBoxes className="me-2" />
-                        <span className="me-2">Equipos</span>
-                        {!availabilityChecked && (
-                            <small className="form-text text-muted ms-2">
-                                Verificando disponibilidad de equipos...
-                            </small>
-                        )}
-                        {checkingAvailability && (
-                            <span className="ms-2 spinner-border spinner-border-sm"></span>
-                        )}
+
+                    <label className="form-label d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center">
+                            <FaBoxes className="me-2" />
+                            <span className="me-2">Equipos</span>
+                            {!availabilityChecked && (
+                                <small className="form-text text-muted ms-2">
+                                    Verificando disponibilidad de equipos...
+                                </small>
+                            )}
+                            {checkingAvailability && (
+                                <span className="ms-2 spinner-border spinner-border-sm"></span>
+                            )}
+                        </div>
+                        <a
+                            href="/equipmentavailability"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm ms-3"
+                            style={{
+                                backgroundColor: "rgb(2 71 102)",
+                                color: "#fff",
+                                border: "none",
+                            }}
+                        >
+                            <FaEye className="me-1" /> Ver disponibilidad
+                        </a>
                     </label>
+
+
+
+
                     {loadingEquipments ? (
                         <div className="d-flex justify-content-center">
                             <div className="spinner-border" role="status">

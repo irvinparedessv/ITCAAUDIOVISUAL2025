@@ -53,6 +53,10 @@ export default function EquipmentForm({
     navigate("/equipolist"); // Regresa a la página anterior
   };
 
+  useEffect(() => {
+    toast.dismiss(); // limpia cualquier confirmación colgada
+  }, []);
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
@@ -110,35 +114,35 @@ export default function EquipmentForm({
 
     toast.dismiss("confirmation-toast"); // 👈 Cierra uno previo si existe
 
-toast(
-  (t) => (
-    <div>
-      <p>{question}</p>
-      <div className="d-flex justify-content-end gap-2 mt-2">
-        <button
-          className="btn btn-sm btn-success"
-          onClick={() => {
-            onConfirm();
-            toast.dismiss(t.id);
-            toast.success(success, { id: "action-success" }); // opcional: evita duplicados de éxito también
-          }}
-        >
-          {confirmText}
-        </button>
-        <button
-          className="btn btn-sm btn-secondary"
-          onClick={() => toast.dismiss(t.id)}
-        >
-          Cancelar
-        </button>
-      </div>
-    </div>
-  ),
-  {
-    duration: 5000,
-    id: "confirmation-toast", // 👈 ID único para evitar múltiples toasts simultáneos
-  }
-);
+    toast(
+      (t) => (
+        <div>
+          <p>{question}</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-success"
+              onClick={() => {
+                onConfirm();
+                toast.dismiss(t.id);
+                toast.success(success, { id: "action-success" }); // opcional: evita duplicados de éxito también
+              }}
+            >
+              {confirmText}
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 5000,
+        id: "confirmation-toast", // 👈 ID único para evitar múltiples toasts simultáneos
+      }
+    );
 
   };
 
@@ -181,53 +185,53 @@ toast(
   }, [equipoEditando]);
 
   const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // Cierra cualquier toast anterior de submit
-  toast.dismiss("submit-toast");
+    // Cierra cualquier toast anterior de submit
+    toast.dismiss("submit-toast");
 
-  // Validaciones
-  if (!form.nombre.trim()) {
-    toast.error("El nombre es obligatorio", { id: "submit-toast" });
-    return;
-  }
+    // Validaciones
+    if (!form.nombre.trim()) {
+      toast.error("El nombre es obligatorio", { id: "submit-toast" });
+      return;
+    }
 
-  if (!form.descripcion.trim()) {
-    toast.error("La descripción es obligatoria", { id: "submit-toast" });
-    return;
-  }
+    if (!form.descripcion.trim()) {
+      toast.error("La descripción es obligatoria", { id: "submit-toast" });
+      return;
+    }
 
-  if (form.cantidad <= 0) {
-    toast.error("La cantidad debe ser mayor a cero", { id: "submit-toast" });
-    return;
-  }
+    if (form.cantidad <= 0) {
+      toast.error("La cantidad debe ser mayor a cero", { id: "submit-toast" });
+      return;
+    }
 
-  if (!form.tipo_equipo_id) {
-    toast.error("Debe seleccionar un tipo de equipo", { id: "submit-toast" });
-    return;
-  }
+    if (!form.tipo_equipo_id) {
+      toast.error("Debe seleccionar un tipo de equipo", { id: "submit-toast" });
+      return;
+    }
 
-  if (!form.tipo_reserva_id) {
-    toast.error("Debe seleccionar un tipo de reserva", { id: "submit-toast" });
-    return;
-  }
+    if (!form.tipo_reserva_id) {
+      toast.error("Debe seleccionar un tipo de reserva", { id: "submit-toast" });
+      return;
+    }
 
-  // Edición con confirmación
-  if (equipoEditando) {
-    showConfirmationToast("update", () => {
-      onSubmit(form, true, equipoEditando.id);
+    // Edición con confirmación
+    if (equipoEditando) {
+      showConfirmationToast("update", () => {
+        onSubmit(form, true, equipoEditando.id);
+        handleClear();
+      });
+    } else {
+      // Creación directa
+      onSubmit(form, false);
+      toast.success("Equipo creado exitosamente", { id: "submit-toast" });
       handleClear();
-    });
-  } else {
-    // Creación directa
-    onSubmit(form, false);
-    toast.success("Equipo creado exitosamente", { id: "submit-toast" });
-    handleClear();
-    setTimeout(() => {
-      navigate("/equipolist"); // Ajusta según ruta real
-    }, 2000);
-  }
-};
+      setTimeout(() => {
+        navigate("/equipolist"); // Ajusta según ruta real
+      }, 2000);
+    }
+  };
 
 
   const handleDelete = () => {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import {
@@ -15,6 +15,7 @@ import {
 import { FaComputer, FaBookmark } from "react-icons/fa6";
 import { Card, Container, Row, Col } from "react-bootstrap";
 import { Role } from "../types/roles";
+import toast from "react-hot-toast";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -45,6 +46,10 @@ export default function Dashboard() {
     e.currentTarget.style.transform = "translateY(0)";
     e.currentTarget.style.boxShadow = "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)";
   };
+
+  useEffect(() => {
+    toast.dismiss(); // limpia cualquier confirmación colgada
+  }, []);
 
   return (
     <Container>
@@ -164,7 +169,7 @@ export default function Dashboard() {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           />
-          
+
           <DashboardCard
             title="Aprobar Reservas"
             icon={<FaClipboardList size={24} style={getIconStyle()} />}
@@ -174,7 +179,7 @@ export default function Dashboard() {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           />
-          
+
           <DashboardCard
             title="Lector QR"
             icon={<FaQrcode size={24} style={getIconStyle()} />}

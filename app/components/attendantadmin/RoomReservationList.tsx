@@ -300,16 +300,18 @@ const RoomReservationList = () => {
     setSelectedReserva(reserva);
     setShowModal(true);
   };
+
+
   const handleCancelClick = (reserva: any) => {
     const toastId = `cancel-reserva-${reserva.id}`;
 
-    // Cierra cualquier toast abierto para esta reserva
-    toast.dismiss(toastId);
+    // Cierra cualquier toast activo
+    toast.dismiss();
 
     toast(
       (t) => (
         <div>
-          <p>¿Estás seguro de que deseas cancelar esta reserva?</p>
+          <p>¿Estás seguro de que deseas cancelar esta reserva <strong>#{reserva.id}</strong>?</p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button
               className="btn btn-sm btn-danger"
@@ -323,8 +325,9 @@ const RoomReservationList = () => {
                     }
                   );
 
+                  toast.dismiss(t.id); // Cierra el toast de confirmación
                   toast.success("Reserva cancelada exitosamente.", {
-                    id: toastId,
+                    id: `${toastId}-success`,
                   });
 
                   const updated = data.reserva;
@@ -338,12 +341,11 @@ const RoomReservationList = () => {
                     await fetchHistorial(updated.id, true);
                   }
                 } catch (err) {
+                  toast.dismiss(t.id);
                   toast.error("No se pudo cancelar la reserva.", {
-                    id: toastId,
+                    id: `${toastId}-error`,
                   });
                 }
-
-                toast.dismiss(t.id);
               }}
             >
               Sí, cancelar
@@ -359,11 +361,12 @@ const RoomReservationList = () => {
         </div>
       ),
       {
-        duration: 8000,
+        duration: 5000,
         id: toastId,
       }
     );
   };
+
 
 
 
@@ -463,6 +466,7 @@ const RoomReservationList = () => {
               <table className="table table-hover align-middle text-center">
                 <thead className="table-dark">
                   <tr>
+                    <th>#</th>
                     <th>Aula</th>
                     <th>Fecha</th>
                     <th>Horario</th>
@@ -484,6 +488,7 @@ const RoomReservationList = () => {
                             : ""
                         }
                       >
+                        <td>{res.id}</td>
                         <td>{res.aula?.name || "Aula Desconocida"}</td>
                         <td>{formatDate(res.fecha)}</td>
                         <td>{res.horario}</td>

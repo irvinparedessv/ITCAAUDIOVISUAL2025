@@ -79,47 +79,50 @@ export default function ReserveClassroom() {
 
 
   const showConfirmationToast = () => {
-  return new Promise((resolve) => {
-    // Cierra cualquier confirmación anterior
-    toast.dismiss("confirmation-toast");
+    return new Promise((resolve) => {
+      // Cierra cualquier confirmación anterior
+      toast.dismiss("confirmation-toast");
 
-    toast(
-      (t) => (
-        <div>
-          <p>{messages.update.question}</p>
-          <div className="d-flex justify-content-end gap-2 mt-2">
-            <button
-              className="btn btn-sm btn-success"
-              onClick={() => {
-                toast.dismiss(t.id);
-                resolve(true);
-              }}
-            >
-              {messages.update.confirmText}
-            </button>
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => {
-                toast.dismiss(t.id);
-                resolve(false);
-              }}
-            >
-              Cancelar
-            </button>
+      toast(
+        (t) => (
+          <div>
+            <p>{messages.update.question}</p>
+            <div className="d-flex justify-content-end gap-2 mt-2">
+              <button
+                className="btn btn-sm btn-success"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  resolve(true);
+                }}
+              >
+                {messages.update.confirmText}
+              </button>
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  resolve(false);
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
-        </div>
-      ),
-      {
-        duration: 5000,
-        id: "confirmation-toast", // ✅ ID fijo para evitar duplicados
-      }
-    );
-  });
-};
+        ),
+        {
+          duration: 5000,
+          id: "confirmation-toast", // ✅ ID fijo para evitar duplicados
+        }
+      );
+    });
+  };
 
 
   // === Cargar aulas y usuarios ===
   useEffect(() => {
+
+    toast.dismiss(); // limpia cualquier confirmación colgada
+
     const fetchAulas = async () => {
       try {
         const response = await api.get("/aulas");
@@ -299,63 +302,63 @@ export default function ReserveClassroom() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // Evita múltiples toasts iguales
-  toast.dismiss("submit-toast");
+    // Evita múltiples toasts iguales
+    toast.dismiss("submit-toast");
 
-  if (!selectedDate || !selectedTime || !selectedClassroom) {
-    toast.error("Completa todos los campos", { id: "submit-toast" });
-    return;
-  }
-
-  if (!id && (!selectedDate || !selectedTime || !selectedClassroom)) {
-    toast.error("Completa todos los campos", { id: "submit-toast" });
-    return;
-  }
-
-  if (id) {
-    const userConfirmed = await showConfirmationToast();
-    if (!userConfirmed) return;
-  }
-
-  const aula = availableClassrooms.find((c) => c.name === selectedClassroom);
-  if (!aula) {
-    toast.error("Aula no válida", { id: "submit-toast" });
-    return;
-  }
-
-  try {
-    setIsUpdating(true);
-
-    const payload = {
-      aula_id: aula.id,
-      fecha: formatDateLocal(selectedDate),
-      horario: selectedTime,
-      user_id: selectedPrestamista?.value?.toString() || userId,
-      estado: "pendiente",
-    };
-
-    let response;
-    if (id) {
-      response = await api.put(`/reservas-aula/${id}`, payload);
-      toast.success(messages.update.success, { id: "submit-toast" });
-    } else {
-      response = await api.post("/reservasAula", payload);
-      toast.success("¡Reserva creada exitosamente!", { id: "submit-toast" });
+    if (!selectedDate || !selectedTime || !selectedClassroom) {
+      toast.error("Completa todos los campos", { id: "submit-toast" });
+      return;
     }
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    await navigate("/reservations-room");
+    if (!id && (!selectedDate || !selectedTime || !selectedClassroom)) {
+      toast.error("Completa todos los campos", { id: "submit-toast" });
+      return;
+    }
 
-  } catch (error: any) {
-    const message =
-      error.response?.data?.message || (id ? messages.update.error : "Error al guardar la reserva");
-    toast.error(message, { id: "submit-toast" });
-  } finally {
-    setIsUpdating(false);
-  }
-};
+    if (id) {
+      const userConfirmed = await showConfirmationToast();
+      if (!userConfirmed) return;
+    }
+
+    const aula = availableClassrooms.find((c) => c.name === selectedClassroom);
+    if (!aula) {
+      toast.error("Aula no válida", { id: "submit-toast" });
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+
+      const payload = {
+        aula_id: aula.id,
+        fecha: formatDateLocal(selectedDate),
+        horario: selectedTime,
+        user_id: selectedPrestamista?.value?.toString() || userId,
+        estado: "pendiente",
+      };
+
+      let response;
+      if (id) {
+        response = await api.put(`/reservas-aula/${id}`, payload);
+        toast.success(messages.update.success, { id: "submit-toast" });
+      } else {
+        response = await api.post("/reservasAula", payload);
+        toast.success("¡Reserva creada exitosamente!", { id: "submit-toast" });
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await navigate("/reservations-room");
+
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || (id ? messages.update.error : "Error al guardar la reserva");
+      toast.error(message, { id: "submit-toast" });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
 
   const handleClearOrCancel = async () => {

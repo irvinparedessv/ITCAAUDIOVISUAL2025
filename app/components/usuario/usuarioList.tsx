@@ -64,86 +64,102 @@ export default function UsuarioList() {
   }, [filters]);
 
   const handleResetPassword = async (userId: number, email: string) => {
-  // Cerramos cualquier toast de confirmación previo para este usuario
-  toast.dismiss(`reset-toast-${userId}`);
+    const toastId = `reset-toast-${userId}`;
+    const loadingId = `loading-reset-${userId}`;
 
-  toast(
-    (t) => (
-      <div>
-        <p>¿Estás seguro que deseas restablecer la contraseña de {email}?</p>
-        <div className="d-flex justify-content-end gap-2 mt-2">
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={async () => {
-              toast.dismiss(t.id); // Cerramos el toast de confirmación
-              toast.loading("Enviando enlace...", { id: `loading-reset-${userId}` });
+    // Cierra todas las alertas activas
+    toast.dismiss();
 
-              try {
-                await forgotPassword(email);
-                toast.success(`Enlace enviado a ${email}`, { id: `loading-reset-${userId}` });
-              } catch {
-                toast.error("Error al enviar el enlace", { id: `loading-reset-${userId}` });
-              }
-            }}
-          >
-            Sí, restablecer
-          </button>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
+    toast(
+      (t) => (
+        <div>
+          <p>
+            ¿Estás seguro que deseas restablecer la contraseña de <strong>{email}</strong>?
+          </p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={async () => {
+                toast.dismiss(t.id); // Cierra el toast de confirmación
+                toast.loading("Enviando enlace...", { id: loadingId });
+
+                try {
+                  await forgotPassword(email);
+                  toast.success(`Enlace enviado a ${email}`, { id: loadingId });
+                } catch {
+                  toast.error("Error al enviar el enlace", { id: loadingId });
+                }
+              }}
+            >
+              Sí, restablecer
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ),
-    {
-      duration: 10000,
-      id: `reset-toast-${userId}` // ID único por usuario
-    }
-  );
-};
+      ),
+      {
+        duration: 5000,
+        id: toastId,
+      }
+    );
+  };
 
 
-  const confirmarEliminacion = (id: number) => {
-  // Cerramos cualquier toast existente con el mismo ID
-  toast.dismiss(`delete-toast-${id}`);
 
-  toast(
-    (t) => (
-      <div>
-        <p>¿Deseas desactivar este usuario?</p>
-        <div className="d-flex justify-content-end gap-2 mt-2">
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={async () => {
-              try {
-                await deleteUsuario(id);
-                toast.success("Usuario desactivado");
-                cargarUsuarios();
-              } catch {
-                toast.error("Error al desactivar usuario");
-              }
-              toast.dismiss(t.id);
-            }}
-          >
-            Sí, desactivar
-          </button>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
+  const confirmarEliminacion = (id: number, correo: string) => {
+    const toastId = `delete-toast-${id}`;
+
+    // Cierra todos los toasts activos antes de mostrar uno nuevo
+    toast.dismiss();
+
+    toast(
+      (t) => (
+        <div>
+          <p>
+            ¿Deseas desactivar al usuario <strong>{correo}</strong>?
+          </p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={async () => {
+                try {
+                  await deleteUsuario(id);
+                  toast.dismiss(t.id); // Cierra el toast de confirmación
+                  toast.success("Usuario desactivado correctamente", {
+                    id: `${toastId}-success`,
+                  });
+                  cargarUsuarios();
+                } catch {
+                  toast.dismiss(t.id);
+                  toast.error("Error al desactivar al usuario", {
+                    id: `${toastId}-error`,
+                  });
+                }
+              }}
+            >
+              Sí, desactivar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ),
-    {
-      duration: 8000,
-      id: `delete-toast-${id}`, // ID único para el toast
-    }
-  );
-};
+      ),
+      {
+        duration: 5000,
+        id: toastId,
+      }
+    );
+  };
+
 
 
   const handleFilterUpdate = (key: string, value: any) => {
@@ -174,7 +190,7 @@ export default function UsuarioList() {
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
 
-        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4">
+      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4">
         <div className="d-flex align-items-center gap-3">
           <FaLongArrowAltLeft
             onClick={handleBack}
@@ -191,13 +207,13 @@ export default function UsuarioList() {
           variant="primary"
           onClick={() => navigate("/formUsuario")}
           className="d-flex align-items-center gap-2"
-          style={{ 
+          style={{
             transition: "transform 0.2s ease-in-out"
           }}
-          onMouseEnter={(e) => 
+          onMouseEnter={(e) =>
             (e.currentTarget.style.transform = "scale(1.03)")
           }
-          onMouseLeave={(e) => 
+          onMouseLeave={(e) =>
             (e.currentTarget.style.transform = "scale(1)")
           }
         >
@@ -232,13 +248,13 @@ export default function UsuarioList() {
           variant="outline-secondary"
           onClick={() => setShowFilters(!showFilters)}
           className="d-flex align-items-center gap-2"
-          style={{ 
+          style={{
             transition: "transform 0.2s ease-in-out"
           }}
-          onMouseEnter={(e) => 
+          onMouseEnter={(e) =>
             (e.currentTarget.style.transform = "scale(1.03)")
           }
-          onMouseLeave={(e) => 
+          onMouseLeave={(e) =>
             (e.currentTarget.style.transform = "scale(1)")
           }
         >
@@ -268,27 +284,27 @@ export default function UsuarioList() {
             </div>
 
             <div className="col-md-6">
-  <Form.Label>Estado</Form.Label>
-  <Form.Select
-    value={
-      filters.estado === undefined
-        ? ""
-        : filters.estado === 1
-        ? "1"
-        : "0"
-    }
-    onChange={(e) =>
-      handleFilterUpdate(
-        "estado",
-        e.target.value === "" ? undefined : Number(e.target.value)
-      )
-    }
-  >
-    <option value="">Todos</option>
-    <option value="1">Activo</option>
-    <option value="0">Inactivo</option>
-  </Form.Select>
-</div>
+              <Form.Label>Estado</Form.Label>
+              <Form.Select
+                value={
+                  filters.estado === undefined
+                    ? ""
+                    : filters.estado === 1
+                      ? "1"
+                      : "0"
+                }
+                onChange={(e) =>
+                  handleFilterUpdate(
+                    "estado",
+                    e.target.value === "" ? undefined : Number(e.target.value)
+                  )
+                }
+              >
+                <option value="">Todos</option>
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+              </Form.Select>
+            </div>
 
 
             <div className="col-12">
@@ -296,13 +312,13 @@ export default function UsuarioList() {
                 variant="outline-danger"
                 onClick={resetFilters}
                 className="w-100"
-                style={{ 
+                style={{
                   transition: "transform 0.2s ease-in-out"
                 }}
-                onMouseEnter={(e) => 
+                onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.03)")
                 }
-                onMouseLeave={(e) => 
+                onMouseLeave={(e) =>
                   (e.currentTarget.style.transform = "scale(1)")
                 }
               >
@@ -381,15 +397,15 @@ export default function UsuarioList() {
                             className="rounded-circle"
                             title="Editar usuario"
                             onClick={() => navigate(`/editarUsuario/${user.id}`)}
-                            style={{ 
-                              width: "44px", 
+                            style={{
+                              width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out"
                             }}
-                            onMouseEnter={(e) => 
+                            onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
-                            onMouseLeave={(e) => 
+                            onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                           >
@@ -400,15 +416,15 @@ export default function UsuarioList() {
                             className="rounded-circle"
                             title="Restablecer contraseña"
                             onClick={() => handleResetPassword(user.id, user.email)}
-                            style={{ 
-                              width: "44px", 
+                            style={{
+                              width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out"
                             }}
-                            onMouseEnter={(e) => 
+                            onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
-                            onMouseLeave={(e) => 
+                            onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                           >
@@ -418,16 +434,16 @@ export default function UsuarioList() {
                             variant="outline-danger"
                             className="rounded-circle"
                             title="Eliminar usuario"
-                            onClick={() => confirmarEliminacion(user.id)}
-                            style={{ 
-                              width: "44px", 
+                            onClick={() => confirmarEliminacion(user.id, user.email)}
+                            style={{
+                              width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out"
                             }}
-                            onMouseEnter={(e) => 
+                            onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
-                            onMouseLeave={(e) => 
+                            onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                           >

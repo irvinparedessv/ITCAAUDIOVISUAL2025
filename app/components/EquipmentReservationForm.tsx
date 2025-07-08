@@ -374,6 +374,9 @@ export default function EquipmentReservationForm() {
   };
 
   useEffect(() => {
+    toast.dismiss(); // limpia cualquier confirmación colgada
+  }, []);
+  useEffect(() => {
     if (formData.tipoReserva?.label !== "Eventos" && uploadedFile) {
       setUploadedFile(null);
       toast("ℹ️ Documento eliminado porque el tipo de reserva no es Eventos");
@@ -723,8 +726,8 @@ export default function EquipmentReservationForm() {
               <div
                 {...getRootProps()}
                 className={`border rounded p-4 text-center cursor-pointer ${isDragActive
-                    ? "border-primary bg-light"
-                    : "border-secondary-subtle"
+                  ? "border-primary bg-light"
+                  : "border-secondary-subtle"
                   }`}
               >
                 <input {...getInputProps()} />

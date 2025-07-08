@@ -31,7 +31,7 @@ export default function TipoEquipoForm({
   }, [tipoEditado]);
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/");
   };
 
   const handleSubmit = async () => {

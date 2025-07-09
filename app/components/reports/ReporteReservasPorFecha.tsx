@@ -399,29 +399,31 @@ const ReporteReservasPorFecha = () => {
               </Form.Group>
             </Col>
 
-            <Col md={2} className="d-flex gap-2">
-              <Button
-                variant="primary"
-                onClick={handleBuscarClick}
-                disabled={loading}
-                className="flex-fill d-flex align-items-center justify-content-center gap-2"
-              >
-                {loading ? (
-                  <Spinner size="sm" animation="border" />
-                ) : (
-                  <>
-                    <FaSearch /> Buscar
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline-secondary"
-                onClick={limpiarFiltros}
-                disabled={loading}
-                className="d-flex align-items-center justify-content-center gap-2"
-              >
-                <FaEraser /> Limpiar
-              </Button>
+            <Col md={12} className="mt-3">
+              <div className="d-flex gap-2 justify-content-end">
+                <Button
+                  variant="primary"
+                  onClick={handleBuscarClick}
+                  disabled={loading}
+                  className="d-flex align-items-center justify-content-center gap-2"
+                >
+                  {loading ? (
+                    <Spinner size="sm" animation="border" />
+                  ) : (
+                    <>
+                      <FaSearch /> Buscar
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  onClick={limpiarFiltros}
+                  disabled={loading}
+                  className="d-flex align-items-center justify-content-center gap-2"
+                >
+                  <FaEraser /> Limpiar
+                </Button>
+              </div>
             </Col>
           </Row>
         </Card.Body>

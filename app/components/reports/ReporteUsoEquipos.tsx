@@ -1,25 +1,24 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Button, Card, Container, Form, Row, Col, Spinner, Table } from "react-bootstrap";
+import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
-import { Table, Button, Form, Spinner } from "react-bootstrap";
+import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import toast from "react-hot-toast";
 import PaginationComponent from "~/utils/Pagination";
-
-// Importar componentes de Recharts para el gráfico
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
-import { FaLongArrowAltLeft } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useTheme } from "~/hooks/ThemeContext";
 
 interface EquipoUsoReporte {
   equipo: string;
@@ -34,27 +33,34 @@ const ReporteUsoEquipos = () => {
   const [equipos, setEquipos] = useState<EquipoUsoReporte[]>([]);
   const [tiposEquipo, setTiposEquipo] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate()
+  const { darkMode } = useTheme();
+  const navigate = useNavigate();
 
+  // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const perPage = 20;
+  const perPage = 10;
 
   useEffect(() => {
-    (async () => {
+    const fetchTiposEquipo = async () => {
       try {
         const res = await api.get("/tipoEquipos");
         setTiposEquipo(res.data.map((t: any) => t.nombre));
       } catch (err) {
         console.error(err);
-        toast.error("Error cargando tipos de equipo");
+        toast.error("Error cargando tipos de equipo", { id: "error-tipos-equipo" });
       }
-    })();
+    };
+
+    fetchTiposEquipo();
   }, []);
 
   const fetchEquipos = async (page = 1) => {
+    const ERROR_FILTROS_ID = "error-filtros";
+    const ERROR_REPORTE_ID = "error-obtener-reporte";
+
     if (!desde || !hasta) {
-      toast.error("Selecciona ambas fechas");
+      toast.error("Selecciona ambas fechas", { id: ERROR_FILTROS_ID });
       return;
     }
 
@@ -75,7 +81,7 @@ const ReporteUsoEquipos = () => {
       setTotalPages(res.data.last_page || 1);
     } catch (err) {
       console.error(err);
-      toast.error("Error al obtener datos");
+      toast.error("Error al obtener datos", { id: ERROR_REPORTE_ID });
     } finally {
       setLoading(false);
     }
@@ -91,10 +97,14 @@ const ReporteUsoEquipos = () => {
     setHasta("");
     setTipoEquipo("");
     setEquipos([]);
+    setCurrentPage(1);
   };
 
-  // Exportar Excel
-  const exportarExcel = async () => {
+  const exportarExcel = () => {
+    const toastId = "confirmar-excel";
+    toast.dismiss(toastId);
+    toast.dismiss("confirmar-pdf");
+
     toast(
       (t) => (
         <div>
@@ -107,7 +117,6 @@ const ReporteUsoEquipos = () => {
                 toast.loading("Generando Excel...", { id: "excel-download" });
 
                 try {
-                  // Exportar todos sin paginación (puedes hacer paginación en backend si quieres)
                   const params: any = { from: desde, to: hasta };
                   if (tipoEquipo) params.tipo_equipo = tipoEquipo;
 
@@ -128,7 +137,7 @@ const ReporteUsoEquipos = () => {
 
                   const ws = XLSX.utils.json_to_sheet(datos);
                   const wb = XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(wb, ws, "Uso Equipos");
+                  XLSX.utils.book_append_sheet(wb, ws, "UsoEquipos");
                   const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
                   saveAs(new Blob([buffer], { type: "application/octet-stream" }), "ReporteUsoEquipos.xlsx");
 
@@ -141,20 +150,28 @@ const ReporteUsoEquipos = () => {
             >
               Sí, descargar
             </button>
-            <button className="btn btn-sm btn-secondary" onClick={() => toast.dismiss(t.id)}>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
               Cancelar
             </button>
           </div>
         </div>
       ),
-      { duration: 10000 }
+      {
+        duration: 5000,
+        id: toastId,
+      }
     );
   };
 
-  // Exportar PDF
- const exportarPDF = async () => {
-  toast(
-    (t) => (
+  const exportarPDF = () => {
+    const toastId = "confirmar-pdf";
+    toast.dismiss(toastId);
+    toast.dismiss("confirmar-excel");
+
+    toast((t) => (
       <div>
         <p>¿Estás seguro que deseas descargar el reporte en formato PDF?</p>
         <div className="d-flex justify-content-end gap-2 mt-2">
@@ -178,72 +195,56 @@ const ReporteUsoEquipos = () => {
 
                 const doc = new jsPDF();
                 const logo = new Image();
-                logo.src = "/images/logo.png"; // Ajusta la ruta según corresponda
+                logo.src = "/images/logo.png";
 
-                await new Promise<void>((resolve, reject) => {
-                  logo.onload = () => {
-                    try {
-                      const fechaHora = new Date();
-                      const fechaStr = fechaHora.toLocaleDateString("es-ES");
-                      const horaStr = fechaHora.toLocaleTimeString("es-ES", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                        hour12: true,
-                      });
-
-                      const body = all.map((r: EquipoUsoReporte, i: number) => [
-                        i + 1,
-                        r.equipo,
-                        r.tipo_equipo,
-                        r.total_cantidad,
-                      ]);
-
-                      // Dibuja el logo
-                      doc.addImage(logo, "PNG", 15, 15, 40, 11);
-
-                      // Encabezados de texto junto al logo
-                      doc.setFontSize(16);
-                      doc.text("Reporte de Uso de Equipos", 60, 18);
-                      doc.setFontSize(10);
-                      doc.text(`Generado: ${fechaStr} ${horaStr}`, 60, 25);
-                      doc.text(`Rango: ${desde} a ${hasta}`, 60, 30);
-                      doc.text(`Tipo Equipo: ${tipoEquipo || "Todos"}`, 60, 35);
-
-                      autoTable(doc, {
-                        head: [["#", "Equipo", "Tipo de Equipo", "Cantidad Total Reservada"]],
-                        body,
-                        startY: 50,
-                        styles: { fontSize: 8, cellPadding: 3 },
-                        headStyles: { fillColor: [107, 0, 0], textColor: 255, fontStyle: "bold" },
-                        margin: { top: 10 },
-                        didDrawPage: (data) => {
-                          const pageSize = doc.internal.pageSize;
-                          const pageHeight = typeof pageSize.getHeight === "function"
-                            ? pageSize.getHeight()
-                            : pageSize.height;
-                          const totalPages = doc.getNumberOfPages();
-                          doc.setFontSize(8);
-                          doc.text(
-                            `Página ${data.pageNumber} de ${totalPages}`,
-                            pageSize.width - 40,
-                            pageHeight - 10
-                          );
-                        }
-                      });
-
-                      doc.save("ReporteUsoEquipos.pdf");
-                      resolve();
-                    } catch (error) {
-                      reject(error);
-                    }
-                  };
-
-                  logo.onerror = () => {
-                    reject(new Error("No se pudo cargar el logo"));
-                  };
+                const fechaHora = new Date();
+                const fechaStr = fechaHora.toLocaleDateString("es-ES");
+                const horaStr = fechaHora.toLocaleTimeString("es-ES", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
                 });
 
+                const head = [["#", "Equipo", "Tipo de Equipo", "Cantidad Total Reservada"]];
+
+                const body = all.map((r: EquipoUsoReporte, i: number) => [
+                  i + 1,
+                  r.equipo,
+                  r.tipo_equipo,
+                  r.total_cantidad,
+                ]);
+
+                doc.addImage(logo, "PNG", 15, 15, 45, 11);
+                doc.setFontSize(16).text("Reporte de Uso de Equipos", 60, 18);
+                doc.setFontSize(10)
+                  .text(`Generado: ${fechaStr} - ${horaStr}`, 60, 25)
+                  .text(`Rango: ${desde} a ${hasta}`, 60, 30)
+                  .text(`Tipo Equipo: ${tipoEquipo || "Todos"}`, 60, 35);
+
+                autoTable(doc, {
+                  head,
+                  body,
+                  startY: 45,
+                  styles: { fontSize: 8, cellPadding: 3 },
+                  headStyles: {
+                    fillColor: [107, 0, 0],
+                    textColor: 255,
+                    fontStyle: "bold",
+                  },
+                  margin: { top: 10 },
+                  didDrawPage: (data) => {
+                    const pageSize = doc.internal.pageSize;
+                    const pageHeight = typeof pageSize.getHeight === "function"
+                      ? pageSize.getHeight()
+                      : pageSize.height;
+                    doc.setFontSize(8)
+                      .text(`Página ${data.pageNumber} de ${doc.getNumberOfPages()}`,
+                        pageSize.width - 40, pageHeight - 10);
+                  }
+                });
+
+                doc.save("ReporteUsoEquipos.pdf");
                 toast.success("PDF descargado correctamente", { id: "pdf-download" });
               } catch (error) {
                 console.error(error);
@@ -261,129 +262,205 @@ const ReporteUsoEquipos = () => {
           </button>
         </div>
       </div>
-    ),
-    { duration: 10000 }
-  );
-};
+    ), {
+      duration: 5000,
+      id: toastId,
+    });
+  };
 
-   const handleBack = () => {
-    navigate(-1); // Redirige a la ruta de inicio
+  const handleBack = () => {
+    navigate(-1);
   };
 
   return (
-    <div className="container mt-4">
-       <div className="d-flex align-items-center gap-3 mb-4">
-                                <FaLongArrowAltLeft
-                                  onClick={handleBack}
-                                  title="Regresar"
-                                  style={{
-                                    cursor: 'pointer',
-                                    fontSize: '2rem',
-                                    marginTop: '2px' // Ajuste fino para alinear visualmente el icono con el texto
-                                  }}
-                                />
-                                <h3 className="mb-0">Reporte de uso de equipos</h3>
-                              </div>
-
-      {/* Filtros */}
-      <div className="d-flex gap-3 align-items-end flex-wrap mb-4">
-        <Form.Group>
-          <Form.Label>Desde</Form.Label>
-          <Form.Control type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
-        </Form.Group>
-
-        <Form.Group>
-          <Form.Label>Hasta</Form.Label>
-          <Form.Control type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
-        </Form.Group>
-
-        <Form.Group>
-          <Form.Label>Tipo de Equipo</Form.Label>
-          <Form.Select value={tipoEquipo} onChange={(e) => setTipoEquipo(e.target.value)}>
-            <option value="">Todos</option>
-            {tiposEquipo.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
-
-        <Button onClick={handleBuscarClick} disabled={loading}>
-          {loading ? <Spinner size="sm" animation="border" /> : "Buscar"}
-        </Button>
-
-        <Button variant="outline-danger" onClick={limpiarFiltros} disabled={loading}>
-          Limpiar
-        </Button>
-
-        <div className="ms-auto d-flex gap-2">
-          <Button variant="success" onClick={exportarExcel} disabled={loading}>
-            Exportar Excel
-          </Button>
-          <Button variant="danger" onClick={exportarPDF} disabled={loading}>
-            Exportar PDF
-          </Button>
-        </div>
-      </div>
-
-      {/* Gráfico de barras */}
-      {equipos.length > 0 && (
-        <div style={{ width: "100%", height: 300, marginBottom: 40 }}>
-          <ResponsiveContainer>
-            <BarChart data={equipos}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="equipo" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="total_cantidad" fill="#6b0000" name="Cantidad Total Reservada" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* Tabla */}
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Equipo</th>
-            <th>Tipo de Equipo</th>
-            <th>Cantidad Total Reservada</th>
-          </tr>
-        </thead>
-        <tbody>
-          {equipos.length === 0 ? (
-            <tr>
-              <td colSpan={4} className="text-center">
-                No hay resultados
-              </td>
-            </tr>
-          ) : (
-            equipos.map((e, i) => (
-              <tr key={i}>
-                <td>{i + 1 + (currentPage - 1) * perPage}</td>
-                <td>{e.equipo}</td>
-                <td>{e.tipo_equipo}</td>
-                <td>{e.total_cantidad}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </Table>
-
-      {/* Paginación */}
-      {equipos.length > 0 && (
-        <PaginationComponent
-          page={currentPage}
-          totalPages={totalPages}
-          onPageChange={(p) => {
-            setCurrentPage(p);
-            fetchEquipos(p);
+    <Container className="mt-4">
+      <div className="d-flex align-items-center gap-3 mb-4">
+        <FaLongArrowAltLeft
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: 'pointer',
+            fontSize: '2rem'
           }}
         />
-      )}
-    </div>
+        <h2 className="mb-0">
+          Reporte de uso de equipos
+        </h2>
+      </div>
+
+      <Card className="shadow-sm mb-4">
+        <Card.Body>
+          <Row className="g-3 align-items-end">
+            <Col md={2}>
+              <Form.Group controlId="desde">
+                <Form.Label className="fw-bold">Desde <span className="text-danger">*</span></Form.Label>
+                <Form.Control
+                  type="date"
+                  value={desde}
+                  onChange={(e) => setDesde(e.target.value)}
+                  max={hasta || undefined}
+                />
+              </Form.Group>
+            </Col>
+
+            <Col md={2}>
+              <Form.Group controlId="hasta">
+                <Form.Label className="fw-bold">Hasta <span className="text-danger">*</span></Form.Label>
+                <Form.Control
+                  type="date"
+                  value={hasta}
+                  onChange={(e) => setHasta(e.target.value)}
+                  min={desde || undefined}
+                />
+              </Form.Group>
+            </Col>
+
+            <Col md={3}>
+              <Form.Group controlId="tipoEquipo">
+                <Form.Label className="fw-bold">Tipo de equipo</Form.Label>
+                <Form.Select
+                  value={tipoEquipo}
+                  onChange={(e) => setTipoEquipo(e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  {tiposEquipo.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+
+            <Col md={3} className="d-flex align-items-end gap-2">
+              <Button
+                variant="primary"
+                onClick={handleBuscarClick}
+                disabled={loading}
+                className="d-flex align-items-center justify-content-center gap-2 flex-grow-1"
+                style={{ height: '48px' }}
+              >
+                {loading ? (
+                  <Spinner size="sm" animation="border" />
+                ) : (
+                  <>
+                    <FaSearch /> Buscar
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline-secondary"
+                onClick={limpiarFiltros}
+                disabled={loading}
+                className="d-flex align-items-center justify-content-center gap-2 flex-grow-1"
+                style={{ height: '48px' }}
+              >
+                <FaEraser /> Limpiar
+              </Button>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+
+      <Card className="shadow-sm mb-4">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="mb-0">
+              Resultados de la búsqueda
+            </h5>
+            <div className="d-flex gap-2">
+              <Button
+                variant="success"
+                onClick={exportarExcel}
+                disabled={loading || equipos.length === 0}
+                className="d-flex align-items-center gap-2"
+              >
+                <FaFileExcel /> Excel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={exportarPDF}
+                disabled={loading || equipos.length === 0}
+                className="d-flex align-items-center gap-2"
+              >
+                <FaFilePdf /> PDF
+              </Button>
+            </div>
+          </div>
+
+          {equipos.length > 0 && (
+            <div style={{ width: "100%", height: 350, marginBottom: 30 }}>
+              <ResponsiveContainer>
+                <BarChart data={equipos}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="equipo" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: darkMode ? '#fff' : '#f9f9f9',
+                      borderColor: '#6b0000',
+                      color: '#6b0000',
+                    }}
+                    labelStyle={{
+                      color: '#6b0000',
+                    }}
+                  />
+                  <Bar dataKey="total_cantidad" fill="#6b0000" name="Cantidad Total Reservada" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          <div className="table-responsive">
+            <Table striped hover className="mb-0">
+              <thead className="table-dark">
+                <tr>
+                  <th>#</th>
+                  <th>Equipo</th>
+                  <th>Tipo de Equipo</th>
+                  <th>Cantidad Total Reservada</th>
+                </tr>
+              </thead>
+              <tbody>
+                {equipos.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-4">
+                      {loading ? (
+                        <Spinner animation="border" variant="primary" />
+                      ) : (
+                        "No hay resultados para mostrar. Realiza una búsqueda para ver los datos."
+                      )}
+                    </td>
+                  </tr>
+                ) : (
+                  equipos.map((e, i) => (
+                    <tr key={i}>
+                      <td>{(currentPage - 1) * perPage + i + 1}</td>
+                      <td>{e.equipo}</td>
+                      <td>{e.tipo_equipo}</td>
+                      <td>{e.total_cantidad}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </Table>
+          </div>
+
+          {equipos.length > 0 && (
+            <div className="mt-3">
+              <PaginationComponent
+                page={currentPage}
+                totalPages={totalPages}
+                onPageChange={(p) => {
+                  setCurrentPage(p);
+                  fetchEquipos(p);
+                }}
+              />
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+    </Container>
   );
 };
 

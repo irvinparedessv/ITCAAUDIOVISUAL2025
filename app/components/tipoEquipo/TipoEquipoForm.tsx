@@ -35,8 +35,10 @@ export default function TipoEquipoForm({
   };
 
   const handleSubmit = async () => {
+    toast.dismiss();
     if (!nombre.trim()) {
       toast.error("El nombre del tipo de equipo es obligatorio", {
+        id: "error-nombre-obligatorio",
         style: {
           background: "#363636",
           color: "#fff",
@@ -49,6 +51,7 @@ export default function TipoEquipoForm({
       if (tipoEditado) {
         await updateTipoEquipo(tipoEditado.id, { nombre });
         toast.success("Tipo de equipo actualizado correctamente", {
+          id: "exito-actualizacion",
           style: {
             background: "#363636",
             color: "#fff",
@@ -57,6 +60,7 @@ export default function TipoEquipoForm({
       } else {
         await createTipoEquipo({ nombre });
         toast.success("Tipo de equipo creado exitosamente", {
+          id: "exito-creacion",
           style: {
             background: "#363636",
             color: "#fff",
@@ -69,6 +73,7 @@ export default function TipoEquipoForm({
     } catch (error) {
       console.error(error);
       toast.error("Ocurrió un error al guardar el tipo de equipo", {
+        id: "error-guardar",
         style: {
           background: "#363636",
           color: "#fff",
@@ -83,6 +88,11 @@ export default function TipoEquipoForm({
   };
 
   const handleUpdateWithConfirmation = () => {
+    const toastId = "confirmar-actualizacion";
+    toast.dismiss();
+    // Cierra cualquier toast con este id abierto para evitar duplicados
+    toast.dismiss(toastId);
+
     toast(
       (t) => (
         <div>
@@ -94,30 +104,18 @@ export default function TipoEquipoForm({
                 toast.dismiss(t.id);
                 await handleSubmit();
               }}
-              style={{ 
-                transition: "transform 0.2s ease-in-out"
-              }}
-              onMouseEnter={(e) => 
-                (e.currentTarget.style.transform = "scale(1.03)")
-              }
-              onMouseLeave={(e) => 
-                (e.currentTarget.style.transform = "scale(1)")
-              }
+              style={{ transition: "transform 0.2s ease-in-out" }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
               Sí, actualizar
             </button>
             <button
               className="btn btn-sm btn-secondary"
               onClick={() => toast.dismiss(t.id)}
-              style={{ 
-                transition: "transform 0.2s ease-in-out"
-              }}
-              onMouseEnter={(e) => 
-                (e.currentTarget.style.transform = "scale(1.03)")
-              }
-              onMouseLeave={(e) => 
-                (e.currentTarget.style.transform = "scale(1)")
-              }
+              style={{ transition: "transform 0.2s ease-in-out" }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
               Cancelar
             </button>
@@ -130,29 +128,31 @@ export default function TipoEquipoForm({
           background: "#363636",
           color: "#fff",
         },
+        id: toastId, // <-- aquí el id para controlar la instancia
       }
     );
   };
+
 
   return (
     <div className="form-container">
       <div className="d-flex">
         <FaLongArrowAltLeft
-    onClick={handleBack}
-    title="Regresar"
-    style={{
-      cursor: 'pointer',
-      fontSize: '2rem',
-      transition: 'transform 0.2s ease-in-out',
-      marginRight: '0.5rem' // Añadido este estilo
-    }}
-    onMouseEnter={(e) => 
-      (e.currentTarget.style.transform = 'scale(1.1)')
-    }
-    onMouseLeave={(e) => 
-      (e.currentTarget.style.transform = 'scale(1)')
-    }
-  />
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: 'pointer',
+            fontSize: '2rem',
+            transition: 'transform 0.2s ease-in-out',
+            marginRight: '0.5rem' // Añadido este estilo
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.transform = 'scale(1.1)')
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.transform = 'scale(1)')
+          }
+        />
         <h2 className="fw-bold">
           {tipoEditado ? "Editar Tipo de Equipo" : "Agregar Nuevo Tipo de Equipo"}
         </h2>
@@ -180,13 +180,13 @@ export default function TipoEquipoForm({
                 type="button"
                 className="btn primary-btn"
                 onClick={handleUpdateWithConfirmation}
-                style={{ 
+                style={{
                   transition: "transform 0.2s ease-in-out"
                 }}
-                onMouseEnter={(e) => 
+                onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.03)")
                 }
-                onMouseLeave={(e) => 
+                onMouseLeave={(e) =>
                   (e.currentTarget.style.transform = "scale(1)")
                 }
               >
@@ -197,13 +197,13 @@ export default function TipoEquipoForm({
                 type="button"
                 className="btn secondary-btn"
                 onClick={handleClear}
-                style={{ 
+                style={{
                   transition: "transform 0.2s ease-in-out"
                 }}
-                onMouseEnter={(e) => 
+                onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.03)")
                 }
-                onMouseLeave={(e) => 
+                onMouseLeave={(e) =>
                   (e.currentTarget.style.transform = "scale(1)")
                 }
               >
@@ -217,13 +217,13 @@ export default function TipoEquipoForm({
                 type="button"
                 className="btn primary-btn"
                 onClick={handleSubmit}
-                style={{ 
+                style={{
                   transition: "transform 0.2s ease-in-out"
                 }}
-                onMouseEnter={(e) => 
+                onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.03)")
                 }
-                onMouseLeave={(e) => 
+                onMouseLeave={(e) =>
                   (e.currentTarget.style.transform = "scale(1)")
                 }
               >
@@ -234,13 +234,13 @@ export default function TipoEquipoForm({
                 type="button"
                 className="btn secondary-btn"
                 onClick={handleClear}
-                style={{ 
+                style={{
                   transition: "transform 0.2s ease-in-out"
                 }}
-                onMouseEnter={(e) => 
+                onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.03)")
                 }
-                onMouseLeave={(e) => 
+                onMouseLeave={(e) =>
                   (e.currentTarget.style.transform = "scale(1)")
                 }
               >

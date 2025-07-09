@@ -439,31 +439,33 @@ const ReporteUsoAulas = () => {
               </Form.Group>
             </Col>
 
-            <Col md={3} className="d-flex align-items-end gap-2">
-              <Button
-                variant="primary"
-                onClick={handleBuscarClick}
-                disabled={loading}
-                className="d-flex align-items-center justify-content-center gap-2 flex-grow-1"
-                style={{ height: '48px' }}
-              >
-                {loading ? (
-                  <Spinner size="sm" animation="border" />
-                ) : (
-                  <>
-                    <FaSearch /> Buscar
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline-secondary"
-                onClick={limpiarFiltros}
-                disabled={loading}
-                className="d-flex align-items-center justify-content-center gap-2 flex-grow-1"
-                style={{ height: '48px' }}
-              >
-                <FaEraser /> Limpiar
-              </Button>
+            <Col md={3} className="mt-3">
+              <div className="d-flex flex-wrap gap-2 justify-content-end">
+                <Button
+                  variant="primary"
+                  onClick={handleBuscarClick}
+                  disabled={loading}
+                  className="d-flex align-items-center justify-content-center gap-2"
+                  style={{ height: '48px' }}
+                >
+                  {loading ? (
+                    <Spinner size="sm" animation="border" />
+                  ) : (
+                    <>
+                      <FaSearch /> Buscar
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  onClick={limpiarFiltros}
+                  disabled={loading}
+                  className="d-flex align-items-center justify-content-center gap-2"
+                  style={{ height: '48px' }}
+                >
+                  <FaEraser /> Limpiar
+                </Button>
+              </div>
             </Col>
           </Row>
         </Card.Body>

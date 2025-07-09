@@ -1,6 +1,24 @@
 import api from "../api/axios";
 import type { TipoEquipo } from "app/types/tipoEquipo";
 
+interface TipoEquipoResponse {
+  data: TipoEquipo[];
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+}
+
+export const getTipoEquipo = async (page = 1): Promise<TipoEquipoResponse> => {
+  try {
+    const res = await api.get(`/obtenerTipo?page=${page}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error al obtener los tipos de equipo:", error);
+    throw error;
+  }
+};
+
 export const getTipoEquipos = async (): Promise<TipoEquipo[]> => {
   try {
     const res = await api.get("/tipoEquipos");

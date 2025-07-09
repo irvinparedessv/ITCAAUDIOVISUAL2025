@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Card, Col, Row } from "react-bootstrap";
+import { Button, Card, Col, Row, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import {
   FaEnvelope,
@@ -14,11 +14,13 @@ import { getPerfil } from "../../services/userService";
 const VerPerfil = () => {
   const [user, setUser] = useState<any>({});
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getPerfil()
       .then((res) => setUser(res))
-      .catch((err) => console.error(err));
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false)); // 👈 Asegura que se oculte el spinner
   }, []);
 
   const getRoleName = (roleId: number) => {
@@ -29,6 +31,8 @@ const VerPerfil = () => {
         return "Encargado";
       case 3:
         return "Docente";
+      case 4:
+        return "Encargado Espacio";
       default:
         return "Desconocido";
     }
@@ -37,6 +41,16 @@ const VerPerfil = () => {
   const getEstadoName = (estado: number) => {
     return estado === 1 ? "Activo" : "Inactivo";
   };
+
+  // ✅ Mostrar spinner mientras carga
+  if (loading) {
+    return (
+      <div className="text-center my-5">
+        <Spinner animation="border" variant="primary" />
+        <p className="mt-3">Cargando datos...</p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -135,7 +149,7 @@ const VerPerfil = () => {
             <hr />
 
             <div className="text-center mt-4 d-flex justify-content-center gap-3">
-              <Button variant="secondary" className="btn secondary-btn" onClick={() => navigate(-1)}>
+              <Button variant="secondary" className="btn secondary-btn" onClick={() => navigate('/')}>
                 Regresar
               </Button>
               <Button

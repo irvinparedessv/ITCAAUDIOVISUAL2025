@@ -26,6 +26,7 @@ type AuthContextType = {
   logout: () => Promise<void>;
   checkAccess: (route: string) => boolean;
   setUser: React.Dispatch<React.SetStateAction<UserLogin | null>>;
+  updateUser: (updatedFields: Partial<UserLogin>) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -176,6 +177,16 @@ const logout = async () => {
     return allowedRoles.length === 0 || allowedRoles.includes(user.role);
   };
 
+  const updateUser = (updatedFields: Partial<UserLogin>) => {
+  setUser((prevUser) => {
+    if (!prevUser) return prevUser;
+    const updatedUser = { ...prevUser, ...updatedFields };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    return updatedUser;
+  });
+};
+
+
   const contextValue = useMemo(
     () => ({
       token,
@@ -186,6 +197,7 @@ const logout = async () => {
       logout,
       checkAccess,
       setUser,
+      updateUser, 
     }),
     [token, user, isLoading, isAuthenticated]
   );

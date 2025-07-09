@@ -8,6 +8,9 @@ import type { Crop, PixelCrop } from "react-image-crop";
 import { getPerfil, updateProfile } from "../../services/userService";
 import type { UserProfileUpdateDTO } from "app/types/user";
 import "react-image-crop/dist/ReactCrop.css";
+import { useAuth } from "../../hooks/AuthContext"; // ajusta si tu ruta es distinta
+import { Spinner } from "react-bootstrap";
+
 
 function centerAspectCrop(
   mediaWidth: number,
@@ -33,6 +36,7 @@ const EditPerfil = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { updateUser } = useAuth();
   const [formData, setFormData] = useState<UserProfileUpdateDTO>({
     first_name: "",
     last_name: "",
@@ -207,42 +211,48 @@ const EditPerfil = () => {
   const removeImage = () => {
     setFormData((prev) => ({ ...prev, image: "", image_url: "" }));
   };
-
+  
   const submitUpdate = async () => {
-  setSaving(true);
-  const form = new FormData();
+    setSaving(true);
+    const form = new FormData();
 
-  Object.entries(formData).forEach(([key, value]) => {
-    if (key === "image") {
-      if (value instanceof File) {
-        form.append("image", value);
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === "image") {
+        if (value instanceof File) {
+          form.append("image", value);
+        }
+      } else {
+        form.append(key, value?.toString() ?? "");
       }
-    } else {
-      form.append(key, value?.toString() ?? "");
+    });
+
+    try {
+      form.append("_method", "PUT"); // Laravel lo interpreta como PUT
+      const response = await updateProfile(form); // ✅ ya devuelve res.data
+
+      toast.success("Perfil actualizado correctamente");
+
+      const updatedUser = response.user; // ✅ response ya es .data, accedemos directo a .user
+
+      updateUser({
+        first_name: updatedUser.first_name,
+        last_name: updatedUser.last_name,
+        image: updatedUser.image, // ej. "user_images/xyz.jpg"
+      });
+
+      setFormData((prev) => ({ ...prev, image_url: "" }));
+
+      setTimeout(() => navigate("/perfil"), 1500);
+    } catch (error) {
+      toast.error("Error al actualizar el perfil");
+      console.error(error);
+    } finally {
+      setSaving(false);
     }
-  });
+  };
 
-  try {
-    await updateProfile(form);
-    toast.success("Perfil actualizado correctamente");
-    
-    // Emitir evento con los nuevos datos
-    window.dispatchEvent(new CustomEvent('userProfileUpdated', {
-      detail: {
-        image: formData.image_url,
-        firstName: formData.first_name,
-        lastName: formData.last_name
-      }
-    }));
-    
-    setTimeout(() => navigate("/perfil"), 1500);
-  } catch (error) {
-    toast.error("Error al actualizar el perfil");
-    console.error(error);
-  } finally {
-    setSaving(false);
-  }
-};
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,8 +294,9 @@ const EditPerfil = () => {
     return (
       <div className="form-container">
         <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Cargando...</span>
+          <div className="text-center my-5">
+            <Spinner animation="border" variant="primary" />
+            <p className="mt-3">Cargando datos...</p>
           </div>
         </div>
       </div>

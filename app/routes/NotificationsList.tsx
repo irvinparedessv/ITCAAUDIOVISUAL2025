@@ -9,11 +9,9 @@ import {
   Col,
   Modal,
   Button,
-  Toast,
-  ToastContainer,
 } from "react-bootstrap";
 import api from "../api/axios";
-
+import toast from "react-hot-toast";
 import {
   SwipeableList,
   SwipeableListItem,
@@ -23,7 +21,6 @@ import {
 } from "react-swipeable-list";
 import "react-swipeable-list/dist/styles.css";
 import { useNotificaciones } from "../hooks/useNotifications";
-
 
 interface Notification {
   id: string;
@@ -36,18 +33,12 @@ interface Notification {
 }
 
 export default function NotificationsList() {
-  const {
-    markAsRead,
-  } = useNotificaciones({ includeArchived: true });
+  const { markAsRead } = useNotificaciones({ includeArchived: true });
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [selectedNotification, setSelectedNotification] =
-    useState<Notification | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showDeleteAllToast, setShowDeleteAllToast] = useState(false);
-  const [showDeleteSuccessToast, setShowDeleteSuccessToast] = useState(false);
-  const [showDeleteErrorToast, setShowDeleteErrorToast] = useState(false);
 
   const loadNotifications = () => {
     setIsLoading(true);
@@ -59,6 +50,7 @@ export default function NotificationsList() {
       .catch((err) => {
         console.error("Error al cargar notificaciones", err);
         setIsLoading(false);
+        toast.error("Error al cargar notificaciones");
       });
   };
 
@@ -67,9 +59,14 @@ export default function NotificationsList() {
   }, []);
 
   const handleMarkAllAsRead = async () => {
-    await markAsRead(); // marcar todas
-    loadNotifications(); // recargar lista desde backend
-    window.dispatchEvent(new CustomEvent("notification-updated"));
+    try {
+      await markAsRead();
+      loadNotifications();
+      window.dispatchEvent(new CustomEvent("notification-updated"));
+      toast.success("Todas las notificaciones marcadas como leídas");
+    } catch (error) {
+      toast.error("Error al marcar como leídas");
+    }
   };
 
   const handleSelect = (id: string) => {
@@ -89,24 +86,21 @@ export default function NotificationsList() {
             n.id === id ? { ...n, read_at: res.data.notification.read_at } : n
           )
         );
-
-        // ✅ Añade esto justo aquí:
-        markAsRead(id); // tu función ya importada desde useNotificaciones
-
+        markAsRead(id);
         window.dispatchEvent(
           new CustomEvent("notification-updated", {
-            detail: { id }, // opcional, si el menú lo necesita
+            detail: { id },
           })
         );
       })
       .catch((err) => {
         console.error("Error al cargar detalle de la notificación", err);
         setNotifications((prev) => prev.filter((n) => n.id !== id));
+        toast.error("Error al cargar notificación");
       });
   };
 
-
-  function deleteNotification(id: string) {
+  const deleteNotification = (id: string) => {
     api.delete(`/notificaciones/${id}`)
       .then(() => {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -114,77 +108,90 @@ export default function NotificationsList() {
           setSelectedNotification(null);
           setShowModal(false);
         }
-        setShowDeleteSuccessToast(true);
+        toast.success("Notificación eliminada");
         window.dispatchEvent(new CustomEvent("notification-updated"));
       })
       .catch((err) => {
         console.error("Error al eliminar notificación", err);
-        setShowDeleteErrorToast(true);
+        toast.error("Error al eliminar notificación");
       });
-  }
+  };
 
-  function handleDeleteAll() {
-    setShowDeleteAllToast(true);
-  }
+  const confirmDeleteAll = () => {
+    toast.dismiss();
+    
+    toast(
+      (t) => (
+        <div className="p-2">
+          <p className="mb-3">
+            ¿Deseas eliminar <strong>todas</strong> las notificaciones?
+          </p>
+          <div className="d-flex justify-content-end gap-2">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={async () => {
+                try {
+                  await api.delete("/notifications");
+                  setNotifications([]);
+                  setSelectedNotification(null);
+                  setShowModal(false);
+                  toast.dismiss(t.id);
+                  toast.success("Todas las notificaciones eliminadas");
+                  window.dispatchEvent(new CustomEvent("notification-updated"));
+                } catch (err) {
+                  toast.dismiss(t.id);
+                  toast.error("Error al eliminar notificaciones");
+                }
+              }}
+            >
+              Sí, eliminar
+            </Button>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 10000,
+        style: {
+          minWidth: '300px',
+        },
+      }
+    );
+  };
 
-  function confirmDeleteAll() {
-    api.delete("/notifications")
-      .then(() => {
-        setNotifications([]);
-        setSelectedNotification(null);
-        setShowModal(false);
-        setShowDeleteSuccessToast(true);
-        window.dispatchEvent(new CustomEvent("notification-updated"));
-      })
-      .catch((err) => {
-        console.error("Error al eliminar todas las notificaciones", err);
-        setShowDeleteErrorToast(true);
-      })
-      .finally(() => {
-        setShowDeleteAllToast(false);
-      });
-  }
-
-  function cancelDeleteAll() {
-    setShowDeleteAllToast(false);
-  }
-
-  function leadingActions(id: string) {
+  const leadingActions = (id: string) => {
     return (
       <LeadingActions>
         <SwipeAction onClick={() => markAsRead(id)}>
-          <div
+          <div className="d-flex align-items-center justify-content-center h-100 px-3"
             style={{
-              padding: "0.75rem 1rem",
               background: "#d1e7dd",
               color: "#0f5132",
             }}
           >
-            Marcar como leída
+            ✅ Leída
           </div>
         </SwipeAction>
       </LeadingActions>
     );
-  }
+  };
 
-  function trailingActions(id: string) {
+  const trailingActions = (id: string) => {
     return (
       <TrailingActions>
         <SwipeAction destructive={true} onClick={() => deleteNotification(id)}>
-          <div
+          <div className="d-flex align-items-center justify-content-center h-100 px-3"
             style={{
-              padding: "0.75rem 1rem",
               background: "linear-gradient(90deg, #ff6b6b, #c0392b)",
               color: "#fff",
-              borderRadius: "8px",
               fontWeight: "bold",
-              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "0.95rem",
-              letterSpacing: "0.5px",
-              transition: "background 0.3s",
             }}
           >
             🗑️ Eliminar
@@ -192,9 +199,9 @@ export default function NotificationsList() {
         </SwipeAction>
       </TrailingActions>
     );
-  }
+  };
 
-  function formatDate(dateStr?: string) {
+  const formatDate = (dateStr?: string) => {
     if (!dateStr) return "No disponible";
     const date = new Date(dateStr);
     return (
@@ -202,7 +209,7 @@ export default function NotificationsList() {
       " " +
       date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     );
-  }
+  };
 
   const unreadNotifications = notifications.filter((n) => !n.read_at);
   const readNotifications = notifications.filter((n) => n.read_at);
@@ -215,18 +222,12 @@ export default function NotificationsList() {
 
     const getEstadoColor = (estado: string) => {
       switch (estado?.toLowerCase()) {
-        case 'aprobado':
-          return 'success';
-        case 'pendiente':
-          return 'warning';
-        case 'rechazado':
-          return 'danger';
-        case 'entregado':
-          return 'primary';
-        case 'devuelto':
-          return 'info';
-        default:
-          return 'secondary';
+        case 'aprobado': return 'success';
+        case 'pendiente': return 'warning';
+        case 'rechazado': return 'danger';
+        case 'entregado': return 'primary';
+        case 'devuelto': return 'info';
+        default: return 'secondary';
       }
     };
 
@@ -280,17 +281,12 @@ export default function NotificationsList() {
               </div>
             </Col>
 
-            {notification.data.comentario && (
+            {(notification.data.comentario || notification.data.reserva?.comentario) && (
               <Col xs={12} className="mb-3">
                 <strong>Comentario:</strong>
-                <div className="text-muted">{notification.data.comentario}</div>
-              </Col>
-            )}
-
-            {notification.data.reserva?.comentario && (
-              <Col xs={12} className="mb-3">
-                <strong>Comentario:</strong>
-                <div className="text-muted">{notification.data.reserva.comentario}</div>
+                <div className="text-muted">
+                  {notification.data.comentario || notification.data.reserva?.comentario}
+                </div>
               </Col>
             )}
 
@@ -351,10 +347,7 @@ export default function NotificationsList() {
                     {(() => {
                       const fechaStr = (notification.data.reserva?.fecha ?? notification.data.fecha).split(' ')[0];
                       const fechaObj = new Date(fechaStr);
-                      const day = String(fechaObj.getDate()).padStart(2, '0');
-                      const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
-                      const year = fechaObj.getFullYear();
-                      return `${day}/${month}/${year}`;
+                      return fechaObj.toLocaleDateString();
                     })()}
                   </div>
                 </Col>
@@ -387,7 +380,13 @@ export default function NotificationsList() {
             </Col>
           </Row>
 
-          <div className="mt-4 d-flex justify-content-end">
+          <div className="mt-4 d-flex justify-content-end gap-2">
+            <Button
+              variant="outline-secondary"
+              onClick={() => setShowModal(false)}
+            >
+              Cerrar
+            </Button>
             <Button
               variant="primary"
               onClick={() => {
@@ -396,7 +395,7 @@ export default function NotificationsList() {
                   navigate('/reservations', {
                     state: {
                       highlightReservaId: notification.data.reserva?.id,
-                      page: notification.data.page ?? 1, // ← asegúrate que el backend te lo envía
+                      page: notification.data.page ?? 1,
                     }
                   });
                 } else if (isAula) {
@@ -422,33 +421,34 @@ export default function NotificationsList() {
       <Row className="justify-content-center">
         <Col md={10}>
           <Card className="shadow rounded-4 border-0">
-            <Card.Header className="card-header-dark-red rounded-top-4 d-flex justify-content-between align-items-center">
+            <Card.Header className="card-header-dark-red rounded-top-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
               <h4 className="mb-0">📩 Notificaciones</h4>
-              <div className="d-flex gap-2 align-items-center">
-                <Button
-                  variant="success"
-                  size="sm"
-                  onClick={handleMarkAllAsRead}
-                  disabled={unreadNotifications.length === 0}
-                  className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill shadow-sm"
-                >
-                  ✅
-                  <span>Marcar todas como leídas</span>
-                </Button>
+              <div className="d-flex justify-content-end w-100 w-md-auto">
+                <div className="d-flex gap-2">
+                  <Button
+                    variant="outline-light"
+                    size="sm"
+                    onClick={handleMarkAllAsRead}
+                    disabled={unreadNotifications.length === 0}
+                    className="d-flex align-items-center gap-1 px-3 rounded-pill"
+                  >
+                    <span className="d-none d-md-inline">✅ Marcar todas</span>
+                    <span className="d-inline d-md-none">✓ Marcar todas</span>
+                  </Button>
 
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={handleDeleteAll}
-                  disabled={notifications.length === 0}
-                  className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill shadow-sm"
-                >
-                  🗑️
-                  <span>Eliminar todas</span>
-                </Button>
+                  <Button
+                    variant="outline-light"
+                    size="sm"
+                    onClick={confirmDeleteAll}
+                    disabled={notifications.length === 0}
+                    className="d-flex align-items-center gap-1 px-3 rounded-pill"
+                  >
+                    <span className="d-none d-md-inline">🗑️ Eliminar todas</span>
+                    <span className="d-inline d-md-none">🗑️ Eliminar todas</span>
+                  </Button>
+                </div>
               </div>
             </Card.Header>
-
 
             <Card.Body>
               {isLoading ? (
@@ -569,81 +569,6 @@ export default function NotificationsList() {
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         {selectedNotification && renderNotificationDetail(selectedNotification)}
       </Modal>
-
-      <ToastContainer
-        position="top-end"
-        className="mb-3"
-        style={{ zIndex: 1070 }}
-      >
-        {/* Toast de confirmación de eliminación */}
-        <Toast
-          show={showDeleteAllToast}
-          onClose={cancelDeleteAll}
-          bg="warning"
-          autohide={false}
-          style={{ minWidth: "320px" }}
-        >
-          <Toast.Header>
-            <strong className="me-auto">Confirmar acción</strong>
-          </Toast.Header>
-          <Toast.Body>
-            ¿Seguro que quieres eliminar <b>todas</b> las notificaciones?
-            <div className="d-flex justify-content-end mt-3">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="me-2"
-                onClick={cancelDeleteAll}
-              >
-                Cancelar
-              </Button>
-              <Button variant="danger" size="sm" onClick={confirmDeleteAll}>
-                Eliminar todas
-              </Button>
-            </div>
-          </Toast.Body>
-        </Toast>
-
-        {/* Toast de éxito al eliminar */}
-        <Toast
-          show={showDeleteSuccessToast}
-          onClose={() => setShowDeleteSuccessToast(false)}
-          bg="success"
-          autohide={true}
-          delay={3000}
-          style={{ minWidth: "320px" }}
-        >
-          <Toast.Header>
-            <strong className="me-auto">Éxito</strong>
-            <small className="text-muted">Ahora</small>
-          </Toast.Header>
-          <Toast.Body className="text-white">
-            {showDeleteAllToast ?
-              "Todas las notificaciones han sido eliminadas correctamente" :
-              "La notificación ha sido eliminada correctamente"}
-          </Toast.Body>
-        </Toast>
-
-        {/* Toast de error al eliminar */}
-        <Toast
-          show={showDeleteErrorToast}
-          onClose={() => setShowDeleteErrorToast(false)}
-          bg="danger"
-          autohide={true}
-          delay={3000}
-          style={{ minWidth: "320px" }}
-        >
-          <Toast.Header>
-            <strong className="me-auto">Error</strong>
-            <small className="text-muted">Ahora</small>
-          </Toast.Header>
-          <Toast.Body className="text-white">
-            {showDeleteAllToast ?
-              "Ocurrió un error al intentar eliminar las notificaciones" :
-              "Ocurrió un error al intentar eliminar la notificación"}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
     </Container>
   );
 }

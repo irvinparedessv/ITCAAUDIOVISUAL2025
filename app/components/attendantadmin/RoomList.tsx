@@ -9,8 +9,6 @@ import {
   FaSearch,
   FaCheck,
   FaUser,
-  FaChevronDown,
-  FaChevronUp,
   FaLongArrowAltLeft,
   FaPlus,
 } from "react-icons/fa";

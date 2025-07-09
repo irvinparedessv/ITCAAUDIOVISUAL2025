@@ -7,8 +7,8 @@ import {
   buscarEquipos,
   getPrediccionPorEquipo,
   getTop5PrediccionesPorEquipo,
-} from "../services/prediccionService";
-import { useTheme } from "../hooks/ThemeContext";
+} from "../../services/prediccionService";
+import { useTheme } from "../../hooks/ThemeContext";
 
 type PrediccionRow = {
   mes: string;

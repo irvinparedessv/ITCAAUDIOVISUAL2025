@@ -38,3 +38,19 @@ export const getTop5PrediccionesPorEquipo = async () => {
 //   const res = await api.get('/prediccion/reservas/por-equipo');
 //   return res.data.data;
 // };
+
+export const getPrediccionPorAula = async (aulaId: number) => {
+  const res = await api.get(`/prediccion/aula/${aulaId}`);
+  return res.data;
+};
+
+export const getListaAulas = async () => {
+  const res = await api.get("/aulas"); // asegúrate de tener este endpoint
+  return res.data;
+};
+
+// Obtiene la predicción general (todas las aulas)
+export const getPrediccionAulasGeneral = async () => {
+  const res = await api.get("/prediccion/aulas/general");
+  return res.data;
+};

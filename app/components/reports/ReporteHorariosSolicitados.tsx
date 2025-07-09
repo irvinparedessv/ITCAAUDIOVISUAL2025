@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Button, Card, Container, Form, Row, Col, Spinner, Table } from "react-bootstrap";
 import AsyncSelect from "react-select/async";
 import api from "../../api/axios";
@@ -8,20 +8,22 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import PaginationComponent from "~/utils/Pagination";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    Tooltip,
-    ResponsiveContainer,
-    CartesianGrid,
-} from "recharts";
+import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend, Title } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
 import { useTheme } from "~/hooks/ThemeContext";
-import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser } from "react-icons/fa";
+import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser, FaChartBar } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 
+// Registrar componentes de Chart.js
+ChartJS.register(
+    BarElement,
+    CategoryScale,
+    LinearScale,
+    Tooltip,
+    Legend,
+    Title
+);
 
 interface HorarioMasSolicitado {
     horario: string;
@@ -51,8 +53,9 @@ const ReporteHorariosSolicitados = () => {
     const [loading, setLoading] = useState(false);
     const { darkMode } = useTheme();
     const navigate = useNavigate();
+    const chartRef = useRef<any>(null);
 
-    // Paginación tabla (ahora es frontend)
+    // Paginación tabla (frontend)
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage] = useState(10);
 
@@ -124,6 +127,16 @@ const ReporteHorariosSolicitados = () => {
             setEquipoSeleccionado(null);
         }
     }, [tipo]);
+
+    const getNombreSeleccionado = () => {
+        if (tipo === "aula" && aulaId) {
+            const aula = aulas.find(a => a.id === aulaId);
+            return aula ? ` - Aula: ${aula.name}` : "";
+        } else if (tipo === "equipo" && equipoSeleccionado) {
+            return ` - Equipo: ${equipoSeleccionado.label}`;
+        }
+        return "";
+    };
 
     // Función para cargar opciones en AsyncSelect
     const loadOptions = async (inputValue: string) => {
@@ -300,6 +313,7 @@ const ReporteHorariosSolicitados = () => {
                                     d.total,
                                 ]);
 
+
                                 doc.addImage(logo, "PNG", 15, 15, 45, 11);
                                 doc.setFontSize(16).text("Reporte de Horarios Más Solicitados", 60, 18);
                                 doc.setFontSize(10)
@@ -362,6 +376,69 @@ const ReporteHorariosSolicitados = () => {
         });
     };
 
+    const downloadChart = () => {
+        if (!chartRef.current) return;
+
+        const toastId = "download-chart";
+        toast.dismiss(toastId);
+
+        toast((t) => (
+            <div>
+                <p>¿Deseas descargar el gráfico como imagen?</p>
+                <div className="d-flex justify-content-end gap-2 mt-2">
+                    <button
+                        className="btn btn-sm btn-primary"
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                            const chart = chartRef.current;
+
+                            if (chart) {
+                                const canvas = chart.canvas;
+                                const ctx = canvas.getContext("2d");
+
+                                // Usar darkMode desde el contexto
+                                const bgColor = darkMode ? '#1e1e1e' : '#ffffff';
+
+                                // Guardar imagen actual del canvas
+                                const original = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                                // Dibujar fondo adecuado
+                                ctx.save();
+                                ctx.globalCompositeOperation = "destination-over";
+                                ctx.fillStyle = bgColor;
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                ctx.restore();
+
+                                // Descargar imagen
+                                const imageLink = document.createElement('a');
+                                imageLink.download = 'GraficoHorariosSolicitados.png';
+                                imageLink.href = chart.toBase64Image();
+                                imageLink.click();
+
+                                // Restaurar canvas
+                                ctx.putImageData(original, 0, 0);
+
+                                toast.success("Gráfico descargado correctamente", { id: toastId });
+                            }
+                        }}
+                    >
+                        Descargar
+                    </button>
+                    <button
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => toast.dismiss(t.id)}
+                    >
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        ), {
+            duration: 5000,
+            id: toastId,
+        });
+    };
+
+
     const handleBuscarClick = () => {
         fetchReporte();
     };
@@ -372,6 +449,78 @@ const ReporteHorariosSolicitados = () => {
 
     // Paginación frontend
     const paginatedData = data.slice((currentPage - 1) * perPage, currentPage * perPage);
+
+    // Configuración del gráfico
+    const chartData = {
+        labels: data.map(item => item.horario),
+        datasets: [
+            {
+                label: 'Total de Reservas',
+                data: data.map(item => item.total),
+                backgroundColor: '#6b0000',
+                borderColor: '#4a0000',
+                borderWidth: 1,
+            }
+        ]
+    };
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top' as const,
+                labels: {
+                    color: darkMode ? '#fff' : '#333',
+                    font: {
+                        size: 14
+                    }
+                }
+            },
+            title: {
+                display: true,
+                text: `Horarios más solicitados${getNombreSeleccionado()}`,
+                color: darkMode ? '#fff' : '#333',
+                font: {
+                    size: 16,
+                    weight: 'bold' as const
+                }
+            },
+            tooltip: {
+                backgroundColor: darkMode ? '#333' : '#fff',
+                titleColor: darkMode ? '#fff' : '#333',
+                bodyColor: darkMode ? '#fff' : '#333',
+                borderColor: '#6b0000',
+                borderWidth: 1,
+                padding: 10,
+                callbacks: {
+                    label: function (context: any) {
+                        return `Reservas: ${context.raw}`;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    color: darkMode ? '#fff' : '#333'
+                },
+                grid: {
+                    color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    color: darkMode ? '#fff' : '#333',
+                    precision: 0
+                },
+                grid: {
+                    color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                }
+            }
+        }
+    };
 
     return (
         <Container className="mt-4">
@@ -469,7 +618,6 @@ const ReporteHorariosSolicitados = () => {
                                             }),
                                         }}
                                     />
-
                                 </Form.Group>
                             </Col>
                         )}
@@ -493,40 +641,47 @@ const ReporteHorariosSolicitados = () => {
                             </Col>
                         )}
 
-                        <Col md={3} className="d-flex align-items-end gap-2">
-                            <Button
-                                variant="primary"
-                                onClick={handleBuscarClick}
-                                disabled={loading}
-                                className="d-flex align-items-center justify-content-center gap-2 flex-grow-1"
-                                style={{ height: '48px' }}
-                            >
-                                {loading ? (
-                                    <Spinner size="sm" animation="border" />
-                                ) : (
-                                    <>
-                                        <FaSearch /> Buscar
-                                    </>
-                                )}
-                            </Button>
-                            <Button
-                                variant="outline-secondary"
-                                onClick={limpiarFiltros}
-                                disabled={loading}
-                                className="d-flex align-items-center justify-content-center gap-2 flex-grow-1"
-                                style={{ height: '48px' }}
-                            >
-                                <FaEraser /> Limpiar
-                            </Button>
+                        <Col md={3} className="mt-3">
+                            <div className="d-flex flex-wrap justify-content-end gap-2">
+                                <div className="flex-grow-1 flex-sm-grow-0" style={{ minWidth: '120px' }}>
+                                    <Button
+                                        variant="primary"
+                                        onClick={handleBuscarClick}
+                                        disabled={loading}
+                                        className="d-flex align-items-center justify-content-center gap-2 w-100"
+                                        style={{ height: '48px' }}
+                                    >
+                                        {loading ? (
+                                            <Spinner size="sm" animation="border" />
+                                        ) : (
+                                            <>
+                                                <FaSearch /> Buscar
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                                <div className="flex-grow-1 flex-sm-grow-0" style={{ minWidth: '120px' }}>
+                                    <Button
+                                        variant="outline-secondary"
+                                        onClick={limpiarFiltros}
+                                        disabled={loading}
+                                        className="d-flex align-items-center justify-content-center gap-2 w-100"
+                                        style={{ height: '48px' }}
+                                    >
+                                        <FaEraser /> Limpiar
+                                    </Button>
+                                </div>
+                            </div>
                         </Col>
+
                     </Row>
                 </Card.Body>
             </Card>
 
             <Card className="shadow-sm mb-4">
                 <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h5 className="mb-0">
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3">
+                        <h5 className="mb-3 mb-md-0">
                             Resultados de la búsqueda
                         </h5>
                         <div className="d-flex gap-2">
@@ -546,31 +701,25 @@ const ReporteHorariosSolicitados = () => {
                             >
                                 <FaFilePdf /> PDF
                             </Button>
+                            <Button
+                                variant="warning"
+                                onClick={downloadChart}
+                                disabled={loading || data.length === 0}
+                                className="d-flex align-items-center gap-2"
+                            >
+                                <FaChartBar /> Gráfico
+                            </Button>
                         </div>
                     </div>
 
                     {data.length > 0 && (
-                        <div style={{ width: "100%", height: 350, marginBottom: 30 }}>
-                            <ResponsiveContainer>
-                                <BarChart data={data}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="horario" />
-                                    <YAxis allowDecimals={false} />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: darkMode ? '#fff' : '#f9f9f9',
-                                            borderColor: '#6b0000',
-                                            color: '#6b0000',
-                                        }}
-                                        labelStyle={{
-                                            color: '#6b0000',
-                                        }}
-                                    />
-                                    <Bar dataKey="total" fill="#6b0000" name="Cantidad de Reservas" />
-                                </BarChart>
-                            </ResponsiveContainer>
+                        <div style={{ width: "100%", height: "400px", marginBottom: "30px" }}>
+                            <Bar
+                                ref={chartRef}
+                                data={chartData}
+                                options={chartOptions}
+                            />
                         </div>
-
                     )}
 
                     <div className="table-responsive">

@@ -15,6 +15,12 @@ const opciones = [
         ruta: '/prediccionPorEquipoPage',
         icono: <FaChartLine size={24} />,
     },
+    {
+        nombre: 'Análisis por aula',
+        descripcion: 'Predicción y estadísticas',
+        ruta: '/prediccionAula',
+        icono: <FaChartLine size={24} />,
+    },
 ];
 
 const OpcionesAnalisis = () => {

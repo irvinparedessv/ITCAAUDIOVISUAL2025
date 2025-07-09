@@ -33,7 +33,7 @@ import ReservacionEstado from "./routes/ReservacionEstado";
 import ReservacionEstadoAula from "./routes/ReservacionEstadoAula";
 import BitacoraPage from "./routes/BitacoraPage";
 import NotificationsList from "./routes/NotificationsList";
-import PrediccionPage from "./routes/PrediccionPage";
+import PrediccionPage from "./components/prediction/PrediccionPage";
 import OpcionesPanel from "./dashboard/OpcionesPanel";
 import OpcionesReportes from "./dashboard/OpcionesReportes";
 import App from "./root";
@@ -42,7 +42,7 @@ import ReserveClassroom from "./components/RoomReservationForm";
 import EspacioListWrapper from "./routes/wrappers/reservations";
 import EquipmentListPage from "./routes/equipment/equipmentListPage";
 import EquipmentEditPage from "./routes/equipment/equipmentEditPage";
-import PrediccionPorEquipoPage from "./routes/PrediccionPorEquipoPage";
+import PrediccionPorEquipoPage from "./components/prediction/PrediccionPorEquipoPage";
 import AulaList from "./components/attendantadmin/RoomList";
 import EditEquipmentReservationForm from "./components/EditEquipmentReservationForm";
 import AsignarEncargadosForm from "./components/FormEncargadosEspacio";
@@ -55,6 +55,7 @@ import ReporteHorariosSolicitados from "./components/reports/ReporteHorariosSoli
 import ReporteInventarioEquipos from "./components/reports/ReporteInventarioEquipos";
 import OpcionesAnalisis from "./dashboard/OpcionesAnalisis";
 import ReporteReservasPorAula from "./components/reports/ReporteReservasPorAula";
+import PrediccionAulaPage from "./components/prediction/PrediccionAulaPage";
 
 const router = createBrowserRouter([
   {
@@ -269,6 +270,10 @@ const router = createBrowserRouter([
           {
             path: "reporteReservasAulas",
             element: <ReporteReservasPorAula />,
+          },
+          {
+            path: "prediccionAula",
+            element: <PrediccionAulaPage />,
           },
         ],
       },

@@ -14,7 +14,7 @@ import html2canvas from "html2canvas";
 import {
   getPrediccion,
   getPrediccionesPorTipo,
-} from "../services/prediccionService";
+} from "../../services/prediccionService";
 import type { PrediccionData } from "app/types/predict";
 import type { TipoEquipo } from "app/types/tipoEquipo";
 

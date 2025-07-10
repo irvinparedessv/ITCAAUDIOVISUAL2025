@@ -42,7 +42,7 @@ const OpcionesAnalisis = () => {
     });
 
     const handleBack = () => {
-        navigate(-1); // Redirige a la ruta de inicio
+        navigate("/administracion"); // Redirige a la ruta de inicio
     };
 
     return (
@@ -56,7 +56,7 @@ const OpcionesAnalisis = () => {
                         gap: '12px',
                         marginBottom: '20px',
                         padding: '10px',
-                        maxWidth: '600px'
+                        maxWidth: '800px'
                     }}
                 >
                     <FaLongArrowAltLeft

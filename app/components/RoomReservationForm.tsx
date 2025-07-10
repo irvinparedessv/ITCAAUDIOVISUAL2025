@@ -321,7 +321,28 @@ export default function ReserveClassroom() {
       toast.error("Completa todos los campos", { id: "submit-toast" });
       return;
     }
+    // Validación: Si la fecha es hoy, la hora seleccionada debe ser al menos 30 minutos después de la hora actual
+    const now = new Date();
+    const todayStr = formatDateLocal(now);
+    const selectedDateStr = formatDateLocal(selectedDate);
 
+    if (selectedDateStr === todayStr) {
+      // La hora de inicio del slot seleccionado (ej: "08:40 - 10:20")
+      const slotStartStr = selectedTime.split(" - ")[0];
+      const [slotHour, slotMinute] = slotStartStr.split(":").map(Number);
+
+      const slotDateTime = new Date(selectedDate);
+      slotDateTime.setHours(slotHour, slotMinute, 0, 0);
+
+      const diffMinutes = (slotDateTime.getTime() - now.getTime()) / 60000;
+      if (diffMinutes < 30) {
+        toast.error(
+          "Para reservas el mismo día, debe hacerse con al menos 30 minutos de anticipación.",
+          { id: "submit-toast" }
+        );
+        return;
+      }
+    }
     if (id) {
       const userConfirmed = await showConfirmationToast();
       if (!userConfirmed) return;

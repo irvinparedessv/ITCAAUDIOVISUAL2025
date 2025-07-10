@@ -112,8 +112,12 @@ const NotificationItem = ({
       <div className="d-flex justify-content-between align-items-start">
         {/* Contenido principal */}
         <div className="flex-grow-1 me-2">
-          <div className={`fw-bold d-flex align-items-center gap-2 ${noti.unread ? "text-unread-title" : ""}`}>
-            {noti.unread && <FaBell/>}
+          <div
+            className={`fw-bold d-flex align-items-center gap-2 ${
+              noti.unread ? "text-unread-title" : ""
+            }`}
+          >
+            {noti.unread && <FaBell />}
             {noti.data.title}
           </div>
 
@@ -122,31 +126,44 @@ const NotificationItem = ({
           {isAulaNotification ? (
             <>
               <div className="d-flex align-items-center gap-1 mt-1">
-                <small className="text-dark">Aula: {(reservaData as AulaNotification).aula || "No especificada"}</small>
+                <small className="text-dark">
+                  Aula:{" "}
+                  {(reservaData as AulaNotification).aula || "No especificada"}
+                </small>
                 {userRole === Role.Prestamista && (
                   <>
                     <span className="mx-1">-</span>
-                    <span className={`badge ${estadoStyle.badgeClass} px-2 py-1`}>
+                    <span
+                      className={`badge ${estadoStyle.badgeClass} px-2 py-1`}
+                    >
                       {estadoStyle.displayText}
                     </span>
                   </>
                 )}
               </div>
               <small className="d-block text-dark">
-                Fecha: {(reservaData as AulaNotification).fecha || "No especificada"}
+                Fecha:{" "}
+                {(reservaData as AulaNotification).fecha || "No especificada"}
               </small>
               <small className="d-block text-dark">
-                Horario: {(reservaData as AulaNotification).horario || "No especificado"}
+                Horario:{" "}
+                {(reservaData as AulaNotification).horario || "No especificado"}
               </small>
             </>
           ) : (
             <>
               <div className="d-flex align-items-center gap-1 mt-1">
-                <small className="text-dark">Aula: {(reservaData as ReservaNotification).aula || "No especificada"}</small>
+                <small className="text-dark">
+                  Aula:{" "}
+                  {(reservaData as ReservaNotification).aula ||
+                    "No especificada"}
+                </small>
                 {userRole === Role.Prestamista && (
                   <>
                     <span className="mx-1">-</span>
-                    <span className={`badge ${estadoStyle.badgeClass} px-2 py-1`}>
+                    <span
+                      className={`badge ${estadoStyle.badgeClass} px-2 py-1`}
+                    >
                       {estadoStyle.displayText}
                     </span>
                   </>
@@ -186,8 +203,6 @@ const NotificationItem = ({
     </Dropdown.Item>
   );
 };
-
-
 
 // Componentes CustomToggle
 const CustomToggle = React.forwardRef<
@@ -254,10 +269,11 @@ const HoverDropdown = ({ title, icon: Icon, children }: HoverDropdownProps) => {
     >
       <Dropdown.Toggle
         as={DesktopToggle}
-        id={`dropdown-${typeof title === "string"
+        id={`dropdown-${
+          typeof title === "string"
             ? title.toLowerCase().replace(" ", "-")
             : "dropdown"
-          }`}
+        }`}
       >
         <Icon className="me-1" /> {title}
       </Dropdown.Toggle>
@@ -301,7 +317,6 @@ const NavbarMenu = () => {
     "/forbidden",
   ];
 
-
   useEffect(() => {
     const handleNotificationUpdate = () => {
       refreshNotifications(); // recarga automáticamente
@@ -310,7 +325,10 @@ const NavbarMenu = () => {
     window.addEventListener("notification-updated", handleNotificationUpdate);
 
     return () => {
-      window.removeEventListener("notification-updated", handleNotificationUpdate);
+      window.removeEventListener(
+        "notification-updated",
+        handleNotificationUpdate
+      );
     };
   }, []);
 
@@ -436,8 +454,6 @@ const NavbarMenu = () => {
       {/* Menu encargado mobile */}
       {user?.role === Role.Encargado && (
         <>
-          
-
           {checkAccess("/reservations") && (
             <Dropdown className="mb-2 offcanvas-dropdown">
               <Dropdown.Toggle as={CustomToggle} id="dropdown-reservas-sidebar">
@@ -452,8 +468,6 @@ const NavbarMenu = () => {
                 >
                   <FaComputer className="me-2" /> Reserva de Equipos
                 </Dropdown.Item>
-
-                
 
                 <Dropdown.Item
                   as={Link}
@@ -490,7 +504,7 @@ const NavbarMenu = () => {
                 </Dropdown.Item>
                 <Dropdown.Item
                   as={Link}
-                  to="/addreservation-room"
+                  to="/reservationsroom"
                   className="d-flex align-items-center gap-2 text-dark"
                   onClick={handleCloseSidebar}
                 >
@@ -542,8 +556,9 @@ const NavbarMenu = () => {
               <FaBell className="me-2" size={16} />
               {unreadCount > 0 && (
                 <span
-                  className={`badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle-custom-mobile ${unreadCount > 9 ? "px-1" : ""
-                    }`}
+                  className={`badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle-custom-mobile ${
+                    unreadCount > 9 ? "px-1" : ""
+                  }`}
                 >
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
@@ -974,7 +989,6 @@ const NavbarMenu = () => {
       {/* Menu encargado desktop */}
       {user?.role === Role.Encargado && (
         <>
-         
           {checkAccess("/reservations") && (
             <HoverDropdown
               title={
@@ -1058,7 +1072,7 @@ const NavbarMenu = () => {
               </Dropdown.Item>
               <Dropdown.Item
                 as={Link}
-                to="/addreservation-room"
+                to="/reservationsroom"
                 className="d-flex align-items-start text-dark"
               >
                 <FaCalendarAlt className="me-2" />
@@ -1181,7 +1195,7 @@ function getEstadoStyle(estado: string): {
       return {
         className: "text-warning",
         displayText: "Pendiente",
-        badgeClass: "bg-warning text-dark"
+        badgeClass: "bg-warning text-dark",
       };
     case "approved":
     case "aprobado":
@@ -1189,14 +1203,14 @@ function getEstadoStyle(estado: string): {
       return {
         className: "text-success",
         displayText: "Aprobado",
-        badgeClass: "bg-primary text-white"
+        badgeClass: "bg-primary text-white",
       };
     case "rejected":
     case "rechazado":
       return {
         className: "text-danger",
         displayText: "Rechazado",
-        badgeClass: "bg-danger text-white"
+        badgeClass: "bg-danger text-white",
       };
     case "returned":
     case "devuelto":
@@ -1204,19 +1218,19 @@ function getEstadoStyle(estado: string): {
       return {
         className: "text-info",
         displayText: "Completada",
-        badgeClass: "bg-success text-white"
+        badgeClass: "bg-success text-white",
       };
     case "cancelado":
       return {
         className: "text-secondary",
         displayText: "Cancelado",
-        badgeClass: "bg-secondary text-white"
+        badgeClass: "bg-secondary text-white",
       };
     default:
       return {
         className: "",
         displayText: estado,
-        badgeClass: "bg-secondary text-white"
+        badgeClass: "bg-secondary text-white",
       };
   }
 }

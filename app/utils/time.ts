@@ -7,6 +7,15 @@ const generateTimeOptions = () => {
   return times;
 };
 
+export function formatOnlyDate(dateString: string) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 export function formatTo12h(time24: string): string {
   const [hourStr, minStr] = time24.split(":");
   let hour = parseInt(hourStr, 10);
@@ -16,6 +25,20 @@ export function formatTo12h(time24: string): string {
 
   return `${hour}:${minutes} ${ampm}`;
 }
+
+export function formatDateTimeTo12h(datetime: string): string {
+  const [datePart, timePart] = datetime.split(" ");
+  const formattedDate = formatOnlyDate(datePart);
+  const formattedTime = formatTo12h(timePart.slice(0, 5));
+  return `${formattedDate} ${formattedTime}`;
+}
+
+export function formatTimeRangeTo12h(range24: string): string {
+  const [start, end] = range24.split(" - ");
+  return `${formatTo12h(start)} - ${formatTo12h(end)}`;
+}
+
+
 
 
 export const timeOptions = generateTimeOptions();

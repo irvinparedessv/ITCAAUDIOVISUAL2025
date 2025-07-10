@@ -6,6 +6,8 @@ import {
   Modal,
   type ButtonProps,
 } from "react-bootstrap";
+import { EyeFill, EyeSlashFill } from "react-bootstrap-icons";
+import { InputGroup } from "react-bootstrap";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,6 +28,7 @@ const Login = () => {
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
   const [showForgotModal, setShowForgotModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && location.pathname === "/login") {
@@ -95,7 +98,7 @@ const Login = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                
+
                 {error}
               </motion.div>
             )}
@@ -127,21 +130,30 @@ const Login = () => {
               transition={{ delay: 0.5 }}
             >
               <Form.Label className="text-secondary">Contraseña</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="border-color-login"
-              />
+              <InputGroup>
+                <Form.Control
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="border-color-login"
+                />
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ borderColor: "#cc3300" }}
+                >
+                  {showPassword ? <EyeSlashFill /> : <EyeFill />}
+                </Button>
+              </InputGroup>
             </motion.div>
+
 
             <MotionButton
               type="submit"
               disabled={isLoading}
-              className={`w-100 btn primary-btn border-0 ${
-                isLoading ? "loading" : ""
-              }`}
+              className={`w-100 btn primary-btn border-0 ${isLoading ? "loading" : ""
+                }`}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               style={{

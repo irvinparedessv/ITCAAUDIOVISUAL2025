@@ -22,6 +22,7 @@ import ReservacionEstadoModal from "./ReservacionEstado";
 import { Role } from "~/types/roles";
 import QrScanner from "./QrReader";
 import PaginationComponent from "../utils/Pagination";
+import { formatDateTimeTo12h } from "~/utils/time";
 
 export default function ReservationList() {
   // Estados de autenticación y navegación
@@ -556,8 +557,9 @@ export default function ReservationList() {
                         {reserva.equipos.length > 2 && "..."}
                       </td>
                       <td>{reserva.aula}</td>
-                      <td>{formatDate(reserva.fecha_reserva)}</td>
-                      <td>{formatDate(reserva.fecha_entrega)}</td>
+                     <td>{formatDateTimeTo12h(reserva.fecha_reserva)}</td>
+
+                      <td>{formatDateTimeTo12h(reserva.fecha_entrega)}</td>
                       <td>
                         <Badge
                           bg={getBadgeColor(reserva.estado)}
@@ -719,7 +721,7 @@ export default function ReservationList() {
 
       <EquipmentDetailsModal
         getBadgeColor={getBadgeColor}
-        formatDate={formatDate}
+        formatDate={formatDateTimeTo12h}
         handleCloseModal={handleCloseModal}
         showModal={showModal}
         loadingHistorial={loadingHistorial}
@@ -747,13 +749,13 @@ function getBadgeColor(estado: string) {
   }
 }
 
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+// function formatDate(dateString: string) {
+//   const date = new Date(dateString);
+//   return date.toLocaleDateString("es-ES", {
+//     day: "2-digit",
+//     month: "2-digit",
+//     year: "numeric",
+//     hour: "2-digit",
+//     minute: "2-digit",
+//   });
+// }

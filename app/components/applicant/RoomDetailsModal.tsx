@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, Badge } from "react-bootstrap";
 import type { ReservationRoom } from "../../types/reservationroom";
 import type { HistorialItem } from "~/types/reservation";
+import { formatTimeRangeTo12h } from "~/utils/time";
 
 interface Props {
   showModal: boolean;
@@ -159,7 +160,7 @@ const RoomDetailsModal: React.FC<Props> = ({
                       Horario
                     </span>
                     <p className="mb-0 fw-semibold flex-grow-1">
-                      {selectedReservation.horario}
+                      {formatTimeRangeTo12h(selectedReservation.horario)}
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">

@@ -12,6 +12,7 @@ import { QRURL } from "~/constants/constant";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import "animate.css";
+import { formatTimeRangeTo12h } from "~/utils/time";
 
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -470,7 +471,7 @@ const RoomReservationList = () => {
                       <td>{res.id}</td>
                       <td>{res.aula?.name || "Aula Desconocida"}</td>
                       <td>{formatDate(res.fecha)}</td>
-                      <td>{res.horario}</td>
+                      <td>{formatTimeRangeTo12h(res.horario)}</td>
                       <td>{res.user?.first_name || "Desconocido"}</td>
                       <td>
                         <Badge bg={getEstadoVariant(res.estado)}>

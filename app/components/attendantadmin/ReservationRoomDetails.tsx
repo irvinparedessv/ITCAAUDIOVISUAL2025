@@ -4,6 +4,7 @@ import type {
   ReservationRoom,
   HistorialItem,
 } from "../../types/reservationroom";
+import { formatTimeRangeTo12h } from "~/utils/time";
 
 interface Props {
   showModal: boolean;
@@ -101,7 +102,7 @@ const RoomDetailsModal: React.FC<Props> = ({
                     {formatDate(selectedReservation.fecha)}
                   </p>
                   <p>
-                    <strong>Horario:</strong> {selectedReservation.horario}
+                    <strong>Horario:</strong> {formatTimeRangeTo12h(selectedReservation.horario)}
                   </p>
                   <p>
                     <strong>Estado:</strong>{" "}

@@ -18,6 +18,7 @@ import {
 import { useAuth } from "app/hooks/AuthContext";
 import { Role } from "~/types/roles";
 import PanoramaViewer from "./PanoramaViewer";
+import { formatTimeRangeTo12h } from "~/utils/time";
 
 type Horario = {
   start_date: string;
@@ -511,7 +512,7 @@ export default function ReserveClassroom() {
             <option value="">Selecciona un horario</option>
             {getTimeOptions().map((slot, idx) => (
               <option key={idx} value={slot}>
-                {slot}
+                 {formatTimeRangeTo12h(slot)}
               </option>
             ))}
           </select>

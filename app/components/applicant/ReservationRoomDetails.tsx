@@ -12,6 +12,7 @@ import {
 } from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
 import api from "../../api/axios";
+import { formatTimeRangeTo12h } from "~/utils/time";
 
 type ReservaAula = {
   id: number;
@@ -115,7 +116,7 @@ export default function ReservationDetailAula() {
               <strong>Fecha:</strong> {formatDate(reserva.fecha)}
             </ListGroup.Item>
             <ListGroup.Item>
-              <strong>Horario:</strong> {reserva.horario}
+              <strong>Horario:</strong> {formatTimeRangeTo12h(reserva.horario)}
             </ListGroup.Item>
             <ListGroup.Item>
               <strong>Estado:</strong>{" "}

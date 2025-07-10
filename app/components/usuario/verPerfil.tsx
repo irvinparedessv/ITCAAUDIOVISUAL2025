@@ -1,3 +1,4 @@
+// VerPerfil.tsx
 import { useEffect, useState } from "react";
 import { Button, Card, Col, Row, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
@@ -8,19 +9,22 @@ import {
   FaIdBadge,
   FaUser,
   FaUserCircle,
+  FaKey,
 } from "react-icons/fa";
-import { getPerfil } from "../../services/userService";
+import { getPerfil } from "../../services/userService"; // Asegúrate de importar correctamente
+import ChangePasswordModal from "../auth/ChangePasswordModal";
 
 const VerPerfil = () => {
   const [user, setUser] = useState<any>({});
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [mostrarModal, setMostrarModal] = useState(false); // 👈 Nuevo estado
+  const navigate = useNavigate();
 
   useEffect(() => {
     getPerfil()
       .then((res) => setUser(res))
       .catch((err) => console.error(err))
-      .finally(() => setLoading(false)); // 👈 Asegura que se oculte el spinner
+      .finally(() => setLoading(false));
   }, []);
 
   const getRoleName = (roleId: number) => {
@@ -42,7 +46,6 @@ const VerPerfil = () => {
     return estado === 1 ? "Activo" : "Inactivo";
   };
 
-  // ✅ Mostrar spinner mientras carga
   if (loading) {
     return (
       <div className="text-center my-5">
@@ -53,18 +56,9 @@ const VerPerfil = () => {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        paddingTop: "4rem",
-        paddingBottom: "4rem",
-      }}
-    >
+    <div style={{ minHeight: "100vh", paddingTop: "4rem", paddingBottom: "4rem" }}>
       <div className="container d-flex justify-content-center">
-        <Card
-          className="shadow-lg animate__animated animate__fadeIn"
-          style={{ maxWidth: "700px", width: "100%", borderRadius: "1rem" }}
-        >
+        <Card className="shadow-lg animate__animated animate__fadeIn" style={{ maxWidth: "700px", width: "100%", borderRadius: "1rem" }}>
           <Card.Body>
             <div className="text-center mb-4">
               {user.image_url ? (
@@ -144,25 +138,31 @@ const VerPerfil = () => {
                   </div>
                 </div>
               </Col>
+
+              <Col>
+               <Button variant="warning" onClick={() => setMostrarModal(true)}>
+    <FaKey className="me-2" />
+    Cambiar Contraseña
+  </Button>
+              </Col>
             </Row>
 
             <hr />
 
-            <div className="text-center mt-4 d-flex justify-content-center gap-3">
-              <Button variant="secondary" className="btn secondary-btn" onClick={() => navigate('/')}>
+            <div className="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+              <Button variant="secondary" onClick={() => navigate("/")}>
                 Regresar
               </Button>
-              <Button
-                variant="primary"
-                className="btn secondary-btn"
-                onClick={() => navigate("/editarPerfil")}
-              >
+              <Button variant="primary" onClick={() => navigate("/editarPerfil")}>
                 Editar Perfil
               </Button>
             </div>
           </Card.Body>
         </Card>
       </div>
+
+      {/* MODAL CAMBIO DE CONTRASEÑA */}
+      <ChangePasswordModal show={mostrarModal} onHide={() => setMostrarModal(false)} />
     </div>
   );
 };

@@ -70,7 +70,9 @@ export default function AulaList() {
     toast(
       (t) => (
         <div>
-          <p>¿Desea eliminar el aula <strong>{name}</strong>?</p>
+          <p>
+            ¿Desea eliminar el aula <strong>{name}</strong>?
+          </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button
               className="btn btn-sm btn-danger"
@@ -108,8 +110,6 @@ export default function AulaList() {
     );
   };
 
-
-
   const handleFilterUpdate = <K extends keyof AulaFilters>(
     key: K,
     value: AulaFilters[K]
@@ -134,8 +134,8 @@ export default function AulaList() {
             onClick={handleBack}
             title="Regresar"
             style={{
-              cursor: 'pointer',
-              fontSize: '2rem',
+              cursor: "pointer",
+              fontSize: "2rem",
             }}
           />
           <h2 className="fw-bold m-0 flex-grow-1">Listado de Aulas</h2>
@@ -153,7 +153,6 @@ export default function AulaList() {
           </Button>
         </div>
       </div>
-
 
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
         <div className="flex-grow-1">
@@ -178,11 +177,11 @@ export default function AulaList() {
         </div>
       </div>
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
-
-
         {/* Filtro por imagen */}
         <Form.Select
-          value={filters.has_images === null ? "" : filters.has_images ? "yes" : "no"}
+          value={
+            filters.has_images === null ? "" : filters.has_images ? "yes" : "no"
+          }
           onChange={(e) => {
             const val = e.target.value;
             handleFilterUpdate(
@@ -196,7 +195,6 @@ export default function AulaList() {
           <option value="no">Sin imagen</option>
         </Form.Select>
       </div>
-
 
       {loading ? (
         <div className="text-center my-5">
@@ -222,7 +220,10 @@ export default function AulaList() {
                       <td className="fw-bold">{aula.name}</td>
                       <td>
                         {aula.has_images ? (
-                          <FaCheck className="text-success" title="Con imagen" />
+                          <FaCheck
+                            className="text-success"
+                            title="Con imagen"
+                          />
                         ) : (
                           <FaTimes className="text-muted" title="Sin imagen" />
                         )}
@@ -246,18 +247,13 @@ export default function AulaList() {
                                       fontWeight: 500,
                                       color: "var(--bs-body-color)",
                                     }}
-                                    title={`ID: ${enc.id}`}
                                   >
                                     {enc.first_name} {enc.last_name}{" "}
-                                    <small style={{ color: "var(--bs-secondary-text)", fontWeight: 400 }}>
-                                      (ID: {enc.id})
-                                    </small>
                                   </li>
                                 ))}
                               </ul>
                             )}
                           </>
-
                         ) : (
                           <label>Sin encargados</label>
                         )}
@@ -270,7 +266,7 @@ export default function AulaList() {
                             style={{
                               width: "44px",
                               height: "44px",
-                              transition: "transform 0.2s ease-in-out"
+                              transition: "transform 0.2s ease-in-out",
                             }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
@@ -278,7 +274,9 @@ export default function AulaList() {
                             onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
-                            onClick={() => navigate(`/aulas/encargados/${aula.id}`)}
+                            onClick={() =>
+                              navigate(`/aulas/encargados/${aula.id}`)
+                            }
                             title="Asignar encargados"
                           >
                             <FaUser />
@@ -289,7 +287,7 @@ export default function AulaList() {
                             style={{
                               width: "44px",
                               height: "44px",
-                              transition: "transform 0.2s ease-in-out"
+                              transition: "transform 0.2s ease-in-out",
                             }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
@@ -308,7 +306,7 @@ export default function AulaList() {
                             style={{
                               width: "44px",
                               height: "44px",
-                              transition: "transform 0.2s ease-in-out"
+                              transition: "transform 0.2s ease-in-out",
                             }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
@@ -316,7 +314,9 @@ export default function AulaList() {
                             onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
-                            onClick={() => confirmarEliminacion(aula.id, aula.name)}
+                            onClick={() =>
+                              confirmarEliminacion(aula.id, aula.name)
+                            }
                             title="Eliminar aula"
                           >
                             <FaTrash />

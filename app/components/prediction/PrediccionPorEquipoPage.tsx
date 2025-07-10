@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import AsyncSelect from "react-select/async";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush,
@@ -9,6 +9,24 @@ import {
   getTop5PrediccionesPorEquipo,
 } from "../../services/prediccionService";
 import { useTheme } from "../../hooks/ThemeContext";
+import {
+  Button,
+  Card,
+  Container,
+  Row,
+  Col,
+  Spinner,
+  Table,
+  Badge,
+  Form,
+  Accordion
+} from "react-bootstrap";
+import html2canvas from "html2canvas";
+import { FaChartBar, FaFileExcel, FaFileImage, FaLongArrowAltLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 type PrediccionRow = {
   mes: string;
@@ -25,9 +43,11 @@ type EquipoData = {
   precision: number | null;
 };
 
-
 export default function PrediccionPorEquipoPage() {
   const { darkMode } = useTheme();
+  const navigate = useNavigate();
+  const chartRef = useRef<HTMLDivElement>(null);
+  const top5ChartRef = useRef<HTMLDivElement>(null);
 
   const [top5, setTop5] = useState<EquipoData[]>([]);
   const [loadingTop5, setLoadingTop5] = useState(true);
@@ -39,7 +59,6 @@ export default function PrediccionPorEquipoPage() {
 
   const [showRL, setShowRL] = useState(true);
   const [showSVR, setShowSVR] = useState(true);
-
   const [equiposAbiertos, setEquiposAbiertos] = useState<string[]>([]);
 
   const customSelectStyles = useMemo(() => ({
@@ -48,6 +67,8 @@ export default function PrediccionPorEquipoPage() {
       backgroundColor: darkMode ? "#2d2d2d" : "#fff",
       borderColor: darkMode ? "#444" : "#ccc",
       color: darkMode ? "#f8f9fa" : "#212529",
+      minHeight: '48px',
+      height: '48px',
     }),
     menu: (base: any) => ({
       ...base,
@@ -57,6 +78,12 @@ export default function PrediccionPorEquipoPage() {
     input: (base: any) => ({
       ...base,
       color: darkMode ? "#f8f9fa" : "#212529",
+      margin: '0px',
+    }),
+    valueContainer: (base: any) => ({
+      ...base,
+      height: '48px',
+      padding: '0 8px',
     }),
     placeholder: (base: any) => ({
       ...base,
@@ -95,6 +122,7 @@ export default function PrediccionPorEquipoPage() {
 
       } catch (e) {
         console.error(e);
+        toast.error("Error al cargar los equipos más prestados");
       } finally {
         setLoadingTop5(false);
       }
@@ -104,14 +132,24 @@ export default function PrediccionPorEquipoPage() {
   const loadOptions = async (inputValue: string) => {
     const q = inputValue.trim();
     if (!q) return [];
-    const teams = await buscarEquipos(q, 10);
-    return teams.map((e: any) => ({ label: e.nombre, value: e.id.toString() }));
+    try {
+      const teams = await buscarEquipos(q, 10);
+      return teams.map((e: any) => ({ label: e.nombre, value: e.id.toString() }));
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al buscar equipos");
+      return [];
+    }
   };
 
   const analizarEquipo = async () => {
-    if (!equipoSeleccionado) return;
-    const id = parseInt(equipoSeleccionado.value);
+    if (!equipoSeleccionado) {
+      toast.error("Por favor selecciona un equipo");
+      return;
+    }
+    
     try {
+      const id = parseInt(equipoSeleccionado.value);
       const data = await getPrediccionPorEquipo(id);
       const combinado = [...(data.historico ?? []), ...(data.predicciones ?? [])]
         .sort((a, b) => a.mes_numero - b.mes_numero);
@@ -121,12 +159,198 @@ export default function PrediccionPorEquipoPage() {
       setPrecisionEquipo(data.precision ?? null);
       setShowRL(true);
       setShowSVR(true);
+      
+      toast.success(`Datos cargados para ${equipoSeleccionado.label}`);
     } catch (error) {
       console.error(error);
       setAnalisisEquipo(null);
       setNombreEquipoSeleccionado("");
       setPrecisionEquipo(null);
+      toast.error("Error al cargar los datos del equipo");
     }
+  };
+
+  const confirmarExportacionExcel = () => {
+    toast.dismiss('confirmar-excel-equipo');
+    toast.dismiss('confirmar-imagen-equipo');
+
+    toast(
+      (t) => (
+        <div>
+          <p>¿Estás seguro que deseas descargar el reporte en formato Excel?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => {
+                toast.dismiss(t.id);
+                exportarExcel();
+              }}
+            >
+              Sí, descargar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 5000,
+        id: 'confirmar-excel-equipo',
+      }
+    );
+  };
+
+  const exportarExcel = () => {
+    if (!analisisEquipo || analisisEquipo.length === 0) {
+      toast.error("No hay datos para exportar");
+      return;
+    }
+
+    try {
+      toast.loading("Generando Excel...", { id: "excel-download-equipo" });
+      
+      const encabezados = ["Mes", "Cantidad", "Tipo", "Regresión Lineal", "SVR"];
+      const filas = analisisEquipo.map((d) => [
+        d.mes,
+        d.cantidad,
+        d.tipo,
+        d.detalle?.regresion_lineal ?? "",
+        d.detalle?.svr ?? "",
+      ]);
+
+      const datos = [encabezados, ...filas];
+      const ws = XLSX.utils.aoa_to_sheet(datos);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Predicción Equipo");
+      const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      saveAs(new Blob([buffer], { type: "application/octet-stream" }), `Prediccion_${nombreEquipoSeleccionado}.xlsx`);
+      
+      toast.success("Excel exportado correctamente", { id: "excel-download-equipo" });
+    } catch (error) {
+      console.error("Error al exportar Excel:", error);
+      toast.error("Error al exportar Excel", { id: "excel-download-equipo" });
+    }
+  };
+
+  const confirmarExportacionImagen = () => {
+    toast.dismiss('confirmar-imagen-equipo');
+    toast.dismiss('confirmar-excel-equipo');
+
+    toast(
+      (t) => (
+        <div>
+          <p>¿Estás seguro que deseas descargar el gráfico como imagen?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => {
+                toast.dismiss(t.id);
+                exportarImagen();
+              }}
+            >
+              Sí, descargar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 5000,
+        id: 'confirmar-imagen-equipo',
+      }
+    );
+  };
+
+  const exportarImagen = async () => {
+    if (!chartRef.current) {
+      toast.error("No se encontró el gráfico para exportar");
+      return;
+    }
+
+    try {
+      toast.loading("Generando imagen...", { id: "imagen-download-equipo" });
+      const canvas = await html2canvas(chartRef.current);
+      const link = document.createElement("a");
+      link.download = `prediccion_${nombreEquipoSeleccionado}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      
+      toast.dismiss("imagen-download-equipo");
+      toast.success("Imagen exportada correctamente");
+    } catch (error) {
+      console.error("Error al exportar imagen:", error);
+      toast.error("Error al exportar imagen", { id: "imagen-download-equipo" });
+    }
+  };
+
+  const confirmarExportacionTop5Imagen = () => {
+    toast(
+      (t) => (
+        <div>
+          <p>¿Estás seguro que deseas descargar el gráfico Top 5 como imagen?</p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => {
+                toast.dismiss(t.id);
+                exportarTop5Imagen();
+              }}
+            >
+              Sí, descargar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 5000,
+        id: 'confirmar-imagen-top5',
+      }
+    );
+  };
+
+  const exportarTop5Imagen = async () => {
+    if (!top5ChartRef.current) {
+      toast.error("No se encontró el gráfico para exportar");
+      return;
+    }
+
+    try {
+      toast.loading("Generando imagen...", { id: "imagen-download-top5" });
+      const canvas = await html2canvas(top5ChartRef.current);
+      const link = document.createElement("a");
+      link.download = `top5_equipos_mas_prestados.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      
+      toast.dismiss("imagen-download-top5");
+      toast.success("Imagen exportada correctamente");
+    } catch (error) {
+      console.error("Error al exportar imagen:", error);
+      toast.error("Error al exportar imagen", { id: "imagen-download-top5" });
+    }
+  };
+
+  const handleBack = () => {
+    navigate("/opcionesAnalisis");
+  };
+
+  const getTipoBadge = (tipo: string) => {
+    return tipo === "Histórico" ? "info" : "warning";
   };
 
   const colores = ["#007bff", "#28a745", "#ffc107", "#dc3545", "#6610f2"];
@@ -147,128 +371,252 @@ export default function PrediccionPorEquipoPage() {
     setEquiposAbiertos(prev => prev.includes(nombre) ? prev.filter(e => e !== nombre) : [...prev, nombre]);
 
   return (
-    <div className="container mt-4">
-      <h1 className="text-center">🔍 Predicción de Reservas por Equipos</h1>
-      <br />
+    <Container className="mt-4">
+      <div className="d-flex align-items-center gap-3 mb-4">
+        <FaLongArrowAltLeft
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: 'pointer',
+            fontSize: '2rem'
+          }}
+        />
+        <h2 className="mb-0">
+          Predicción de Reservas por Equipos
+        </h2>
+      </div>
 
-      {loadingTop5 ? (
-        <div className="d-flex justify-content-center align-items-center" style={{ height: 350 }}>
-          <div className="spinner-border" role="status" aria-label="Cargando datos top 5">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-        </div>
-      ) : top5.length > 0 ? (
-        <div className="card mb-4">
-          <div className="card-header text-center">📊 Top 5 equipos más prestados</div>
-          <div className="card-body">
-            <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={unificarDatosParaGrafico(top5)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                {top5.map((eq, i) => (
-                  <Line key={eq.nombre} dataKey={eq.nombre} stroke={colores[i % colores.length]} dot={false} />
-                ))}
-                <Brush dataKey="mes" height={30} stroke="#8884d8" />
-              </LineChart>
-            </ResponsiveContainer>
+      <Card className="shadow-sm mb-4">
+        <Card.Header className="text-center fw-bold">📊 Top 5 equipos más prestados</Card.Header>
+        <Card.Body>
+          {loadingTop5 ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-2">Cargando datos de equipos más prestados...</p>
+            </div>
+          ) : top5.length > 0 ? (
+            <>
+              <div className="d-flex justify-content-end mb-3">
+                <Button
+                  variant="warning"
+                  onClick={confirmarExportacionTop5Imagen}
+                  disabled={loadingTop5 || top5.length === 0}
+                  className="d-flex align-items-center gap-2"
+                >
+                  <FaChartBar /> Exportar Gráfico
+                </Button>
+              </div>
 
-            <div className="accordion mt-3" id="top5Acc">
-              {top5.map(eq => (
-                <div key={eq.nombre} className="accordion-item">
-                  <h2 className="accordion-header">
-                    <button
-  className={`accordion-button ${!equiposAbiertos.includes(eq.nombre) ? "collapsed" : ""}`}
-  onClick={() => toggleEquipo(eq.nombre)}
->
-  {eq.nombre} — {eq.total_reservas} reservas en 6 meses
-</button>
+              <div ref={top5ChartRef}>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={unificarDatosParaGrafico(top5)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="mes" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    {top5.map((eq, i) => (
+                      <Line 
+                        key={eq.nombre} 
+                        dataKey={eq.nombre} 
+                        stroke={colores[i % colores.length]} 
+                        dot={false} 
+                      />
+                    ))}
+                    <Brush dataKey="mes" height={30} stroke="#8884d8" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
 
-                  </h2>
-
-                  <div className={`accordion-collapse collapse ${equiposAbiertos.includes(eq.nombre) ? "show" : ""}`}>
-                    <div className="accordion-body p-0">
-                      <table className="table table-sm table-bordered mb-0 text-center">
+              <Accordion className="mt-4">
+                {top5.map(eq => (
+                  <Accordion.Item key={eq.nombre} eventKey={eq.nombre}>
+                    <Accordion.Header onClick={() => toggleEquipo(eq.nombre)}>
+                      {eq.nombre} — {eq.total_reservas} reservas en 6 meses
+                      {eq.precision !== null && (
+                        <Badge bg="success" className="ms-2">
+                          Precisión: {eq.precision.toFixed(2)}%
+                        </Badge>
+                      )}
+                    </Accordion.Header>
+                    <Accordion.Body className="p-0">
+                      <Table striped bordered hover responsive className="mb-0">
                         <thead>
-                          <tr><th>Mes</th><th>Tipo</th><th>Cantidad</th></tr>
+                          <tr>
+                            <th>Mes</th>
+                            <th>Tipo</th>
+                            <th>Cantidad</th>
+                            <th>Reg. Lineal</th>
+                            <th>SVR</th>
+                          </tr>
                         </thead>
                         <tbody>
                           {eq.prediccion.map((p, idx) => (
                             <tr key={idx}>
                               <td>{p.mes}</td>
-                              <td>{p.tipo}</td>
+                              <td>
+                                <Badge bg={getTipoBadge(p.tipo)}>
+                                  {p.tipo}
+                                </Badge>
+                              </td>
                               <td>{p.cantidad}</td>
+                              <td>{p.detalle?.regresion_lineal ?? "-"}</td>
+                              <td>{p.detalle?.svr ?? "-"}</td>
                             </tr>
                           ))}
                         </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                      </Table>
+                    </Accordion.Body>
+                  </Accordion.Item>
+                ))}
+              </Accordion>
+            </>
+          ) : (
+            <div className="text-center py-4">
+              No se encontraron datos de equipos más prestados
             </div>
-          </div>
-        </div>
-      ) : null}
+          )}
+        </Card.Body>
+      </Card>
 
-      <div className="card">
-        <div className="card-header text-center">🔎 Análisis individual</div>
-        <div className="card-body">
-          <div className="d-flex align-items-end gap-3 mb-3">
-            <div className="flex-grow-1">
-              <label>Selecciona un equipo:</label>
-              <AsyncSelect
-                cacheOptions
-                loadOptions={loadOptions}
-                styles={customSelectStyles}
-                defaultOptions
-                value={equipoSeleccionado}
-                onChange={setEquipoSeleccionado}
-                placeholder="Buscar equipo..."
-              />
-            </div>
-            <button className="btn btn-primary" onClick={analizarEquipo}>Analizar</button>
-          </div>
+      <Card className="shadow-sm">
+        <Card.Header className="text-center fw-bold">🔎 Análisis individual</Card.Header>
+        <Card.Body>
+          <Row className="g-3 align-items-end mb-4">
+            <Col md={8}>
+              <Form.Group controlId="equipoSeleccionado">
+                <Form.Label className="fw-bold">Seleccionar equipo</Form.Label>
+                <AsyncSelect
+                  cacheOptions
+                  loadOptions={loadOptions}
+                  styles={customSelectStyles}
+                  defaultOptions
+                  value={equipoSeleccionado}
+                  onChange={setEquipoSeleccionado}
+                  placeholder="Buscar equipo..."
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4} className="d-flex justify-content-end">
+              <Button 
+                variant="primary" 
+                onClick={analizarEquipo}
+                disabled={!equipoSeleccionado}
+              >
+                Analizar
+              </Button>
+            </Col>
+          </Row>
 
           {analisisEquipo && (
             <>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h4>📈 {nombreEquipoSeleccionado}</h4>
-                {precisionEquipo !== null && (
-                  <span className="badge bg-success">
-                    Precisión del modelo: {precisionEquipo.toFixed(2)}%
-                  </span>
-                )}
+              <Row className="align-items-center mb-3">
+                <Col>
+                  <h4 className="mb-0">{nombreEquipoSeleccionado}</h4>
+                </Col>
+                <Col md="auto">
+                  {precisionEquipo !== null && (
+                    <Badge bg="success" className="fs-6">
+                      Precisión del modelo: {precisionEquipo.toFixed(2)}%
+                    </Badge>
+                  )}
+                </Col>
+                <Col md="auto" className="d-flex gap-2">
+                  <Button
+                    variant="success"
+                    onClick={confirmarExportacionExcel}
+                    disabled={!analisisEquipo || analisisEquipo.length === 0}
+                    className="d-flex align-items-center gap-2"
+                  >
+                    <FaFileExcel /> Excel
+                  </Button>
+                  <Button
+                    variant="warning"
+                    onClick={confirmarExportacionImagen}
+                    disabled={!analisisEquipo || analisisEquipo.length === 0}
+                    className="d-flex align-items-center gap-2"
+                  >
+                    <FaFileImage /> Gráfico
+                  </Button>
+                </Col>
+              </Row>
+
+              <Row className="mb-3">
+                <Col>
+                  <Form.Group>
+                    <Form.Label className="fw-bold">Mostrar modelos</Form.Label>
+                    <div className="d-flex gap-3">
+                      <Form.Check
+                        type="checkbox"
+                        id="rlCheckboxEquipo"
+                        label="Regresión Lineal"
+                        checked={showRL}
+                        onChange={() => setShowRL(!showRL)}
+                      />
+                      <Form.Check
+                        type="checkbox"
+                        id="svrCheckboxEquipo"
+                        label="SVR"
+                        checked={showSVR}
+                        onChange={() => setShowSVR(!showSVR)}
+                      />
+                    </div>
+                  </Form.Group>
+                </Col>
+              </Row>
+
+              <div ref={chartRef}>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={analisisEquipo}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="mes" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="cantidad"
+                      stroke="#007bff"
+                      name="Reservas"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    {showRL && (
+                      <Line
+                        type="monotone"
+                        dataKey="detalle.regresion_lineal"
+                        stroke="#28a745"
+                        name="Regresión Lineal"
+                        dot={false}
+                        strokeDasharray="5 5"
+                        strokeWidth={2}
+                      />
+                    )}
+                    {showSVR && (
+                      <Line
+                        type="monotone"
+                        dataKey="detalle.svr"
+                        stroke="#ffc107"
+                        name="SVR"
+                        dot={false}
+                        strokeDasharray="3 3"
+                        strokeWidth={2}
+                      />
+                    )}
+                    <Brush dataKey="mes" height={30} stroke="#8884d8" />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
 
-              <div className="d-flex justify-content-center gap-4 mb-3">
-                <label className="form-check-label"><input type="checkbox" checked={showRL} onChange={() => setShowRL(!showRL)} /> Regresión lineal</label>
-                <label className="form-check-label"><input type="checkbox" checked={showSVR} onChange={() => setShowSVR(!showSVR)} /> SVR</label>
-              </div>
-
-              <ResponsiveContainer width="100%" height={350}>
-                <LineChart data={analisisEquipo}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="mes" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="cantidad" stroke="#8884d8" dot={false} name="Reservas" />
-                  {showRL && <Line type="monotone" dataKey="detalle.regresion_lineal" stroke="#82ca9d" dot={false} name="Regresión lineal" />}
-                  {showSVR && <Line type="monotone" dataKey="detalle.svr" stroke="#ffc658" dot={false} name="SVR" />}
-                  <Brush dataKey="mes" height={30} stroke="#8884d8" />
-                </LineChart>
-              </ResponsiveContainer>
-              <div style={{ overflowX: 'auto', width: '100%' }}>
-                <table className="table table-sm table-bordered text-center mt-3">
-                  <thead>
+              <h5 className="mt-4 mb-3">Detalle de datos</h5>
+              <div className="table-responsive" style={{ maxHeight: "400px" }}>
+                <Table striped hover>
+                  <thead className="table-dark sticky-top">
                     <tr>
                       <th>Mes</th>
-                      <th>Tipo</th>
                       <th>Cantidad</th>
-                      <th>Regresión lineal</th>
+                      <th>Tipo</th>
+                      <th>Reg. Lineal</th>
                       <th>SVR</th>
                     </tr>
                   </thead>
@@ -276,19 +624,23 @@ export default function PrediccionPorEquipoPage() {
                     {analisisEquipo.map((p, idx) => (
                       <tr key={idx}>
                         <td>{p.mes}</td>
-                        <td>{p.tipo}</td>
                         <td>{p.cantidad}</td>
+                        <td>
+                          <Badge bg={getTipoBadge(p.tipo)}>
+                            {p.tipo}
+                          </Badge>
+                        </td>
                         <td>{p.detalle?.regresion_lineal ?? "-"}</td>
                         <td>{p.detalle?.svr ?? "-"}</td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </Table>
               </div>
             </>
           )}
-        </div>
-      </div>
-    </div>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 }

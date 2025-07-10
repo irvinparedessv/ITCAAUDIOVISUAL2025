@@ -10,6 +10,7 @@ import PaginationComponent from "~/utils/Pagination";
 import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
+import { formatTimeRangeTo12h } from "~/utils/time";
 
 interface ReservaAulaReporte {
   id: number;
@@ -226,7 +227,7 @@ const ReporteUsoAulas = () => {
                         r.usuario,
                         r.aula,
                         r.fecha,
-                        r.horario,
+                        formatTimeRangeTo12h(r.horario),
                         r.estado,
                       ]);
 
@@ -527,7 +528,7 @@ const ReporteUsoAulas = () => {
                       <td>{r.usuario}</td>
                       <td>{r.aula}</td>
                       <td>{r.fecha}</td>
-                      <td>{r.horario}</td>
+                      <td>{formatTimeRangeTo12h(r.horario)}</td>
                       <td>
                         <span className={`badge bg-${getEstadoBadge(r.estado)}`}>
                           {r.estado}

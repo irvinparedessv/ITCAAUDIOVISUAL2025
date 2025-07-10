@@ -10,6 +10,7 @@ import PaginationComponent from "~/utils/Pagination";
 import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser, FaUser } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
+import { formatTimeRangeTo12h } from "~/utils/time";
 
 
 interface ReservaReporte {
@@ -257,7 +258,7 @@ const ReporteReservasPorUsuario = () => {
                                                 r.tipo,
                                                 r.nombre_recurso,
                                                 r.fecha,
-                                                r.horario,
+                                                formatTimeRangeTo12h(r.horario),
                                                 r.estado,
                                             ]);
 
@@ -570,7 +571,7 @@ const ReporteReservasPorUsuario = () => {
                                             <td>{r.tipo}</td>
                                             <td>{r.nombre_recurso}</td>
                                             <td>{r.fecha}</td>
-                                            <td>{r.horario}</td>
+                                            <td>{formatTimeRangeTo12h(r.horario)}</td>
                                             <td>
                                                 <span className={`badge bg-${getEstadoBadge(r.estado)}`}>
                                                     {r.estado}

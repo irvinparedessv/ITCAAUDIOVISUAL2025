@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import PaginationComponent from "~/utils/Pagination";
 import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { formatTimeRangeTo12h } from "~/utils/time";
 
 interface ReservaReporte {
   id: number;
@@ -232,7 +233,7 @@ const ReporteReservasPorFecha = () => {
                       });
 
                       const body = all.map((r) => [
-                        r.id, r.usuario, r.tipo, r.nombre_recurso, r.fecha, r.horario, r.estado
+                        r.id, r.usuario, r.tipo, r.nombre_recurso, r.fecha, formatTimeRangeTo12h(r.horario), r.estado
                       ]);
 
                       let startY = 45;
@@ -487,7 +488,7 @@ const ReporteReservasPorFecha = () => {
                       <td>{r.tipo}</td>
                       <td>{r.nombre_recurso}</td>
                       <td>{r.fecha}</td>
-                      <td>{r.horario}</td>
+                      <td>{formatTimeRangeTo12h(r.horario)}</td>
                       <td>
                         <span className={`badge bg-${getEstadoBadge(r.estado)}`}>
                           {r.estado}

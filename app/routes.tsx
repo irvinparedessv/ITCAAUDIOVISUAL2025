@@ -56,6 +56,7 @@ import ReporteInventarioEquipos from "./components/reports/ReporteInventarioEqui
 import OpcionesAnalisis from "./dashboard/OpcionesAnalisis";
 import ReporteReservasPorAula from "./components/reports/ReporteReservasPorAula";
 import PrediccionAulaPage from "./components/prediction/PrediccionAulaPage";
+import RoomsAvailabilityList from "./components/rooms/RoomsAvailability";
 
 const router = createBrowserRouter([
   {
@@ -110,7 +111,10 @@ const router = createBrowserRouter([
             path: "/reservas-aula/:id",
             element: <ReservaAulaDetail />,
           },
-
+          {
+            path: "roomsavailability",
+            element: <RoomsAvailabilityList />,
+          },
           {
             path: "reservations",
             element: <ReservationList />,

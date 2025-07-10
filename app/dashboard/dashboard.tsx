@@ -106,6 +106,15 @@ export default function Dashboard() {
             onMouseLeave={handleMouseLeave}
           />
           <DashboardCard
+            title="Disponibilidad de Espacios"
+            icon={<FaClipboardList size={24} style={getIconStyle()} />}
+            link="/roomsavailability"
+            description="Ver reporte completo de disponibilidad de espacios"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
+          <DashboardCard
             title="Usuarios"
             icon={<FaUsers size={24} style={getIconStyle()} />}
             link="/usuarios"
@@ -245,6 +254,15 @@ export default function Dashboard() {
             icon={<FaClipboardList size={24} style={getIconStyle()} />}
             link="/equipmentavailability"
             description="Ver reporte completo del disponibilidad de equipos"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
+          <DashboardCard
+            title="Disponibilidad de Espacios"
+            icon={<FaClipboardList size={24} style={getIconStyle()} />}
+            link="/roomsavailability"
+            description="Ver reporte completo de disponibilidad de espacios"
             borderStyle={cardBorderStyle}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}

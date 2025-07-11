@@ -2,7 +2,6 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AulaReservacionEstadoModal from "../components/attendantadmin/RoomReservationStateModal";
 import ReservacionEstadoModal from "./ReservacionEstado";
-
 import {
   Card,
   ListGroup,
@@ -10,11 +9,16 @@ import {
   Spinner,
   Alert,
   Button,
+  Row,
+  Col,
 } from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
 import api from "../api/axios";
 import type { Room } from "~/types/reservationroom";
 import type { ReservationStatus } from "~/types/reservation";
+import { FaCalendarAlt, FaLongArrowAltLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { formatTo12h } from "~/utils/time";
 
 type Reserva = {
   usuario: string;
@@ -38,6 +42,7 @@ export default function ReservationDetail() {
   const [showModal, setShowModal] = useState(false);
   const [accion, setAccion] = useState<"Aprobar" | "Rechazar" | null>(null);
   const [comentario, setComentario] = useState("");
+  const navigate = useNavigate();
 
   function formatDayWithDate(fecha: string) {
     const date = new Date(fecha);
@@ -49,14 +54,14 @@ export default function ReservationDetail() {
     });
   }
 
-  function formatTime(fechaHora: string) {
-    const fechaISO = fechaHora.replace(" ", "T");
-    const date = new Date(fechaISO);
-    return date.toLocaleTimeString("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
+  // function formatTime(fechaHora: string) {
+  //   const fechaISO = fechaHora.replace(" ", "T");
+  //   const date = new Date(fechaISO);
+  //   return date.toLocaleTimeString("es-ES", {
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //   });
+  // }
 
   useEffect(() => {
     if (!idQr) return;
@@ -102,6 +107,10 @@ export default function ReservationDetail() {
     setAccion(null);
   };
 
+  const handleBack = () => {
+    navigate("/reservations");
+  };
+
   if (loading) {
     return (
       <div className="text-center my-5">
@@ -115,7 +124,7 @@ export default function ReservationDetail() {
     return (
       <div className="text-center my-5">
         <Alert variant="danger">{error}</Alert>
-        <Button variant="primary" onClick={() => window.history.back()}>
+        <Button variant="primary" onClick={handleBack}>
           Volver
         </Button>
       </div>
@@ -130,82 +139,114 @@ export default function ReservationDetail() {
         reserva.aula
       } el ${reserva.dia}`;
 
+  const cleanEstado = reserva.estado.trim().toLowerCase();
+
   return (
     <>
-      <Card className="shadow-lg my-4">
-        <Card.Header className="bg-primary text-white text-center">
-          <h5>Detalle de Reserva {reserva.isRoom ? "Espacio" : "Equipo"}</h5>
+      <Card className="shadow-lg my-4 border-0">
+        <Card.Header
+          className="text-white d-flex align-items-center gap-2"
+          style={{
+            backgroundColor: "#b1291d",
+            borderRadius: "0.5rem 0.5rem 0 0",
+            padding: "1.25rem",
+          }}
+        >
+          <FaLongArrowAltLeft
+            onClick={handleBack}
+            title="Regresar"
+            style={{
+              cursor: 'pointer',
+              fontSize: '2rem',
+            }}
+          />
+          <FaCalendarAlt />
+          <h5 className="mb-0">
+            Detalle de Reserva {reserva.isRoom ? "de Espacio" : "de Equipo"}
+          </h5>
         </Card.Header>
         <Card.Body>
-          <ListGroup variant="flush">
-            <ListGroup.Item>
-              <strong>Usuario:</strong> {reserva.usuario}
-            </ListGroup.Item>
+          <Row>
+            <Col md={8}>
+              <ListGroup variant="flush">
+                <ListGroup.Item>
+                  <strong>Usuario:</strong> {reserva.usuario}
+                </ListGroup.Item>
 
-            {!reserva.isRoom && reserva.equipo && (
-              <ListGroup.Item>
-                <strong>Equipos:</strong> {reserva.equipo.join(", ")}
-              </ListGroup.Item>
-            )}
+                {!reserva.isRoom && reserva.equipo && (
+                  <ListGroup.Item>
+                    <strong>Equipos:</strong> {reserva.equipo.join(", ")}
+                  </ListGroup.Item>
+                )}
 
-            {reserva.isRoom && (
-              <ListGroup.Item>
-                <strong>Espacio:</strong> {reserva.espacio.name}
-              </ListGroup.Item>
-            )}
+                {reserva.isRoom && (
+                  <ListGroup.Item>
+                    <strong>Espacio:</strong> {reserva.espacio.name}
+                  </ListGroup.Item>
+                )}
 
-            {!reserva.isRoom && (
-              <ListGroup.Item>
-                <strong>Aula:</strong> {reserva.aula}
-              </ListGroup.Item>
-            )}
+                {!reserva.isRoom && (
+                  <ListGroup.Item>
+                    <strong>Aula:</strong> {reserva.aula}
+                  </ListGroup.Item>
+                )}
 
-            <ListGroup.Item>
-              <strong>Día:</strong> {formatDayWithDate(reserva.dia)}
-            </ListGroup.Item>
+                <ListGroup.Item>
+                  <strong>Día:</strong> {formatDayWithDate(reserva.dia)}
+                </ListGroup.Item>
 
-            {!reserva.isRoom && reserva.horaSalida && (
-              <ListGroup.Item>
-                <strong>Hora de Reserva:</strong>{" "}
-                {formatTime(reserva.horaSalida)}
-              </ListGroup.Item>
-            )}
+                {!reserva.isRoom && reserva.horaSalida && (
+                  <ListGroup.Item>
+                    <strong>Hora de Reserva:</strong>{" "}
+                    {formatTo12h(reserva.horaSalida)}
+                  </ListGroup.Item>
+                )}
 
-            {!reserva.isRoom && reserva.horaEntrada && (
-              <ListGroup.Item>
-                <strong>Hora de Entrega:</strong>{" "}
-                {formatTime(reserva.horaEntrada)}
-              </ListGroup.Item>
-            )}
+                {!reserva.isRoom && reserva.horaEntrada && (
+                  <ListGroup.Item>
+                    <strong>Hora de Entrega:</strong>{" "}
+                    {formatTo12h(reserva.horaEntrada)}
+                  </ListGroup.Item>
+                )}
 
-            {reserva.isRoom && reserva.horario && (
-              <ListGroup.Item>
-                <strong>Horario:</strong> {reserva.horario}
-              </ListGroup.Item>
-            )}
+                {reserva.isRoom && reserva.horario && (
+                  <ListGroup.Item>
+                    <strong>Horario:</strong> {reserva.horario}
+                  </ListGroup.Item>
+                )}
 
-            <ListGroup.Item>
-              <strong>Estado:</strong>{" "}
-              <Badge bg={getBadgeColor(reserva.estado)}>{reserva.estado}</Badge>
-            </ListGroup.Item>
+                <ListGroup.Item>
+                  <strong>Estado:</strong>{" "}
+                  <Badge
+                    bg={getBadgeColor(cleanEstado)}
+                    className="text-uppercase"
+                  >
+                    {capitalize(cleanEstado)}
+                  </Badge>
+                </ListGroup.Item>
+              </ListGroup>
+            </Col>
 
-            <ListGroup.Item className="text-center">
-              <strong>Código QR de la Reserva:</strong>
-              <div className="mt-2">
-                <QRCodeSVG value={qrData} size={128} />
-              </div>
-            </ListGroup.Item>
+            <Col
+              md={4}
+              className="d-flex flex-column align-items-center justify-content-center text-center mt-4 mt-md-0"
+            >
+              <p className="mb-2">
+                <strong>Código QR de la Reserva:</strong>
+              </p>
+              <QRCodeSVG value={qrData} size={140} />
+            </Col>
+          </Row>
 
-            <ListGroup.Item className="text-center mt-3">
-              <Button
-                variant="success"
-                className="mx-2"
-                onClick={() => handleAbrirModal("Aprobar")}
-              >
-                Actualizar Estado
-              </Button>
-            </ListGroup.Item>
-          </ListGroup>
+          <div className="text-center mt-4">
+            <Button
+              variant="success"
+              className="mx-2"
+              onClick={() => handleAbrirModal("Aprobar")}
+            >
+              Actualizar Estado
+            </Button>
+          </div>
         </Card.Body>
       </Card>
 
@@ -236,18 +277,25 @@ export default function ReservationDetail() {
   );
 }
 
-function getBadgeColor(estado: ReservationStatus) {
-  switch (estado.toLowerCase()) {
+function getBadgeColor(estado: string) {
+  const clean = estado.trim().toLowerCase();
+  switch (clean) {
     case "pendiente":
       return "warning";
     case "aprobado":
-      return "primary";
+      return "success";
     case "devuelto":
       return "info";
     case "cancelado":
       return "danger";
     case "rechazado":
-    default:
       return "secondary";
+    default:
+      return "dark";
   }
+}
+
+function capitalize(text: string) {
+  const clean = text.trim().toLowerCase();
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
 }

@@ -6,19 +6,20 @@ import {
   Badge,
   Spinner,
   Alert,
-  Button,
-  Modal,
-  Form,
+  Row,
+  Col,
 } from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
 import api from "../../api/axios";
 import { formatTimeRangeTo12h } from "~/utils/time";
+import { FaCalendarAlt, FaLongArrowAltLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 type ReservaAula = {
   id: number;
   fecha: string;
   horario: string;
-  estado: "pendiente" | "aprobada" | "rechazada";
+  estado: "pendiente" | "aprobado" | "rechazado";
   comentario: string | null;
   aula: {
     id: number;
@@ -39,8 +40,7 @@ export default function ReservationDetailAula() {
   const [reserva, setReserva] = useState<ReservaAula | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [accion, setAccion] = useState<"Aprobar" | "Rechazar" | null>(null);
-  const [comentario, setComentario] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchReserva = async () => {
@@ -57,7 +57,9 @@ export default function ReservationDetailAula() {
 
     if (id) fetchReserva();
   }, [id]);
-
+const handleBack = () => {
+    navigate("/reservations-room");
+  };
   const formatDate = (fecha: string) => {
     return new Date(fecha).toLocaleDateString("es-ES", {
       weekday: "long",
@@ -68,17 +70,20 @@ export default function ReservationDetailAula() {
   };
 
   const getBadgeColor = (estado: string) => {
-    switch (estado) {
-      case "pendiente":
-        return "warning";
-      case "aprobada":
-        return "success";
-      case "rechazada":
-        return "danger";
-      default:
-        return "secondary";
-    }
-  };
+  const cleanEstado = estado.trim().toLowerCase();
+
+  switch (cleanEstado) {
+    case "pendiente":
+      return "warning";
+    case "aprobado":
+      return "success";
+    case "rechazado":
+      return "danger";
+    default:
+      return "secondary";
+  }
+};
+
 
   if (loading) {
     return (
@@ -99,43 +104,81 @@ export default function ReservationDetailAula() {
 
   if (!reserva) return null;
 
+  // Debug del estado recibido
+  console.log("Estado recibido:", reserva.estado);
+
   const qrData = `Reserva Aula: ${reserva.aula.name} | ${reserva.fecha} | ${reserva.horario} | Usuario: ${reserva.user.first_name} ${reserva.user.last_name}`;
 
   return (
-    <>
-      <Card className="shadow-lg my-4">
-        <Card.Header className="bg-primary text-white text-center">
-          <h5>Detalle de Reserva de Aula</h5>
-        </Card.Header>
-        <Card.Body>
-          <ListGroup variant="flush">
-            <ListGroup.Item>
-              <strong>Aula:</strong> {reserva.aula.name}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Fecha:</strong> {formatDate(reserva.fecha)}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Horario:</strong> {formatTimeRangeTo12h(reserva.horario)}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Estado:</strong>{" "}
-              <Badge bg={getBadgeColor(reserva.estado)}>{reserva.estado}</Badge>
-            </ListGroup.Item>
-            {reserva.comentario && (
+    <Card className="shadow-lg my-4 border-0">
+      <Card.Header
+        className="text-white d-flex align-items-center gap-2"
+        style={{
+          backgroundColor: "#b1291d",
+          borderRadius: "0.5rem 0.5rem 0 0",
+          padding: "1.25rem",
+        }}
+      >
+        <FaLongArrowAltLeft
+                      onClick={handleBack}
+                      title="Regresar"
+                      style={{
+                        cursor: 'pointer',
+                        fontSize: '2rem',
+                      }}
+                    />
+        <FaCalendarAlt />
+        <h5 className="mb-0">Detalle de Reserva de Aula</h5>
+      </Card.Header>
+      <Card.Body>
+        <Row>
+          <Col md={8}>
+            <ListGroup variant="flush">
               <ListGroup.Item>
-                <strong>Comentario:</strong> {reserva.comentario}
+                <strong>Aula:</strong> {reserva.aula.name}
               </ListGroup.Item>
-            )}
-            <ListGroup.Item className="text-center">
+              <ListGroup.Item>
+                <strong>Fecha:</strong> {formatDate(reserva.fecha)}
+              </ListGroup.Item>
+              <ListGroup.Item>
+                <strong>Horario:</strong>{" "}
+                {formatTimeRangeTo12h(reserva.horario)}
+              </ListGroup.Item>
+              <ListGroup.Item>
+                <strong>Estado:</strong>{" "}
+                <Badge
+                  bg={getBadgeColor(reserva.estado)}
+                  className="text-uppercase"
+                >
+                  {reserva.estado}
+                </Badge>
+              </ListGroup.Item>
+              <ListGroup.Item>
+                <strong>Usuario:</strong>{" "}
+                {`${reserva.user.first_name} ${reserva.user.last_name}`} <br />
+                <small className="text-muted">{reserva.user.email}</small>
+              </ListGroup.Item>
+              <ListGroup.Item>
+                <strong>Rol:</strong> {reserva.user.role.nombre}
+              </ListGroup.Item>
+              {reserva.comentario && (
+                <ListGroup.Item>
+                  <strong>Comentario:</strong> {reserva.comentario}
+                </ListGroup.Item>
+              )}
+            </ListGroup>
+          </Col>
+          <Col
+            md={4}
+            className="d-flex flex-column align-items-center justify-content-center text-center mt-4 mt-md-0"
+          >
+            <p className="mb-2">
               <strong>Código QR de la Reserva:</strong>
-              <div className="mt-2">
-                <QRCodeSVG value={qrData} size={128} />
-              </div>
-            </ListGroup.Item>
-          </ListGroup>
-        </Card.Body>
-      </Card>
-    </>
+            </p>
+            <QRCodeSVG value={qrData} size={140} />
+          </Col>
+        </Row>
+      </Card.Body>
+    </Card>
   );
 }

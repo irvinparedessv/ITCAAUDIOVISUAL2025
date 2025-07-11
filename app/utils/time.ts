@@ -26,12 +26,20 @@ export function formatTo12h(time24: string): string {
   return `${hour}:${minutes} ${ampm}`;
 }
 
-export function formatDateTimeTo12h(datetime: string): string {
-  const [datePart, timePart] = datetime.split(" ");
-  const formattedDate = formatOnlyDate(datePart);
-  const formattedTime = formatTo12h(timePart.slice(0, 5));
-  return `${formattedDate} ${formattedTime}`;
+export function formatDateTimeTo12h(dateTimeStr?: string | null): string {
+  if (!dateTimeStr) return "—"; // valor predeterminado si es null o undefined
+
+  const date = new Date(dateTimeStr);
+  if (isNaN(date.getTime())) return "—"; // si no es una fecha válida
+
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const formattedHours = hours % 12 || 12;
+  const formattedMinutes = minutes.toString().padStart(2, "0");
+  return `${formattedHours}:${formattedMinutes} ${ampm}`;
 }
+
 
 export function formatTimeRangeTo12h(range24: string): string {
   const [start, end] = range24.split(" - ");

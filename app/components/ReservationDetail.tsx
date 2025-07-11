@@ -65,9 +65,24 @@ export default function ReservationDetail() {
       try {
         const response = await api.get(`/reservasQR/${idQr}`);
         setReserva(response.data);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setError("No se pudo cargar la reserva.");
+
+        if (err.response) {
+          if (err.response.status === 404) {
+            setError("No se encontró la reserva.");
+          } else if (err.response.status === 403) {
+            setError("No tiene autorización para ver esta reserva.");
+          } else {
+            setError(
+              `Error ${err.response.status}: ${
+                err.response.data?.message || "Error desconocido"
+              }`
+            );
+          }
+        } else {
+          setError("Error de red o servidor no disponible.");
+        }
       } finally {
         setLoading(false);
       }
@@ -87,29 +102,6 @@ export default function ReservationDetail() {
     setAccion(null);
   };
 
-  const handleEnviar = async () => {
-    if (!reserva) return;
-
-    try {
-      const nuevoEstado: ReservationStatus =
-        accion === "Aprobar" ? "Aprobado" : "Rechazado";
-
-      await api.post(`/reservas/${idQr}/estado`, {
-        estado: nuevoEstado,
-        comentario,
-      });
-
-      setReserva({
-        ...reserva,
-        estado: nuevoEstado,
-      });
-
-      setShowModal(false);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   if (loading) {
     return (
       <div className="text-center my-5">
@@ -123,6 +115,9 @@ export default function ReservationDetail() {
     return (
       <div className="text-center my-5">
         <Alert variant="danger">{error}</Alert>
+        <Button variant="primary" onClick={() => window.history.back()}>
+          Volver
+        </Button>
       </div>
     );
   }
@@ -220,8 +215,9 @@ export default function ReservationDetail() {
           onHide={handleCerrarModal}
           reservationId={reserva.id}
           currentStatus={reserva.estado}
-          onSuccess={async () => {
-            await handleEnviar();
+          onSuccess={async (newEstado) => {
+            setReserva({ ...reserva, estado: newEstado });
+            setShowModal(false);
           }}
         />
       ) : (

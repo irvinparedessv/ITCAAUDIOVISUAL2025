@@ -55,9 +55,9 @@ const Filters: React.FC<FiltersProps> = ({
           >
             <option value="Todos">Todos los estados</option>
             <option value="Pendiente">Pendiente</option>
-            <option value="aprobado">Entregado</option>
-            <option value="devuelto">Devuelto</option>
+            <option value="Aprobado">Aprobado</option>
             <option value="rechazado">Rechazado</option>
+            <option value="Cancelado">Cancelado</option>
           </Form.Select>
         </Col>
         <Col md={3}>
@@ -71,11 +71,10 @@ const Filters: React.FC<FiltersProps> = ({
         </Col>
       </Row>
       <div className="d-flex justify-content-end">
-  <Button variant="outline-danger" onClick={onReset}>
-    Limpiar filtros
-  </Button>
-</div>
-
+        <Button variant="outline-danger" onClick={onReset}>
+          Limpiar filtros
+        </Button>
+      </div>
     </div>
   );
 };

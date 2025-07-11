@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Equipo, EquipoFilters, TipoEquipo } from "app/types/equipo";
 import { Button, Form, InputGroup, Spinner, Modal } from "react-bootstrap";
 import toast from "react-hot-toast";
-import { FaEdit, FaFilter, FaTrash, FaTimes, FaSearch, FaLongArrowAltLeft, FaPlus } from "react-icons/fa";
+import { FaEdit, FaFilter, FaTrash, FaTimes, FaSearch, FaLongArrowAltLeft, FaPlus, FaTools } from "react-icons/fa";
 import { getEquipos } from "../../services/equipoService";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
@@ -164,27 +164,38 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
 
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
         <div className="d-flex align-items-center gap-3">
-          <FaLongArrowAltLeft
-            onClick={handleBack}
-            title="Regresar"
-            style={{
-              cursor: 'pointer',
-              fontSize: '2rem',
-            }}
-          />
-          <h2 className="fw-bold m-0">Listado de Equipos</h2>
-        </div>
+  <FaLongArrowAltLeft
+    onClick={handleBack}
+    title="Regresar"
+    style={{
+      cursor: 'pointer',
+      fontSize: '2rem',
+    }}
+  />
+  <h2 className="fw-bold m-0">Listado de Equipos</h2>
+</div>
 
-        <Button
-          variant="primary"
-          className="d-flex align-items-center gap-2 ms-md-0 ms-auto"
-          onClick={() => navigate('/equipo')}
-        >
-          <FaPlus />
-          Crear Nuevo Equipo
-        </Button>
-      </div>
+<div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
+  <Button
+    variant="primary"
+    className="d-flex align-items-center gap-2"
+    onClick={() => navigate('/tipoEquipo')}
+  >
+    <FaTools />
+    Tipo de Equipo
+  </Button>
 
+  <Button
+    variant="primary"
+    className="d-flex align-items-center gap-2"
+    onClick={() => navigate('/equipo')}
+  >
+    <FaPlus />
+    Crear Nuevo Equipo
+  </Button>
+</div>
+
+</div>
       {/* Buscador + botón de filtros */}
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
         {/* Input con ícono */}

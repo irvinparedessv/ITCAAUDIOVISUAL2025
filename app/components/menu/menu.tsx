@@ -361,6 +361,7 @@ const NavbarMenu = () => {
 
       {user?.role === Role.Administrador && (
         <>
+         {/* Menu admin mobile */}
           {checkAccess("/reservations") && (
             <Dropdown className="mb-2 offcanvas-dropdown">
               <Dropdown.Toggle as={CustomToggle} id="dropdown-reservas-sidebar">
@@ -406,6 +407,14 @@ const NavbarMenu = () => {
                 <Dropdown.Item
                   as={Link}
                   to="/equipolist"
+                  className="d-flex align-items-center gap-2 text-dark"
+                  onClick={handleCloseSidebar}
+                >
+                  <FaList className="me-2" /> Listado de Tipo de Equipos
+                </Dropdown.Item>
+                <Dropdown.Item
+                  as={Link}
+                  to="/tipoEquipo"
                   className="d-flex align-items-center gap-2 text-dark"
                   onClick={handleCloseSidebar}
                 >
@@ -534,7 +543,8 @@ const NavbarMenu = () => {
                   className="d-flex align-items-center gap-2 text-dark"
                   onClick={handleCloseSidebar}
                 >
-                  <FaComputer className="me-2" /> Reservas de Equipos
+                  <FaComputer className="me-2" />
+                   Reservas de Equipos
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
@@ -879,34 +889,25 @@ const NavbarMenu = () => {
             >
               <Dropdown.Item
                 as={Link}
-                to="/addreservation"
+                to="/reservations"
                 className="d-flex align-items-start text-dark"
               >
                 <FaComputer className="me-2" />
                 <div>
                   <div className="fw-bold">Reserva de Equipos</div>
+                  <small>Ver o gestionar equipos reservados</small>
                 </div>
               </Dropdown.Item>
 
               <Dropdown.Item
                 as={Link}
-                to="/reservationsroom"
+                to="/reservations-room"
                 className="d-flex align-items-start text-dark"
               >
                 <FaDoorOpen className="me-2" />
                 <div>
                   <div className="fw-bold">Reserva de Espacios</div>
-                </div>
-              </Dropdown.Item>
-              <Dropdown.Item
-                as={Link}
-                to="/reservations"
-                className="d-flex align-items-start text-dark"
-                onClick={handleCloseSidebar}
-              >
-                <FaClipboardList className="me-2" />
-                <div>
-                  <div className="fw-bold">Aprobar reservas</div>
+                  <small>Ver o gestionar aulas reservadas</small>
                 </div>
               </Dropdown.Item>
             </HoverDropdown>
@@ -935,13 +936,13 @@ const NavbarMenu = () => {
 
               <Dropdown.Item
                 as={Link}
-                to="/equipo"
+                to="/tipoEquipo"
                 className="d-flex align-items-start text-dark"
               >
-                <FaPlus className="me-2" />
+                <FaList className="me-2" />
                 <div>
-                  <div className="fw-bold">Nuevo Equipo</div>
-                  <small>Agregar un nuevo equipo</small>
+                  <div className="fw-bold">Listado de Tipo de Equipos</div>
+                  <small>Ver todos los tipos de equipos</small>
                 </div>
               </Dropdown.Item>
             </HoverDropdown>
@@ -962,27 +963,14 @@ const NavbarMenu = () => {
                 className="d-flex align-items-center gap-2 text-dark"
                 onClick={handleCloseSidebar}
               >
-                <FaList className="me-2" /> Listado de Espacios
-              </Dropdown.Item>
-              <Dropdown.Item
-                as={Link}
-                to="/createRoom"
-                className="d-flex align-items-center gap-2 text-dark"
-                onClick={handleCloseSidebar}
-              >
-                <FaPlus className="me-2" /> Nuevo Espacio
+                <FaList className="me-2" />
+                <div>
+                  <div className="fw-bold">Listado de Espacios</div>
+                  <small>Ver listado de espacios</small>
+                </div>
+                
               </Dropdown.Item>
             </HoverDropdown>
-          )}
-
-          {checkAccess("/reservations-room") && (
-            <Nav.Link
-              as={Link}
-              to="/reservations-room"
-              className="px-3 py-2 rounded text-dark"
-            >
-              <FaList className="me-1" /> Reserva de espacios
-            </Nav.Link>
           )}
         </>
       )}
@@ -1006,6 +994,7 @@ const NavbarMenu = () => {
                 <FaComputer className="me-2" />
                 <div>
                   <div className="fw-bold">Reserva de Equipos</div>
+                  <small>Ver o gestionar equipos reservados</small>
                 </div>
               </Dropdown.Item>
 
@@ -1018,6 +1007,7 @@ const NavbarMenu = () => {
                 <FaClipboardList className="me-2" />
                 <div>
                   <div className="fw-bold">Aprobar reservas</div>
+                  <small>Gestionar reservas</small>
                 </div>
               </Dropdown.Item>
             </HoverDropdown>

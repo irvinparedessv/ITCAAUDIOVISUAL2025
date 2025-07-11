@@ -15,18 +15,13 @@ import Home from "./routes/home";
 import AddReservation from "./routes/reservation";
 import ReservationList from "./routes/reservationList";
 import ReservationDetail from "./routes/reservationDetail";
-import ReservationDetailAdmin from "./routes/reservationDetailAdmin";
-import FormEquipo from "./routes/formEquipo";
 import CreacionEspacio from "./routes/creacionEspacio";
-import FormChat from "./routes/formChat";
-import OptionsReservation from "./routes/optionsReservation";
 import TipoEquipos from "./routes/tipoEquipos";
 import Equipos from "./routes/equipment/equipments";
 import FormUsuario from "./routes/formUsuario";
 import EditUsuario from "./routes/editUsuario";
 import UsuarioListPage from "./routes/usuarioList";
 import QrScan from "./routes/qr";
-import ApproveReservations from "./routes/attendant/approveReservations";
 import VerPerfil from "./routes/verPerfil";
 import EditPerfil from "./routes/editPerfil";
 import ReservacionEstado from "./routes/ReservacionEstado";
@@ -128,28 +123,12 @@ const router = createBrowserRouter([
             element: <EditEquipmentReservationForm />,
           },
           {
-            path: "reservationdetailAdmin",
-            element: <ReservationDetailAdmin />,
-          },
-          {
-            path: "formEquipo",
-            element: <FormEquipo />,
-          },
-          {
             path: "createRoom",
             element: <CreacionEspacio />,
           },
           {
-            path: "formChat",
-            element: <FormChat />,
-          },
-          {
             path: "equipmentavailability",
             element: <EquipmentAvailabilityListPage />,
-          },
-          {
-            path: "menu",
-            element: <OptionsReservation />,
           },
           {
             path: "reservationsroom",
@@ -168,7 +147,7 @@ const router = createBrowserRouter([
             element: <AsignarEncargadosForm />,
           },
           {
-            path: "tipoequipo",
+            path: "tipoEquipo",
             element: <TipoEquipos />,
           },
           {
@@ -200,24 +179,12 @@ const router = createBrowserRouter([
             element: <QrScan />,
           },
           {
-            path: "approvereservations",
-            element: <ApproveReservations />,
-          },
-          {
             path: "perfil",
             element: <VerPerfil />,
           },
           {
             path: "editarPerfil",
             element: <EditPerfil />,
-          },
-          {
-            path: "actualizarEstado/:id",
-            element: <ReservacionEstado />,
-          },
-          {
-            path: "actualizarEstadoAula/:id",
-            element: <ReservacionEstadoAula />,
           },
           {
             path: "bitacora",

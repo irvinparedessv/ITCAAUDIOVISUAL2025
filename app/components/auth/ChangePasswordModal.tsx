@@ -32,8 +32,30 @@ export default function ChangePasswordModal({ show, onHide }: { show: boolean; o
     e.preventDefault();
     setLoading(true);
 
+
+    toast.dismiss();
+
+    // Validaciones manuales
+    if (!form.current_password) {
+      toast.error("Por favor ingresa tu contraseña actual");
+      setLoading(false);
+      return;
+    }
+
+    if (!form.new_password) {
+      toast.error("Por favor ingresa una nueva contraseña");
+      setLoading(false);
+      return;
+    }
+
+    if (!form.new_password_confirmation) {
+      toast.error("Por favor confirma tu nueva contraseña");
+      setLoading(false);
+      return;
+    }
+
     if (form.new_password !== form.new_password_confirmation) {
-      toast.error("Las contraseñas no coinciden");
+      toast.error("Las nuevas contraseñas no coinciden");
       setLoading(false);
       return;
     }
@@ -44,39 +66,35 @@ export default function ChangePasswordModal({ show, onHide }: { show: boolean; o
       return;
     }
 
-   try {
-  const res = await api.post("/user/update-password", {
-    current_password: form.current_password,
-    new_password: form.new_password,
-    new_password_confirmation: form.new_password_confirmation,
-  });
+    try {
+      const res = await api.post("/user/update-password", {
+        current_password: form.current_password,
+        new_password: form.new_password,
+        new_password_confirmation: form.new_password_confirmation,
+      });
 
-  toast.success(res.data.message || "Contraseña actualizada con éxito");
+      toast.success(res.data.message || "Contraseña actualizada con éxito");
 
-  // Cierra sesión si backend lo indica
-  if (res.data.logout) {
-    setTimeout(() => {
-      // Limpia localStorage/sessionStorage si usas token
-      localStorage.removeItem("token");
-      localStorage.removeItem("user"); // o lo que tengas
+      // Cierra sesión si backend lo indica
+      if (res.data.logout) {
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+        }, 1500);
+        return;
+      }
 
-      // Redirige al login
-      window.location.href = "/login";
-    }, 1500); // espera a que el toast se muestre
-    return;
-  }
-
-  // Reset del formulario si no hay logout automático
-  setForm({
-    current_password: "",
-    new_password: "",
-    new_password_confirmation: "",
-  });
-  onHide();
-} catch (error: any) {
-  toast.error(error.response?.data?.message || "Error al cambiar contraseña");
-}
-finally {
+      // Reset del formulario
+      setForm({
+        current_password: "",
+        new_password: "",
+        new_password_confirmation: "",
+      });
+      onHide();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error al cambiar contraseña");
+    } finally {
       setLoading(false);
     }
   };
@@ -84,13 +102,15 @@ finally {
   return (
     <Modal show={show} onHide={onHide} centered>
       <Form onSubmit={handleSubmit}>
-        <Modal.Header    closeButton
-        className="text-white"
-        style={{
-          backgroundColor: "rgb(177, 41, 29)",
-          borderBottom: "none",
-          padding: "1.5rem",
-        }} >
+        <Modal.Header
+          closeButton
+          className="text-white"
+          style={{
+            backgroundColor: "rgb(177, 41, 29)",
+            borderBottom: "none",
+            padding: "1.5rem",
+          }}
+        >
           <Modal.Title className="fw-bold">Cambiar Contraseña</Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -104,7 +124,6 @@ finally {
                 value={form.current_password}
                 onChange={handleChange}
                 placeholder="Ingresa tu contraseña actual"
-                required
               />
               <Button variant="outline-secondary" onClick={() => setShowCurrent(!showCurrent)}>
                 {showCurrent ? <EyeSlashFill /> : <EyeFill />}
@@ -122,12 +141,14 @@ finally {
                 value={form.new_password}
                 onChange={handleChange}
                 placeholder="Nueva contraseña segura"
-                required
               />
               <Button variant="outline-secondary" onClick={() => setShowNew(!showNew)}>
                 {showNew ? <EyeSlashFill /> : <EyeFill />}
               </Button>
             </InputGroup>
+            <Form.Text muted>
+              Debe contener mayúscula, minúscula, número, carácter especial y mínimo 8 caracteres
+            </Form.Text>
           </Form.Group>
 
           {/* Confirmación */}
@@ -140,7 +161,6 @@ finally {
                 value={form.new_password_confirmation}
                 onChange={handleChange}
                 placeholder="Confirma la nueva contraseña"
-                required
               />
               <Button variant="outline-secondary" onClick={() => setShowConfirm(!showConfirm)}>
                 {showConfirm ? <EyeSlashFill /> : <EyeFill />}

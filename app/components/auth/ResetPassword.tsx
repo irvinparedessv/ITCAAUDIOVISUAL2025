@@ -10,15 +10,17 @@ import {
   FaEye,
   FaEyeSlash,
 } from "react-icons/fa";
+import { Modal } from "react-bootstrap";
+import ForgotPassword from "../auth/ForgotPassword";
 
 const ResetPassword: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [passwordConfirm, setPasswordConfirm] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showPasswordConfirm, setShowPasswordConfirm] =
-    useState<boolean>(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isExpired, setIsExpired] = useState<boolean>(false);
+  const [showForgotModal, setShowForgotModal] = useState<boolean>(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -42,16 +44,12 @@ const ResetPassword: React.FC = () => {
 
   const validatePassword = (): boolean => {
     if (!password || !passwordConfirm) {
-      toast.error("Por favor completa todos los campos", {
-        icon: "⚠️",
-      });
+      toast.error("Por favor completa todos los campos", { icon: "⚠️" });
       return false;
     }
 
     if (password !== passwordConfirm) {
-      toast.error("Las contraseñas no coinciden", {
-        icon: "⚠️",
-      });
+      toast.error("Las contraseñas no coinciden", { icon: "⚠️" });
       return false;
     }
 
@@ -105,7 +103,6 @@ const ResetPassword: React.FC = () => {
       });
 
       toast.success("¡Contraseña restablecida con éxito!");
-
       setTimeout(() => navigate("/login"), 2000);
     } catch (err: any) {
       const errorMessage =
@@ -119,7 +116,7 @@ const ResetPassword: React.FC = () => {
       });
 
       if (err.response?.status === 400 || err.response?.status === 401) {
-        setTimeout(() => navigate("/forgot-password"), 3000);
+        setTimeout(() => setShowForgotModal(true), 1000);
       }
     } finally {
       setIsLoading(false);
@@ -152,9 +149,13 @@ const ResetPassword: React.FC = () => {
       {isExpired && (
         <div className="alert alert-danger text-center mb-4">
           Este enlace ha expirado. Por favor{" "}
-          <a href="/forgot-password" className="text-danger fw-bold">
+          <button
+            type="button"
+            className="btn btn-link text-danger fw-bold p-0"
+            onClick={() => setShowForgotModal(true)}
+          >
             solicita uno nuevo
-          </a>
+          </button>
           .
         </div>
       )}
@@ -234,6 +235,27 @@ const ResetPassword: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* Modal para solicitar nuevo enlace */}
+      <Modal
+        show={showForgotModal}
+        onHide={() => setShowForgotModal(false)}
+        centered
+      >
+        <Modal.Header closeButton
+          className="text-white"
+          style={{
+            backgroundColor: "rgb(177, 41, 29)",
+            borderBottom: "none",
+            padding: "1.5rem",
+          }}>
+          <Modal.Title>Solicitar nuevo enlace</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ForgotPassword />
+        </Modal.Body>
+      </Modal>
+
     </div>
   );
 };

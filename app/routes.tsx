@@ -8,7 +8,6 @@ import ForgotPassword from "./routes/forgot-password";
 import ResetPassword from "./routes/reset-password";
 import ConfirmAccount from "./routes/confirm-account";
 import Forbidden from "./components/auth/Forbidden";
-import ChangePassword from "./components/auth/change-password";
 
 // protegidas
 import Home from "./routes/home";
@@ -24,8 +23,6 @@ import UsuarioListPage from "./routes/usuarioList";
 import QrScan from "./routes/qr";
 import VerPerfil from "./routes/verPerfil";
 import EditPerfil from "./routes/editPerfil";
-import ReservacionEstado from "./routes/ReservacionEstado";
-import ReservacionEstadoAula from "./routes/ReservacionEstadoAula";
 import BitacoraPage from "./routes/BitacoraPage";
 import NotificationsList from "./routes/NotificationsList";
 import PrediccionPage from "./components/prediction/PrediccionPage";
@@ -59,10 +56,6 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
-    path: "/forgot-password",
-    element: <ForgotPassword />,
-  },
-  {
     path: "/reset-password",
     element: <ResetPassword />,
   },
@@ -73,10 +66,6 @@ const router = createBrowserRouter([
   {
     path: "/forbidden",
     element: <Forbidden />,
-  },
-  {
-    path: "/change-password",
-    element: <ChangePassword />,
   },
   {
     path: "/",

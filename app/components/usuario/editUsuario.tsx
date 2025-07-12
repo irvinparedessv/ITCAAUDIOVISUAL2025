@@ -39,7 +39,17 @@ const EditUsuario = () => {
     if (id) {
       getUsuarioById(id)
         .then((data) => {
-          setFormData(data);
+
+
+          setFormData({
+            first_name: data.first_name,
+            last_name: data.last_name,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+            role_id: data.role_id,
+            estado: data.estado,
+          });
           setLoading(false);
         })
         .catch((error) => {
@@ -50,66 +60,64 @@ const EditUsuario = () => {
     }
   }, [id]);
 
+
   const validateForm = (): boolean => {
-  let isValid = true;
-  let firstError: string | null = null;
+    let isValid = true;
+    let firstError: string | null = null;
 
-  // Validación de nombres
-  if (!formData.first_name.trim()) {
-    firstError = "El nombre es obligatorio";
-    isValid = false;
-  } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.first_name)) {
-    firstError = "El nombre solo puede contener letras";
-    isValid = false;
-  }
+    // Validación de nombres
+    if (!formData.first_name.trim()) {
+      firstError = "El nombre es obligatorio";
+      isValid = false;
+    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.first_name)) {
+      firstError = "El nombre solo puede contener letras";
+      isValid = false;
+    }
 
-  // Validación de apellidos
-  else if (!formData.last_name.trim()) {
-    firstError = "El apellido es obligatorio";
-    isValid = false;
-  } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.last_name)) {
-    firstError = "El apellido solo puede contener letras";
-    isValid = false;
-  }
+    // Validación de apellidos
+    else if (!formData.last_name.trim()) {
+      firstError = "El apellido es obligatorio";
+      isValid = false;
+    } else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(formData.last_name)) {
+      firstError = "El apellido solo puede contener letras";
+      isValid = false;
+    }
 
-  // Validación de email (correo institucional)
-  else if (!formData.email.trim()) {
-    firstError = "El correo electrónico es obligatorio";
-    isValid = false;
-  } else if (
-    !/^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)?(edu\.sv|esdu\.edu\.sv)$/.test(formData.email)
-  ) {
-    firstError = "Debe ingresar un correo institucional válido (terminado en .edu.sv o esdu.edu.sv)";
-    isValid = false;
-  }
+    // Validación de email (correo institucional)
+    else if (!formData.email.trim()) {
+      firstError = "El correo electrónico es obligatorio";
+      isValid = false;
+    } else if (
+      !/^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)?(edu\.sv|esdu\.edu\.sv)$/.test(formData.email)
+    ) {
+      firstError = "Debe ingresar un correo institucional válido (terminado en .edu.sv o esdu.edu.sv)";
+      isValid = false;
+    }
 
-  // Validación de teléfono
-  else if (formData.phone && !/^\d{4}-\d{4}$/.test(formData.phone)) {
-    firstError = "El teléfono debe tener el formato 0000-0000";
-    isValid = false;
-  }
+    // Validación de teléfono
+    else if (formData.phone && !/^\d{4}-\d{4}$/.test(formData.phone)) {
+      firstError = "El teléfono debe tener el formato 0000-0000";
+      isValid = false;
+    }
 
-  // Validación de dirección
-  else if (formData.address && formData.address.length < 5) {
-    firstError = "La dirección debe tener al menos 5 caracteres";
-    isValid = false;
-  }
+    // Validación de dirección
+    else if (formData.address && formData.address.length < 5) {
+      firstError = "La dirección debe tener al menos 5 caracteres";
+      isValid = false;
+    }
 
-  if (!isValid && firstError) {
-    toast.dismiss("form-validation-toast");
-    toast.error(firstError, {
-      id: "form-validation-toast",
-    });
-  }
+    if (!isValid && firstError) {
+      toast.dismiss("form-validation-toast");
+      toast.error(firstError, {
+        id: "form-validation-toast",
+      });
+    }
 
-  return isValid;
-};
-
+    return isValid;
+  };
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
 
@@ -132,65 +140,66 @@ const EditUsuario = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!validateForm()) return;
-  if (!id) return;
+    if (!validateForm()) return;
+    if (!id) return;
 
-  // Evita que se abra más de un toast de confirmación de actualización
-  toast.dismiss(`update-toast-${id}`);
+    // Evita que se abra más de un toast de confirmación de actualización
+    toast.dismiss(`update-toast-${id}`);
 
-  toast(
-    (t) => (
-      <div className="text-center">
-        <p>¿Seguro que deseas actualizar este usuario?</p>
-        <div className="d-flex justify-content-center gap-3 mt-3">
-          <button
-            className="btn btn-sm btn-success"
-            onClick={() => {
-              submitUpdate();
-              toast.dismiss(t.id);
-            }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <span
-                className="spinner-border spinner-border-sm me-1"
-                role="status"
-                aria-hidden="true"
-              ></span>
-            ) : null}
-            Sí, actualizar
-          </button>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </button>
+    toast(
+      (t) => (
+        <div className="text-center">
+          <p>¿Seguro que deseas actualizar este usuario?</p>
+          <div className="d-flex justify-content-center gap-3 mt-3">
+            <button
+              className="btn btn-sm btn-success"
+              onClick={async () => {
+                await submitUpdate();
+                toast.dismiss(t.id);
+              }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <span
+                  className="spinner-border spinner-border-sm me-1"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+              ) : null}
+              Sí, actualizar
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ),
-    {
-      duration: 5000,
-      id: `update-toast-${id}`,
-    }
-  );
-};
-
+      ),
+      {
+        duration: 5000,
+        id: `update-toast-${id}`,
+      }
+    );
+  };
 
   const submitUpdate = async () => {
     setIsSubmitting(true); // Comienza el envío
     try {
       await updateUsuario(Number(id), formData);
       toast.success("Usuario actualizado correctamente");
-      setTimeout(() => navigate("/usuarios"), 1500);
+      // No reiniciamos isSubmitting aquí, lo haremos después de la navegación
+
+      navigate("/usuarios");
+
     } catch (error) {
       console.error("Error al actualizar usuario:", error);
       toast.error("Error al actualizar usuario");
-    } finally {
-      setIsSubmitting(false); // Finaliza el envío (éxito o error)
+      setIsSubmitting(false); // Solo reiniciamos si hay error
     }
   };
 
@@ -250,6 +259,7 @@ const EditUsuario = () => {
               className="form-control"
               value={formData.first_name}
               onChange={handleChange}
+              disabled={isSubmitting}  // Deshabilitar si se está enviando
             />
           </div>
 
@@ -264,6 +274,7 @@ const EditUsuario = () => {
               className="form-control"
               value={formData.last_name}
               onChange={handleChange}
+              disabled={isSubmitting}  // Deshabilitar si se está enviando
             />
           </div>
         </div>
@@ -299,6 +310,7 @@ const EditUsuario = () => {
               value={formData.phone || ""}
               onChange={handleChange}
               placeholder="0000-0000"
+              disabled={isSubmitting}  // Deshabilitar si se está enviando
             />
           </div>
 
@@ -313,6 +325,7 @@ const EditUsuario = () => {
               value={formData.role_id}
               onChange={handleChange}
               required
+              disabled={isSubmitting}  // Deshabilitar si se está enviando
             >
               {rolesMap.map((role) => (
                 <option key={role.id} value={role.id}>
@@ -334,6 +347,7 @@ const EditUsuario = () => {
             rows={3}
             value={formData.address || ""}
             onChange={handleChange}
+            disabled={isSubmitting}  // Deshabilitar si se está enviando
           />
         </div>
 
@@ -348,6 +362,7 @@ const EditUsuario = () => {
             value={formData.estado}
             onChange={handleChange}
             required
+            disabled={isSubmitting}  // Deshabilitar si se está enviando
           >
             {estadosMap.map((estado) => (
               <option key={estado.id} value={estado.id}>
@@ -358,8 +373,8 @@ const EditUsuario = () => {
         </div>
 
         <div className="form-actions">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn primary-btn"
             disabled={isSubmitting}
           >

@@ -12,6 +12,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ForgotPassword from "./auth/ForgotPassword";
+import ChangePassword from "./auth/change-password";
 
 const MotionButton = motion(
   forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => (
@@ -29,6 +30,11 @@ const Login = () => {
   const { login, isAuthenticated } = useAuth();
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  // Estados:
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [tempCredentials, setTempCredentials] = useState<{ email: string; password: string } | null>(null);
+
+
 
   useEffect(() => {
     if (isAuthenticated && location.pathname === "/login") {
@@ -46,10 +52,11 @@ const Login = () => {
       setIsLoading(false);
 
       if (result?.requiresPasswordChange) {
-        navigate("/change-password", {
-          state: { email, password },
-        });
+        setTempCredentials({ email, password });
+        setShowChangePasswordModal(true);
+        return; // no hagas navigate
       }
+
     } catch (err: any) {
       setIsLoading(false);
       let msg = "Ocurrió un error inesperado al iniciar sesión.";
@@ -196,13 +203,51 @@ const Login = () => {
         centered
         animation={true}
       >
-        <Modal.Header closeButton>
+        <Modal.Header closeButton className="text-white"
+          style={{
+            backgroundColor: "rgb(177, 41, 29)",
+            borderBottom: "none",
+            padding: "1.5rem",
+          }}>
           <Modal.Title>Recuperar Contraseña</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <ForgotPassword />
         </Modal.Body>
       </Modal>
+
+      {/* Modal: Cambiar contraseña temporal */}
+      <Modal
+        show={showChangePasswordModal}
+        onHide={() => setShowChangePasswordModal(false)}
+        centered
+        backdrop="static"
+      >
+        <Modal.Header closeButton
+          className="text-white"
+          style={{
+            backgroundColor: "rgb(177, 41, 29)",
+            borderBottom: "none",
+            padding: "1.5rem",
+          }}>
+          <Modal.Title>Cambiar Contraseña Temporal</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {tempCredentials && (
+            <ChangePassword
+              email={tempCredentials.email}
+              currentPassword={tempCredentials.password}
+              onSuccess={() => {
+                setShowChangePasswordModal(false);
+                navigate("/"); // redirige al home si todo fue bien
+              }}
+            />
+          )}
+        </Modal.Body>
+      </Modal>
+
+
+
     </div>
   );
 };

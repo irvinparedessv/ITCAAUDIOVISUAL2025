@@ -1,91 +1,121 @@
 import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Form, Button, Container } from "react-bootstrap";
-import { useAuth } from "app/hooks/AuthContext";
+import { Form, Button, InputGroup } from "react-bootstrap";
+import { EyeFill, EyeSlashFill } from "react-bootstrap-icons";
 import api from "../../api/axios";
+import { useAuth } from "../../hooks/AuthContext";
 
-const ChangePassword = () => {
-  const navigate = useNavigate();
-  const { user, login } = useAuth(); // Obtén el usuario del contexto
-  const [password, setPassword] = useState(""); // Contraseña nueva
-  const [confirmPassword, setConfirmPassword] = useState(""); // Confirmar nueva contraseña
+interface Props {
+  email: string;
+  currentPassword: string;
+  onSuccess: () => void;
+}
+
+const validatePassword = (password: string) => {
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  return (
+    hasUpperCase &&
+    hasLowerCase &&
+    hasNumbers &&
+    hasSpecialChars &&
+    password.length >= 8
+  );
+};
+
+const ChangePassword: React.FC<Props> = ({
+  email,
+  currentPassword,
+  onSuccess,
+}) => {
+  const { login } = useAuth();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const location = useLocation();
-  const email = location.state?.email;
-  const pass = location.state.password;
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
 
-    // Verificar si las contraseñas coinciden
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden.");
       return;
     }
 
-    try {
-      // Verifica que el correo esté disponible
-      if (!email) {
-        setError("No se pudo obtener el correo del usuario.");
-        return;
-      }
+    if (!validatePassword(password)) {
+      setError(
+        "La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas, números y caracteres especiales."
+      );
+      return;
+    }
 
-      // Cambiar contraseña en el backend
-      const response = await api.post("/change-password", {
+    try {
+      await api.post("/change-password", {
         email,
-        current_password: pass, // Aquí usamos la contraseña del usuario
-        new_password: password, // Nueva contraseña
-        new_password_confirmation: confirmPassword, // Confirmación de la nueva contraseña
+        current_password: currentPassword,
+        new_password: password,
+        new_password_confirmation: confirmPassword,
       });
 
-      // Si el cambio de contraseña fue exitoso, iniciamos sesión automáticamente
-      await login(email, password); // Reintenta el login con la nueva contraseña
-
-      setSuccess("Contraseña cambiada y sesión iniciada correctamente.");
-      navigate("/"); // Redirige a la página principal después de un cambio exitoso
-    } catch (error: any) {
-      // Si ocurre un error, muestra el mensaje correspondiente
-      if (error.response) {
-        setError(
-          error.response.data.message ||
-            "Hubo un error al cambiar la contraseña."
-        );
+      await login(email, password);
+      onSuccess();
+    } catch (err: any) {
+      if (err.response) {
+        setError(err.response.data.message || "Error al cambiar la contraseña.");
       } else {
-        setError("Hubo un error desconocido.");
+        setError("Error desconocido.");
       }
     }
   };
 
   return (
-    <Container className="mt-5">
-      <h2 className="mb-4">Cambiar Contraseña Temporal</h2>
+    <>
       {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
       <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
+        <Form.Group>
           <Form.Label>Nueva Contraseña</Form.Label>
-          <Form.Control
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Ingresa la nueva contraseña"
-          />
+          <InputGroup>
+            <Form.Control
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Nueva contraseña"
+            />
+            <Button
+              variant=""
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeSlashFill /> : <EyeFill />}
+            </Button>
+          </InputGroup>
         </Form.Group>
-        <Form.Group className="mb-3">
+        <Form.Group className="mt-3">
           <Form.Label>Confirmar Contraseña</Form.Label>
-          <Form.Control
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirma tu nueva contraseña"
-          />
+          <InputGroup>
+            <Form.Control
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirma tu nueva contraseña"
+            />
+            <Button
+              variant="outline-secondary"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              tabIndex={-1}
+            >
+              {showConfirmPassword ? <EyeSlashFill /> : <EyeFill />}
+            </Button>
+          </InputGroup>
         </Form.Group>
-        <Button type="submit">Cambiar Contraseña</Button>
+        <Button type="submit" className="w-100 mt-3">
+          Cambiar Contraseña
+        </Button>
       </Form>
-    </Container>
+    </>
   );
 };
 

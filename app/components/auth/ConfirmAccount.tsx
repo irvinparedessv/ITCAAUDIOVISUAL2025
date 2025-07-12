@@ -65,7 +65,12 @@ const ConfirmAccount = () => {
   return (
     <div className="container mt-5">
       <div className="card">
-        <div className="card-header bg-primary text-white">
+        <div className="card-header text-white"
+          style={{
+            backgroundColor: "rgb(177, 41, 29)",
+            borderBottom: "none",
+            padding: "1.5rem",
+          }}>
           <h2 className="mb-0">Confirmación de Cuenta</h2>
         </div>
         <div className="card-body">

@@ -3,7 +3,6 @@ import { Role } from "./roles";
 export const routeRoles: Record<string, Role[]> = {
   // ===== Rutas Públicas =====
   "/login": [],
-  "/forgot-password": [],
   "/reset-password": [],
 
 

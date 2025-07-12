@@ -51,6 +51,7 @@ export type UserUpdateDTO = {
   address?: string;
   role_id: number;
   estado?: number;
+  image?: File | null;  // Hacemos la imagen opcional para las actualizaciones
 };
 
 // Para identificar el usuario a actualizar (id requerido)

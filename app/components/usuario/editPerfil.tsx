@@ -58,10 +58,14 @@ const EditPerfil = () => {
   const imgRef = useRef<HTMLImageElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
+  const [deletingImage, setDeletingImage] = useState(false);
+
   // Validation
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const nameRegex = /^[a-zA-Z\s]{2,}$/;
   const phoneRegex = /^[0-9]{4}-[0-9]{4}$/;
+
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     getPerfil()
@@ -177,6 +181,7 @@ const EditPerfil = () => {
     },
     maxFiles: 1,
     multiple: false,
+    disabled: saving || isNavigating || deletingImage, // <-- Aquí deshabilitamos durante operaciones
   });
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
@@ -209,9 +214,14 @@ const EditPerfil = () => {
   };
 
   const removeImage = () => {
-    setFormData((prev) => ({ ...prev, image: "", image_url: "" }));
+    setDeletingImage(true);
+    // Simulamos un pequeño delay para la operación (puedes quitarlo si es sincrónico)
+    setTimeout(() => {
+      setFormData((prev) => ({ ...prev, image: "", image_url: "" }));
+      setDeletingImage(false);
+    }, 500);
   };
-  
+
   const submitUpdate = async () => {
     setSaving(true);
     const form = new FormData();
@@ -227,27 +237,28 @@ const EditPerfil = () => {
     });
 
     try {
-      form.append("_method", "PUT"); // Laravel lo interpreta como PUT
-      const response = await updateProfile(form); // ✅ ya devuelve res.data
+      form.append("_method", "PUT");
+      const response = await updateProfile(form);
 
       toast.success("Perfil actualizado correctamente");
 
-      const updatedUser = response.user; // ✅ response ya es .data, accedemos directo a .user
-
+      const updatedUser = response.user;
       updateUser({
         first_name: updatedUser.first_name,
         last_name: updatedUser.last_name,
-        image: updatedUser.image, // ej. "user_images/xyz.jpg"
+        image: updatedUser.image,
       });
 
-      setFormData((prev) => ({ ...prev, image_url: "" }));
-
+      setIsNavigating(true); // <-- Aquí marcamos que la navegación está en curso
       setTimeout(() => navigate("/perfil"), 1500);
     } catch (error) {
       toast.error("Error al actualizar el perfil");
       console.error(error);
     } finally {
-      setSaving(false);
+      // No reiniciamos saving aquí si la navegación está en curso
+      if (!isNavigating) {
+        setSaving(false);
+      }
     }
   };
 
@@ -272,12 +283,17 @@ const EditPerfil = () => {
                 submitUpdate();
                 toast.dismiss(t.id);
               }}
+              disabled={saving || isNavigating}
             >
+              {saving ? (
+                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              ) : null}
               Sí, actualizar
             </button>
             <button
               className="btn btn-sm btn-secondary"
               onClick={() => toast.dismiss(t.id)}
+              disabled={saving || isNavigating}
             >
               Cancelar
             </button>
@@ -285,7 +301,7 @@ const EditPerfil = () => {
         </div>
       ),
       {
-        duration: 10000,
+        duration: 5000,
       }
     );
   };
@@ -307,15 +323,16 @@ const EditPerfil = () => {
     <div className="form-container position-relative">
       {/* Flecha de regresar en esquina superior izquierda */}
       <FaLongArrowAltLeft
-        onClick={handleBack}
+        onClick={() => !isNavigating && handleBack()}
         title="Regresar"
         style={{
           position: 'absolute',
           top: '25px',
           left: '30px',
-          cursor: 'pointer',
+          cursor: isNavigating ? 'not-allowed' : 'pointer',
           fontSize: '2rem',
-          zIndex: 10
+          zIndex: 10,
+          opacity: isNavigating ? 0.5 : 1
         }}
       />
       <h2 className="mb-4 text-center fw-bold">Editar Perfil</h2>
@@ -429,9 +446,14 @@ const EditPerfil = () => {
                 type="button"
                 onClick={removeImage}
                 className="btn btn-outline-danger btn-sm"
+                disabled={saving || isNavigating || deletingImage}
               >
-                <FaTrash className="me-1" />
-                Eliminar imagen
+                {deletingImage ? (
+                  <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                ) : (
+                  <FaTrash className="me-1" />
+                )}
+                {deletingImage ? "Eliminando..." : "Eliminar imagen"}
               </button>
             </div>
           ) : (
@@ -462,9 +484,16 @@ const EditPerfil = () => {
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="btn primary-btn" disabled={saving}>
-            {saving ? (
-              "Guardando..."
+          <button
+            type="submit"
+            className="btn primary-btn"
+            disabled={saving || isNavigating}
+          >
+            {saving || isNavigating ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                {isNavigating ? "Redirigiendo..." : "Guardando..."}
+              </>
             ) : (
               <>
                 <FaSave className="me-2" />
@@ -472,10 +501,12 @@ const EditPerfil = () => {
               </>
             )}
           </button>
+
           <button
             type="button"
             className="btn btn-outline-secondary"
-            onClick={() => navigate("/perfil")}
+            onClick={() => !isNavigating && navigate("/perfil")}
+            disabled={saving || isNavigating}
           >
             <FaTimes className="me-2" />
             Cancelar

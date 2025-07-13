@@ -60,9 +60,11 @@ const Login = () => {
     } catch (err: any) {
       setIsLoading(false);
       let msg = "Ocurrió un error inesperado al iniciar sesión.";
-
       if (err.response?.status === 401) {
         msg = "Credenciales incorrectas. Verifique su correo y contraseña.";
+      } else if (err.response?.status === 422) {
+        const errors = err.response.data.errors;
+        msg = Object.values(errors).flat().join(" ");
       } else if (err.response?.data?.message) {
         msg = err.response.data.message;
       }

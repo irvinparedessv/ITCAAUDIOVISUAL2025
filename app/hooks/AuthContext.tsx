@@ -112,7 +112,7 @@ useEffect(() => {
   }, [token, isAuthenticated]);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
+  
     try {
       const response = await api.post("/login", { email, password });
       const { token: newToken, user: newUser } = response.data;
@@ -138,7 +138,6 @@ useEffect(() => {
     } catch (error) {
       throw error;
     } finally {
-      setIsLoading(false);
     }
   };
 const logout = async () => {

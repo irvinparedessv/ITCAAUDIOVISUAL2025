@@ -24,7 +24,7 @@ const opciones = [
     descripcion: 'Reporte de uso de aulas por aulas',
     ruta: '/reporteReservasAulas',
     icono: <FaRegFileAlt size={24} />,
-    roles: [Role.Administrador] // Solo admin y encargado de espacios
+    roles: [Role.Administrador, Role.EspacioEncargado] // Solo admin y encargado de espacios
   },
   {
     nombre: 'Reporte de reservas aulas',

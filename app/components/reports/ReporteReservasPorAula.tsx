@@ -11,6 +11,8 @@ import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser } from "
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import { formatTimeRangeTo12h } from "~/utils/time";
+import { useAuth } from "../../hooks/AuthContext"; // Asegúrate de importar useAuth
+import { Role } from "~/types/roles";
 
 interface ReservaAulaReporte {
   id: number;
@@ -35,6 +37,8 @@ const ReporteReservasPorAula = () => {
   const [reservas, setReservas] = useState<ReservaAulaReporte[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const { user } = useAuth(); // Obtén el usuario del contexto de autenticación
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -316,7 +320,11 @@ const ReporteReservasPorAula = () => {
   };
 
   const handleBack = () => {
-    navigate("/opcionesReportes");
+    if (user?.role === Role.EspacioEncargado) {
+      navigate("/");
+    } else {
+      navigate("/opcionesReportes");
+    }
   };
 
   const getEstadoBadge = (estado: string) => {

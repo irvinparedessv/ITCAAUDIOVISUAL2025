@@ -10,7 +10,7 @@ const opciones = [
     descripcion: 'Reportes generales del sistema',
     ruta: '/opcionesReportes',
     icono: <FaRegFileAlt size={24} />,
-    roles: [Role.Administrador, Role.Encargado] // Ambos roles pueden ver Reportes
+    roles: [Role.Administrador, Role.Encargado, Role.EspacioEncargado] // Ambos roles pueden ver Reportes
   },
   {
     nombre: 'Análisis',

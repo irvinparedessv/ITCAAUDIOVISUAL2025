@@ -387,7 +387,7 @@ const RoomReservationList = () => {
                   fontSize: '2rem',
                 }}
               />
-              <h2 className="m-0">Reservas de Aulas</h2>
+              <h2 className="fw-bold m-0">Reservas de Aulas</h2>
             </div>
           </Col>
 

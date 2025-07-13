@@ -365,22 +365,23 @@ export default function ReserveClassroom() {
   }
 
   return (
-    <div className="form-container position-relative">
-      <FaLongArrowAltLeft
-        onClick={() => navigate("/reservations-room")}
-        title="Regresar"
-        style={{
-          position: "absolute",
-          left: "30px",
-          cursor: "pointer",
-          fontSize: "2rem",
-          zIndex: 10,
-        }}
-      />
-      <h2 className="mb-4 text-center fw-bold">
-        <FaDoorOpen className="me-2" />
-        {id ? "Editar Reserva" : "Reserva de Aula"}
-      </h2>
+    <div className="form-container position-relative mb-3 mb-md-0">
+  <div className="d-flex align-items-center gap-2 gap-md-3" style={{ marginBottom: '30px' }}>
+    <FaLongArrowAltLeft
+      onClick={() => navigate("/reservations-room")}
+      title="Regresar"
+      style={{
+        cursor: "pointer",
+        fontSize: "2rem",
+      }}
+    />
+    <h2 className="fw-bold m-0">
+      <FaDoorOpen className="me-2" />
+      {id ? "Editar Reserva" : "Reserva de Aula"}
+    </h2>
+  </div>
+
+
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label htmlFor="classroom" className="form-label">

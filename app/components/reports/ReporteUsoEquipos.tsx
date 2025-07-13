@@ -420,7 +420,7 @@ const ReporteUsoEquipos = () => {
             fontSize: '2rem'
           }}
         />
-        <h2 className="mb-0">
+        <h2 className="fw-bold m-0">
           Reporte de uso de equipos
         </h2>
       </div>

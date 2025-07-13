@@ -3,41 +3,21 @@ import api from "../api/axios";
 
 type ThemeContextType = {
   darkMode: boolean;
-  toggleDarkMode: () => void;
-  loading: boolean; // Añade un estado de carga
+  toggleDarkMode: () => Promise<void>;
+  loading: boolean;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [darkMode, setDarkMode] = useState(false);
-  const [loading, setLoading] = useState(true); // Estado para manejar la carga inicial
+  // 1. Leer de localStorage primero, luego preferencias del sistema
+  const [darkMode, setDarkMode] = useState(() => {
+    const savedMode = localStorage.getItem('darkMode');
+    if (savedMode !== null) return JSON.parse(savedMode);
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
-  useEffect(() => {
-    const loadTheme = async () => {
-      try {
-        const { data } = await api.get('/user/preferences');
-        setDarkMode(data.darkMode);
-        applyTheme(data.darkMode);
-      } catch (err) {
-        console.error('Error loading theme from API:', err);
-        // Si hay error, usa las preferencias del sistema
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setDarkMode(prefersDark);
-        applyTheme(prefersDark);
-        
-        // Intenta guardar las preferencias del sistema en la base de datos
-        try {
-          await api.patch('/user/preferences', { dark_mode: prefersDark });
-        } catch (saveErr) {
-          console.error('Error saving system theme preference:', saveErr);
-        }
-      } finally {
-        setLoading(false); // Marca la carga como completada
-      }
-    };
-    loadTheme();
-  }, []);
+  const [loading, setLoading] = useState(true);
 
   const applyTheme = (isDark: boolean) => {
     document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
@@ -48,24 +28,55 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   };
 
+  // Aplicar tema al inicio (desde localStorage o sistema)
+  useEffect(() => {
+    applyTheme(darkMode);
+  }, []);
+
+  // 2. Consultar API y actualizar si hay cambios
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const { data } = await api.get('/user/preferences');
+        if (data.darkMode !== darkMode) {
+          setDarkMode(data.darkMode);
+          localStorage.setItem('darkMode', JSON.stringify(data.darkMode)); // Actualizar caché
+          applyTheme(data.darkMode);
+        }
+      } catch (err) {
+        console.error('Error al cargar tema:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTheme();
+  }, [darkMode]);
+
+  // 3. Actualizar localStorage + API al cambiar tema
   const toggleDarkMode = async () => {
     const newMode = !darkMode;
+    
+    // Cambio inmediato (localStorage + UI)
     setDarkMode(newMode);
+    localStorage.setItem('darkMode', JSON.stringify(newMode));
     applyTheme(newMode);
 
+    // Sincronización con API (en segundo plano)
     try {
       await api.patch('/user/preferences', { dark_mode: newMode });
     } catch (err) {
-      console.error('Error updating theme on server:', err);
-      // Revertir el cambio si falla la actualización
-      setDarkMode(!newMode);
-      applyTheme(!newMode);
+      console.error('Error al guardar tema:', err);
+      // Opcional: Revertir si prefieres consistencia absoluta con la API
+      // setDarkMode(!newMode);
+      // localStorage.setItem('darkMode', JSON.stringify(!newMode));
+      // applyTheme(!newMode);
     }
   };
 
   return (
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode, loading }}>
-      {!loading && children} {/* Solo renderiza los hijos cuando la carga ha terminado */}
+      {children}
     </ThemeContext.Provider>
   );
 };

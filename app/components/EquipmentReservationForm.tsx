@@ -537,24 +537,24 @@ export default function EquipmentReservationForm() {
   };
 
   return (
-    <div className="form-container position-relative">
-      {/* Flecha de regresar en esquina superior izquierda */}
-      <FaLongArrowAltLeft
-        onClick={handleBack}
-        title="Regresar"
-        style={{
-          position: "absolute",
-          left: "30px",
-          cursor: "pointer",
-          fontSize: "2rem",
-          zIndex: 10,
-        }}
-      />
+    <div className="form-container position-relative mb-3 mb-md-0">
+      <div
+        className="d-flex align-items-center gap-2 gap-md-3"
+        style={{ marginBottom: '30px' }}
+      >
 
-      {/* Título centrado */}
-      <div className="mb-4 text-center d-flex align-items-center justify-content-center">
+        <FaLongArrowAltLeft
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: 'pointer',
+            fontSize: '2rem',
+          }}
+        />
         <h2 className="fw-bold m-0">Reserva de Equipos</h2>
       </div>
+
+
 
       <form onSubmit={handleSubmit}>
         {/* Fecha */}
@@ -649,26 +649,26 @@ export default function EquipmentReservationForm() {
         {/* USUARIO */}
         {(user?.role === Role.Administrador ||
           user?.role === Role.Encargado) && (
-          <div className="mb-4">
-            <label className="form-label d-flex align-items-center">
-              <FaUser className="me-2" />
-              Seleccionar Usuario
-            </label>
-            <Select
-              options={prestamistaOptions}
-              value={selectedPrestamista}
-              onChange={(selected) => setSelectedPrestamista(selected)}
-              placeholder={
-                !formData.date
-                  ? "Selecciona primero una fecha"
-                  : "Selecciona un usuario prestamista"
-              }
-              className="react-select-container"
-              classNamePrefix="react-select"
-              isDisabled={!isDateTimeComplete}
-            />
-          </div>
-        )}
+            <div className="mb-4">
+              <label className="form-label d-flex align-items-center">
+                <FaUser className="me-2" />
+                Seleccionar Usuario
+              </label>
+              <Select
+                options={prestamistaOptions}
+                value={selectedPrestamista}
+                onChange={(selected) => setSelectedPrestamista(selected)}
+                placeholder={
+                  !formData.date
+                    ? "Selecciona primero una fecha"
+                    : "Selecciona un usuario prestamista"
+                }
+                className="react-select-container"
+                classNamePrefix="react-select"
+                isDisabled={!isDateTimeComplete}
+              />
+            </div>
+          )}
 
         {/* TIPO RESERVA */}
         <div className="mb-4">
@@ -728,11 +728,10 @@ export default function EquipmentReservationForm() {
             ) : (
               <div
                 {...getRootProps()}
-                className={`border rounded p-4 text-center cursor-pointer ${
-                  isDragActive
+                className={`border rounded p-4 text-center cursor-pointer ${isDragActive
                     ? "border-primary bg-light"
                     : "border-secondary-subtle"
-                }`}
+                  }`}
               >
                 <input {...getInputProps()} />
                 <div className="d-flex flex-column align-items-center justify-content-center">
@@ -820,12 +819,12 @@ export default function EquipmentReservationForm() {
                 !isDateTimeComplete
                   ? "Selecciona fecha y hora primero"
                   : !formData.tipoReserva
-                  ? "Selecciona un tipo de reserva primero"
-                  : checkingAvailability
-                  ? "Verificando disponibilidad..."
-                  : availableEquipmentOptions.length === 0
-                  ? "No hay equipos disponibles para este tipo"
-                  : "Selecciona equipos disponibles"
+                    ? "Selecciona un tipo de reserva primero"
+                    : checkingAvailability
+                      ? "Verificando disponibilidad..."
+                      : availableEquipmentOptions.length === 0
+                        ? "No hay equipos disponibles para este tipo"
+                        : "Selecciona equipos disponibles"
               }
               className="react-select-container"
               classNamePrefix="react-select"

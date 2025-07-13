@@ -264,22 +264,26 @@ export default function EquipmentForm({
 
   return (
     <div className="form-container position-relative">
-      {/* Flecha de regresar en esquina superior izquierda */}
-      <FaLongArrowAltLeft
-        onClick={handleBack}
-        title="Regresar"
-        style={{
-          position: 'absolute',
-          top: '25px',
-          left: '30px',
-          cursor: 'pointer',
-          fontSize: '2rem',
-          zIndex: 10
-        }}
-      />
-      <h2 className="mb-4 text-center fw-bold">
-        {equipoEditando ? "Editar Equipo" : "Agregar Nuevo Equipo"}
-      </h2>
+  {/* Encabezado con flecha y título */}
+  <div
+    className="d-flex align-items-center gap-2 gap-md-3"
+    style={{ marginBottom: '30px' }}
+  >
+    <FaLongArrowAltLeft
+      onClick={handleBack}
+      title="Regresar"
+      style={{
+        cursor: 'pointer',
+        fontSize: '2rem',
+      }}
+    />
+    <h2 className="fw-bold m-0">
+      {equipoEditando ? "Editar Equipo" : "Agregar Nuevo Equipo"}
+    </h2>
+  </div>
+
+
+
 
 
       <form onSubmit={handleSubmit}>

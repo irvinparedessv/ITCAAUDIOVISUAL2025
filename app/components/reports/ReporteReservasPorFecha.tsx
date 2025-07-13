@@ -336,7 +336,7 @@ const ReporteReservasPorFecha = () => {
             fontSize: '2rem'
           }}
         />
-        <h2 className="mb-0">
+        <h2 className="fw-bold m-0">
           Reporte de reservas por rango de fechas
         </h2>
       </div>

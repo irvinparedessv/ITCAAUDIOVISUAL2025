@@ -275,21 +275,23 @@ export const CreateSpaceForm = () => {
 
   return (
     <div className="form-container position-relative">
-      <FaLongArrowAltLeft
-        onClick={handleBack}
-        title="Regresar"
-        style={{
-          position: "absolute",
-          top: "25px",
-          left: "30px",
-          cursor: "pointer",
-          fontSize: "2rem",
-          zIndex: 10,
-        }}
-      />
-      <h2 className="mb-4 text-center fw-bold">
-        {isEdit ? "Editar Espacio" : "Crear Nuevo Espacio"}
-      </h2>
+  <div
+    className="d-flex align-items-center gap-2 gap-md-3"
+    style={{ marginBottom: '30px' }}
+  >
+    <FaLongArrowAltLeft
+      onClick={handleBack}
+      title="Regresar"
+      style={{
+        cursor: 'pointer',
+        fontSize: '2rem',
+      }}
+    />
+    <h2 className="fw-bold m-0">
+      {isEdit ? "Editar Espacio" : "Crear Nuevo Espacio"}
+    </h2>
+  </div>
+
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">

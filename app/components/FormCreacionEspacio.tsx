@@ -17,6 +17,7 @@ import { Spinner } from "react-bootstrap";
 import { diasSemana } from "../constants/day";
 import type { AvailableTime } from "../types/aula";
 import * as exifr from "exifr";
+import EspacioNoEncontrado from "./error/EspacioNoEncontrado";
 
 type RenderImageInfo = {
   file: File | null;
@@ -42,6 +43,8 @@ export const CreateSpaceForm = () => {
 
   const [loading, setLoading] = useState(isEdit);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+
 
   const handleBack = () => {
     navigate("/rooms");
@@ -75,7 +78,13 @@ export const CreateSpaceForm = () => {
           }));
           setAvailableTimes(horariosParseados);
         })
-        .catch(() => toast.error("Error al cargar el aula"))
+        .catch((err) => {
+        if (err.response?.status === 404) {
+          setNotFound(true);
+        } else {
+          toast.error("Error al cargar el aula");
+        }
+      })
         .finally(() => setLoading(false));
     }
   }, [id]);
@@ -388,6 +397,10 @@ export const CreateSpaceForm = () => {
       </div>
     );
   }
+  if (notFound) {
+  return <EspacioNoEncontrado />;
+}
+
 
   return (
     <div className="form-container position-relative">

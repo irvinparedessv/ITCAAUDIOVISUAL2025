@@ -20,6 +20,7 @@ import {
 import { useAuth } from "../hooks/AuthContext";
 import { formatTo12h } from "../utils/time";
 import { Role } from "../types/roles";
+import ReservaNoEncontrada from "./error/ReservaNoEncontrada";
 
 const messages = {
     update: {
@@ -76,6 +77,8 @@ export default function EditEquipmentReservationForm() {
     const [availabilityChecked, setAvailabilityChecked] = useState(false);
     const [documentUrl, setDocumentUrl] = useState<string | null>(null);
 
+    const [notFound, setNotFound] = useState(false);
+    const [loadingReserva, setLoadingReserva] = useState(true);
     const isDateTimeComplete = formData.date && formData.startTime && formData.endTime;
     const isTodaySelected = formData.date === new Date().toISOString().split("T")[0];
 
@@ -166,14 +169,23 @@ export default function EditEquipmentReservationForm() {
                 if (reserva.documento_url) {
                     setDocumentUrl(reserva.documento_url);
                 }
-            } catch (err) {
+
+            } catch (err: any) {
                 console.error("Error cargando la reserva:", err);
-                toast.error("Error cargando la reserva");
+
+                if (err.response?.status === 404) {
+                    setNotFound(true);
+                } else {
+                    toast.error("Error cargando la reserva");
+                }
+            } finally {
+                setLoadingReserva(false);
             }
         };
 
         fetchData();
     }, [id]);
+
 
     useEffect(() => {
         const fetchOptions = async () => {
@@ -358,6 +370,21 @@ export default function EditEquipmentReservationForm() {
         });
     };
 
+    if (loadingReserva) {
+        return (
+            <div className="d-flex flex-column align-items-center justify-content-center my-5">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                </div>
+                <p className="mt-3 text-muted">Cargando datos de reserva...</p>
+            </div>
+        );
+    }
+
+
+    if (notFound) {
+        return <ReservaNoEncontrada />;
+    }
 
 
 

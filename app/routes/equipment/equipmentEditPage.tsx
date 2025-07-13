@@ -5,6 +5,7 @@ import type { Equipo, EquipoCreateDTO } from "~/types/equipo";
 import EquipmentForm from "~/components/equipment/EquipmentForm";
 import { getEquipoById, updateEquipo } from "~/services/equipoService";
 import { Spinner } from "react-bootstrap";
+import EquipoNoEncontrado from "~/components/error/EquipoNoEncontrado";
 
 export default function EquipmentEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,9 +21,10 @@ export default function EquipmentEditPage() {
           console.log("ID recibido:", id);
           if (!data) {
             toast.error("Equipo no encontrado");
-            navigate("/equipolist");
+            setEquipo(null); // explícitamente nulo, aunque ya está
             return;
           }
+
           setEquipo({
             ...data,
             tipo_reserva_id: data.tipo_reserva_id || 0,
@@ -32,9 +34,12 @@ export default function EquipmentEditPage() {
         }
 
 
-      } catch (error) {
-        toast.error("Error al cargar el equipo");
-        //navigate("/equipos");
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          setEquipo(null); // Para mostrar <EquipoNoEncontrado />
+        } else {
+          toast.error("Error al cargar el equipo");
+        }
       } finally {
         setLoading(false);
       }
@@ -73,17 +78,18 @@ export default function EquipmentEditPage() {
 
   if (loading) {
     return <>
-    <div className="text-center my-5">
-      <Spinner animation="border" variant="primary" />
-      <p className="mt-3">Cargando datos...</p>
-    </div>
+      <div className="text-center my-5">
+        <Spinner animation="border" variant="primary" />
+        <p className="mt-3">Cargando datos...</p>
+      </div>
     </>
-    
+
   }
 
   if (!equipo) {
-    return <div className="text-center py-8">Equipo no encontrado</div>;
+    return <EquipoNoEncontrado />;
   }
+
 
   return (
     <div className="container py-4">

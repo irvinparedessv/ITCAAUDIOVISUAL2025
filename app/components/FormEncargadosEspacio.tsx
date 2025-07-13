@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 
 import type { User } from "../types/user";
 import api from "./../api/axios";
+import EspacioNoEncontrado from "./error/EspacioNoEncontrado";
 
 interface AulaDetalle {
   id: number;
@@ -24,6 +25,7 @@ export default function AsignarEncargadosForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const [notFound, setNotFound] = useState(false);
 
   const { aulaId } = useParams<{ aulaId: string }>();
 
@@ -43,15 +45,25 @@ export default function AsignarEncargadosForm() {
         if (aulaRes.data?.encargados) {
           setEncargados(aulaRes.data.encargados);
         }
-      } catch (error) {
-        toast.error("Error al cargar datos");
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          setNotFound(true);
+        } else {
+          toast.error("Error al cargar datos");
+        }
       } finally {
         setLoading(false);
       }
+
     };
 
     fetchData();
   }, [aulaId]);
+
+  if (notFound) {
+    return <EspacioNoEncontrado />;
+  }
+
 
   const handleBack = () => {
     navigate("/rooms");
@@ -125,18 +137,18 @@ export default function AsignarEncargadosForm() {
   return (
     <div className="form-container position-relative">
 
-    <div className="d-flex align-items-center gap-3">
-          <FaLongArrowAltLeft
-            onClick={handleBack}
-            title="Regresar"
-            style={{
-              cursor: 'pointer',
-              fontSize: '2rem',
-            }}
-          />
-          <h2 className="fw-bold m-0 flex-grow-1">Asignar Encargados</h2>
-        </div>
-        <br />
+      <div className="d-flex align-items-center gap-3">
+        <FaLongArrowAltLeft
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: 'pointer',
+            fontSize: '2rem',
+          }}
+        />
+        <h2 className="fw-bold m-0 flex-grow-1">Asignar Encargados</h2>
+      </div>
+      <br />
 
 
 

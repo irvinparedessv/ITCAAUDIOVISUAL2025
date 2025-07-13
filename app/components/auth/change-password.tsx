@@ -85,7 +85,7 @@ const ChangePassword: React.FC<Props> = ({
               placeholder="Nueva contraseña"
             />
             <Button
-              variant=""
+              variant="outline-secondary"
               onClick={() => setShowPassword(!showPassword)}
               tabIndex={-1}
             >

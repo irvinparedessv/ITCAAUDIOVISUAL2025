@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import { getUsuarioById, updateUsuario } from "../../services/userService";
 import type { UserUpdateDTO } from "app/types/user";
 import { FaSave, FaTimes, FaUserEdit, FaTrash, FaLongArrowAltLeft } from "react-icons/fa";
+import UsuarioNoEncontrado from "../error/UsuarioNoEncontrado";
 
 const rolesMap = [
   { id: 1, nombre: "Administrador" },
@@ -22,7 +23,8 @@ const EditUsuario = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Nuevo estado para controlar el envío
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   const [formData, setFormData] = useState<UserUpdateDTO>({
     first_name: "",
@@ -35,12 +37,10 @@ const EditUsuario = () => {
   });
 
   useEffect(() => {
-    toast.dismiss(); // limpia cualquier confirmación colgada
+    toast.dismiss();
     if (id) {
       getUsuarioById(id)
         .then((data) => {
-
-
           setFormData({
             first_name: data.first_name,
             last_name: data.last_name,
@@ -54,11 +54,16 @@ const EditUsuario = () => {
         })
         .catch((error) => {
           console.error("Error al obtener usuario:", error);
-          toast.error("Error al cargar usuario");
+          if (error?.response?.status === 404) {
+            setNotFound(true);
+          } else {
+            toast.error("Error al cargar usuario");
+          }
           setLoading(false);
         });
     }
   }, [id]);
+
 
 
   const validateForm = (): boolean => {
@@ -223,6 +228,10 @@ const EditUsuario = () => {
         </div>
       </div>
     );
+  }
+
+  if (notFound) {
+    return <UsuarioNoEncontrado />;
   }
 
   return (

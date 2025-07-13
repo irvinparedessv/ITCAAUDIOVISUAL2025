@@ -4,7 +4,6 @@ import ProtectedLayout from "./layouts/protected-layout";
 
 // públicas
 import Login from "./routes/login";
-import ForgotPassword from "./routes/forgot-password";
 import ResetPassword from "./routes/reset-password";
 import ConfirmAccount from "./routes/confirm-account";
 import Forbidden from "./components/auth/Forbidden";
@@ -49,6 +48,7 @@ import OpcionesAnalisis from "./dashboard/OpcionesAnalisis";
 import ReporteReservasPorAula from "./components/reports/ReporteReservasPorAula";
 import PrediccionAulaPage from "./components/prediction/PrediccionAulaPage";
 import RoomsAvailabilityList from "./components/rooms/RoomsAvailability";
+import NoEncontrado from "./components/error/NoEncontrado";
 
 const router = createBrowserRouter([
   {
@@ -235,9 +235,14 @@ const router = createBrowserRouter([
             path: "prediccionAula",
             element: <PrediccionAulaPage />,
           },
+
         ],
       },
     ],
+  },
+  {
+    path: "*",
+    element: <NoEncontrado />,
   },
 ]);
 

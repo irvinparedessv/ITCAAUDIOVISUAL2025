@@ -189,19 +189,14 @@ input[type="time"] {
 /* Variables generales para la aplicación */
 :root {
   /* Light theme colors */
-  --bs-body-bg: #000000;
+  --bs-body-bg: #f8f9fa;
   --bs-body-color: #212529;
   --bs-card-bg: #ffffff;
-  --bs-border-color: #000000;
+  --bs-border-color: #dee2e6;
   --bs-primary-bg: #8b0000;
-  --bs-primary-text: #000000;
-  --bs-secondary-bg: #000000;
+  --bs-primary-text: #ffffff;
+  --bs-secondary-bg: #e9ecef;
 }
-
-.bg-body {
-  background-color: red !important;
-}
-
 
 [data-bs-theme="dark"] {
   /* Dark theme colors */
@@ -1321,6 +1316,3 @@ input.form-control.border-color-login {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
  
-
-
-

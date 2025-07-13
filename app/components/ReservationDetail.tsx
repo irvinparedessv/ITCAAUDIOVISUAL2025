@@ -19,6 +19,7 @@ import type { ReservationStatus } from "~/types/reservation";
 import { FaCalendarAlt, FaLongArrowAltLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { formatTo12h } from "~/utils/time";
+import ReservaNoEncontrada from "./error/ReservaNoEncontrada";
 
 type Reserva = {
   usuario: string;
@@ -80,8 +81,7 @@ export default function ReservationDetail() {
             setError("No tiene autorización para ver esta reserva.");
           } else {
             setError(
-              `Error ${err.response.status}: ${
-                err.response.data?.message || "Error desconocido"
+              `Error ${err.response.status}: ${err.response.data?.message || "Error desconocido"
               }`
             );
           }
@@ -113,31 +113,25 @@ export default function ReservationDetail() {
 
   if (loading) {
     return (
-      <div className="text-center my-5">
-        <Spinner animation="border" />
-        <p>Cargando reserva...</p>
+      <div className="d-flex flex-column align-items-center justify-content-center my-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+        <p className="mt-3 text-muted">Cargando reserva...</p>
       </div>
     );
   }
 
   if (error) {
-    return (
-      <div className="text-center my-5">
-        <Alert variant="danger">{error}</Alert>
-        <Button variant="primary" onClick={handleBack}>
-          Volver
-        </Button>
-      </div>
-    );
+    return <ReservaNoEncontrada />;
   }
 
   if (!reserva) return null;
 
   const qrData = reserva.isRoom
     ? `Reserva de aula para ${reserva.usuario} en ${reserva.espacio.name} el ${reserva.dia}`
-    : `Reserva de ${reserva.usuario} - ${reserva.equipo?.join(", ")} en ${
-        reserva.aula
-      } el ${reserva.dia}`;
+    : `Reserva de ${reserva.usuario} - ${reserva.equipo?.join(", ")} en ${reserva.aula
+    } el ${reserva.dia}`;
 
   const cleanEstado = reserva.estado.trim().toLowerCase();
 

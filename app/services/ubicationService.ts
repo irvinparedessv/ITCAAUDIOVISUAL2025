@@ -11,9 +11,9 @@ export const createUbicacion = async (data: {
 }) => {
   await api.post("/ubicaciones", data);
 };
-export const getUbicacionesPaginadas = async (page = 1, perPage = 5) => {
+export const getUbicacionesPaginadas = async (page = 1, perPage = 5, search = "") => {
   const res = await api.get(
-    `/ubicaciones/paginate?page=${page}&per_page=${perPage}`
+    `/ubicaciones/paginate?page=${page}&per_page=${perPage}&search=${encodeURIComponent(search)}`
   );
   return res.data;
 };

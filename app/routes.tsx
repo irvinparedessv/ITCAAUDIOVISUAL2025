@@ -49,6 +49,8 @@ import ReporteReservasPorAula from "./components/reports/ReporteReservasPorAula"
 import PrediccionAulaPage from "./components/prediction/PrediccionAulaPage";
 import RoomsAvailabilityList from "./components/rooms/RoomsAvailability";
 import NoEncontrado from "./components/error/NoEncontrado";
+import UbicacionForm from "./components/ubication/UbicationForm";
+import UbicacionList from "./components/ubication/listUbications";
 
 const router = createBrowserRouter([
   {
@@ -204,6 +206,18 @@ const router = createBrowserRouter([
             element: <OpcionesAnalisis />,
           },
           {
+            path: "ubications",
+            element: <UbicacionList />,
+          },
+          {
+            path: "ubications/add",
+            element: <UbicacionForm />,
+          },
+          {
+            path: "ubications/edit/:id",
+            element: <UbicacionForm />,
+          },
+          {
             path: "reporteReservasEquipo",
             element: <ReporteReservasPorFecha />,
           },
@@ -235,7 +249,6 @@ const router = createBrowserRouter([
             path: "prediccionAula",
             element: <PrediccionAulaPage />,
           },
-
         ],
       },
     ],

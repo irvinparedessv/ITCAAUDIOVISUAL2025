@@ -31,7 +31,6 @@ export const routeRoles: Record<string, Role[]> = {
 
   // -- Espacios --
   "/createRoom": [Role.Administrador],
-
   "/reservations-room": [Role.Administrador, Role.EspacioEncargado, Role.Prestamista,],
   "/reservationsroom": [Role.Administrador, Role.EspacioEncargado, Role.Prestamista,],
   "/rooms": [Role.Administrador, Role.EspacioEncargado],
@@ -47,11 +46,11 @@ export const routeRoles: Record<string, Role[]> = {
 
 
   // -- Reporte ADMIN Y ENCARGADO --
-  "/reporteEquipos": [Role.Administrador,  Role.Encargado],
-  "/reporteHorarios": [Role.Administrador,  Role.Encargado],
-  "/reporteInventario": [Role.Administrador,  Role.Encargado],
-  "/reporteReservasEquipo": [Role.Administrador],
-  "/reporteReservasUsuarios": [Role.Administrador],
+  "/reporteEquipos": [Role.Administrador, Role.Encargado],
+  "/reporteHorarios": [Role.Administrador, Role.Encargado],
+  "/reporteInventario": [Role.Administrador, Role.Encargado],
+  "/reporteReservasEquipo": [Role.Administrador, Role.Encargado],
+  "/reporteReservasUsuarios": [Role.Administrador, Role.Encargado],
   // -- Reporte ADMIN--
   "/reporteReservasAulas": [Role.Administrador, Role.EspacioEncargado],
   "/reporteAulas": [Role.Administrador],
@@ -59,7 +58,7 @@ export const routeRoles: Record<string, Role[]> = {
 
   // -- Otros --
   "/aulas/encargados/:aulaId": [Role.Administrador],
-  "bitacora": [Role.Administrador],
+  "/bitacora": [Role.Administrador],
   "/qrScan": [Role.Administrador, Role.EspacioEncargado, Role.Encargado],
   "/perfil": [Role.Administrador, Role.EspacioEncargado, Role.Encargado, Role.Prestamista,],
   "/editarPerfil": [Role.Administrador, Role.EspacioEncargado, Role.Encargado, Role.Prestamista,],

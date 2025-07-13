@@ -14,6 +14,7 @@ import api from "../../api/axios";
 import { formatTimeRangeTo12h } from "~/utils/time";
 import { FaCalendarAlt, FaLongArrowAltLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import ReservaNoEncontrada from "../error/ReservaNoEncontrada";
 
 type ReservaAula = {
   id: number;
@@ -46,10 +47,17 @@ export default function ReservationDetailAula() {
     const fetchReserva = async () => {
       try {
         const res = await api.get(`/reservas-aula/${id}`);
-        setReserva(res.data);
-      } catch (err) {
-        console.error(err);
-        setError("No se pudo cargar la reserva.");
+        if (!res.data || Object.keys(res.data).length === 0) {
+          setError("not_found");
+        } else {
+          setReserva(res.data);
+        }
+      } catch (err: any) {
+        if (err.response?.status === 404) {
+          setError("not_found");
+        } else {
+          setError("No se pudo cargar la reserva.");
+        }
       } finally {
         setLoading(false);
       }
@@ -57,7 +65,8 @@ export default function ReservationDetailAula() {
 
     if (id) fetchReserva();
   }, [id]);
-const handleBack = () => {
+
+  const handleBack = () => {
     navigate("/reservations-room");
   };
   const formatDate = (fecha: string) => {
@@ -70,28 +79,32 @@ const handleBack = () => {
   };
 
   const getBadgeColor = (estado: string) => {
-  const cleanEstado = estado.trim().toLowerCase();
+    const cleanEstado = estado.trim().toLowerCase();
 
-  switch (cleanEstado) {
-    case "pendiente":
-      return "warning";
-    case "aprobado":
-      return "success";
-    case "rechazado":
-      return "danger";
-    default:
-      return "secondary";
-  }
-};
+    switch (cleanEstado) {
+      case "pendiente":
+        return "warning";
+      case "aprobado":
+        return "success";
+      case "rechazado":
+        return "danger";
+      default:
+        return "secondary";
+    }
+  };
 
 
   if (loading) {
     return (
       <div className="text-center my-5">
-        <Spinner animation="border" />
+        <Spinner animation="border" variant="primary" />
         <p>Cargando reserva...</p>
       </div>
     );
+  }
+
+  if (error === "not_found") {
+    return <ReservaNoEncontrada />;
   }
 
   if (error) {
@@ -101,6 +114,7 @@ const handleBack = () => {
       </div>
     );
   }
+
 
   if (!reserva) return null;
 
@@ -120,13 +134,13 @@ const handleBack = () => {
         }}
       >
         <FaLongArrowAltLeft
-                      onClick={handleBack}
-                      title="Regresar"
-                      style={{
-                        cursor: 'pointer',
-                        fontSize: '2rem',
-                      }}
-                    />
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: 'pointer',
+            fontSize: '2rem',
+          }}
+        />
         <FaCalendarAlt />
         <h5 className="mb-0">Detalle de Reserva de Aula</h5>
       </Card.Header>

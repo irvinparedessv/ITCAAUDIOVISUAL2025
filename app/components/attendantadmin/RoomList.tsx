@@ -138,7 +138,7 @@ export default function AulaList() {
               fontSize: "2rem",
             }}
           />
-          <h2 className="fw-bold m-0 flex-grow-1">Listado de Aulas</h2>
+          <h2 className="fw-bold m-0 flex-grow-1">Listado de Espacios</h2>
         </div>
 
         {/* Botón, separado y alineado en mobile y desktop */}
@@ -149,7 +149,7 @@ export default function AulaList() {
             className="d-inline-flex align-items-center gap-2"
           >
             <FaPlus />
-            Crear Aula
+            Crear Espacio
           </Button>
         </div>
       </div>
@@ -228,7 +228,7 @@ export default function AulaList() {
                           <FaTimes className="text-muted" title="Sin imagen" />
                         )}
                       </td>
-                      <td className="text-start">
+                      <td>
                         {aula.encargados.length > 0 ? (
                           <>
                             {aula.encargados.length > 0 && (

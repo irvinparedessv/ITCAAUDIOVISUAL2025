@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import {
   FaCalendarAlt,
@@ -19,274 +19,75 @@ import toast from "react-hot-toast";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-
-  // Estilo para los iconos basado en el tema
-  const getIconStyle = () => {
-    const isDarkMode =
-      document.documentElement.getAttribute("data-bs-theme") === "dark";
-    return { color: isDarkMode ? "#b1291d" : "#8B0000" };
-  };
-
-  // Estilo para el borde con gradiente
-  const cardBorderStyle = {
-    border: "2px solid",
-    borderImage: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20)) 1",
-    boxShadow: "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)",
-    cursor: "pointer",
-    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-  };
-
-  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.transform = "translateY(-5px)";
-    e.currentTarget.style.boxShadow = "0 0.5rem 1rem rgba(0, 0, 0, 0.15)";
-  };
-
-  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.transform = "translateY(0)";
-    e.currentTarget.style.boxShadow = "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)";
-  };
 
   useEffect(() => {
-    toast.dismiss(); // limpia cualquier confirmación colgada
+    toast.dismiss();
   }, []);
 
   return (
-    <Container>
-      <h1 className="mb-4">Panel de Control</h1>
-      <p className="text-muted mb-5">
-        Bienvenido, {user?.first_name}. Selecciona una opción:
+    <Container fluid className={"dashboardContainer"}>
+      <h1 className={"welcomeHeader"}>
+        {user?.role === Role.Prestamista ? "Área Personal" : "Centro de administración"}
+      </h1>
+      <p className={"welcomeText"}>
+        {user?.role === Role.Prestamista && `Bienvenido ${user?.first_name}, este es tu espacio personal para gestionar tus reservas.`}
+        {user?.role === Role.Administrador && `Bienvenido ${user?.first_name}, aquí puedes administrar todo el sistema.`}
+        {user?.role === Role.Encargado && `Bienvenido ${user?.first_name}, gestiona las reservas de equipos.`}
+        {user?.role === Role.EspacioEncargado && `Bienvenido ${user?.first_name}, gestiona las reservas de aulas y espacios.`}
       </p>
-
       {user?.role === Role.Administrador && (
-        <Row xs={1} md={2} lg={3} className="g-4">
-          <DashboardCard
-            title="Reservas de Equipo"
-            icon={<FaComputer size={24} style={getIconStyle()} />}
-            link="/reservations"
-            description="Gestionar reserva de equipos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Reservas de Espacios"
-            icon={<FaDoorOpen size={24} style={getIconStyle()} />}
-            link="/reservations-room"
-            description="Gestionar reservas de espacios físicos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Gestión de Equipos"
-            icon={<FaTools size={24} style={getIconStyle()} />}
-            link="/equipolist"
-            description="Administrar inventario de equipos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Gestión de Espacios"
-            icon={<FaBuilding size={24} style={getIconStyle()} />}
-            link="/rooms"
-            description="Administrar espacios disponibles"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Disponibilidad de Equipos"
-            icon={<FaClipboardList size={24} style={getIconStyle()} />}
-            link="/equipmentavailability"
-            description="Ver reporte completo del disponibilidad de equipos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Disponibilidad de Espacios"
-            icon={<FaClipboardList size={24} style={getIconStyle()} />}
-            link="/roomsavailability"
-            description="Ver reporte completo de disponibilidad de espacios"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Usuarios"
-            icon={<FaUsers size={24} style={getIconStyle()} />}
-            link="/usuarios"
-            description="Gestión de cuentas y permisos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Administración"
-            icon={<FaUserShield size={24} style={getIconStyle()} />}
-            link="/administracion"
-            description="Configuración del sistema"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-        </Row>
+        <div className={"roleSection"}>
+          <h2 className={"roleTitle"}>Administrador</h2>
+          <Row xs={1} md={2} lg={3} className="g-4">
+            <DashboardCard title="Reservas de Equipo" icon={<FaComputer size={24} />} link="/reservations" description="Gestionar reserva de equipos" />
+            <DashboardCard title="Reservas de Espacios" icon={<FaDoorOpen size={24} />} link="/reservations-room" description="Gestionar reservas de espacios físicos" />
+            <DashboardCard title="Gestión de Equipos" icon={<FaTools size={24} />} link="/equipolist" description="Administrar inventario de equipos" />
+            <DashboardCard title="Gestión de Espacios" icon={<FaBuilding size={24} />} link="/rooms" description="Administrar espacios disponibles" />
+            <DashboardCard title="Disponibilidad de Equipos" icon={<FaClipboardList size={24} />} link="/equipmentavailability" description="Ver reporte completo del disponibilidad de equipos" />
+            <DashboardCard title="Disponibilidad de Espacios" icon={<FaClipboardList size={24} />} link="/roomsavailability" description="Ver reporte completo de disponibilidad de espacios" />
+            <DashboardCard title="Usuarios" icon={<FaUsers size={24} />} link="/usuarios" description="Gestión de cuentas y permisos" />
+            <DashboardCard title="Administración" icon={<FaUserShield size={24} />} link="/administracion" description="Configuración del sistema" />
+          </Row>
+        </div>
       )}
 
       {user?.role === Role.EspacioEncargado && (
-        <Row xs={1} md={2} lg={3} className="g-4">
-          <DashboardCard
-            title="Gestion de Reservas"
-            icon={<FaClipboardList size={24} style={getIconStyle()} />}
-            link="/reservations-room"
-            description="Revisar y aprobar reservas pendientes"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Creacion de Reservas"
-            icon={<FaDoorOpen size={24} style={getIconStyle()} />}
-            link="/reservationsroom"
-            description="Gestionar reservas de espacios físicos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Lector QR"
-            icon={<FaQrcode size={24} style={getIconStyle()} />}
-            link="/qrScan"
-            description="Leer Codigo QR"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Reporte de reserva de aulas"
-            icon={<FaRegFileAlt size={24} style={getIconStyle()} />}
-            link="/reporteReservasAulas"
-            description="Reporte de reserva de aulas"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-        </Row>
+        <div className={"roleSection"}>
+          <h2 className={"roleTitle"}>Encargado de Espacios</h2>
+          <Row xs={1} md={2} lg={3} className="g-4">
+            <DashboardCard title="Gestion de Reservas" icon={<FaClipboardList size={24} />} link="/reservations-room" description="Revisar y aprobar reservas pendientes" />
+            <DashboardCard title="Creacion de Reservas" icon={<FaDoorOpen size={24} />} link="/reservationsroom" description="Gestionar reservas de espacios físicos" />
+            <DashboardCard title="Lector QR" icon={<FaQrcode size={24} />} link="/qrScan" description="Leer Codigo QR" />
+            <DashboardCard title="Reporte de reserva de aulas" icon={<FaRegFileAlt size={24} />} link="/reporteReservasAulas" description="Reporte de reserva de aulas" />
+          </Row>
+        </div>
       )}
 
       {user?.role === Role.Encargado && (
-        <Row xs={1} md={2} lg={3} className="g-4">
-          <DashboardCard
-            title="Reservar Equipo"
-            icon={<FaComputer size={24} style={getIconStyle()} />}
-            link="/addreservation"
-            description="Crear nueva reserva de equipos tecnológicos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-
-          <DashboardCard
-            title="Aprobar Reservas"
-            icon={<FaClipboardList size={24} style={getIconStyle()} />}
-            link="/reservations"
-            description="Revisar y aprobar reservas pendientes"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-
-          <DashboardCard
-            title="Lector QR"
-            icon={<FaQrcode size={24} style={getIconStyle()} />}
-            link="/qrScan"
-            description="Leer Codigo QR"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-
-          <DashboardCard
-            title="Equipos Disponibles"
-            icon={<FaComputer size={24} style={getIconStyle()} />}
-            link="/equipmentavailability"
-            description="Ver disponibilidad de equipos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-
-          <DashboardCard
-            title="Administración"
-            icon={<FaUserShield size={24} style={getIconStyle()} />}
-            link="/administracion"
-            description="Configuración del sistema"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-        </Row>
+        <div className={"roleSection"}>
+          <h2 className={"roleTitle"}>Encargado</h2>
+          <Row xs={1} md={2} lg={3} className="g-4">
+            <DashboardCard title="Reservar Equipo" icon={<FaComputer size={24} />} link="/addreservation" description="Crear nueva reserva de equipos tecnológicos" />
+            <DashboardCard title="Aprobar Reservas" icon={<FaClipboardList size={24} />} link="/reservations" description="Revisar y aprobar reservas pendientes" />
+            <DashboardCard title="Lector QR" icon={<FaQrcode size={24} />} link="/qrScan" description="Leer Codigo QR" />
+            <DashboardCard title="Equipos Disponibles" icon={<FaComputer size={24} />} link="/equipmentavailability" description="Ver disponibilidad de equipos" />
+            <DashboardCard title="Administración" icon={<FaUserShield size={24} />} link="/administracion" description="Configuración del sistema" />
+          </Row>
+        </div>
       )}
 
       {user?.role === Role.Prestamista && (
-        <Row xs={1} md={2} className="g-4">
-          <DashboardCard
-            title="Reservar Espacio"
-            icon={<FaBookmark size={24} style={getIconStyle()} />}
-            link="/reservationsroom"
-            description="Crear nueva reserva de espacio"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Nueva Reserva"
-            icon={<FaComputer size={24} style={getIconStyle()} />}
-            link="/addreservation"
-            description="Solicitar préstamo de equipos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Mis Reservas Equipos"
-            icon={<FaCalendarAlt size={24} style={getIconStyle()} />}
-            link="/reservations"
-            description="Ver mis reservas equipo"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Mis Reservas Espacios"
-            icon={<FaCalendarAlt size={24} style={getIconStyle()} />}
-            link="/reservations-room"
-            description="Ver mis reservas espacios"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Disponibilidad de Equipos"
-            icon={<FaClipboardList size={24} style={getIconStyle()} />}
-            link="/equipmentavailability"
-            description="Ver reporte completo del disponibilidad de equipos"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-          <DashboardCard
-            title="Disponibilidad de Espacios"
-            icon={<FaClipboardList size={24} style={getIconStyle()} />}
-            link="/roomsavailability"
-            description="Ver reporte completo de disponibilidad de espacios"
-            borderStyle={cardBorderStyle}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          />
-        </Row>
+        <div className={"roleSection"}>
+          <h2 className={"roleTitle"}>Prestamista</h2>
+          <Row xs={1} md={2} lg={3} className="g-4">
+            <DashboardCard title="Reservar Espacio" icon={<FaBookmark size={24} />} link="/reservationsroom" description="Crear nueva reserva de espacio" />
+            <DashboardCard title="Nueva Reserva" icon={<FaComputer size={24} />} link="/addreservation" description="Solicitar préstamo de equipos" />
+            <DashboardCard title="Mis Reservas Equipos" icon={<FaCalendarAlt size={24} />} link="/reservations" description="Ver mis reservas equipo" />
+            <DashboardCard title="Mis Reservas Espacios" icon={<FaCalendarAlt size={24} />} link="/reservations-room" description="Ver mis reservas espacios" />
+            <DashboardCard title="Disponibilidad de Equipos" icon={<FaClipboardList size={24} />} link="/equipmentavailability" description="Ver reporte completo del disponibilidad de equipos" />
+            <DashboardCard title="Disponibilidad de Espacios" icon={<FaClipboardList size={24} />} link="/roomsavailability" description="Ver reporte completo de disponibilidad de espacios" />
+          </Row>
+        </div>
       )}
     </Container>
   );
@@ -297,34 +98,18 @@ interface DashboardCardProps {
   icon: React.ReactNode;
   link: string;
   description: string;
-  borderStyle: React.CSSProperties;
-  onMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => void;
-  onMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-function DashboardCard({
-  title,
-  icon,
-  link,
-  description,
-  borderStyle,
-  onMouseEnter,
-  onMouseLeave,
-}: DashboardCardProps) {
+function DashboardCard({ title, icon, link, description }: DashboardCardProps) {
   return (
     <Col>
-      <Card
-        as={Link}
-        to={link}
-        className="h-100 text-decoration-none"
-        style={borderStyle}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-      >
-        <Card.Body className="text-center py-4">
-          <div className="mb-3">{icon}</div>
-          <h5 className="mb-2">{title}</h5>
-          <p className="text-muted small mb-0">{description}</p>
+      <Card as={Link} to={link} className={`text-decoration-none ${"card"}`}>
+        <Card.Body className="text-center p-4">
+          <div className={"iconWrapper"}>
+            {icon}
+          </div>
+          <h5 className={"cardTitle"}>{title}</h5>
+          <p className={"cardDescription"}>{description}</p>
         </Card.Body>
       </Card>
     </Col>

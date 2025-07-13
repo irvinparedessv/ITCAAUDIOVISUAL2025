@@ -51,19 +51,32 @@ import RoomsAvailabilityList from "./components/rooms/RoomsAvailability";
 import NoEncontrado from "./components/error/NoEncontrado";
 import UbicacionForm from "./components/ubication/UbicationForm";
 import UbicacionList from "./components/ubication/listUbications";
+import PublicOnlyRoute from "./layouts/PublicOnlyRoute";
 
 const router = createBrowserRouter([
   {
     path: "/login",
-    element: <Login />,
+    element: (
+      <PublicOnlyRoute>
+        <Login />
+      </PublicOnlyRoute>
+    ),
   },
   {
     path: "/reset-password",
-    element: <ResetPassword />,
+    element: (
+      <PublicOnlyRoute>
+        <ResetPassword />
+      </PublicOnlyRoute>
+    ),
   },
   {
     path: "/confirm-account/:token",
-    element: <ConfirmAccount />,
+    element: (
+      <PublicOnlyRoute>
+        <ConfirmAccount />
+      </PublicOnlyRoute>
+    ),
   },
   {
     path: "/forbidden",

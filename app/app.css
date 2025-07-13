@@ -189,14 +189,19 @@ input[type="time"] {
 /* Variables generales para la aplicación */
 :root {
   /* Light theme colors */
-  --bs-body-bg: #f8f9fa;
+  --bs-body-bg: #000000;
   --bs-body-color: #212529;
   --bs-card-bg: #ffffff;
-  --bs-border-color: #dee2e6;
+  --bs-border-color: #000000;
   --bs-primary-bg: #8b0000;
-  --bs-primary-text: #ffffff;
-  --bs-secondary-bg: #e9ecef;
+  --bs-primary-text: #000000;
+  --bs-secondary-bg: #000000;
 }
+
+.bg-body {
+  background-color: red !important;
+}
+
 
 [data-bs-theme="dark"] {
   /* Dark theme colors */
@@ -1158,6 +1163,164 @@ input.form-control.border-color-login {
   background-color: rgb(195, 144, 0) !important;
   color: #fff !important; /* Texto blanco para mejor contraste */
 }
+
+
+
+
+
+
+/* Dashboard.module.css */
+.dashboardContainer {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.welcomeHeader {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #8B0000, #b1291d, #8B0000);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: gradientBackground 3s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes gradientBackground {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.welcomeText {
+  font-size: 1.1rem;
+  margin-bottom: 2.5rem;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.welcomeText::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 70%;
+  width: 4px;
+  background: linear-gradient(to bottom, #b1291d, #8B0000);
+  border-radius: 2px;
+}
+
+.card {
+  border: none;
+  border-radius: 15px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  height: 100%;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.card:hover .iconWrapper {
+  animation: floatAnimation 2s ease-in-out infinite;
+}
+
+@keyframes floatAnimation {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.iconWrapper {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  background: #8B0000; /* Fondo rojo SIEMPRE */
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
+}
+
+.iconWrapper svg {
+  color: #ffffff !important; /* Ícono blanco SIEMPRE */
+}
+
+
+.cardTitle {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.cardDescription {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  text-align: center;
+  color: #6c757d;
+}
+
+.roleSection {
+  margin-bottom: 3rem;
+}
+
+.roleSection:not(:first-child) {
+  margin-top: 3rem;
+  padding-top: 3rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.roleTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+  position: relative;
+}
+
+.roleTitle::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(90deg, #8B0000, #b1291d);
+  border-radius: 3px;
+}
+
+/* Dark mode styles */
+[data-bs-theme="dark"] .card {
+  background: linear-gradient(145deg, #2a2a2a, #1f1f1f);
+}
+
+[data-bs-theme="dark"] .cardTitle {
+  color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] .cardDescription {
+  color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .iconWrapper {
+  background: linear-gradient(145deg, #8B0000, #b1291d);
+}
+
+[data-bs-theme="dark"] .welcomeText {
+  color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .roleSection:not(:first-child) {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+ 
 
 
 

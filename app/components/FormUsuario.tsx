@@ -67,7 +67,7 @@ export default function FormUsuario() {
 
   // Validation regex patterns
   const nameRegex = /^[a-zA-Z\s]{2,}$/;
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@itca\.edu\.sv$/;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const phoneRegex = /^[0-9]{4}-[0-9]{4}$/;
   const imageTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
   const maxImageSize = 2 * 1024 * 1024;
@@ -227,7 +227,7 @@ export default function FormUsuario() {
 
     if (!isFormValid()) {
       toast.error("Por favor corrija los errores antes de enviar", {
-        id: "submit-toast"
+        id: "submit-toast",
       });
       return;
     }
@@ -252,52 +252,53 @@ export default function FormUsuario() {
     formDataToSend.append("estado", "0");
 
     toast.dismiss("submit-toast");
-    toast.loading("Estamos creando el usuario. Por favor, espere un momento...", {
-      position: 'top-right',
-      id: "submit-toast"
-    });
+    toast.loading(
+      "Estamos creando el usuario. Por favor, espere un momento...",
+      {
+        position: "top-right",
+        id: "submit-toast",
+      }
+    );
 
     try {
       const response = await createUsuario(formDataToSend);
 
       toast.dismiss("submit-toast");
       toast.success("Usuario creado con éxito", {
-        position: 'top-right',
+        position: "top-right",
         duration: 3000,
-        id: "submit-toast"
+        id: "submit-toast",
       });
 
       handleClear();
       navigate("/usuarios");
-
     } catch (error: any) {
       toast.dismiss("submit-toast");
 
       const errorData = error.response?.data;
-      const isEmailExists = errorData?.error === 'email_exists';
+      const isEmailExists = errorData?.error === "email_exists";
       const errorMessage = isEmailExists
         ? "El correo electrónico ya está registrado"
         : errorData?.message || "Error al crear el usuario";
 
       toast.error(errorMessage, {
-        position: 'top-right',
+        position: "top-right",
         duration: 5000,
-        id: "submit-toast"
+        id: "submit-toast",
       });
 
       if (isEmailExists) {
-        setFormErrors(prev => ({
+        setFormErrors((prev) => ({
           ...prev,
-          email: errorMessage
+          email: errorMessage,
         }));
       }
 
-      console.error('Error al crear usuario:', {
+      console.error("Error al crear usuario:", {
         status: error.response?.status,
         data: errorData,
-        message: error.message
+        message: error.message,
       });
-
     } finally {
       setIsLoading(false);
     }
@@ -330,12 +331,12 @@ export default function FormUsuario() {
         onClick={handleBack}
         title="Regresar"
         style={{
-          position: 'absolute',
-          top: '25px',
-          left: '30px',
-          cursor: 'pointer',
-          fontSize: '2rem',
-          zIndex: 10
+          position: "absolute",
+          top: "25px",
+          left: "30px",
+          cursor: "pointer",
+          fontSize: "2rem",
+          zIndex: 10,
         }}
       />
       <h2 className="mb-4 text-center fw-bold">Crear Nuevo Usuario</h2>
@@ -353,8 +354,9 @@ export default function FormUsuario() {
               value={formData.first_name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${formErrors.first_name ? "is-invalid" : ""
-                }`}
+              className={`form-control ${
+                formErrors.first_name ? "is-invalid" : ""
+              }`}
             />
             {formErrors.first_name && (
               <div className="invalid-feedback">{formErrors.first_name}</div>
@@ -372,8 +374,9 @@ export default function FormUsuario() {
               value={formData.last_name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${formErrors.last_name ? "is-invalid" : ""
-                }`}
+              className={`form-control ${
+                formErrors.last_name ? "is-invalid" : ""
+              }`}
             />
             {formErrors.last_name && (
               <div className="invalid-feedback">{formErrors.last_name}</div>
@@ -486,8 +489,9 @@ export default function FormUsuario() {
           ) : (
             <div
               {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : ""
-                }`}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
+                isDragActive ? "border-primary bg-light" : ""
+              }`}
             >
               <input {...getInputProps()} />
               <div className="d-flex flex-column align-items-center justify-content-center">
@@ -521,7 +525,11 @@ export default function FormUsuario() {
           >
             {isLoading ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
                 Procesando...
               </>
             ) : (

@@ -14,6 +14,8 @@ import { useTheme } from "~/hooks/ThemeContext";
 import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser, FaChartBar } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
+import { useAuth } from "~/hooks/AuthContext";
+import { Role } from "~/types/roles";
 
 // Registrar componentes de Chart.js
 ChartJS.register(
@@ -54,6 +56,7 @@ const ReporteHorariosSolicitados = () => {
     const { darkMode } = useTheme();
     const navigate = useNavigate();
     const chartRef = useRef<any>(null);
+    const { user } = useAuth();
 
     // Paginación tabla (frontend)
     const [currentPage, setCurrentPage] = useState(1);
@@ -567,13 +570,17 @@ const ReporteHorariosSolicitados = () => {
 
                         <Col md={2}>
                             <Form.Group controlId="tipo">
-                                <Form.Label className="fw-bold">Tipo <span className="text-danger">*</span></Form.Label>
+                                <Form.Label className="fw-bold">
+                                    Tipo <span className="text-danger">*</span>
+                                </Form.Label>
                                 <Form.Select
                                     value={tipo}
                                     onChange={(e) => setTipo(e.target.value)}
                                 >
                                     <option value="">-- Selecciona --</option>
-                                    <option value="aula">Aula</option>
+                                    {user?.role !== Role.Encargado && (
+                                        <option value="aula">Aula</option>
+                                    )}
                                     <option value="equipo">Equipo</option>
                                 </Form.Select>
                             </Form.Group>

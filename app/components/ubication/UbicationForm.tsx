@@ -47,21 +47,58 @@ export default function UbicacionForm() {
       return;
     }
 
-    setLoadingSubmit(true);
+    if (id) {
+      // Mostrar confirmación y DETENER aquí
+      toast(
+        (t) => (
+          <span>
+            ¿Seguro que quieres actualizar?
+            <div className="d-flex w-100 mt-2">
+              <button
+                className="btn btn-success flex-fill me-1"
+                onClick={async () => {
+                  toast.dismiss(t.id);
+                  setLoadingSubmit(true);
+                  try {
+                    await updateUbicacion(Number(id), form);
+                    toast.success("Ubicación actualizada");
+                    setTimeout(() => {
+                      navigate("/ubications");
+                    }, 2000);
+                  } catch (error) {
+                    toast.error("Error al actualizar");
+                  } finally {
+                    setLoadingSubmit(false);
+                  }
+                }}
+              >
+                Sí
+              </button>
+              <button
+                className="btn btn-secondary flex-fill ms-1"
+                onClick={() => toast.dismiss(t.id)}
+              >
+                No
+              </button>
+            </div>
+          </span>
+        ),
+        { duration: 6000 }
+      );
 
+      return; // <<----- ESTO CORTA la ejecución y evita doble llamada
+    }
+
+    // Crear
+    setLoadingSubmit(true);
     try {
-      if (id) {
-        await updateUbicacion(Number(id), form);
-        toast.success("Ubicación actualizada");
-      } else {
-        await createUbicacion(form);
-        toast.success("Ubicación creada");
-      }
+      await createUbicacion(form);
+      toast.success("Ubicación creada");
       setTimeout(() => {
         navigate("/ubications");
       }, 2000);
     } catch (error) {
-      toast.error("Error al guardar la ubicación");
+      toast.error("Error al crear");
     } finally {
       setLoadingSubmit(false);
     }
@@ -108,28 +145,30 @@ export default function UbicacionForm() {
           ></textarea>
         </div>
 
-        <button
-          type="submit"
-          className="btn btn-primary me-2"
-          disabled={loadingSubmit}
-        >
-          {loadingSubmit && (
-            <span
-              className="spinner-border spinner-border-sm me-2"
-              role="status"
-              aria-hidden="true"
-            />
-          )}
-          {id ? "Actualizar" : "Crear"}
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => navigate("/ubications")}
-          disabled={loadingSubmit}
-        >
-          Cancelar
-        </button>
+        <div className="d-flex w-100">
+          <button
+            type="submit"
+            className="btn btn-primary flex-fill me-1"
+            disabled={loadingSubmit}
+          >
+            {loadingSubmit && (
+              <span
+                className="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              />
+            )}
+            {id ? "Actualizar" : "Crear"}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary flex-fill ms-1"
+            onClick={() => navigate("/ubications")}
+            disabled={loadingSubmit}
+          >
+            Cancelar
+          </button>
+        </div>
       </form>
     </div>
   );

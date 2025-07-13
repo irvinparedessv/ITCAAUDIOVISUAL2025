@@ -5,6 +5,9 @@ import {
   deleteUbicacion,
 } from "../../services/ubicationService";
 import toast from "react-hot-toast";
+import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
+import { Button, Spinner } from "react-bootstrap";
+import PaginationComponent from "~/utils/Pagination";
 
 interface Ubicacion {
   id: number;
@@ -37,7 +40,6 @@ export default function UbicacionList() {
         ITEMS_PER_PAGE
       );
       setUbicaciones(res.data);
-      setCurrentPage(res.current_page);
       setLastPage(res.last_page);
     } catch (error) {
       toast.error("Error cargando ubicaciones");
@@ -51,30 +53,55 @@ export default function UbicacionList() {
   }, [currentPage]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm("¿Seguro que quieres eliminar esta ubicación?")) return;
-
-    try {
-      await deleteUbicacion(id);
-      toast.success("Ubicación eliminada");
-      cargarUbicaciones(currentPage);
-    } catch {
-      toast.error("Error al eliminar");
-    }
+    const confirmId = toast(
+      (t) => (
+        <span>
+          ¿Seguro que quieres eliminar?
+          <div style={{ marginTop: "10px", display: "flex", gap: "10px" }}>
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={async () => {
+                toast.dismiss(t.id);
+                await toast.promise(deleteUbicacion(id), {
+                  loading: "Eliminando...",
+                  success: "Ubicación eliminada",
+                  error: "Error al eliminar",
+                });
+                cargarUbicaciones(currentPage);
+              }}
+            >
+              Sí
+            </button>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              No
+            </button>
+          </div>
+        </span>
+      ),
+      { duration: 6000 }
+    );
   };
 
   return (
     <div>
-      <h2>Listado de Ubicaciones</h2>
-
-      <button
-        className="btn btn-success mb-3"
-        onClick={() => navigate("/ubications/add")}
-      >
-        Agregar Ubicación
-      </button>
+      <div className="d-flex justify-content-end mb-3">
+        <button
+          className="btn btn-primary"
+          onClick={() => navigate("/ubications/add")}
+        >
+          <FaPlus className="me-2" />
+          Agregar Ubicación
+        </button>
+      </div>
 
       {loading ? (
-        <p>Cargando ubicaciones...</p>
+        <div className="text-center my-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando ubicaciones...</p>
+        </div>
       ) : (
         <>
           <table className="table">
@@ -91,71 +118,59 @@ export default function UbicacionList() {
                   <td>{ubicacion.nombre}</td>
                   <td>{ubicacion.descripcion}</td>
                   <td>
-                    <button
-                      className="btn btn-sm btn-primary me-2"
-                      onClick={() =>
-                        navigate(`/ubications/edit/${ubicacion.id}`)
-                      }
-                    >
-                      Editar
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(ubicacion.id)}
-                    >
-                      Eliminar
-                    </button>
+                    <div className="d-flex gap-2">
+                      <Button
+                        variant="outline-primary"
+                        className="rounded-circle"
+                        title="Editar ubicacion"
+                        onClick={() =>
+                          navigate(`/ubications/edit/${ubicacion.id}`)
+                        }
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          transition: "transform 0.2s ease-in-out",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.transform = "scale(1.15)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.transform = "scale(1)")
+                        }
+                      >
+                        <FaEdit />
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        className="rounded-circle"
+                        title="Eliminar ubicacion"
+                        onClick={() => handleDelete(ubicacion.id)}
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          transition: "transform 0.2s ease-in-out",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.transform = "scale(1.15)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.transform = "scale(1)")
+                        }
+                      >
+                        <FaTrash />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <nav>
-            <ul className="pagination">
-              <li
-                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  Anterior
-                </button>
-              </li>
-
-              {Array.from({ length: lastPage }, (_, i) => i + 1).map((page) => (
-                <li
-                  key={page}
-                  className={`page-item ${
-                    page === currentPage ? "active" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </button>
-                </li>
-              ))}
-
-              <li
-                className={`page-item ${
-                  currentPage === lastPage ? "disabled" : ""
-                }`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === lastPage}
-                >
-                  Siguiente
-                </button>
-              </li>
-            </ul>
-          </nav>
+          <PaginationComponent
+            page={currentPage}
+            totalPages={lastPage}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
     </div>

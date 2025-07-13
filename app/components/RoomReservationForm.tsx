@@ -464,7 +464,7 @@ export default function ReserveClassroom() {
                 type="time"
                 className="form-control"
                 value={endTime}
-                min="07:00"
+                min={startTime || "07:00"}
                 max="22:00"
                 onChange={(e) => setEndTime(e.target.value)}
                 required

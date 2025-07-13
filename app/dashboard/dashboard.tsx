@@ -164,6 +164,15 @@ export default function Dashboard() {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           />
+          <DashboardCard
+            title="Reporte de reserva de aulas"
+            icon={<FaRegFileAlt size={24} style={getIconStyle()} />}
+            link="/reporteReservasAulas"
+            description="Reporte de reserva de aulas"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
         </Row>
       )}
 

@@ -382,7 +382,7 @@ const PrediccionAulaPage = () => {
             <>
               {precision !== null && (
                 <div className="mb-3 text-end">
-                  <Badge bg="secondary" className="fs-6">
+                  <Badge bg="success" className="fs-6">
                     Precisión del modelo: {precision.toFixed(2)}%
                   </Badge>
                 </div>

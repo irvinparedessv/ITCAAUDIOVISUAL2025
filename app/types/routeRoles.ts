@@ -53,7 +53,7 @@ export const routeRoles: Record<string, Role[]> = {
   "/reporteReservasEquipo": [Role.Administrador],
   "/reporteReservasUsuarios": [Role.Administrador],
   // -- Reporte ADMIN--
-  "/reporteReservasAulas": [Role.Administrador],
+  "/reporteReservasAulas": [Role.Administrador, Role.EspacioEncargado],
   "/reporteAulas": [Role.Administrador],
     
 
@@ -64,9 +64,11 @@ export const routeRoles: Record<string, Role[]> = {
   "/perfil": [Role.Administrador, Role.EspacioEncargado, Role.Encargado, Role.Prestamista,],
   "/editarPerfil": [Role.Administrador, Role.EspacioEncargado, Role.Encargado, Role.Prestamista,],
   "/notifications": [Role.Administrador, Role.EspacioEncargado, Role.Encargado, Role.Prestamista,],
-// -- Reporte ADMIN Y ENCARGADO --
-  "/administracion": [Role.Administrador,  Role.Encargado],
-  "/opcionesReportes": [Role.Administrador, Role.Encargado],
+  // -- Reporte ADMIN, ENCARGADO--
   "/opcionesAnalisis": [Role.Administrador, Role.Encargado],
+  // -- Reporte ADMIN, ENCARGADO, ENCARGADO ESPACIO --
+  "/administracion": [Role.Administrador,  Role.Encargado, Role.EspacioEncargado],
+  "/opcionesReportes": [Role.Administrador, Role.Encargado, Role.EspacioEncargado],
+
 
 };

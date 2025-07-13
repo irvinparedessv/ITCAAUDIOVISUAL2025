@@ -39,47 +39,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = !!token && !!user;
 
   useEffect(() => {
-    const loadCredentials = async () => {
-      try {
-        const storedToken = localStorage.getItem("token");
-        const storedUser = localStorage.getItem("user");
+  console.log("[AuthContext] Cargando credenciales...");
+  const loadCredentials = async () => {
+    try {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
 
-        if (!storedToken || !storedUser) {
-          setIsLoading(false);
-          return;
-        }
+      if (!storedToken || !storedUser) {
+        console.log("[AuthContext] No hay token o usuario");
+        setIsLoading(false);
+        return;
+      }
 
-        const response = await api.get("/validate-token", {
-          headers: { Authorization: `Bearer ${storedToken}` },
-        });
+      const response = await api.get("/validate-token", {
+        headers: { Authorization: `Bearer ${storedToken}` },
+      });
 
-        if (response.data.valid) {
-          setToken((prev) => (prev !== storedToken ? storedToken : prev));
-          setUser((prev) => {
-            const parsedUser = JSON.parse(storedUser);
-            return JSON.stringify(prev) !== JSON.stringify(parsedUser)
-              ? parsedUser
-              : prev;
-          });
-          initializeEcho(storedToken);
-        } else {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          setToken(null);
-          setUser(null);
-        }
-      } catch (error) {
+      if (response.data.valid) {
+        console.log("[AuthContext] Token válido. Estableciendo usuario.");
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+        initializeEcho(storedToken);
+      } else {
+        console.log("[AuthContext] Token inválido.");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         setToken(null);
         setUser(null);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("[AuthContext] Error al validar token:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setToken(null);
+      setUser(null);
+    } finally {
+      console.log("[AuthContext] isLoading = false");
+      setIsLoading(false);
+    }
+  };
 
-    loadCredentials();
-  }, []);
+  loadCredentials();
+}, []);
+
 
   // Escuchar cambios en localStorage para detectar logout desde otra pestaña
 useEffect(() => {

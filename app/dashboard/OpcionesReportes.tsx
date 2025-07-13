@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaChartLine, FaBook, FaRegFileAlt, FaLongArrowAltLeft } from 'react-icons/fa';
-import { Card } from 'react-bootstrap';
-import { useAuth } from '../hooks/AuthContext'; // Asegúrate de importar tu hook de autenticación
-import { Role } from '../types/roles'; // Importa los roles si es necesario
+import { FaRegFileAlt, FaChartLine, FaLongArrowAltLeft } from 'react-icons/fa';
+import { Card, Container, Row, Col } from 'react-bootstrap';
+import { useAuth } from '../hooks/AuthContext';
+import { Role } from '../types/roles';
 
 const opciones = [
   {
@@ -10,7 +10,7 @@ const opciones = [
     descripcion: 'Reporte de reserva por fechas',
     ruta: '/reporteReservasEquipo',
     icono: <FaRegFileAlt size={24} />,
-    roles: [Role.Administrador, Role.Encargado] // Especifica qué roles pueden ver esta opción
+    roles: [Role.Administrador, Role.Encargado]
   },
   {
     nombre: 'Reporte de reservas equipo',
@@ -24,7 +24,7 @@ const opciones = [
     descripcion: 'Reporte de uso de aulas por aulas',
     ruta: '/reporteReservasAulas',
     icono: <FaRegFileAlt size={24} />,
-    roles: [Role.Administrador, Role.EspacioEncargado] // Solo admin y encargado de espacios
+    roles: [Role.Administrador, Role.EspacioEncargado]
   },
   {
     nombre: 'Reporte de reservas aulas',
@@ -58,92 +58,62 @@ const opciones = [
 
 const OpcionesReporte = () => {
   const navigate = useNavigate();
-  const { user } = useAuth(); // Obtiene el usuario del contexto de autenticación
+  const { user } = useAuth();
 
-  // Filtra las opciones basadas en el rol del usuario
+  // Filtra las opciones según el rol del usuario
   const opcionesFiltradas = opciones.filter(opcion => 
-  opcion.roles.includes(user?.role ?? Role.Prestamista) // O cualquier otro rol por defecto
-);
-  // Estilo del borde degradado
-  const cardBorderStyle = {
-    border: "2px solid",
-    borderImage: "linear-gradient(rgb(245, 195, 92), rgb(206, 145, 20)) 1",
-    boxShadow: "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)",
-    cursor: "pointer" 
-  };
-
-  // Estilo para los iconos (rojo)
-  const getIconStyle = () => ({
-    color: document.documentElement.getAttribute("data-bs-theme") === "dark" 
-      ? "#b1291d" 
-      : "#8B0000"
-  });
+    user?.role && opcion.roles.includes(user.role)
+  );
 
   const handleBack = () => {
     navigate("/administracion");
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto">
-        {/* Contenedor flex principal (flecha + título) */}
-        <div 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '12px', 
-              marginBottom: '20px',
-              padding: '10px',
-              maxWidth: '600px'
-            }}
-          >
-            <FaLongArrowAltLeft 
-              onClick={handleBack} 
-              style={{ fontSize: '2rem', cursor: 'pointer' }} 
-            />
-            <h1>
-              Opciones de Reportes
-            </h1>
-          </div>
-    
-          <p style={{ marginTop: 0 }}>
-            Gestiona todas los reportes del sistema
+    <Container fluid className={"dashboardContainer"}>
+      {/* Encabezado con flecha de retroceso */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '1rem', 
+        marginBottom: '1.5rem'
+      }}>
+        <FaLongArrowAltLeft 
+          onClick={handleBack} 
+          className={"backIcon"}
+          style={{ 
+            fontSize: '2rem', 
+            cursor: 'pointer',
+          }} 
+        />
+        <div>
+          <h1 className={"welcomeHeader"}>Opciones de Reportes</h1>
+          <p className={"welcomeText"}>
+            Gestiona todos los reportes del sistema
           </p>
-
-        <div className="d-flex flex-wrap gap-4">
-          {opcionesFiltradas.map((opcion) => (
-            <Card 
-              key={opcion.ruta}
-              onClick={() => navigate(opcion.ruta)}
-              className="cursor-pointer transition-all"
-              style={{ 
-                ...cardBorderStyle,
-                width: '280px',
-                flex: '1 0 auto',
-                transform: 'translateY(0)',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-5px)';
-                e.currentTarget.style.boxShadow = '0 0.5rem 1rem rgba(0, 0, 0, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)';
-              }}
-            >
-              <Card.Body className="text-center py-4">
-                <div className="mb-3" style={getIconStyle()}>
-                  {opcion.icono}
-                </div>
-                <h5 className="mb-2">{opcion.nombre}</h5>
-                <p className="text-muted small">{opcion.descripcion}</p>
-              </Card.Body>
-            </Card>
-          ))}
         </div>
       </div>
-    </div>
+
+      <Row xs={1} md={2} lg={3} className="g-4">
+        {opcionesFiltradas.map((opcion) => (
+          <Col key={opcion.ruta}>
+            <Card 
+              onClick={() => navigate(opcion.ruta)} 
+              className={`text-decoration-none ${"card"}`}
+              style={{ cursor: 'pointer' }}
+            >
+              <Card.Body className="text-center p-4">
+                <div className={"iconWrapper"}>
+                  {opcion.icono}
+                </div>
+                <h5 className={"cardTitle"}>{opcion.nombre}</h5>
+                <p className={"cardDescription"}>{opcion.descripcion}</p>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    </Container>
   );
 };
 

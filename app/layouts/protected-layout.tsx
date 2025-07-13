@@ -1,64 +1,50 @@
 // layouts/protected-layout.tsx
-import { useLocation, Outlet, Navigate, useNavigate } from "react-router-dom";
+import { useLocation, Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/AuthContext";
 import { Spinner } from "react-bootstrap";
 import { getAllowedRoles } from "../helpers/matchRouteRoles";
-import { useEffect, useState } from "react";
 import Chatbot from "~/components/chatbot/chatbot";
 import { Role } from "~/types/roles";
 
 const publicRoutes = ["/login", "/forgot-password", "/reset-password"];
 
+
+
 export default function ProtectedLayout() {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const [redirectHandled, setRedirectHandled] = useState(false);
 
-  useEffect(() => {
-    if (isLoading || redirectHandled) return;
+  console.log("[ProtectedLayout] Ruta:", location.pathname);
+  console.log("[ProtectedLayout] isAuthenticated:", isAuthenticated);
+  console.log("[ProtectedLayout] isLoading:", isLoading);
 
-    if (!isAuthenticated && !publicRoutes.includes(location.pathname)) {
-      navigate("/login", { replace: true, state: { from: location } });
-      setRedirectHandled(true);
-      return;
-    }
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="text-center">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-2">Verificando sesión...</p>
+        </div>
+      </div>
+    );
+  }
 
-    if (isAuthenticated && location.pathname === "/login") {
-      navigate("/", { replace: true });
-      setRedirectHandled(true);
-      return;
-    }
-  }, [
-    isLoading,
-    isAuthenticated,
-    location.pathname,
-    redirectHandled,
-    navigate,
-  ]);
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
-  useEffect(() => {
-    setRedirectHandled(false);
-  }, [location.pathname]);
+  const allowedRoles = getAllowedRoles(location.pathname);
+  const userRole = Number(user?.role);
 
-  if (isLoading) return <Spinner animation="border" />;
-
-  if (isAuthenticated) {
-    const allowedRoles = getAllowedRoles(location.pathname);
-    const userRole = Number(user?.role);
-
-    if (
-      allowedRoles.length > 0 &&
-      (!userRole || !allowedRoles.includes(userRole))
-    ) {
-      return <Navigate to="/forbidden" replace />;
-    }
+  if (allowedRoles.length > 0 && (!userRole || !allowedRoles.includes(userRole))) {
+    return <Navigate to="/forbidden" replace />;
   }
 
   return (
     <>
       <Outlet />
-      {user?.role === Role.Prestamista && <Chatbot />}{" "}
+      {user?.role === Role.Prestamista && <Chatbot />}
     </>
   );
 }
+

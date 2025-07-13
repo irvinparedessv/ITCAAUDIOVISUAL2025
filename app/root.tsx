@@ -33,7 +33,6 @@ function AppContent() {
   }, []);
   const hideNavbarRoutes = [
     "/login",
-    "/forgot-password",
     "/reset-password",
     "/forbidden",
   ];
@@ -44,40 +43,7 @@ function AppContent() {
   // Puedes usar `theme` para condicionar algo, por ejemplo:
   console.log("Tema actual:", darkMode);
 
-  if (isLoading) {
-    return (
-      <div
-        className="d-flex justify-content-center align-items-center vh-100"
-        style={{
-          backgroundColor: "var(--bs-body-bg)",
-          color: "var(--bs-body-color)",
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 9999,
-        }}
-      >
-        <div className="text-center">
-          <Spinner
-            animation="border"
-            role="status"
-            style={{
-              width: "3rem",
-              height: "3rem",
-              color: "var(--bs-primary-bg)",
-            }}
-          >
-            <span className="visually-hidden">Cargando...</span>
-          </Spinner>
-          <h3 className="mt-3">Cargando...</h3>
-          <p>Estamos verificando tu sesión, por favor espera...</p>
-        </div>
-      </div>
-    );
-  }
-
+ 
   return (
     <>
       {shouldShowNavbar && <NavbarMenu />}

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FaSave,
-  FaTimes,
   FaPlus,
   FaBroom,
   FaUpload,
@@ -36,15 +35,12 @@ export const CreateSpaceForm = () => {
   const [timeInput, setTimeInput] = useState<AvailableTime>({
     start_date: "",
     end_date: "",
-    start_time: "",
-    end_time: "",
     days: [],
   });
 
   const [loading, setLoading] = useState(isEdit);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [notFound, setNotFound] = useState(false);
-
 
   const handleBack = () => {
     navigate("/rooms");
@@ -79,12 +75,12 @@ export const CreateSpaceForm = () => {
           setAvailableTimes(horariosParseados);
         })
         .catch((err) => {
-        if (err.response?.status === 404) {
-          setNotFound(true);
-        } else {
-          toast.error("Error al cargar el aula");
-        }
-      })
+          if (err.response?.status === 404) {
+            setNotFound(true);
+          } else {
+            toast.error("Error al cargar el aula");
+          }
+        })
         .finally(() => setLoading(false));
     }
   }, [id]);
@@ -113,11 +109,17 @@ export const CreateSpaceForm = () => {
   };
 
   const handleDropImages = async (acceptedFiles: File[]) => {
-    const validFiles = acceptedFiles.filter((file) =>
-      file.type.match("image.*")
-    );
-    if (validFiles.length !== acceptedFiles.length) {
-      toast.error("Solo se permiten archivos de imagen");
+    if (renderImages.length >= 5) {
+      toast.error("Solo puedes subir hasta 5 imágenes.");
+      return;
+    }
+
+    const remainingSlots = 5 - renderImages.length;
+    const filesToAdd = acceptedFiles.slice(0, remainingSlots);
+
+    const validFiles = filesToAdd.filter((file) => file.type.match("image.*"));
+    if (validFiles.length !== filesToAdd.length) {
+      toast.error("Solo se permiten archivos de imagen.");
     }
 
     const results: RenderImageInfo[] = [];
@@ -129,10 +131,6 @@ export const CreateSpaceForm = () => {
       ]);
       const is360 = isExif360 || isAspect360;
 
-      console.log(
-        `${file.name} -> EXIF: ${isExif360} | Aspect: ${isAspect360}`
-      );
-
       results.push({
         file,
         preview: URL.createObjectURL(file),
@@ -140,7 +138,7 @@ export const CreateSpaceForm = () => {
       });
     }
 
-    setRenderImages(results);
+    setRenderImages((prev) => [...prev, ...results]);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -158,17 +156,11 @@ export const CreateSpaceForm = () => {
   };
 
   const handleAddTime = () => {
-    const { start_date, end_date, start_time, end_time, days } = timeInput;
+    const { start_date, end_date, days } = timeInput;
 
     toast.dismiss("add-time-error");
 
-    if (
-      !start_date ||
-      !end_date ||
-      !start_time ||
-      !end_time ||
-      days.length === 0
-    ) {
+    if (!start_date || !end_date || days.length === 0) {
       toast.error("Completa todos los campos y selecciona al menos un día.", {
         id: "add-time-error",
       });
@@ -177,13 +169,6 @@ export const CreateSpaceForm = () => {
 
     if (end_date < start_date) {
       toast.error("La fecha fin no puede ser menor a la fecha inicio.", {
-        id: "add-time-error",
-      });
-      return;
-    }
-
-    if (end_time <= start_time) {
-      toast.error("La hora fin debe ser mayor a la hora inicio.", {
         id: "add-time-error",
       });
       return;
@@ -206,59 +191,14 @@ export const CreateSpaceForm = () => {
     setTimeInput({
       start_date: "",
       end_date: "",
-      start_time: "",
-      end_time: "",
       days: [],
     });
   };
 
   const handleRemoveTime = (index: number) => {
-    const toastId = `remove-time-${index}`;
-
-    toast.dismiss(toastId);
-
-    toast(
-      (t) => (
-        <div>
-          <p>¿Desea eliminar este horario?</p>
-          <div className="d-flex justify-content-end gap-2 mt-2">
-            <button
-              className="btn btn-sm btn-danger"
-              onClick={() => {
-                const newTimes = [...availableTimes];
-                newTimes.splice(index, 1);
-                setAvailableTimes(newTimes);
-                toast.dismiss(t.id);
-                toast.success("Horario eliminado", {
-                  id: `${toastId}-success`,
-                  duration: 2000,
-                });
-              }}
-            >
-              Sí, eliminar
-            </button>
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => toast.dismiss(t.id)}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ),
-      {
-        duration: 5000,
-        id: toastId,
-      }
-    );
-  };
-
-  const updateMessages = {
-    question: "¿Seguro que deseas actualizar este espacio?",
-    confirmText: "Sí, actualizar",
-    cancelText: "Cancelar",
-    success: "Espacio actualizado correctamente",
-    error: "Error actualizando el espacio",
+    const newTimes = [...availableTimes];
+    newTimes.splice(index, 1);
+    setAvailableTimes(newTimes);
   };
 
   const handleClear = () => {
@@ -268,86 +208,30 @@ export const CreateSpaceForm = () => {
     setTimeInput({
       start_date: "",
       end_date: "",
-      start_time: "",
-      end_time: "",
       days: [],
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const errorToastId = "submit-error";
-    const confirmToastId = "edit-confirm-toast";
-
-    toast.dismiss(errorToastId);
-    toast.dismiss(confirmToastId);
 
     if (!name.trim()) {
-      toast.error("El nombre del espacio es obligatorio", {
-        id: errorToastId,
-      });
+      toast.error("El nombre del espacio es obligatorio");
       return;
     }
 
     if (availableTimes.length === 0) {
-      toast.error("Debes agregar al menos un horario disponible", {
-        id: errorToastId,
-      });
+      toast.error("Debes agregar al menos un horario disponible");
       return;
-    }
-
-    if (isEdit) {
-      const confirmed = await new Promise<boolean>((resolve) => {
-        toast(
-          (t) => (
-            <div>
-              <p>{updateMessages.question}</p>
-              <div className="d-flex justify-content-end gap-2 mt-2">
-                <button
-                  className="btn btn-sm btn-success"
-                  onClick={() => {
-                    toast.dismiss(t.id);
-                    resolve(true);
-                  }}
-                >
-                  {updateMessages.confirmText}
-                </button>
-                <button
-                  className="btn btn-sm btn-secondary"
-                  onClick={() => {
-                    toast.dismiss(t.id);
-                    resolve(false);
-                  }}
-                >
-                  {updateMessages.cancelText}
-                </button>
-              </div>
-            </div>
-          ),
-          {
-            id: confirmToastId,
-            duration: 8000,
-          }
-        );
-      });
-
-      if (!confirmed) return;
     }
 
     const formData = new FormData();
     formData.append("name", name);
 
-    // 🚫 NO uses index fijo del forEach: solo indexa reales
-    let fileIndex = 0;
-
-    renderImages.forEach((img) => {
+    renderImages.forEach((img, index) => {
       if (img.file) {
-        formData.append(`render_images[${fileIndex}]`, img.file);
-        formData.append(
-          `render_images_is360[${fileIndex}]`,
-          img.is360 ? "1" : "0"
-        );
-        fileIndex++;
+        formData.append(`render_images[${index}]`, img.file);
+        formData.append(`render_images_is360[${index}]`, img.is360 ? "1" : "0");
       }
     });
 
@@ -360,15 +244,17 @@ export const CreateSpaceForm = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       toast.success(
-        isEdit ? updateMessages.success : "Espacio creado correctamente"
+        isEdit
+          ? "Espacio actualizado correctamente"
+          : "Espacio creado correctamente"
       );
       if (!isEdit) handleClear();
       navigate("/rooms");
     } catch (err) {
       console.error(err);
-      toast.error(isEdit ? updateMessages.error : "Error creando el espacio", {
-        id: errorToastId,
-      });
+      toast.error(
+        isEdit ? "Error actualizando el espacio" : "Error creando el espacio"
+      );
     } finally {
       setLoadingSubmit(false);
     }
@@ -380,27 +266,12 @@ export const CreateSpaceForm = () => {
         className="d-flex justify-content-center align-items-center"
         style={{ height: "50vh" }}
       >
-        <div className="text-center">
-          <Spinner
-            animation="border"
-            variant="primary"
-            style={{ width: "3rem", height: "3rem" }}
-          />
-          <div>
-            {loading
-              ? "Cargando espacio..."
-              : isEdit
-              ? "Actualizando espacio..."
-              : "Creando espacio..."}
-          </div>
-        </div>
+        <Spinner animation="border" variant="primary" />
       </div>
     );
   }
-  if (notFound) {
-  return <EspacioNoEncontrado />;
-}
 
+  if (notFound) return <EspacioNoEncontrado />;
 
   return (
     <div className="form-container position-relative">
@@ -431,15 +302,26 @@ export const CreateSpaceForm = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="form-control"
-            placeholder="Nombre del espacio"
           />
         </div>
 
         <div className="mb-4">
-          <label className="form-label">Imágenes 360°</label>
+          <label className="form-label">Imágenes 360° (máx. 5)</label>
 
-          {renderImages.length > 0 ? (
-            <div className="d-flex flex-wrap justify-content-center gap-4">
+          <div
+            {...getRootProps()}
+            className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
+              isDragActive ? "border-primary bg-light" : ""
+            }`}
+          >
+            <input {...getInputProps()} />
+            <FaUpload className="text-muted mb-2" />
+            <p>Arrastra y suelta imágenes aquí, o haz clic para seleccionar</p>
+            <p className="text-muted small mb-0">Formatos: JPEG, PNG, GIF</p>
+          </div>
+
+          {renderImages.length > 0 && (
+            <div className="d-flex flex-wrap justify-content-center gap-4 mt-3">
               {renderImages.map((img, i) => (
                 <div key={i} className="d-flex flex-column align-items-center">
                   <img
@@ -453,47 +335,17 @@ export const CreateSpaceForm = () => {
                     }}
                   />
                   <small className="text-muted mb-1">
-                    {img.is360
-                      ? "✅ Imagen 360° detectada"
-                      : "❌ Imagen NO 360°"}
+                    {img.is360 ? "✅ 360° detectada" : "❌ No 360°"}
                   </small>
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(i)}
                     className="btn btn-outline-danger btn-sm"
                   >
-                    <FaTrash className="me-1" />
-                    Eliminar imagen
+                    <FaTrash className="me-1" /> Eliminar
                   </button>
                 </div>
               ))}
-            </div>
-          ) : (
-            <div
-              {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
-                isDragActive ? "border-primary bg-light" : ""
-              }`}
-            >
-              <input {...getInputProps()} />
-              <div className="d-flex flex-column align-items-center justify-content-center">
-                <FaUpload className="text-muted mb-2" />
-                {isDragActive ? (
-                  <p className="text-primary mb-0">
-                    Suelta las imágenes aquí...
-                  </p>
-                ) : (
-                  <>
-                    <p className="mb-1">
-                      Arrastra y suelta imágenes aquí, o haz clic para
-                      seleccionar
-                    </p>
-                    <p className="text-muted small mb-0">
-                      Formatos: JPEG, PNG, GIF
-                    </p>
-                  </>
-                )}
-              </div>
             </div>
           )}
         </div>
@@ -523,28 +375,6 @@ export const CreateSpaceForm = () => {
                 className="form-control"
               />
             </div>
-            <div className="col-md-3 mb-2">
-              <label className="form-label">Hora inicio</label>
-              <input
-                type="time"
-                value={timeInput.start_time}
-                onChange={(e) =>
-                  setTimeInput({ ...timeInput, start_time: e.target.value })
-                }
-                className="form-control timeForm"
-              />
-            </div>
-            <div className="col-md-3 mb-2">
-              <label className="form-label">Hora fin</label>
-              <input
-                type="time"
-                value={timeInput.end_time}
-                onChange={(e) =>
-                  setTimeInput({ ...timeInput, end_time: e.target.value })
-                }
-                className="form-control timeForm"
-              />
-            </div>
           </div>
 
           <div className="mb-3">
@@ -560,12 +390,11 @@ export const CreateSpaceForm = () => {
                     checked={timeInput.days.includes(d.value)}
                     onChange={(e) => {
                       const checked = e.target.checked;
-                      const day = e.target.value;
                       setTimeInput((prev) => ({
                         ...prev,
                         days: checked
-                          ? [...prev.days, day]
-                          : prev.days.filter((x) => x !== day),
+                          ? [...prev.days, d.value]
+                          : prev.days.filter((x) => x !== d.value),
                       }));
                     }}
                   />
@@ -585,46 +414,38 @@ export const CreateSpaceForm = () => {
             className="btn secondary-btn"
             onClick={handleAddTime}
           >
-            <FaPlus className="me-2" />
-            Agregar horario
+            <FaPlus className="me-2" /> Agregar horario
           </button>
         </div>
 
         {availableTimes.length > 0 && (
-          <div className="mb-4">
-            <h6>Horarios agregados:</h6>
-            <ul className="list-group">
-              {availableTimes.map((t, i) => (
-                <li
-                  key={i}
-                  className="list-group-item d-flex justify-content-between align-items-center"
+          <ul className="list-group mb-4">
+            {availableTimes.map((t, i) => (
+              <li
+                key={i}
+                className="list-group-item d-flex justify-content-between align-items-center"
+              >
+                <span>
+                  Del {t.start_date} al {t.end_date}–{" "}
+                  {t.days
+                    .map((d) => diasSemana.find((x) => x.value === d)?.label)
+                    .join(", ")}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => handleRemoveTime(i)}
                 >
-                  <span>
-                    Del {t.start_date} al {t.end_date} de {t.start_time} a{" "}
-                    {t.end_time} –{" "}
-                    {t.days
-                      .map(
-                        (d: string) =>
-                          diasSemana.find((x) => x.value === d)?.label
-                      )
-                      .join(", ")}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() => handleRemoveTime(i)}
-                  >
-                    <FaTrash />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  <FaTrash />
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
 
         <div className="form-actions">
           <button type="submit" className="btn primary-btn">
-            <FaSave className="me-2" />
+            <FaSave className="me-2" />{" "}
             {isEdit ? "Actualizar espacio" : "Crear espacio"}
           </button>
           {!isEdit && (
@@ -633,8 +454,7 @@ export const CreateSpaceForm = () => {
               className="btn secondary-btn"
               onClick={handleClear}
             >
-              <FaBroom className="me-2" />
-              Limpiar
+              <FaBroom className="me-2" /> Limpiar
             </button>
           )}
         </div>

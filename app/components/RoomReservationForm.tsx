@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Spinner } from "react-bootstrap";
+import { Spinner, Modal, Button, Card } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../api/axios";
@@ -14,6 +14,7 @@ import {
   FaBroom,
   FaUser,
   FaLongArrowAltLeft,
+  FaImages,
 } from "react-icons/fa";
 import { useAuth } from "app/hooks/AuthContext";
 import { Role } from "~/types/roles";
@@ -27,10 +28,15 @@ type Horario = {
   days: string[];
 };
 
+type ImagenAula = {
+  url: string;
+  is_360: boolean;
+};
+
 type Aula = {
   id: number;
   name: string;
-  image_path?: string;
+  imagenes?: ImagenAula[];
 };
 
 type OptionType = { value: string; label: string };
@@ -54,7 +60,6 @@ export default function ReserveClassroom() {
   const [availableClassrooms, setAvailableClassrooms] = useState<Aula[]>([]);
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-
   const [startTime, setStartTime] = useState<string>("");
   const [endTime, setEndTime] = useState<string>("");
 
@@ -69,6 +74,9 @@ export default function ReserveClassroom() {
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   const isDateTimeComplete = selectedDate && startTime && endTime;
 
@@ -335,6 +343,18 @@ export default function ReserveClassroom() {
     (c) => c.name === selectedClassroom
   );
 
+  const handlePrev = () => {
+    setCarouselIndex((prev) =>
+      prev === 0 ? selectedClassroomData!.imagenes!.length - 1 : prev - 1
+    );
+  };
+
+  const handleNext = () => {
+    setCarouselIndex((prev) =>
+      prev === selectedClassroomData!.imagenes!.length - 1 ? 0 : prev + 1
+    );
+  };
+
   if (loading) {
     return (
       <div className="text-center my-5">
@@ -361,7 +381,6 @@ export default function ReserveClassroom() {
         <FaDoorOpen className="me-2" />
         {id ? "Editar Reserva" : "Reserva de Aula"}
       </h2>
-
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label htmlFor="classroom" className="form-label">
@@ -420,8 +439,8 @@ export default function ReserveClassroom() {
           <label className="form-label">
             <FaClock className="me-2" /> Horario
           </label>
-          <div className="d-flex gap-3">
-            <div>
+          <div className="mb-4 row">
+            <div className="col-md-6 mb-2">
               <label htmlFor="startTime" className="form-label">
                 Inicio
               </label>
@@ -436,7 +455,7 @@ export default function ReserveClassroom() {
                 required
               />
             </div>
-            <div>
+            <div className="col-md-6 mb-2">
               <label htmlFor="endTime" className="form-label">
                 Fin
               </label>
@@ -476,7 +495,20 @@ export default function ReserveClassroom() {
             )}
           </div>
         )}
+        {selectedClassroomData?.imagenes?.length > 0 && (
+          <button
+            type="button"
+            className="btn btn-info ms-3"
+            onClick={() => {
+              setCarouselIndex(0);
+              setShowModal(true);
+            }}
+          >
+            <FaImages className="me-2" /> Visualizar Imágenes
+          </button>
+        )}
 
+        <br />
         <div className="form-actions">
           <button
             type="submit"
@@ -523,21 +555,52 @@ export default function ReserveClassroom() {
         </div>
       </form>
 
-      {selectedClassroomData?.image_path && (
-        <div className="mt-5">
-          <h4 className="text-center mb-3">
-            Vista Panorámica del Aula {selectedClassroomData.name}
-          </h4>
-          <div className="panorama-container">
-            <PanoramaViewer
-              image={selectedClassroomData.image_path}
-              pitch={10}
-              yaw={180}
-              hfov={110}
-            />
-          </div>
-        </div>
-      )}
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        size="xl"
+        fullscreen
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Imágenes del Aula</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          {selectedClassroomData?.imagenes &&
+            selectedClassroomData.imagenes.length > 0 && (
+              <>
+                {selectedClassroomData.imagenes[carouselIndex].is_360 ? (
+                  <PanoramaViewer
+                    image={selectedClassroomData.imagenes[carouselIndex].url}
+                    pitch={10}
+                    yaw={180}
+                    hfov={110}
+                  />
+                ) : (
+                  <Card style={{ width: "100%" }}>
+                    <Card.Img
+                      variant="top"
+                      src={selectedClassroomData.imagenes[carouselIndex].url}
+                      style={{ maxHeight: "80vh", objectFit: "contain" }}
+                    />
+                  </Card>
+                )}
+                <div className="mt-3 d-flex justify-content-between">
+                  <Button variant="secondary" onClick={handlePrev}>
+                    Anterior
+                  </Button>
+                  <Button variant="secondary" onClick={handleNext}>
+                    Siguiente
+                  </Button>
+                </div>
+              </>
+            )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

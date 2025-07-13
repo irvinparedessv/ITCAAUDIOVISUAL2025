@@ -32,7 +32,5 @@ export interface AulaFilters {
 export interface AvailableTime {
   start_date: string;
   end_date: string;
-  start_time: string;
-  end_time: string;
   days: string[];
 }

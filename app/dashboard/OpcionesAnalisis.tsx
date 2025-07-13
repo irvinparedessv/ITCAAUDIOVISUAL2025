@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { FaUsers, FaChartLine, FaBook, FaRegFileAlt, FaLongArrowAltLeft } from 'react-icons/fa';
 import { Card } from 'react-bootstrap';
+import { useAuth } from '../hooks/AuthContext'; // Importa tu hook de autenticación
+import { Role } from '../types/roles'; // Importa tus roles
 
 const opciones = [
     {
@@ -8,23 +10,32 @@ const opciones = [
         descripcion: 'Predicción y estadísticas',
         ruta: '/prediccion',
         icono: <FaChartLine size={24} />,
+        roles: [Role.Administrador, Role.Encargado] // Roles permitidos
     },
     {
         nombre: 'Análisis por equipo',
         descripcion: 'Predicción y estadísticas',
         ruta: '/prediccionPorEquipoPage',
         icono: <FaChartLine size={24} />,
+        roles: [Role.Administrador, Role.Encargado]
     },
     {
         nombre: 'Análisis por aula',
         descripcion: 'Predicción y estadísticas',
         ruta: '/prediccionAula',
         icono: <FaChartLine size={24} />,
+        roles: [Role.Administrador] // Solo admin
     },
 ];
 
 const OpcionesAnalisis = () => {
     const navigate = useNavigate();
+    const { user } = useAuth(); // Obtiene el usuario autenticado
+
+    // Filtra las opciones según el rol del usuario
+    const opcionesFiltradas = opciones.filter(opcion => 
+        user?.role && opcion.roles.includes(user.role)
+    );
 
     // Estilo del borde degradado
     const cardBorderStyle = {
@@ -42,7 +53,7 @@ const OpcionesAnalisis = () => {
     });
 
     const handleBack = () => {
-        navigate("/administracion"); // Redirige a la ruta de inicio
+        navigate("/administracion");
     };
 
     return (
@@ -73,7 +84,7 @@ const OpcionesAnalisis = () => {
                 </p>
 
                 <div className="d-flex flex-wrap gap-4">
-                    {opciones.map((opcion) => (
+                    {opcionesFiltradas.map((opcion) => (
                         <Card
                             key={opcion.ruta}
                             onClick={() => navigate(opcion.ruta)}

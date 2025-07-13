@@ -208,6 +208,16 @@ export default function Dashboard() {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           />
+
+          <DashboardCard
+            title="Administración"
+            icon={<FaUserShield size={24} style={getIconStyle()} />}
+            link="/administracion"
+            description="Configuración del sistema"
+            borderStyle={cardBorderStyle}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          />
         </Row>
       )}
 

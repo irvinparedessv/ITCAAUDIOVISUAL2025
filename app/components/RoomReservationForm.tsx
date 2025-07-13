@@ -18,7 +18,6 @@ import {
 import { useAuth } from "app/hooks/AuthContext";
 import { Role } from "~/types/roles";
 import PanoramaViewer from "./PanoramaViewer";
-import { formatTimeRangeTo12h } from "~/utils/time";
 
 type Horario = {
   start_date: string;
@@ -28,16 +27,10 @@ type Horario = {
   days: string[];
 };
 
-type Reserva = {
-  fecha: string;
-  horario: string;
-};
-
 type Aula = {
   id: number;
   name: string;
   image_path?: string;
-  horarios: Horario[];
 };
 
 type OptionType = { value: string; label: string };
@@ -53,16 +46,18 @@ const messages = {
 };
 
 export default function ReserveClassroom() {
-  const { id } = useParams(); // Para edición
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const userId = user?.id;
 
-  // Estados
   const [availableClassrooms, setAvailableClassrooms] = useState<Aula[]>([]);
   const [selectedClassroom, setSelectedClassroom] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string>("");
+
+  const [startTime, setStartTime] = useState<string>("");
+  const [endTime, setEndTime] = useState<string>("");
+
   const [prestamistaOptions, setPrestamistaOptions] = useState<OptionType[]>(
     []
   );
@@ -70,15 +65,13 @@ export default function ReserveClassroom() {
     useState<SingleValue<OptionType>>(null);
 
   const [aulaHorarios, setAulaHorarios] = useState<Horario[]>([]);
-  const [aulaReservas, setAulaReservas] = useState<Reserva[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  const isDateTimeComplete = selectedDate && selectedTime;
+  const isDateTimeComplete = selectedDate && startTime && endTime;
 
-  // Formato yyyy-mm-dd
   const formatDateLocal = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
@@ -89,7 +82,6 @@ export default function ReserveClassroom() {
     )}`;
   };
 
-  // Carga aulas y prestamistas (solo si es admin o espacio encargado)
   useEffect(() => {
     toast.dismiss();
     const fetchAulas = async () => {
@@ -124,7 +116,6 @@ export default function ReserveClassroom() {
     );
   }, [user]);
 
-  // Carga reserva para editar
   useEffect(() => {
     if (!id) return;
 
@@ -132,9 +123,14 @@ export default function ReserveClassroom() {
       setLoading(true);
       try {
         const { data } = await api.get(`/reservas-aula/${id}`);
+        handleAulaSelect(data.aula.name, data.aula.id);
         setSelectedClassroom(data.aula.name);
         setSelectedDate(new Date(data.fecha));
-        setSelectedTime(data.horario);
+
+        const [start, end] = data.horario.split(" - ");
+        setStartTime(start.trim());
+        setEndTime(end.trim());
+
         if (data.user) {
           setSelectedPrestamista({
             value: data.user.id,
@@ -151,78 +147,36 @@ export default function ReserveClassroom() {
     loadReserva();
   }, [id]);
 
-  // Al seleccionar aula: carga horarios y reservas filtrados
-  const handleAulaSelect = async (aulaName: string) => {
+  const handleAulaSelect = async (aulaName: string, idaula: number) => {
     setSelectedClassroom(aulaName);
     setSelectedDate(null);
-    setSelectedTime("");
+    setStartTime("");
+    setEndTime("");
     setSelectedPrestamista(null);
 
-    const aula = availableClassrooms.find((c) => c.name === aulaName);
-    if (!aula) return;
+    if (idaula === 0) {
+      const aula = availableClassrooms.find((c) => c.name === aulaName);
+      if (!aula) return;
+      idaula = aula.id;
+    }
 
     setLoadingHorarios(true);
     try {
-      const { data } = await api.get(`/aulas/${aula.id}/horarios`);
+      const { data } = await api.get(`/aulas/${idaula}/horarios`);
       setAulaHorarios(data.horarios);
-      setAulaReservas(data.reservas);
     } catch {
       toast.error("Error al cargar horarios del aula");
       setAulaHorarios([]);
-      setAulaReservas([]);
     } finally {
       setLoadingHorarios(false);
     }
   };
 
-  // Genera bloques de 100m entre start y end time
-  const generateTimeSlots = (start: string, end: string): string[] => {
-    const result: string[] = [];
-    const [startH, startM] = start.split(":").map(Number);
-    const [endH, endM] = end.split(":").map(Number);
-
-    let current = new Date();
-    current.setHours(startH, startM, 0, 0);
-
-    const endTime = new Date();
-    endTime.setHours(endH, endM, 0, 0);
-
-    while (current < endTime) {
-      const next = new Date(current);
-      next.setMinutes(current.getMinutes() + 100);
-      if (next > endTime) break;
-
-      result.push(
-        `${current.toTimeString().slice(0, 5)} - ${next
-          .toTimeString()
-          .slice(0, 5)}`
-      );
-      current = next;
-    }
-
-    return result;
-  };
-
-  // Convierte "HH:mm" a minutos totales desde medianoche
   const parseTime = (timeStr: string): number => {
     const [h, m] = timeStr.split(":").map(Number);
     return h * 60 + m;
   };
 
-  // Verifica si dos rangos horarios se solapan
-  const isOverlap = (slot: string, reserva: string): boolean => {
-    const [slotStartStr, slotEndStr] = slot.split(" - ");
-    const [resStartStr, resEndStr] = reserva.split(" - ");
-
-    const slotStart = parseTime(slotStartStr);
-    const slotEnd = parseTime(slotEndStr);
-    const resStart = parseTime(resStartStr);
-    const resEnd = parseTime(resEndStr);
-
-    return slotStart < resEnd && resStart < slotEnd;
-  };
-
-  // Valida si una fecha es válida según horarios del aula
   const isDateEnabled = (date: Date): boolean => {
     if (loadingHorarios) return false;
     if (!aulaHorarios.length) return false;
@@ -245,40 +199,6 @@ export default function ReserveClassroom() {
     return horariosValidos.length > 0;
   };
 
-  // Opciones de horarios disponibles (excluyendo reservados)
-  const getTimeOptions = (): string[] => {
-    if (!selectedDate || !aulaHorarios.length) return [];
-
-    const dayName = selectedDate.toLocaleDateString("en-US", {
-      weekday: "long",
-    });
-
-    const horario = aulaHorarios.find((h) => {
-      const current = formatDateLocal(selectedDate);
-      return (
-        h.days.includes(dayName) &&
-        current >= h.start_date &&
-        current <= h.end_date
-      );
-    });
-
-    if (!horario) return [];
-
-    let slots = generateTimeSlots(horario.start_time, horario.end_time);
-
-    // Filtra slots que se solapan con alguna reserva en la misma fecha
-    const reservasFecha = aulaReservas.filter(
-      (r) => r.fecha.slice(0, 10) === formatDateLocal(selectedDate)
-    );
-
-    slots = slots.filter(
-      (slot) => !reservasFecha.some((r) => isOverlap(slot, r.horario))
-    );
-
-    return slots;
-  };
-
-  // Confirmación de actualización
   const showConfirmationToast = () => {
     return new Promise<boolean>((resolve) => {
       toast.dismiss("confirmation-toast");
@@ -313,28 +233,32 @@ export default function ReserveClassroom() {
     });
   };
 
-  // Submit formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     toast.dismiss("submit-toast");
 
-    if (!selectedDate || !selectedTime || !selectedClassroom) {
+    if (!selectedDate || !startTime || !endTime || !selectedClassroom) {
       toast.error("Completa todos los campos", { id: "submit-toast" });
       return;
     }
-    // Validación: Si la fecha es hoy, la hora seleccionada debe ser al menos 30 minutos después de la hora actual
+
+    const startMinutes = parseTime(startTime);
+    const endMinutes = parseTime(endTime);
+    if (startMinutes >= endMinutes) {
+      toast.error("La hora de inicio debe ser antes de la hora fin", {
+        id: "submit-toast",
+      });
+      return;
+    }
+
     const now = new Date();
     const todayStr = formatDateLocal(now);
     const selectedDateStr = formatDateLocal(selectedDate);
 
     if (selectedDateStr === todayStr) {
-      // La hora de inicio del slot seleccionado (ej: "08:40 - 10:20")
-      const slotStartStr = selectedTime.split(" - ")[0];
-      const [slotHour, slotMinute] = slotStartStr.split(":").map(Number);
-
       const slotDateTime = new Date(selectedDate);
+      const [slotHour, slotMinute] = startTime.split(":").map(Number);
       slotDateTime.setHours(slotHour, slotMinute, 0, 0);
-
       const diffMinutes = (slotDateTime.getTime() - now.getTime()) / 60000;
       if (diffMinutes < 30) {
         toast.error(
@@ -344,6 +268,7 @@ export default function ReserveClassroom() {
         return;
       }
     }
+
     if (id) {
       const userConfirmed = await showConfirmationToast();
       if (!userConfirmed) return;
@@ -355,12 +280,14 @@ export default function ReserveClassroom() {
       return;
     }
 
+    const horarioFinal = `${startTime} - ${endTime}`;
+
     try {
       setIsUpdating(true);
       const payload = {
         aula_id: aula.id,
         fecha: formatDateLocal(selectedDate),
-        horario: selectedTime,
+        horario: horarioFinal,
         user_id: selectedPrestamista?.value?.toString() || userId,
         estado: "pendiente",
       };
@@ -385,7 +312,6 @@ export default function ReserveClassroom() {
     }
   };
 
-  // Limpiar formulario o cancelar edición
   const handleClearOrCancel = async () => {
     try {
       setIsCancelling(true);
@@ -394,18 +320,17 @@ export default function ReserveClassroom() {
         navigate(-1);
       } else {
         setSelectedDate(null);
-        setSelectedTime("");
+        setStartTime("");
+        setEndTime("");
         setSelectedClassroom("");
         setSelectedPrestamista(null);
         setAulaHorarios([]);
-        setAulaReservas([]);
       }
     } finally {
       setIsCancelling(false);
     }
   };
 
-  // Datos aula seleccionada
   const selectedClassroomData = availableClassrooms.find(
     (c) => c.name === selectedClassroom
   );
@@ -446,7 +371,7 @@ export default function ReserveClassroom() {
             id="classroom"
             className="form-select"
             value={selectedClassroom}
-            onChange={(e) => handleAulaSelect(e.target.value)}
+            onChange={(e) => handleAulaSelect(e.target.value, 0)}
             required
             disabled={!!id}
           >
@@ -475,54 +400,65 @@ export default function ReserveClassroom() {
               if (date) {
                 date.setHours(12, 0, 0, 0);
                 setSelectedDate(date);
-                setSelectedTime("");
+                setStartTime("");
+                setEndTime("");
               }
             }}
             className="form-control"
             dateFormat="dd/MM/yyyy"
             placeholderText="Selecciona la fecha"
             required
-            disabled={!selectedClassroom || !!id || loadingHorarios}
+            disabled={!selectedClassroom || loadingHorarios}
             filterDate={isDateEnabled}
           />
           {loadingHorarios && (
-            <small className="text-muted">
-              Cargando horarios disponibles...
-            </small>
-          )}
-          {id && (
-            <div className="form-text text-muted">
-              No se puede editar la fecha en modo edición
-            </div>
+            <small className="text-muted">Restringiendo horarios...</small>
           )}
         </div>
 
         <div className="mb-4">
-          <label htmlFor="time" className="form-label">
+          <label className="form-label">
             <FaClock className="me-2" /> Horario
           </label>
-          <select
-            id="time"
-            className="form-select"
-            value={selectedTime}
-            onChange={(e) => setSelectedTime(e.target.value)}
-            required
-            disabled={!selectedDate}
-          >
-            <option value="">Selecciona un horario</option>
-            {getTimeOptions().map((slot, idx) => (
-              <option key={idx} value={slot}>
-                 {formatTimeRangeTo12h(slot)}
-              </option>
-            ))}
-          </select>
+          <div className="d-flex gap-3">
+            <div>
+              <label htmlFor="startTime" className="form-label">
+                Inicio
+              </label>
+              <input
+                id="startTime"
+                type="time"
+                className="form-control"
+                value={startTime}
+                min="07:00"
+                max="22:00"
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="endTime" className="form-label">
+                Fin
+              </label>
+              <input
+                id="endTime"
+                type="time"
+                className="form-control"
+                value={endTime}
+                min="07:00"
+                max="22:00"
+                onChange={(e) => setEndTime(e.target.value)}
+                required
+              />
+            </div>
+          </div>
         </div>
 
         {(user?.role === Role.Administrador ||
           user?.role === Role.EspacioEncargado) && (
           <div className="mb-4">
             <label className="form-label d-flex align-items-center">
-              <FaUser className="me-2" /> Seleccionar Usuario
+              <FaUser className="me-2" /> Usuario prestamista
             </label>
             <Select
               options={prestamistaOptions}
@@ -548,7 +484,8 @@ export default function ReserveClassroom() {
             disabled={
               isUpdating ||
               !selectedDate ||
-              !selectedTime ||
+              !startTime ||
+              !endTime ||
               !selectedClassroom ||
               ((user?.role === Role.Administrador ||
                 user?.role === Role.EspacioEncargado) &&

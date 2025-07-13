@@ -160,23 +160,23 @@ export default function EquipmentReservationForm() {
   }, [formData.date]);
 
   useEffect(() => {
-    const fetchAulas = async () => {
+    const fetchUbicaciones = async () => {
       try {
-        const response = await api.get("/aulasEquipos");
+        const response = await api.get("/ubicaciones");
         const data = response.data;
         const options = data.map((item: any) => ({
-          value: item.name,
-          label: item.name,
+          value: item.nombre,
+          label: item.nombre,
         }));
         setAulaOptions(options);
       } catch (error) {
-        toast.error("Error cargando las aulas. Intente nuevamente.");
+        toast.error("Error cargando las ubicaciones. Intente nuevamente.");
       } finally {
         setLoadingAulas(false);
       }
     };
 
-    fetchAulas();
+    fetchUbicaciones();
   }, []);
 
   useEffect(() => {
@@ -405,9 +405,12 @@ export default function EquipmentReservationForm() {
       (dateOnly.getTime() - now.setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24);
 
     if (daysDiff > 7) {
-      toast.error("Solo se pueden hacer reservas con hasta una semana de anticipación.", {
-        id: toastId,
-      });
+      toast.error(
+        "Solo se pueden hacer reservas con hasta una semana de anticipación.",
+        {
+          id: toastId,
+        }
+      );
       return;
     }
 
@@ -443,7 +446,9 @@ export default function EquipmentReservationForm() {
     }
 
     if (!formData.startTime || !formData.endTime) {
-      toast.error("Las horas de inicio y fin son obligatorias", { id: toastId });
+      toast.error("Las horas de inicio y fin son obligatorias", {
+        id: toastId,
+      });
       return;
     }
 
@@ -502,8 +507,6 @@ export default function EquipmentReservationForm() {
       setLoadingSubmit(false);
     }
   };
-
-
 
   const getStartTimeOptions = (): string[] => {
     const now = new Date();
@@ -646,26 +649,26 @@ export default function EquipmentReservationForm() {
         {/* USUARIO */}
         {(user?.role === Role.Administrador ||
           user?.role === Role.Encargado) && (
-            <div className="mb-4">
-              <label className="form-label d-flex align-items-center">
-                <FaUser className="me-2" />
-                Seleccionar Usuario
-              </label>
-              <Select
-                options={prestamistaOptions}
-                value={selectedPrestamista}
-                onChange={(selected) => setSelectedPrestamista(selected)}
-                placeholder={
-                  !formData.date
-                    ? "Selecciona primero una fecha"
-                    : "Selecciona un usuario prestamista"
-                }
-                className="react-select-container"
-                classNamePrefix="react-select"
-                isDisabled={!isDateTimeComplete}
-              />
-            </div>
-          )}
+          <div className="mb-4">
+            <label className="form-label d-flex align-items-center">
+              <FaUser className="me-2" />
+              Seleccionar Usuario
+            </label>
+            <Select
+              options={prestamistaOptions}
+              value={selectedPrestamista}
+              onChange={(selected) => setSelectedPrestamista(selected)}
+              placeholder={
+                !formData.date
+                  ? "Selecciona primero una fecha"
+                  : "Selecciona un usuario prestamista"
+              }
+              className="react-select-container"
+              classNamePrefix="react-select"
+              isDisabled={!isDateTimeComplete}
+            />
+          </div>
+        )}
 
         {/* TIPO RESERVA */}
         <div className="mb-4">
@@ -725,10 +728,11 @@ export default function EquipmentReservationForm() {
             ) : (
               <div
                 {...getRootProps()}
-                className={`border rounded p-4 text-center cursor-pointer ${isDragActive
-                  ? "border-primary bg-light"
-                  : "border-secondary-subtle"
-                  }`}
+                className={`border rounded p-4 text-center cursor-pointer ${
+                  isDragActive
+                    ? "border-primary bg-light"
+                    : "border-secondary-subtle"
+                }`}
               >
                 <input {...getInputProps()} />
                 <div className="d-flex flex-column align-items-center justify-content-center">
@@ -816,12 +820,12 @@ export default function EquipmentReservationForm() {
                 !isDateTimeComplete
                   ? "Selecciona fecha y hora primero"
                   : !formData.tipoReserva
-                    ? "Selecciona un tipo de reserva primero"
-                    : checkingAvailability
-                      ? "Verificando disponibilidad..."
-                      : availableEquipmentOptions.length === 0
-                        ? "No hay equipos disponibles para este tipo"
-                        : "Selecciona equipos disponibles"
+                  ? "Selecciona un tipo de reserva primero"
+                  : checkingAvailability
+                  ? "Verificando disponibilidad..."
+                  : availableEquipmentOptions.length === 0
+                  ? "No hay equipos disponibles para este tipo"
+                  : "Selecciona equipos disponibles"
               }
               className="react-select-container"
               classNamePrefix="react-select"

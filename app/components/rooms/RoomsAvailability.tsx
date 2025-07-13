@@ -159,7 +159,7 @@ export default function RoomsAvailabilityList() {
             title="Regresar"
             style={{ cursor: "pointer", fontSize: "2rem" }}
           />
-          <h2 className="mb-0">Disponibilidad de aulas</h2>
+          <h2 className="fw-bold m-0">Disponibilidad de Espacios</h2>
         </div>
         <div className="d-flex flex-column flex-sm-row gap-2 mt-3 mt-sm-0 ms-auto">
           <Button

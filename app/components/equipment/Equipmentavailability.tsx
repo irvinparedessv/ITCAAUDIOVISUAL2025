@@ -167,7 +167,7 @@ export default function EquipmentAvailabilityList() {
         fontSize: '2rem',
       }}
     />
-    <h2 className="mb-0">Disponibilidad de equipos</h2>
+    <h2 className="fw-bold m-0">Disponibilidad de equipos</h2>
   </div>
 
   {/* Botones alineados a la derecha */}

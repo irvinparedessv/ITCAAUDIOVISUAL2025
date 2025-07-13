@@ -270,7 +270,7 @@ const PrediccionAulaPage = () => {
             fontSize: '2rem'
           }}
         />
-        <h2 className="mb-0">
+        <h2 className="fw-bold m-0">
           Predicción de Reservas por Aula
         </h2>
       </div>

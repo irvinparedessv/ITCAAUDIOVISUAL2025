@@ -326,20 +326,23 @@ export default function FormUsuario() {
   ];
 
   return (
-    <div className="form-container position-relative">
-      <FaLongArrowAltLeft
-        onClick={handleBack}
-        title="Regresar"
-        style={{
-          position: "absolute",
-          top: "25px",
-          left: "30px",
-          cursor: "pointer",
-          fontSize: "2rem",
-          zIndex: 10,
-        }}
-      />
-      <h2 className="mb-4 text-center fw-bold">Crear Nuevo Usuario</h2>
+    <div
+      className="form-container position-relative"
+
+    >
+      <div className="d-flex align-items-center gap-2 gap-md-3" style={{ marginBottom: '30px' }}>
+        <FaLongArrowAltLeft
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: 'pointer',
+            fontSize: '2rem',
+          }}
+        />
+        <h2 className="fw-bold m-0">Crear Nuevo Usuario</h2>
+      </div>
+
+
 
       <form onSubmit={handleSubmit}>
         <div className="row mb-4">
@@ -354,9 +357,8 @@ export default function FormUsuario() {
               value={formData.first_name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${
-                formErrors.first_name ? "is-invalid" : ""
-              }`}
+              className={`form-control ${formErrors.first_name ? "is-invalid" : ""
+                }`}
             />
             {formErrors.first_name && (
               <div className="invalid-feedback">{formErrors.first_name}</div>
@@ -374,9 +376,8 @@ export default function FormUsuario() {
               value={formData.last_name}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`form-control ${
-                formErrors.last_name ? "is-invalid" : ""
-              }`}
+              className={`form-control ${formErrors.last_name ? "is-invalid" : ""
+                }`}
             />
             {formErrors.last_name && (
               <div className="invalid-feedback">{formErrors.last_name}</div>
@@ -489,9 +490,8 @@ export default function FormUsuario() {
           ) : (
             <div
               {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
-                isDragActive ? "border-primary bg-light" : ""
-              }`}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : ""
+                }`}
             >
               <input {...getInputProps()} />
               <div className="d-flex flex-column align-items-center justify-content-center">

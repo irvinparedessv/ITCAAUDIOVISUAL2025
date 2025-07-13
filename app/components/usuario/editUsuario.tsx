@@ -235,25 +235,23 @@ const EditUsuario = () => {
   }
 
   return (
-    <div className="form-container position-relative">
-      {/* Flecha de regresar en esquina superior izquierda */}
-      <FaLongArrowAltLeft
-        onClick={handleBack}
-        title="Regresar"
-        style={{
-          position: 'absolute',
-          top: '25px',
-          left: '30px',
-          cursor: isSubmitting ? 'not-allowed' : 'pointer',
-          fontSize: '2rem',
-          zIndex: 10,
-          opacity: isSubmitting ? 0.5 : 1
-        }}
-      />
-      <h2 className="mb-4 text-center fw-bold">
-        <FaUserEdit className="me-2" />
-        Editar Usuario
-      </h2>
+
+    <div
+      className="form-container position-relative"
+
+    >
+      <div className="d-flex align-items-center gap-2 gap-md-3" style={{ marginBottom: '30px' }}>
+        <FaLongArrowAltLeft
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: 'pointer',
+            fontSize: '2rem',
+          }}
+        />
+        <h2 className="fw-bold m-0"><FaUserEdit className="me-2" />
+          Editar Usuario</h2>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="row mb-4">

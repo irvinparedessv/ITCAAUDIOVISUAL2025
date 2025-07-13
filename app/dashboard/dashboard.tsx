@@ -26,7 +26,7 @@ export default function Dashboard() {
 
   return (
     <Container fluid className={"dashboardContainer"}>
-      <h1 className={"welcomeHeader"}>
+      <h1 className={"welcomeHeader py-3"}>
         {user?.role === Role.Prestamista ? "Área Personal" : "Centro de administración"}
       </h1>
       <p className={"welcomeText"}>

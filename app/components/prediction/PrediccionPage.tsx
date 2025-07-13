@@ -235,7 +235,7 @@ export default function PrediccionPage() {
             fontSize: '2rem'
           }}
         />
-        <h2 className="mb-0">
+        <h2 className="fw-bold m-0">
           Predicción de Reservas
         </h2>
       </div>

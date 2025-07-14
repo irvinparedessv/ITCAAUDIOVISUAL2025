@@ -92,7 +92,7 @@ const Login = () => {
         alignItems: "center",
         justifyContent: "center",
         padding: "1rem",
-        backgroundImage: 'url("https://www.itca.edu.sv/wp-content/uploads/2016/11/santatecla.png")',
+        backgroundImage: 'url("/images/loginPicture.jpg")',
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",

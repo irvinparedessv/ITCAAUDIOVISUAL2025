@@ -15,6 +15,7 @@ type AuthContextType = {
   user: UserLogin | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  initialTheme: boolean | null;
   login: (
     email: string,
     password: string
@@ -35,87 +36,92 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserLogin | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [initialTheme, setInitialTheme] = useState<boolean | null>(null);
 
   const isAuthenticated = !!token && !!user;
 
   useEffect(() => {
-  console.log("[AuthContext] Cargando credenciales...");
-  const loadCredentials = async () => {
-    try {
-      const storedToken = localStorage.getItem("token");
-      const storedUser = localStorage.getItem("user");
+    console.log("[AuthContext] Cargando credenciales...");
+    const loadCredentials = async () => {
+      try {
+        const storedToken = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user");
+        const storedTheme = localStorage.getItem("darkMode");
 
-      if (!storedToken || !storedUser) {
-        console.log("[AuthContext] No hay token o usuario");
-        setIsLoading(false);
-        return;
-      }
+        if (!storedToken || !storedUser) {
+          console.log("[AuthContext] No hay token o usuario");
+          setIsLoading(false);
+          return;
+        }
 
-      const response = await api.get("/validate-token", {
-        headers: { Authorization: `Bearer ${storedToken}` },
-      });
+        const response = await api.get("/validate-token", {
+          headers: { Authorization: `Bearer ${storedToken}` },
+        });
 
-      if (response.data.valid) {
-        console.log("[AuthContext] Token válido. Estableciendo usuario.");
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        initializeEcho(storedToken);
-      } else {
-        console.log("[AuthContext] Token inválido.");
+        if (response.data.valid) {
+          console.log("[AuthContext] Token válido. Estableciendo usuario.");
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+          if (storedTheme) setInitialTheme(JSON.parse(storedTheme));
+          initializeEcho(storedToken);
+        } else {
+          console.log("[AuthContext] Token inválido.");
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          localStorage.removeItem("darkMode");
+          setToken(null);
+          setUser(null);
+          setInitialTheme(null);
+        }
+      } catch (error) {
+        console.error("[AuthContext] Error al validar token:", error);
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        localStorage.removeItem("darkMode");
         setToken(null);
         setUser(null);
+        setInitialTheme(null);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("[AuthContext] Error al validar token:", error);
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      setToken(null);
-      setUser(null);
-    } finally {
-      console.log("[AuthContext] isLoading = false");
-      setIsLoading(false);
-    }
-  };
+    };
 
-  loadCredentials();
-}, []);
-
-
-  // Escuchar cambios en localStorage para detectar logout desde otra pestaña
-useEffect(() => {
-  const handleStorage = (event: StorageEvent) => {
-    if (event.key === "logout") {
-      console.log("Logout detectado desde otra pestaña");
-
-      // Limpiar sesión en esta pestaña
-      setToken(null);
-      setUser(null);
-
-      // Redirigir al login
-      window.location.href = "/login"; // O usa navigate si estás dentro de un componente con router
-    }
-  };
-
-  window.addEventListener("storage", handleStorage);
-
-  return () => {
-    window.removeEventListener("storage", handleStorage);
-  };
-}, []);
-
+    loadCredentials();
+  }, []);
 
   useEffect(() => {
-    console.log("Valor actual del token:", token);
-    console.log("Valor de isAuthenticated:", isAuthenticated);
-  }, [token, isAuthenticated]);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "logout") {
+        console.log("Logout detectado desde otra pestaña");
+        setToken(null);
+        setUser(null);
+        setInitialTheme(null);
+        window.location.href = "/login";
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   const login = async (email: string, password: string) => {
-  
     try {
       const response = await api.post("/login", { email, password });
       const { token: newToken, user: newUser } = response.data;
+
+      try {
+        const themePref = await api.get("/user/preferences", {
+          headers: { Authorization: `Bearer ${newToken}` },
+        });
+        const userTheme = themePref.data.darkMode;
+        setInitialTheme(userTheme);
+        localStorage.setItem("darkMode", JSON.stringify(userTheme));
+      } catch (themeError) {
+        console.error("Error al obtener preferencias de tema:", themeError);
+      }
 
       if (newUser.estado === 3) {
         return { requiresPasswordChange: true, token: newToken, user: newUser };
@@ -137,40 +143,38 @@ useEffect(() => {
       initializeEcho(newToken);
     } catch (error) {
       throw error;
-    } finally {
     }
   };
-const logout = async () => {
-  try {
-    if (token) {
-      await api.post(
-        "/logout",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-    }
-  } catch (error) {
-    console.warn("Error cerrando sesión en el servidor:", error);
-  } finally {
-    // Desconectar Laravel Echo
-    if (window.Echo) {
-      window.Echo.disconnect();
-    }
 
-    // Notificar a otras pestañas del logout
-    localStorage.setItem("logout", Date.now().toString());
+  const logout = async () => {
+    try {
+      if (token) {
+        await api.post(
+          "/logout",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
+    } catch (error) {
+      console.warn("Error cerrando sesión en el servidor:", error);
+    } finally {
+      if (window.Echo) {
+        window.Echo.disconnect();
+      }
 
-    // Eliminar token del frontend
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setToken(null);
-    setUser(null);
-  }
-};
+      localStorage.setItem("logout", Date.now().toString());
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("darkMode");
+      setToken(null);
+      setUser(null);
+      setInitialTheme(null);
+    }
+  };
 
   const checkAccess = (route: string) => {
     if (!user) return false;
@@ -179,14 +183,13 @@ const logout = async () => {
   };
 
   const updateUser = (updatedFields: Partial<UserLogin>) => {
-  setUser((prevUser) => {
-    if (!prevUser) return prevUser;
-    const updatedUser = { ...prevUser, ...updatedFields };
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    return updatedUser;
-  });
-};
-
+    setUser((prevUser) => {
+      if (!prevUser) return prevUser;
+      const updatedUser = { ...prevUser, ...updatedFields };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+  };
 
   const contextValue = useMemo(
     () => ({
@@ -194,13 +197,14 @@ const logout = async () => {
       user,
       isLoading,
       isAuthenticated,
+      initialTheme,
       login,
       logout,
       checkAccess,
       setUser,
-      updateUser, 
+      updateUser,
     }),
-    [token, user, isLoading, isAuthenticated]
+    [token, user, isLoading, isAuthenticated, initialTheme]
   );
 
   return (

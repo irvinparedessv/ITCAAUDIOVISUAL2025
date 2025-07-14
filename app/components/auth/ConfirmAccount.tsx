@@ -105,27 +105,9 @@ const ConfirmAccount = () => {
 
               <div className="mt-3">
                 <h5 className="fw-bold mb-2">
-                  Por favor contactar al equipo de soporte:
+                  Por favor contactar al equipo de soporte
                 </h5>
-                <ul className="list-unstyled">
-                  <li className="mb-1">
-                    <i className="bi bi-envelope me-2"></i>
-                    Email:{" "}
-                    <a
-                      href="mailto:soporte@tuapp.com"
-                      className="text-decoration-none"
-                    >
-                      soporte@tuapp.com
-                    </a>
-                  </li>
-                  <li className="mb-1">
-                    <i className="bi bi-telephone me-2"></i>
-                    Teléfono:{" "}
-                    <a href="tel:+123456789" className="text-decoration-none">
-                      +1 (234) 567-89
-                    </a>
-                  </li>
-                </ul>
+                
               </div>
             </div>
           )}

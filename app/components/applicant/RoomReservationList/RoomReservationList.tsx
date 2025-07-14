@@ -386,7 +386,7 @@ const RoomReservationList = () => {
                 flexShrink: 0,
               }}
             />
-            <h2 className="m-0">Reservas de Aulas - Listado</h2>
+            <h2 className="fw-bold m-0">Reservas de Aulas - Listado</h2>
           </Col>
 
           {/* Columna derecha: botón alineado a la derecha */}

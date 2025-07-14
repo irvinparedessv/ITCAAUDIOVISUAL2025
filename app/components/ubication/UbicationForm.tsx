@@ -27,6 +27,10 @@ export default function UbicacionForm() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    toast.dismiss(); // limpia cualquier confirmación colgada
+  }, []);
+
+  useEffect(() => {
     if (id) {
       setLoadingData(true);
       getUbicacionById(Number(id))
@@ -90,7 +94,8 @@ export default function UbicacionForm() {
     e.preventDefault();
 
     if (!form.nombre.trim()) {
-      toast.error("El nombre es obligatorio");
+      const toastId = "nombre-obligatorio";
+      toast.error("El nombre es obligatorio", { id: toastId });
       return;
     }
 
@@ -99,10 +104,9 @@ export default function UbicacionForm() {
         setLoadingSubmit(true);
         try {
           await updateUbicacion(Number(id), form);
-          toast.success("Ubicación actualizada");
           setTimeout(() => {
             navigate("/ubications");
-          }, 2000);
+          }, 500);
         } catch (error) {
           toast.error("Error al actualizar");
         } finally {
@@ -119,7 +123,7 @@ export default function UbicacionForm() {
       toast.success("Ubicación creada");
       setTimeout(() => {
         navigate("/ubications");
-      }, 2000);
+      }, 500);
     } catch (error) {
       toast.error("Error al crear");
     } finally {
@@ -200,8 +204,8 @@ export default function UbicacionForm() {
         <div className="form-actions">
           {id ? (
             <>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn primary-btn"
                 disabled={loadingSubmit}
               >
@@ -229,8 +233,8 @@ export default function UbicacionForm() {
             </>
           ) : (
             <>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn primary-btn"
                 disabled={loadingSubmit}
               >

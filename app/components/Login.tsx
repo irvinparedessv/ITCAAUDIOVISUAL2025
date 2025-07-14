@@ -27,6 +27,15 @@ const Login = () => {
   const [tempCredentials, setTempCredentials] = useState<{ email: string; password: string } | null>(null);
 
   useEffect(() => {
+    // Forzar modo claro en login
+    document.documentElement.setAttribute("data-bs-theme", "light");
+    document.body.className = "light-theme";
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#ffffff");
+  }, []);
+
+
+
+  useEffect(() => {
     if (isAuthenticated && location.pathname === "/login") {
       navigate("/");
     }
@@ -65,6 +74,16 @@ const Login = () => {
   };
 
   return (
+    // <div
+    //   className="login-container"
+    //   style={{
+    //     minHeight: "100vh",
+    //     display: "flex",
+    //     alignItems: "center",
+    //     justifyContent: "center",
+    //     padding: "1rem",
+    //   }}
+    // >
     <div
       className="login-container"
       style={{
@@ -73,6 +92,10 @@ const Login = () => {
         alignItems: "center",
         justifyContent: "center",
         padding: "1rem",
+        backgroundImage: 'url("https://www.itca.edu.sv/wp-content/uploads/2016/11/santatecla.png")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
       <Container
@@ -127,7 +150,7 @@ const Login = () => {
               <Button
                 variant="outline-secondary"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{ borderColor: "#b1291d" }}
+                style={{ borderColor: "#dededeff" }}
                 aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
                 {showPassword ? <EyeSlashFill /> : <EyeFill />}

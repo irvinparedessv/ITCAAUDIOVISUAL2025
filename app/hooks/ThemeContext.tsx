@@ -1,23 +1,23 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from "../api/axios";
+import { useAuth } from './AuthContext';
 
 type ThemeContextType = {
   darkMode: boolean;
   toggleDarkMode: () => Promise<void>;
   loading: boolean;
+  isInitialized: boolean;
+  isSyncing: boolean;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 1. Leer de localStorage primero, luego preferencias del sistema
-  const [darkMode, setDarkMode] = useState(() => {
-    const savedMode = localStorage.getItem('darkMode');
-    if (savedMode !== null) return JSON.parse(savedMode);
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  const [loading, setLoading] = useState(true);
+  const { initialTheme, isAuthenticated } = useAuth();
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   const applyTheme = (isDark: boolean) => {
     document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
@@ -28,54 +28,90 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   };
 
-  // Aplicar tema al inicio (desde localStorage o sistema)
   useEffect(() => {
-    applyTheme(darkMode);
-  }, []);
-
-  // 2. Consultar API y actualizar si hay cambios
-  useEffect(() => {
-    const loadTheme = async () => {
+    const loadInitialTheme = async () => {
       try {
-        const { data } = await api.get('/user/preferences');
-        if (data.darkMode !== darkMode) {
-          setDarkMode(data.darkMode);
-          localStorage.setItem('darkMode', JSON.stringify(data.darkMode)); // Actualizar caché
-          applyTheme(data.darkMode);
+        if (initialTheme !== null) {
+          setDarkMode(initialTheme);
+          localStorage.setItem('darkMode', JSON.stringify(initialTheme));
+          applyTheme(initialTheme);
+          setIsInitialized(true);
+          setLoading(false);
+          return;
         }
+
+        const savedMode = localStorage.getItem('darkMode');
+        if (savedMode !== null) {
+          const parsedMode = JSON.parse(savedMode);
+          setDarkMode(parsedMode);
+          applyTheme(parsedMode);
+          setIsInitialized(true);
+          setLoading(false);
+          return;
+        }
+
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setDarkMode(systemPrefersDark);
+        applyTheme(systemPrefersDark);
       } catch (err) {
-        console.error('Error al cargar tema:', err);
+        console.error('Error al cargar tema inicial:', err);
+        setDarkMode(false);
+        applyTheme(false);
       } finally {
+        setIsInitialized(true);
         setLoading(false);
       }
     };
 
-    loadTheme();
-  }, [darkMode]);
+    loadInitialTheme();
+  }, [initialTheme]);
 
-  // 3. Actualizar localStorage + API al cambiar tema
+  // Escuchar cambios de localStorage (multitabs sync)
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'darkMode' && event.newValue !== null) {
+        const newVal = JSON.parse(event.newValue);
+        setDarkMode(newVal);
+        applyTheme(newVal);
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   const toggleDarkMode = async () => {
     const newMode = !darkMode;
-    
-    // Cambio inmediato (localStorage + UI)
+
     setDarkMode(newMode);
     localStorage.setItem('darkMode', JSON.stringify(newMode));
     applyTheme(newMode);
+    setIsSyncing(true);
 
-    // Sincronización con API (en segundo plano)
     try {
-      await api.patch('/user/preferences', { dark_mode: newMode });
+      if (isAuthenticated) {
+        await api.patch('/user/preferences', { dark_mode: newMode });
+      }
     } catch (err) {
-      console.error('Error al guardar tema:', err);
-      // Opcional: Revertir si prefieres consistencia absoluta con la API
-      // setDarkMode(!newMode);
-      // localStorage.setItem('darkMode', JSON.stringify(!newMode));
-      // applyTheme(!newMode);
+      console.error('Error al guardar tema en el servidor:', err);
+      if (isAuthenticated) {
+        const reverted = !newMode;
+        setDarkMode(reverted);
+        localStorage.setItem('darkMode', JSON.stringify(reverted));
+        applyTheme(reverted);
+      }
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, loading }}>
+    <ThemeContext.Provider value={{ 
+      darkMode, 
+      toggleDarkMode, 
+      loading,
+      isInitialized,
+      isSyncing
+    }}>
       {children}
     </ThemeContext.Provider>
   );

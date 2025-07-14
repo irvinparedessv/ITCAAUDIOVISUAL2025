@@ -361,7 +361,7 @@ const NavbarMenu = () => {
 
       {user?.role === Role.Administrador && (
         <>
-         {/* Menu admin mobile */}
+          {/* Menu admin mobile */}
           {checkAccess("/reservations") && (
             <Dropdown className="mb-2 offcanvas-dropdown">
               <Dropdown.Toggle as={CustomToggle} id="dropdown-reservas-sidebar">
@@ -544,7 +544,7 @@ const NavbarMenu = () => {
                   onClick={handleCloseSidebar}
                 >
                   <FaComputer className="me-2" />
-                   Reservas de Equipos
+                  Reservas de Equipos
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
@@ -968,7 +968,6 @@ const NavbarMenu = () => {
                   <div className="fw-bold">Listado de Espacios</div>
                   <small>Ver listado de espacios</small>
                 </div>
-                
               </Dropdown.Item>
             </HoverDropdown>
           )}
@@ -1032,7 +1031,7 @@ const NavbarMenu = () => {
               </Dropdown.Item>
               <Dropdown.Item
                 as={Link}
-                to="/reservationroom"
+                to="/reservationsroom"
                 className="d-flex align-items-start text-dark"
               >
                 <FaCalendarAlt className="me-2" />

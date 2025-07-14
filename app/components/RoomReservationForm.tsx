@@ -62,6 +62,7 @@ export default function ReserveClassroom() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [startTime, setStartTime] = useState<string>("");
   const [endTime, setEndTime] = useState<string>("");
+  const [descripcion, setDescripcion] = useState<string>("");
 
   const [prestamistaOptions, setPrestamistaOptions] = useState<OptionType[]>(
     []
@@ -134,7 +135,7 @@ export default function ReserveClassroom() {
         handleAulaSelect(data.aula.name, data.aula.id);
         setSelectedClassroom(data.aula.name);
         setSelectedDate(new Date(data.fecha));
-
+        setDescripcion(data.comentario || "");
         const [start, end] = data.horario.split(" - ");
         setStartTime(start.trim());
         setEndTime(end.trim());
@@ -298,6 +299,7 @@ export default function ReserveClassroom() {
         horario: horarioFinal,
         user_id: selectedPrestamista?.value?.toString() || userId,
         estado: "pendiente",
+        comentario: descripcion.trim(),
       };
 
       if (id) {
@@ -366,21 +368,23 @@ export default function ReserveClassroom() {
 
   return (
     <div className="form-container position-relative mb-3 mb-md-0">
-  <div className="d-flex align-items-center gap-2 gap-md-3" style={{ marginBottom: '30px' }}>
-    <FaLongArrowAltLeft
-      onClick={() => navigate("/reservations-room")}
-      title="Regresar"
-      style={{
-        cursor: "pointer",
-        fontSize: "2rem",
-      }}
-    />
-    <h2 className="fw-bold m-0">
-      <FaDoorOpen className="me-2" />
-      {id ? "Editar Reserva" : "Reserva de Aula"}
-    </h2>
-  </div>
-
+      <div
+        className="d-flex align-items-center gap-2 gap-md-3"
+        style={{ marginBottom: "30px" }}
+      >
+        <FaLongArrowAltLeft
+          onClick={() => navigate("/reservations-room")}
+          title="Regresar"
+          style={{
+            cursor: "pointer",
+            fontSize: "2rem",
+          }}
+        />
+        <h2 className="fw-bold m-0">
+          <FaDoorOpen className="me-2" />
+          {id ? "Editar Reserva" : "Reserva de Aula"}
+        </h2>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -496,6 +500,22 @@ export default function ReserveClassroom() {
             )}
           </div>
         )}
+        <div className="mb-4">
+          <label htmlFor="descripcion" className="form-label">
+            Descripción{" "}
+            <small className="text-muted">
+              (Grupo, Familia u otra información necesaria)
+            </small>
+          </label>
+          <textarea
+            id="descripcion"
+            className="form-control"
+            placeholder="Ejemplo: Grupo A - Familia X"
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            required
+          ></textarea>
+        </div>
         {selectedClassroomData?.imagenes?.length > 0 && (
           <button
             type="button"
@@ -522,7 +542,8 @@ export default function ReserveClassroom() {
               !selectedClassroom ||
               ((user?.role === Role.Administrador ||
                 user?.role === Role.EspacioEncargado) &&
-                !selectedPrestamista)
+                !selectedPrestamista) ||
+              !descripcion.trim()
             }
           >
             {isUpdating ? (

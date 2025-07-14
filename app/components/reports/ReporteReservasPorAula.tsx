@@ -350,7 +350,7 @@ const ReporteReservasPorAula = () => {
           }}
         />
         <h2 className="fw-bold m-0">
-          Reporte de uso de aulas por aula
+          Reporte de uso de aulas
         </h2>
       </div>
 

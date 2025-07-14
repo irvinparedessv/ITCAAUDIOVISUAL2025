@@ -509,19 +509,20 @@ export default function EditEquipmentReservationForm() {
 
     return (
         <div className="form-container position-relative">
-            <FaLongArrowAltLeft
-                onClick={handleBack}
-                title="Regresar"
-                style={{
-                    position: 'absolute',
-                    top: '25px',
-                    left: '30px',
-                    cursor: 'pointer',
-                    fontSize: '2rem',
-                    zIndex: 10
-                }}
-            />
-            <h2 className="mb-4 text-center fw-bold">Editar Reserva</h2>
+            <div
+                className="d-flex align-items-center gap-2 gap-md-3"
+                style={{ marginBottom: '30px' }}
+            >
+                <FaLongArrowAltLeft
+                    onClick={handleBack}
+                    title="Regresar"
+                    style={{
+                        cursor: 'pointer',
+                        fontSize: '2rem',
+                    }}
+                />
+                <h2 className="fw-bold m-0">Editar Reserva</h2>
+            </div>
             <form onSubmit={handleSubmit}>
                 {/* Fecha */}
                 <div className="mb-4">
@@ -803,10 +804,10 @@ export default function EditEquipmentReservationForm() {
                     )}
                 </div>
 
-                {/* Aula */}
+                {/* Ubicación */}
                 <div className="mb-4">
                     <label className="form-label d-flex align-items-center">
-                        <FaSchool className="me-2" /> Aula
+                        <FaSchool className="me-2" /> Ubicación
                     </label>
                     {loadingAulas ? (
                         <div className="d-flex justify-content-center">

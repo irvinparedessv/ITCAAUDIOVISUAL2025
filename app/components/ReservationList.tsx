@@ -381,7 +381,7 @@ export default function ReservationList() {
             </InputGroup.Text>
             <Form.Control
               type="text"
-              placeholder="Buscar por usuario, aula, equipo, estado..."
+              placeholder="Buscar por usuario, ubicación, equipo, estado..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -524,7 +524,7 @@ export default function ReservationList() {
                   <th>Usuario</th>
                   <th>Tipo</th>
                   <th>Equipos</th>
-                  <th>Aula</th>
+                  <th>Ubicación</th>
                   <th>Salida</th>
                   <th>Entrega</th>
                   <th>Estado</th>

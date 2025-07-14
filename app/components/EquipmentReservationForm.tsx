@@ -833,11 +833,11 @@ export default function EquipmentReservationForm() {
           )}
         </div>
 
-        {/* Select Aula */}
+        {/* Select Ubicación */}
         <div className="mb-4">
           <label className="form-label d-flex align-items-center">
             <FaSchool className="me-2" />
-            Espacio
+            Ubicación
           </label>
           {loadingAulas ? (
             <div className="d-flex justify-content-center">

@@ -131,6 +131,12 @@ export default function Dashboard() {
               link="/reporteReservasAulas"
               description="Reporte de reserva de aulas"
             />
+            <DashboardCard
+              title="Gestion de Conflictos y Disponibilidad"
+              icon={<FaClipboardList size={24} />}
+              link="/managerooms"
+              description="Revisar y aprobar reservas pendientes ,conflictos"
+            />
           </Row>
         </div>
       )}

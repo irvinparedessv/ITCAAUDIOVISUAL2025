@@ -3,7 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { getUsuarioById, updateUsuario } from "../../services/userService";
 import type { UserUpdateDTO } from "app/types/user";
-import { FaSave, FaTimes, FaUserEdit, FaTrash, FaLongArrowAltLeft } from "react-icons/fa";
+import {
+  FaSave,
+  FaTimes,
+  FaUserEdit,
+  FaTrash,
+  FaLongArrowAltLeft,
+} from "react-icons/fa";
 import UsuarioNoEncontrado from "../error/UsuarioNoEncontrado";
 
 const rolesMap = [
@@ -64,8 +70,6 @@ const EditUsuario = () => {
     }
   }, [id]);
 
-
-
   const validateForm = (): boolean => {
     let isValid = true;
     let firstError: string | null = null;
@@ -88,14 +92,12 @@ const EditUsuario = () => {
       isValid = false;
     }
 
-    // Validación de email (correo institucional)
+    // Validación de email (cualquier correo)
     else if (!formData.email.trim()) {
       firstError = "El correo electrónico es obligatorio";
       isValid = false;
-    } else if (
-      !/^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)?(edu\.sv|esdu\.edu\.sv)$/.test(formData.email)
-    ) {
-      firstError = "Debe ingresar un correo institucional válido (terminado en .edu.sv o esdu.edu.sv)";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      firstError = "Debe ingresar un correo electrónico válido";
       isValid = false;
     }
 
@@ -122,7 +124,9 @@ const EditUsuario = () => {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
 
@@ -200,7 +204,6 @@ const EditUsuario = () => {
       // No reiniciamos isSubmitting aquí, lo haremos después de la navegación
 
       navigate("/usuarios");
-
     } catch (error) {
       console.error("Error al actualizar usuario:", error);
       toast.error("Error al actualizar usuario");
@@ -209,13 +212,15 @@ const EditUsuario = () => {
   };
 
   const handleBack = () => {
-    if (!isSubmitting) { // Solo permite retroceder si no se está enviando
+    if (!isSubmitting) {
+      // Solo permite retroceder si no se está enviando
       navigate("/usuarios");
     }
   };
 
   const handleCancel = () => {
-    if (!isSubmitting) { // Solo permite cancelar si no se está enviando
+    if (!isSubmitting) {
+      // Solo permite cancelar si no se está enviando
       navigate("/usuarios");
     }
   };
@@ -235,22 +240,23 @@ const EditUsuario = () => {
   }
 
   return (
-
-    <div
-      className="form-container position-relative"
-
-    >
-      <div className="d-flex align-items-center gap-2 gap-md-3" style={{ marginBottom: '30px' }}>
+    <div className="form-container position-relative">
+      <div
+        className="d-flex align-items-center gap-2 gap-md-3"
+        style={{ marginBottom: "30px" }}
+      >
         <FaLongArrowAltLeft
           onClick={handleBack}
           title="Regresar"
           style={{
-            cursor: 'pointer',
-            fontSize: '2rem',
+            cursor: "pointer",
+            fontSize: "2rem",
           }}
         />
-        <h2 className="fw-bold m-0"><FaUserEdit className="me-2" />
-          Editar Usuario</h2>
+        <h2 className="fw-bold m-0">
+          <FaUserEdit className="me-2" />
+          Editar Usuario
+        </h2>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -266,7 +272,7 @@ const EditUsuario = () => {
               className="form-control"
               value={formData.first_name}
               onChange={handleChange}
-              disabled={isSubmitting}  // Deshabilitar si se está enviando
+              disabled={isSubmitting} // Deshabilitar si se está enviando
             />
           </div>
 
@@ -281,7 +287,7 @@ const EditUsuario = () => {
               className="form-control"
               value={formData.last_name}
               onChange={handleChange}
-              disabled={isSubmitting}  // Deshabilitar si se está enviando
+              disabled={isSubmitting} // Deshabilitar si se está enviando
             />
           </div>
         </div>
@@ -317,7 +323,7 @@ const EditUsuario = () => {
               value={formData.phone || ""}
               onChange={handleChange}
               placeholder="0000-0000"
-              disabled={isSubmitting}  // Deshabilitar si se está enviando
+              disabled={isSubmitting} // Deshabilitar si se está enviando
             />
           </div>
 
@@ -332,7 +338,7 @@ const EditUsuario = () => {
               value={formData.role_id}
               onChange={handleChange}
               required
-              disabled={isSubmitting}  // Deshabilitar si se está enviando
+              disabled={isSubmitting} // Deshabilitar si se está enviando
             >
               {rolesMap.map((role) => (
                 <option key={role.id} value={role.id}>
@@ -354,7 +360,7 @@ const EditUsuario = () => {
             rows={3}
             value={formData.address || ""}
             onChange={handleChange}
-            disabled={isSubmitting}  // Deshabilitar si se está enviando
+            disabled={isSubmitting} // Deshabilitar si se está enviando
           />
         </div>
 
@@ -369,7 +375,7 @@ const EditUsuario = () => {
             value={formData.estado}
             onChange={handleChange}
             required
-            disabled={isSubmitting}  // Deshabilitar si se está enviando
+            disabled={isSubmitting} // Deshabilitar si se está enviando
           >
             {estadosMap.map((estado) => (
               <option key={estado.id} value={estado.id}>
@@ -387,7 +393,11 @@ const EditUsuario = () => {
           >
             {isSubmitting ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
                 Guardando...
               </>
             ) : (

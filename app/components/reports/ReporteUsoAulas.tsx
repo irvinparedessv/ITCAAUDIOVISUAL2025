@@ -379,6 +379,7 @@ const ReporteUsoAulas = () => {
                   classNamePrefix="react-select"
                   isClearable
                   isDisabled={false}
+                  menuPortalTarget={document.body}
                   styles={{
                     control: (provided) => ({
                       ...provided,

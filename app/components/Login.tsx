@@ -128,7 +128,7 @@ const Login = () => {
             <Form.Label className="text-secondary">Correo electrónico</Form.Label>
             <Form.Control
               type="email"
-              placeholder="usuario@correo.com"
+              placeholder="usuario@itca.edu.sv"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

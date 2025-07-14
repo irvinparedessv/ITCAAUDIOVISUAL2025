@@ -400,6 +400,7 @@ const ReporteReservasPorUsuario = () => {
                                     classNamePrefix="react-select"
                                     isClearable
                                     isDisabled={false}
+                                    menuPortalTarget={document.body}
                                     styles={{
                                         control: (provided) => ({
                                             ...provided,
@@ -415,6 +416,7 @@ const ReporteReservasPorUsuario = () => {
                                             ...provided,
                                             margin: '0px',
                                         }),
+                                        
                                     }}
                                 />
 

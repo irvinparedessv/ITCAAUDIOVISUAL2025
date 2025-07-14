@@ -607,6 +607,7 @@ const ReporteHorariosSolicitados = () => {
                                         placeholder="Selecciona un aula"
                                         className="react-select-container"
                                         classNamePrefix="react-select"
+                                        menuPortalTarget={document.body}
                                         isClearable
                                         styles={{
                                             control: (provided) => ({

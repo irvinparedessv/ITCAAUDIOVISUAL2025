@@ -6,7 +6,6 @@ import {
   FaSave,
   FaTimes,
   FaKey,
-  FaExclamationTriangle,
   FaEye,
   FaEyeSlash,
 } from "react-icons/fa";
@@ -31,25 +30,38 @@ const ResetPassword: React.FC = () => {
   const expires = queryParams.get("expires");
 
   useEffect(() => {
+    if (!token || !email) {
+      toast.error("El enlace de restablecimiento no es válido");
+      navigate("/");
+    }
+  }, [token, email, navigate]);
+
+  useEffect(() => {
     if (expires) {
       const expirationTime = new Date(parseInt(expires, 10) * 1000);
       const now = new Date();
 
       if (now > expirationTime) {
         setIsExpired(true);
-        toast.error("El enlace ha expirado. Por favor solicita uno nuevo.");
       }
     }
   }, [expires]);
 
+  // Mostrar el toast sólo cuando isExpired cambie a true
+  useEffect(() => {
+    if (isExpired) {
+      toast.error("El enlace ha expirado. Por favor solicita uno nuevo.");
+    }
+  }, [isExpired]);
+
   const validatePassword = (): boolean => {
     if (!password || !passwordConfirm) {
-      toast.error("Por favor completa todos los campos", { icon: "⚠️" });
+      toast.error("Por favor completa todos los campos", { icon: "⚠️", id: "empty-fields" });
       return false;
     }
 
     if (password !== passwordConfirm) {
-      toast.error("Las contraseñas no coinciden", { icon: "⚠️" });
+      toast.error("Las contraseñas no coinciden", { icon: "⚠️", id: "password-mismatch" });
       return false;
     }
 
@@ -57,6 +69,7 @@ const ResetPassword: React.FC = () => {
       toast.error("La contraseña debe tener al menos 8 caracteres", {
         icon: "⚠️",
         duration: 4000,
+        id: "password-too-short",
       });
       return false;
     }
@@ -72,6 +85,7 @@ const ResetPassword: React.FC = () => {
         {
           icon: "⚠️",
           duration: 6000,
+          id: "password-invalid-format",
         }
       );
       return false;
@@ -124,11 +138,7 @@ const ResetPassword: React.FC = () => {
   };
 
   const handleCancel = () => {
-    toast("Cancelaste el restablecimiento de contraseña", {
-      icon: "⚠️",
-      duration: 6000,
-    });
-    setTimeout(() => navigate("/login"), 1000);
+    navigate("/login");
   };
 
   const toggleShowPassword = () => setShowPassword(!showPassword);
@@ -242,20 +252,21 @@ const ResetPassword: React.FC = () => {
         onHide={() => setShowForgotModal(false)}
         centered
       >
-        <Modal.Header closeButton
+        <Modal.Header
+          closeButton
           className="text-white"
           style={{
             backgroundColor: "rgb(177, 41, 29)",
             borderBottom: "none",
             padding: "1.5rem",
-          }}>
+          }}
+        >
           <Modal.Title>Solicitar nuevo enlace</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <ForgotPassword />
         </Modal.Body>
       </Modal>
-
     </div>
   );
 };

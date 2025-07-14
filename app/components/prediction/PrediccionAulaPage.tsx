@@ -40,7 +40,6 @@ interface PrediccionData {
   tipo: "Histórico" | "Predicción";
   detalle: {
     regresion_lineal: number | null;
-    svr: number | null;
   };
   mes_numero: number;
 }
@@ -57,7 +56,6 @@ const PrediccionAulaPage = () => {
   const [precision, setPrecision] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [showRL, setShowRL] = useState(true);
-  const [showSVR, setShowSVR] = useState(true);
   const chartRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -81,7 +79,6 @@ const PrediccionAulaPage = () => {
         tipo: "Histórico" as const,
         detalle: {
           regresion_lineal: null,
-          svr: null,
         },
         mes_numero: index,
       }));
@@ -96,7 +93,6 @@ const PrediccionAulaPage = () => {
         tipo: "Predicción" as const,
         detalle: {
           regresion_lineal: item.regresion_lineal ?? null,
-          svr: item.svr ?? null,
         },
         mes_numero: historico.length + index,
       }));
@@ -171,13 +167,12 @@ const PrediccionAulaPage = () => {
     try {
       toast.loading("Generando Excel...", { id: "excel-download" });
       
-      const encabezados = ["Mes", "Cantidad", "Tipo", "Regresión Lineal", "SVR"];
+      const encabezados = ["Mes", "Cantidad", "Tipo", "Regresión Lineal"];
       const filas = data.map((d) => [
         d.mes,
         d.cantidad,
         d.tipo,
         d.detalle?.regresion_lineal ?? "",
-        d.detalle?.svr ?? "",
       ]);
 
       const datos = [encabezados, ...filas];
@@ -242,7 +237,6 @@ const PrediccionAulaPage = () => {
       link.href = canvas.toDataURL("image/png");
       link.click();
       
-      // Asegurarse de que el toast de carga se cierre antes de mostrar el de éxito
       toast.dismiss("imagen-download");
       toast.success("Imagen exportada correctamente");
     } catch (error) {
@@ -278,7 +272,7 @@ const PrediccionAulaPage = () => {
       <Card className="shadow-sm mb-4">
         <Card.Body>
           <Row className="g-3 align-items-end">
-            <Col md={5}>
+            <Col md={6}>
               <Form.Group controlId="aulaSeleccionada">
                 <Form.Label className="fw-bold">Aula</Form.Label>
                 <Select
@@ -302,6 +296,7 @@ const PrediccionAulaPage = () => {
                     setAulaSeleccionada(id);
                     cargarPrediccion(id);
                   }}
+                  menuPortalTarget={document.body}
                   placeholder="Selecciona un aula"
                   className="react-select-container"
                   classNamePrefix="react-select"
@@ -327,29 +322,7 @@ const PrediccionAulaPage = () => {
               </Form.Group>
             </Col>
 
-            <Col md={4}>
-              <Form.Group>
-                <Form.Label className="fw-bold">Mostrar modelos</Form.Label>
-                <div className="d-flex gap-3">
-                  <Form.Check
-                    type="checkbox"
-                    id="rlCheckbox"
-                    label="Regresión Lineal"
-                    checked={showRL}
-                    onChange={() => setShowRL(!showRL)}
-                  />
-                  <Form.Check
-                    type="checkbox"
-                    id="svrCheckbox"
-                    label="SVR"
-                    checked={showSVR}
-                    onChange={() => setShowSVR(!showSVR)}
-                  />
-                </div>
-              </Form.Group>
-            </Col>
-
-            <Col md={3} className="d-flex gap-2">
+            <Col md={6} className="d-flex gap-2 justify-content-end">
               <Button
                 variant="success"
                 onClick={confirmarExportacionExcel}
@@ -417,17 +390,6 @@ const PrediccionAulaPage = () => {
                         strokeWidth={2}
                       />
                     )}
-                    {showSVR && (
-                      <Line
-                        type="monotone"
-                        dataKey="detalle.svr"
-                        stroke="#ffc107"
-                        name="SVR"
-                        dot={false}
-                        strokeDasharray="3 3"
-                        strokeWidth={2}
-                      />
-                    )}
                     <Brush dataKey="mes" height={30} stroke="#8884d8" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -442,7 +404,6 @@ const PrediccionAulaPage = () => {
                       <th>Cantidad</th>
                       <th>Tipo</th>
                       <th>Reg. Lineal</th>
-                      <th>SVR</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -457,12 +418,11 @@ const PrediccionAulaPage = () => {
                             </Badge>
                           </td>
                           <td>{item.detalle?.regresion_lineal ?? "-"}</td>
-                          <td>{item.detalle?.svr ?? "-"}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={5} className="text-center py-4">
+                        <td colSpan={4} className="text-center py-4">
                           No hay datos disponibles
                         </td>
                       </tr>

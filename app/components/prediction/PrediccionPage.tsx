@@ -29,7 +29,7 @@ import {
   Form,
 } from "react-bootstrap";
 import html2canvas from "html2canvas";
-import { FaChartBar, FaFileExcel, FaFileImage, FaLongArrowAltLeft } from "react-icons/fa";
+import { FaChartBar, FaFileExcel, FaLongArrowAltLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -46,10 +46,6 @@ export default function PrediccionPage() {
   const [precision, setPrecision] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [showRL, setShowRL] = useState(true);
-  const [showSVR, setShowSVR] = useState(true);
-
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
 
   const cargarPrediccion = async (tipo?: number) => {
     setLoading(true);
@@ -137,13 +133,12 @@ export default function PrediccionPage() {
     try {
       toast.loading("Generando Excel...", { id: "excel-download" });
 
-      const encabezados = ["Mes", "Cantidad", "Tipo", "Regresión Lineal", "SVR"];
+      const encabezados = ["Mes", "Cantidad", "Tipo", "Regresión Lineal"];
       const filas = data.map((d) => [
         d.mes,
         d.cantidad,
         d.tipo,
         d.detalle?.regresion_lineal ?? "",
-        d.detalle?.svr ?? "",
       ]);
 
       const datos = [encabezados, ...filas];
@@ -312,7 +307,7 @@ export default function PrediccionPage() {
               <Row className="mb-3">
                 <Col>
                   <Form.Group>
-                    <Form.Label className="fw-bold">Mostrar modelos</Form.Label>
+                    <Form.Label className="fw-bold">Mostrar modelo</Form.Label>
                     <div className="d-flex gap-3">
                       <Form.Check
                         type="checkbox"
@@ -320,14 +315,6 @@ export default function PrediccionPage() {
                         label="Regresión Lineal"
                         checked={showRL}
                         onChange={() => setShowRL(!showRL)}
-                        disabled={loading}
-                      />
-                      <Form.Check
-                        type="checkbox"
-                        id="svrCheckbox"
-                        label="SVR"
-                        checked={showSVR}
-                        onChange={() => setShowSVR(!showSVR)}
                         disabled={loading}
                       />
                     </div>
@@ -362,17 +349,6 @@ export default function PrediccionPage() {
                         strokeWidth={2}
                       />
                     )}
-                    {showSVR && (
-                      <Line
-                        type="monotone"
-                        dataKey="detalle.svr"
-                        stroke="#ffc107"
-                        name="SVR"
-                        dot={false}
-                        strokeDasharray="3 3"
-                        strokeWidth={2}
-                      />
-                    )}
                     <Brush dataKey="mes" height={30} stroke="#8884d8" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -389,7 +365,6 @@ export default function PrediccionPage() {
                           <th>Cantidad</th>
                           <th>Tipo</th>
                           <th>Reg. Lineal</th>
-                          <th>SVR</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -403,7 +378,6 @@ export default function PrediccionPage() {
                               </Badge>
                             </td>
                             <td>{item.detalle?.regresion_lineal ?? "-"}</td>
-                            <td>{item.detalle?.svr ?? "-"}</td>
                           </tr>
                         ))}
                       </tbody>

@@ -33,7 +33,7 @@ type PrediccionRow = {
   tipo: string;
   cantidad: number;
   mes_numero: number;
-  detalle?: { regresion_lineal?: number; svr?: number };
+  detalle?: { regresion_lineal?: number };
 };
 
 type EquipoData = {
@@ -58,7 +58,6 @@ export default function PrediccionPorEquipoPage() {
   const [precisionEquipo, setPrecisionEquipo] = useState<number | null>(null);
 
   const [showRL, setShowRL] = useState(true);
-  const [showSVR, setShowSVR] = useState(true);
   const [equiposAbiertos, setEquiposAbiertos] = useState<string[]>([]);
 
   const customSelectStyles = useMemo(() => ({
@@ -158,7 +157,6 @@ export default function PrediccionPorEquipoPage() {
       setNombreEquipoSeleccionado(equipoSeleccionado.label);
       setPrecisionEquipo(data.precision ?? null);
       setShowRL(true);
-      setShowSVR(true);
       
       toast.success(`Datos cargados para ${equipoSeleccionado.label}`);
     } catch (error) {
@@ -213,13 +211,12 @@ export default function PrediccionPorEquipoPage() {
     try {
       toast.loading("Generando Excel...", { id: "excel-download-equipo" });
       
-      const encabezados = ["Mes", "Cantidad", "Tipo", "Regresión Lineal", "SVR"];
+      const encabezados = ["Mes", "Cantidad", "Tipo", "Regresión Lineal"];
       const filas = analisisEquipo.map((d) => [
         d.mes,
         d.cantidad,
         d.tipo,
         d.detalle?.regresion_lineal ?? "",
-        d.detalle?.svr ?? "",
       ]);
 
       const datos = [encabezados, ...filas];
@@ -447,7 +444,6 @@ export default function PrediccionPorEquipoPage() {
                             <th>Tipo</th>
                             <th>Cantidad</th>
                             <th>Reg. Lineal</th>
-                            <th>SVR</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -461,7 +457,6 @@ export default function PrediccionPorEquipoPage() {
                               </td>
                               <td>{p.cantidad}</td>
                               <td>{p.detalle?.regresion_lineal ?? "-"}</td>
-                              <td>{p.detalle?.svr ?? "-"}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -489,6 +484,7 @@ export default function PrediccionPorEquipoPage() {
                 <AsyncSelect
                   cacheOptions
                   loadOptions={loadOptions}
+                  menuPortalTarget={document.body}
                   styles={customSelectStyles}
                   defaultOptions
                   value={equipoSeleccionado}
@@ -544,7 +540,7 @@ export default function PrediccionPorEquipoPage() {
               <Row className="mb-3">
                 <Col>
                   <Form.Group>
-                    <Form.Label className="fw-bold">Mostrar modelos</Form.Label>
+                    <Form.Label className="fw-bold">Mostrar modelo</Form.Label>
                     <div className="d-flex gap-3">
                       <Form.Check
                         type="checkbox"
@@ -552,13 +548,6 @@ export default function PrediccionPorEquipoPage() {
                         label="Regresión Lineal"
                         checked={showRL}
                         onChange={() => setShowRL(!showRL)}
-                      />
-                      <Form.Check
-                        type="checkbox"
-                        id="svrCheckboxEquipo"
-                        label="SVR"
-                        checked={showSVR}
-                        onChange={() => setShowSVR(!showSVR)}
                       />
                     </div>
                   </Form.Group>
@@ -592,17 +581,6 @@ export default function PrediccionPorEquipoPage() {
                         strokeWidth={2}
                       />
                     )}
-                    {showSVR && (
-                      <Line
-                        type="monotone"
-                        dataKey="detalle.svr"
-                        stroke="#ffc107"
-                        name="SVR"
-                        dot={false}
-                        strokeDasharray="3 3"
-                        strokeWidth={2}
-                      />
-                    )}
                     <Brush dataKey="mes" height={30} stroke="#8884d8" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -617,7 +595,6 @@ export default function PrediccionPorEquipoPage() {
                       <th>Cantidad</th>
                       <th>Tipo</th>
                       <th>Reg. Lineal</th>
-                      <th>SVR</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -631,7 +608,6 @@ export default function PrediccionPorEquipoPage() {
                           </Badge>
                         </td>
                         <td>{p.detalle?.regresion_lineal ?? "-"}</td>
-                        <td>{p.detalle?.svr ?? "-"}</td>
                       </tr>
                     ))}
                   </tbody>

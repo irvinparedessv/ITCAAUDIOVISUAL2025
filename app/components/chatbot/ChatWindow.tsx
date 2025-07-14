@@ -138,7 +138,7 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
             className={`aula-btn ${
               reservaData.ubicacion === aula.label ? "seleccionado" : ""
             }`}
-            onClick={() => handleAulaClick(aula.value)}
+            onClick={() => handleAulaClick(aula.label)}
           >
             {aula.label}
           </button>

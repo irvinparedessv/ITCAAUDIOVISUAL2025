@@ -373,22 +373,35 @@ export const useChatbotLogic = (user: any) => {
       endTime: reservaData.horaFin,
       tipo_reserva_id: reservaData.tipo,
     };
+    api
+      .post("/BOTreservas", payload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        withCredentials: true,
+      })
+      .then((response) => {
+        // ✅ Aquí va lo que pasa si todo sale bien
+        const equiposSeleccionados = reservaData.equipos
+          .map(
+            (id) => equipmentOptions.find((e) => e.value === id)?.label || id
+          )
+          .join(", ");
 
-    api.post("/reservas", payload).catch(console.error);
-
-    setTimeout(() => {
-      const equiposSeleccionados = reservaData.equipos
-        .map((id) => equipmentOptions.find((e) => e.value === id)?.label || id)
-        .join(", ");
-
-      addBotMessage(
-        `✅ ¡Reserva creada con éxito!\n\n📅 Fecha: ${reservaData.fecha}\n🕒 Hora: ${reservaData.horaInicio} - ${reservaData.horaFin}\n📍 Ubicación: ${reservaData.ubicacion}\n🎥 Equipos: ${equiposSeleccionados}`
-      );
-      addBotMessage(
-        `¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?`
-      );
-      setStep(Steps.Initial);
-    }, 1000);
+        addBotMessage(
+          `✅ ¡Reserva creada con éxito!\n\n📅 Fecha: ${reservaData.fecha}\n🕒 Hora: ${reservaData.horaInicio} - ${reservaData.horaFin}\n📍 Ubicación: ${reservaData.ubicacion}\n🎥 Equipos: ${equiposSeleccionados}`
+        );
+        addBotMessage(
+          `¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?`
+        );
+        setStep(Steps.Initial);
+      })
+      .catch((error) => {
+        const errorMsg =
+          error.response?.data?.message ||
+          "Ocurrió un error al crear la reserva.";
+        addBotMessage(`❌ Error: ${errorMsg}`);
+      });
   };
 
   const completarReservaAula = async () => {

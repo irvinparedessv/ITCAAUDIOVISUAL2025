@@ -1,33 +1,45 @@
 import { useState, useEffect } from "react";
-import { Badge, Button, Form, Alert, Spinner } from "react-bootstrap";
+import {
+  Badge,
+  Button,
+  Form,
+  Alert,
+  Spinner,
+  Modal,
+  Table,
+} from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../../api/axios";
 import { FaEye, FaLongArrowAltLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
-import { formatTo12h, timeOptions } from "~/utils/time";
 
 interface Rango {
   start_date: string;
   end_date: string;
-  start_time: string;
-  end_time: string;
   days: string[] | string;
+}
+
+interface Reserva {
+  fecha: string;
+  horario: string;
+  estado: string;
 }
 
 interface Resultado {
   rango: Rango;
-  reservas: any[];
   bloques_totales: number;
   cupos_ocupados: number;
-  cupos_libres: number;
+  cupos_pendientes: number;
+  reservas_aprobadas: Reserva[];
+  reservas_pendientes: Reserva[];
 }
 
 interface Aula {
   id: number;
   nombre: string;
-  disponibilidad?: Resultado; // tomamos solo el primero por simplicidad
+  disponibilidad?: Resultado; // solo el primero
 }
 
 export default function RoomsAvailabilityList() {
@@ -47,14 +59,20 @@ export default function RoomsAvailabilityList() {
   const [availabilityData, setAvailabilityData] = useState<{
     startDate: Date | null;
     endDate: Date | null;
-    startTime: string;
-    endTime: string;
   }>({
     startDate: null,
     endDate: null,
-    startTime: "08:00",
-    endTime: "17:00",
   });
+
+  // Modal control
+  const [modalShow, setModalShow] = useState(false);
+  const [modalReservasAprobadas, setModalReservasAprobadas] = useState<
+    Reserva[]
+  >([]);
+  const [modalReservasPendientes, setModalReservasPendientes] = useState<
+    Reserva[]
+  >([]);
+  const [modalAulaNombre, setModalAulaNombre] = useState("");
 
   const handleBack = () => {
     navigate("/");
@@ -84,8 +102,9 @@ export default function RoomsAvailabilityList() {
       setError("Seleccione rango de fechas");
       return;
     }
-
     setCheckingAvailability(true);
+    setError(null);
+
     try {
       const start = availabilityData.startDate.toISOString().split("T")[0];
       const end = availabilityData.endDate.toISOString().split("T")[0];
@@ -97,12 +116,9 @@ export default function RoomsAvailabilityList() {
               params: {
                 startDate: start,
                 endDate: end,
-                startTime: availabilityData.startTime,
-                endTime: availabilityData.endTime,
               },
             });
 
-            // Tomamos SOLO el primer rango por ahora
             const resultado: Resultado = res.data.resultados[0];
 
             return {
@@ -130,13 +146,12 @@ export default function RoomsAvailabilityList() {
     setAvailabilityData({
       startDate: null,
       endDate: null,
-      startTime: "08:00",
-      endTime: "17:00",
     });
     setFilters({ buscar: "", page: 1 });
     setRoomsList((prev) =>
       prev.map((r) => ({ ...r, disponibilidad: undefined }))
     );
+    setError(null);
   };
 
   useEffect(() => {
@@ -149,6 +164,14 @@ export default function RoomsAvailabilityList() {
     }, 500);
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
+
+  // Abrir modal con reservas
+  const handleShowReservas = (room: Aula) => {
+    setModalReservasAprobadas(room.disponibilidad?.reservas_aprobadas || []);
+    setModalReservasPendientes(room.disponibilidad?.reservas_pendientes || []);
+    setModalAulaNombre(room.nombre);
+    setModalShow(true);
+  };
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
@@ -203,7 +226,7 @@ export default function RoomsAvailabilityList() {
       </Form>
 
       <div className="mb-4 p-3 border rounded">
-        <h5>Seleccione rango de fechas y horario</h5>
+        <h5>Seleccione rango de fechas</h5>
         <div className="row">
           <div className="col-md-3">
             <Form.Group>
@@ -237,46 +260,6 @@ export default function RoomsAvailabilityList() {
               />
             </Form.Group>
           </div>
-          <div className="col-md-3">
-            <Form.Group>
-              <Form.Label>Hora inicio</Form.Label>
-              <Form.Select
-                value={availabilityData.startTime}
-                onChange={(e) =>
-                  setAvailabilityData({
-                    ...availabilityData,
-                    startTime: e.target.value,
-                  })
-                }
-              >
-                {timeOptions.map((time) => (
-                  <option key={time} value={time}>
-                    {formatTo12h(time)}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-          </div>
-          <div className="col-md-3">
-            <Form.Group>
-              <Form.Label>Hora fin</Form.Label>
-              <Form.Select
-                value={availabilityData.endTime}
-                onChange={(e) =>
-                  setAvailabilityData({
-                    ...availabilityData,
-                    endTime: e.target.value,
-                  })
-                }
-              >
-                {timeOptions.map((time) => (
-                  <option key={time} value={time}>
-                    {formatTo12h(time)}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-          </div>
         </div>
       </div>
 
@@ -288,6 +271,7 @@ export default function RoomsAvailabilityList() {
       )}
 
       {error && <Alert variant="danger">{error}</Alert>}
+
       {loading && (
         <>
           <div className="table-responsive">
@@ -295,15 +279,16 @@ export default function RoomsAvailabilityList() {
               <thead className="table-dark">
                 <tr>
                   <th>Nombre</th>
-                  <th>Bloques Totales</th>
-                  <th>Cupos Ocupados</th>
-                  <th>Cupos Libres</th>
+                  <th>Dias Habilitados</th>
+                  <th>Cupos Ocupados (Aprobados)</th>
+                  <th>Cupos Pendientes</th>
+                  <th>Detalles</th>
                 </tr>
               </thead>
               <tbody>
                 {roomsList.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-muted py-4">
+                    <td colSpan={6} className="text-muted py-4">
                       No se encontraron aulas.
                     </td>
                   </tr>
@@ -313,7 +298,17 @@ export default function RoomsAvailabilityList() {
                       <td>{room.nombre}</td>
                       <td>{room.disponibilidad?.bloques_totales ?? "-"}</td>
                       <td>{room.disponibilidad?.cupos_ocupados ?? "-"}</td>
-                      <td>{room.disponibilidad?.cupos_libres ?? "-"}</td>
+                      <td>{room.disponibilidad?.cupos_pendientes ?? "-"}</td>
+                      <td>
+                        <Button
+                          size="sm"
+                          variant="info"
+                          onClick={() => handleShowReservas(room)}
+                          disabled={!room.disponibilidad}
+                        >
+                          Ver Reservas
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -327,6 +322,68 @@ export default function RoomsAvailabilityList() {
           />
         </>
       )}
+
+      {/* Modal */}
+      <Modal
+        show={modalShow}
+        onHide={() => setModalShow(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Reservas de {modalAulaNombre}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <h5>Aprobadas</h5>
+          {modalReservasAprobadas.length === 0 ? (
+            <p>No hay reservas aprobadas.</p>
+          ) : (
+            <Table striped bordered hover size="sm" responsive>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Horario</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modalReservasAprobadas.map((r, i) => (
+                  <tr key={i}>
+                    <td>{r.fecha}</td>
+                    <td>{r.horario}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+
+          <h5 className="mt-4">Pendientes</h5>
+          {modalReservasPendientes.length === 0 ? (
+            <p>No hay reservas pendientes.</p>
+          ) : (
+            <Table striped bordered hover size="sm" responsive>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Horario</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modalReservasPendientes.map((r, i) => (
+                  <tr key={i}>
+                    <td>{r.fecha}</td>
+                    <td>{r.horario}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setModalShow(false)}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

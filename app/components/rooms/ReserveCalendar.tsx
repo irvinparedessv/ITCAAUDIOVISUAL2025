@@ -1,15 +1,39 @@
 import React, { useEffect, useState } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
-import moment from "moment";
-import "moment/locale/es";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { getReservas, getAulasEncargado } from "../../services/reservaService";
+import {
+  getBloquesPorMes,
+  getAulasEncargado,
+} from "../../services/reservaService";
 import type { Aula } from "../../types/aula";
 import AulaReservacionEstadoModal from "../../components/attendantadmin/RoomReservationStateModal";
 import Spinner from "react-bootstrap/Spinner";
-moment.locale("es");
+import moment from "moment";
+import "moment/locale/es";
+
+moment.lang("es");
+moment.updateLocale("es", {
+  months: [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+  ],
+});
+console.log(moment.lang()); // debería imprimir "es"
 
 const localizer = momentLocalizer(moment);
+console.log(localizer); // debería imprimir "es"
+
+const ESTADOS_POSIBLES = ["aprobado", "pendiente", "rechazado", "cancelado"];
 
 const ReservaCalendar = () => {
   const [aulas, setAulas] = useState<Aula[]>([]);
@@ -18,6 +42,13 @@ const ReservaCalendar = () => {
   const [mesActual, setMesActual] = useState<moment.Moment>(moment());
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingAulas, setLoadingAulas] = useState<boolean>(true);
+  const [view, setView] = useState<string>("month");
+
+  // Estados seleccionados en filtro (default aprobado y pendiente)
+  const [filtroEstados, setFiltroEstados] = useState<string[]>([
+    "aprobado",
+    "pendiente",
+  ]);
 
   const [showEstadoModal, setShowEstadoModal] = useState(false);
   const [selectedReserva, setSelectedReserva] = useState<any>(null);
@@ -36,76 +67,91 @@ const ReservaCalendar = () => {
 
   useEffect(() => {
     if (aulaId) {
-      fetchReservas();
+      fetchBloques();
     }
-  }, [aulaId, mesActual]);
+  }, [aulaId, mesActual, filtroEstados]);
 
-  const fetchReservas = () => {
+  const fetchBloques = () => {
     setLoading(true);
     const mes = mesActual.format("YYYY-MM");
 
-    getReservas(mes, aulaId).then((res) => {
-      let reservas = res.data;
+    getBloquesPorMes(mes, aulaId).then((res) => {
+      let bloques = res.data;
 
-      reservas = reservas.map((reserva: any, i: number, arr: any[]) => {
-        reserva.conflicto = false;
+      // Aplicar filtro de estados
+      bloques = bloques.filter((b: any) =>
+        filtroEstados.includes(b.estado.toLowerCase())
+      );
 
-        if (["rechazado", "cancelado"].includes(reserva.estado.toLowerCase())) {
-          return reserva;
+      bloques = bloques.map((bloque: any, i: number, arr: any[]) => {
+        bloque.conflicto = false;
+
+        if (["rechazado", "cancelado"].includes(bloque.estado.toLowerCase())) {
+          return bloque;
         }
 
-        const [inicio1, fin1] = reserva.horario
-          .split(" - ")
-          .map((h: string) =>
-            moment(`${reserva.fecha.split("T")[0]} ${h}`, "YYYY-MM-DD HH:mm")
-          );
+        const inicio1 = moment(
+          `${bloque.fecha_inicio} ${bloque.hora_inicio}`,
+          "YYYY-MM-DD HH:mm:ss"
+        );
+        const fin1 = moment(
+          `${bloque.fecha_fin} ${bloque.hora_fin}`,
+          "YYYY-MM-DD HH:mm:ss"
+        );
 
         for (let j = 0; j < arr.length; j++) {
           if (i === j) continue;
-          const otra = arr[j];
+          const otro = arr[j];
 
-          if (reserva.aula_id !== otra.aula_id) continue;
-          if (reserva.fecha !== otra.fecha) continue;
+          if (bloque.reserva.aula_id !== otro.reserva.aula_id) continue;
+          if (bloque.fecha_inicio !== otro.fecha_inicio) continue;
 
-          if (["rechazado", "cancelado"].includes(otra.estado.toLowerCase())) {
+          if (["rechazado", "cancelado"].includes(otro.estado.toLowerCase())) {
             continue;
           }
 
-          const [inicio2, fin2] = otra.horario
-            .split(" - ")
-            .map((h: string) =>
-              moment(`${otra.fecha.split("T")[0]} ${h}`, "YYYY-MM-DD HH:mm")
-            );
+          const inicio2 = moment(
+            `${otro.fecha_inicio} ${otro.hora_inicio}`,
+            "YYYY-MM-DD HH:mm:ss"
+          );
+          const fin2 = moment(
+            `${otro.fecha_fin} ${otro.hora_fin}`,
+            "YYYY-MM-DD HH:mm:ss"
+          );
 
           if (inicio1.isBefore(fin2) && inicio2.isBefore(fin1)) {
-            reserva.conflicto = true;
+            bloque.conflicto = true;
             break;
           }
         }
 
-        return reserva;
+        return bloque;
       });
 
-      const eventos = reservas.map((reserva: any) => {
-        const [horaInicio, horaFin] = reserva.horario
-          .split(" - ")
-          .map((h: string) => h.trim());
-        const fecha = reserva.fecha.split("T")[0];
-
+      const eventos = bloques.map((bloque: any) => {
         const start = moment(
-          `${fecha} ${horaInicio}`,
-          "YYYY-MM-DD HH:mm"
+          `${bloque.fecha_inicio} ${bloque.hora_inicio}`,
+          "YYYY-MM-DD HH:mm:ss"
         ).toDate();
-        const end = moment(`${fecha} ${horaFin}`, "YYYY-MM-DD HH:mm").toDate();
+        const end = moment(
+          `${bloque.fecha_fin} ${bloque.hora_fin}`,
+          "YYYY-MM-DD HH:mm:ss"
+        ).toDate();
 
         return {
-          id: reserva.id,
-          title: getTitle(reserva),
+          id: bloque.id,
+          title: `${getIcon(bloque.estado)} ${
+            bloque.reserva?.comentario || ""
+          } - ${bloque.hora_inicio.slice(0, 5)} a ${bloque.hora_fin.slice(
+            0,
+            5
+          )}`,
           start,
           end,
           allDay: false,
-          color: getColor(reserva),
-          estado: reserva.estado,
+          color: bloque.conflicto ? "red" : "transparent",
+          estado: bloque.estado,
+          reservaId: bloque.reserva_id,
         };
       });
 
@@ -114,20 +160,12 @@ const ReservaCalendar = () => {
     });
   };
 
-  const getColor = (reserva: any) => {
-    return reserva.conflicto ? "red" : "transparent";
-  };
-
-  const getTitle = (reserva: any) => {
-    let icon = "";
-    const estado = reserva.estado.toLowerCase();
-
-    if (estado === "aprobado") icon = "✔️";
-    else if (estado === "rechazado") icon = "❌";
-    else if (estado === "cancelado") icon = "🚫";
-    else icon = "⏳"; // Pendiente sin icono
-
-    return `${icon} ${reserva.comentario} - ${reserva.horario}`;
+  const getIcon = (estado: string) => {
+    const e = estado.toLowerCase();
+    if (e === "aprobado") return "✔️";
+    if (e === "rechazado") return "❌";
+    if (e === "cancelado") return "🚫";
+    return "⏳"; // pendiente
   };
 
   const eventPropGetter = (event: any) => ({
@@ -138,19 +176,23 @@ const ReservaCalendar = () => {
       color: "black",
       border: event.color === "red" ? "0px" : "1px solid #000",
       display: "block",
+      cursor: "pointer",
     },
   });
 
   const handleSelectEvent = (event: any) => {
+    console.log(event);
     setSelectedReserva({
-      id: event.id,
+      id: event.reservaId,
       estado: event.estado,
+      blockId: event.id,
+      isRecurrent: event.isRecurrent,
     });
     setShowEstadoModal(true);
   };
 
   const handleEstadoSuccess = () => {
-    fetchReservas();
+    fetchBloques();
     setShowEstadoModal(false);
   };
 
@@ -160,6 +202,23 @@ const ReservaCalendar = () => {
 
   const handleMesSiguiente = () => {
     setMesActual(mesActual.clone().add(1, "month"));
+  };
+
+  const handleChangeView = (newView: string) => {
+    setView(newView);
+  };
+
+  // Cambia selección en filtro de estados
+  const toggleEstado = (estado: string) => {
+    setFiltroEstados((prev) => {
+      if (prev.includes(estado)) {
+        // quitar
+        return prev.filter((e) => e !== estado);
+      } else {
+        // agregar
+        return [...prev, estado];
+      }
+    });
   };
 
   return (
@@ -185,19 +244,44 @@ const ReservaCalendar = () => {
             ))}
           </select>
 
-          <h5 className="mb-3">
-            Mes actual: {mesActual.locale("es").format("MMMM YYYY")}
-          </h5>
+          <h5 className="mb-3">Mes actual: {mesActual.format("MMMM YYYY")}</h5>
 
-          <div className="mb-3">
+          <div className="mb-3 d-flex flex-wrap gap-2 align-items-center">
+            <span className="fw-bold me-2">Filtrar estados:</span>
+            {ESTADOS_POSIBLES.map((estado) => {
+              const seleccionado = filtroEstados.includes(estado);
+              return (
+                <button
+                  key={estado}
+                  type="button"
+                  className={`btn btn-sm ${
+                    seleccionado ? "btn-primary" : "btn-outline-primary"
+                  }`}
+                  onClick={() => toggleEstado(estado)}
+                >
+                  {getIcon(estado)}{" "}
+                  {estado.charAt(0).toUpperCase() + estado.slice(1)}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mb-3 d-flex gap-2">
             <button
-              className="btn btn-primary me-2"
-              onClick={handleMesAnterior}
+              className={`btn ${
+                view === "month" ? "btn-secondary" : "btn-outline-secondary"
+              }`}
+              onClick={() => handleChangeView("month")}
             >
-              Mes Anterior
+              Mes
             </button>
-            <button className="btn btn-primary" onClick={handleMesSiguiente}>
-              Mes Siguiente
+            <button
+              className={`btn ${
+                view === "agenda" ? "btn-secondary" : "btn-outline-secondary"
+              }`}
+              onClick={() => handleChangeView("agenda")}
+            >
+              Agenda
             </button>
           </div>
 
@@ -215,8 +299,29 @@ const ReservaCalendar = () => {
               style={{ height: 600, margin: "50px" }}
               eventPropGetter={eventPropGetter}
               onSelectEvent={handleSelectEvent}
-              views={{ month: true }}
+              views={["month", "agenda"]}
               toolbar={false}
+              view={view}
+              onView={handleChangeView}
+              culture="es"
+              messages={{
+                date: "Fecha",
+                time: "Hora",
+                event: "Evento",
+                allDay: "Todo el día",
+                week: "Semana",
+                work_week: "Semana laboral",
+                day: "Día",
+                month: "Mes",
+                previous: "Anterior",
+                next: "Siguiente",
+                yesterday: "Ayer",
+                tomorrow: "Mañana",
+                today: "Hoy",
+                agenda: "Agenda",
+                noEventsInRange: "No hay eventos en este rango.",
+                showMore: (total) => `+ Ver más (${total})`,
+              }}
             />
           )}
 
@@ -230,6 +335,8 @@ const ReservaCalendar = () => {
               }}
               reservationId={selectedReserva.id}
               currentStatus={selectedReserva.estado}
+              blockId={selectedReserva.blockId} // tu lógica
+              isRecurrent={selectedReserva.isRecurrent} // true o false
               onSuccess={handleEstadoSuccess}
             />
           )}

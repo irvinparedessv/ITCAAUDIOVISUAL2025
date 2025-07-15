@@ -31,11 +31,7 @@ function AppContent() {
       document.head.removeChild(link);
     };
   }, []);
-  const hideNavbarRoutes = [
-    "/login",
-    "/reset-password",
-    "/forbidden",
-  ];
+  const hideNavbarRoutes = ["/login", "/reset-password", "/forbidden"];
 
   const shouldShowNavbar =
     isAuthenticated && !hideNavbarRoutes.includes(location.pathname);
@@ -43,7 +39,6 @@ function AppContent() {
   // Puedes usar `theme` para condicionar algo, por ejemplo:
   console.log("Tema actual:", darkMode);
 
- 
   return (
     <>
       {shouldShowNavbar && <NavbarMenu />}

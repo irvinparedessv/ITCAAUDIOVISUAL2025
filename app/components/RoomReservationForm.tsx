@@ -63,6 +63,7 @@ export default function ReserveClassroom() {
   const [startTime, setStartTime] = useState<string>("");
   const [endTime, setEndTime] = useState<string>("");
   const [descripcion, setDescripcion] = useState<string>("");
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   const [prestamistaOptions, setPrestamistaOptions] = useState<OptionType[]>(
     []
@@ -76,7 +77,8 @@ export default function ReserveClassroom() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showModal, setShowModal] = useState(false);
-
+  const [tipoReserva, setTipoReserva] = useState<string>("");
+  const [diasSeleccionados, setDiasSeleccionados] = useState<string[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   const isDateTimeComplete = selectedDate && startTime && endTime;
@@ -250,7 +252,30 @@ export default function ReserveClassroom() {
       toast.error("Completa todos los campos", { id: "submit-toast" });
       return;
     }
-
+    if (!tipoReserva) {
+      toast.error("Debes seleccionar el tipo de reserva");
+      return;
+    }
+    if (tipoReserva === "clase_recurrente") {
+      if (diasSeleccionados.length === 0) {
+        toast.error(
+          "Debes seleccionar al menos un día para clases recurrentes."
+        );
+        return;
+      }
+      if (!endDate) {
+        toast.error(
+          "Debes seleccionar una fecha de finalización para clases recurrentes."
+        );
+        return;
+      }
+      if (selectedDate && endDate && selectedDate > endDate) {
+        toast.error(
+          "La fecha de inicio no puede ser después de la fecha de finalización."
+        );
+        return;
+      }
+    }
     const startMinutes = parseTime(startTime);
     const endMinutes = parseTime(endTime);
     if (startMinutes >= endMinutes) {
@@ -258,24 +283,6 @@ export default function ReserveClassroom() {
         id: "submit-toast",
       });
       return;
-    }
-
-    const now = new Date();
-    const todayStr = formatDateLocal(now);
-    const selectedDateStr = formatDateLocal(selectedDate);
-
-    if (selectedDateStr === todayStr) {
-      const slotDateTime = new Date(selectedDate);
-      const [slotHour, slotMinute] = startTime.split(":").map(Number);
-      slotDateTime.setHours(slotHour, slotMinute, 0, 0);
-      const diffMinutes = (slotDateTime.getTime() - now.getTime()) / 60000;
-      if (diffMinutes < 30) {
-        toast.error(
-          "Para reservas el mismo día, debe hacerse con al menos 30 minutos de anticipación.",
-          { id: "submit-toast" }
-        );
-        return;
-      }
     }
 
     if (id) {
@@ -298,8 +305,13 @@ export default function ReserveClassroom() {
         fecha: formatDateLocal(selectedDate),
         horario: horarioFinal,
         user_id: selectedPrestamista?.value?.toString() || userId,
-        estado: "pendiente",
+        estado: selectedPrestamista?.value?.toString()
+          ? "aprobado"
+          : "pendiente",
         comentario: descripcion.trim(),
+        tipo: tipoReserva,
+        fecha_fin: endDate ? formatDateLocal(endDate) : null,
+        dias: diasSeleccionados,
       };
 
       if (id) {
@@ -412,7 +424,44 @@ export default function ReserveClassroom() {
             </div>
           )}
         </div>
-
+        <div className="mb-4">
+          <label htmlFor="descripcion" className="form-label">
+            Titulo{" "}
+            <small className="text-muted">
+              (Grupo, Familia u otra información necesaria)
+            </small>
+          </label>
+          <textarea
+            id="descripcion"
+            className="form-control"
+            placeholder="Ejemplo: Grupo A - Familia X"
+            value={descripcion}
+            minLength={5}
+            onChange={(e) => setDescripcion(e.target.value)}
+            required
+          ></textarea>
+        </div>
+        <div className="mb-4">
+          <label htmlFor="tipoReserva" className="form-label">
+            Tipo de Reserva
+          </label>
+          <select
+            id="tipoReserva"
+            disabled={descripcion.trim().length < 5}
+            className="form-select"
+            value={tipoReserva}
+            onChange={(e) => {
+              setTipoReserva(e.target.value);
+              setDiasSeleccionados([]); // Limpia días si cambia tipo
+            }}
+            required
+          >
+            <option value="">Selecciona el tipo</option>
+            <option value="evento">Evento</option>
+            <option value="clase">Clase</option>
+            <option value="clase_recurrente">Clase Recurrente</option>
+          </select>
+        </div>
         <div className="mb-4">
           <label htmlFor="date" className="form-label">
             <FaCalendarAlt className="me-2" /> Fecha
@@ -432,14 +481,81 @@ export default function ReserveClassroom() {
             dateFormat="dd/MM/yyyy"
             placeholderText="Selecciona la fecha"
             required
-            disabled={!selectedClassroom || loadingHorarios}
+            disabled={
+              !selectedClassroom ||
+              loadingHorarios ||
+              tipoReserva == "" ||
+              tipoReserva == null
+            }
             filterDate={isDateEnabled}
           />
           {loadingHorarios && (
             <small className="text-muted">Restringiendo horarios...</small>
           )}
         </div>
-
+        {tipoReserva === "clase_recurrente" && (
+          <div className="mb-4">
+            <label htmlFor="endDate" className="form-label">
+              <FaCalendarAlt className="me-2" /> Fecha de Finalización
+            </label>
+            <DatePicker
+              id="endDate"
+              selected={endDate}
+              onChange={(date) => {
+                if (date) {
+                  date.setHours(12, 0, 0, 0);
+                  setEndDate(date);
+                }
+              }}
+              className="form-control"
+              dateFormat="dd/MM/yyyy"
+              placeholderText="Selecciona la fecha de finalización"
+              minDate={selectedDate || new Date()}
+              required
+              disabled={selectedDate == null}
+            />
+          </div>
+        )}
+        {tipoReserva === "clase_recurrente" && (
+          <div className="mb-4">
+            <label className="form-label">Días de la semana</label>
+            <div className="d-flex flex-wrap gap-3">
+              {[
+                "Lunes",
+                "Martes",
+                "Miércoles",
+                "Jueves",
+                "Viernes",
+                "Sábado",
+                "Domingo",
+              ].map((dia) => (
+                <div key={dia} className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id={`dia-${dia}`}
+                    disabled={!endDate}
+                    value={dia}
+                    checked={diasSeleccionados.includes(dia)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (e.target.checked) {
+                        setDiasSeleccionados([...diasSeleccionados, value]);
+                      } else {
+                        setDiasSeleccionados(
+                          diasSeleccionados.filter((d) => d !== value)
+                        );
+                      }
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor={`dia-${dia}`}>
+                    {dia}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="mb-4">
           <label className="form-label">
             <FaClock className="me-2" /> Horario
@@ -458,6 +574,7 @@ export default function ReserveClassroom() {
                 max="22:00"
                 onChange={(e) => setStartTime(e.target.value)}
                 required
+                disabled={!selectedDate}
               />
             </div>
             <div className="col-md-6 mb-2">
@@ -473,6 +590,7 @@ export default function ReserveClassroom() {
                 max="22:00"
                 onChange={(e) => setEndTime(e.target.value)}
                 required
+                disabled={!startTime}
               />
             </div>
           </div>
@@ -500,23 +618,8 @@ export default function ReserveClassroom() {
             )}
           </div>
         )}
-        <div className="mb-4">
-          <label htmlFor="descripcion" className="form-label">
-            Descripción{" "}
-            <small className="text-muted">
-              (Grupo, Familia u otra información necesaria)
-            </small>
-          </label>
-          <textarea
-            id="descripcion"
-            className="form-control"
-            placeholder="Ejemplo: Grupo A - Familia X"
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            required
-          ></textarea>
-        </div>
-        {selectedClassroomData?.imagenes?.length > 0 && (
+
+        {selectedClassroomData?.imagenes?.length! > 0 && (
           <button
             type="button"
             className="btn btn-info ms-3"

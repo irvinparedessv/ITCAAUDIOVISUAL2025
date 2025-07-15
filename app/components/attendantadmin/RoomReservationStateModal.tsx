@@ -13,6 +13,10 @@ interface Props {
   onSuccess?: (newStatus: ReservationStatus) => void;
   onBefore?: () => void;
   onAfter?: () => void;
+
+  // nuevos props
+  blockId?: number;
+  isRecurrent?: boolean;
 }
 
 export default function RoomReservationStateModal({
@@ -23,15 +27,19 @@ export default function RoomReservationStateModal({
   onSuccess,
   onBefore,
   onAfter,
+  blockId,
+  isRecurrent,
 }: Props) {
   const [newStatus, setNewStatus] = useState<ReservationStatus | "">("");
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const [updateSeries, setUpdateSeries] = useState(false); // checkbox
 
   useEffect(() => {
     if (show) {
       setNewStatus("");
       setComment("");
+      setUpdateSeries(false);
     }
   }, [show]);
 
@@ -50,8 +58,7 @@ export default function RoomReservationStateModal({
     e.preventDefault();
 
     const toastId = "update-estado-aula";
-
-    toast.dismiss(toastId); // Cierra cualquier toast previo con ese ID
+    toast.dismiss(toastId);
 
     if (!newStatus) {
       toast.error("Debes seleccionar un nuevo estado", { id: toastId });
@@ -62,10 +69,17 @@ export default function RoomReservationStateModal({
       setLoading(true);
       onBefore?.();
 
-      await api.put(`/reservas-aula/${reservationId}/estado`, {
+      const payload: any = {
         estado: newStatus,
         comentario: comment,
-      });
+      };
+
+      if (isRecurrent && blockId) {
+        payload.blockId = blockId;
+        payload.updateSeries = updateSeries;
+      }
+
+      await api.put(`/reservas-aula/${reservationId}/estado`, payload);
 
       toast.success("Estado actualizado correctamente", { id: toastId });
 
@@ -79,7 +93,6 @@ export default function RoomReservationStateModal({
       onAfter?.();
     }
   };
-
 
   const statusOptions = getStatusOptions();
   const isReadOnly =
@@ -148,6 +161,18 @@ export default function RoomReservationStateModal({
                 disabled={isReadOnly || loading}
               />
             </Form.Group>
+
+            {isRecurrent && blockId && (
+              <Form.Group className="mb-4">
+                <Form.Check
+                  type="checkbox"
+                  label="Aplicar cambio a toda la serie"
+                  checked={updateSeries}
+                  onChange={(e) => setUpdateSeries(e.target.checked)}
+                  disabled={loading}
+                />
+              </Form.Group>
+            )}
 
             <div className="d-flex justify-content-end">
               <Button

@@ -6,7 +6,15 @@ import { QRURL } from "~/constants/constant";
 import type { Bitacora } from "~/types/bitacora";
 import RoomDetailsModal from "../applicant/RoomDetailsModal";
 import toast from "react-hot-toast";
-import { FaEdit, FaEye, FaTimes, FaExchangeAlt, FaLongArrowAltLeft, FaPlus, FaQrcode } from "react-icons/fa";
+import {
+  FaEdit,
+  FaEye,
+  FaTimes,
+  FaExchangeAlt,
+  FaLongArrowAltLeft,
+  FaPlus,
+  FaQrcode,
+} from "react-icons/fa";
 import PaginationComponent from "../../utils/Pagination";
 import Filters from "../applicant/RoomReservationList/Filter";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -46,7 +54,16 @@ const RoomReservationList = () => {
     from: Date | null;
     to: Date | null;
   }>({ from: null, to: null });
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  useEffect(() => {
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+
+    debounceTimeout.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 2000); // 2 segundos
+  }, [search]);
   const handleBack = () => {
     navigate("/");
   };
@@ -59,7 +76,9 @@ const RoomReservationList = () => {
     const today = new Date();
     const pastWeek = new Date(today);
     pastWeek.setDate(today.getDate() - 7);
-    const initial = { from: pastWeek, to: today };
+    const plusWeek = new Date(today);
+    plusWeek.setDate(today.getDate() + 7);
+    const initial = { from: pastWeek, to: plusWeek };
     setRange(initial);
     setInitialRange(initial); // guardar el rango original
   }, []);
@@ -81,7 +100,9 @@ const RoomReservationList = () => {
       initialHighlightHandled.current = false;
 
       // Buscar si la reserva ya está en la lista actual
-      const existsInList = reservations.some(r => r.id === highlightReservaId);
+      const existsInList = reservations.some(
+        (r) => r.id === highlightReservaId
+      );
 
       // Si no está en la lista actual, recarga los datos forzadamente
       if (!existsInList) {
@@ -108,9 +129,9 @@ const RoomReservationList = () => {
     };
 
     window.addEventListener("force-refresh", handleForceRefresh);
-    return () => window.removeEventListener("force-refresh", handleForceRefresh);
+    return () =>
+      window.removeEventListener("force-refresh", handleForceRefresh);
   }, [page, range.from, range.to, search, status, reservations]);
-
 
   // Reset página al cambiar filtros
   useEffect(() => {
@@ -174,7 +195,7 @@ const RoomReservationList = () => {
             to: range.to.toISOString().split("T")[0],
             page,
             per_page: perPage,
-            search,
+            search: debouncedSearch, // <-- aquí usas el valor con debounce
             status,
           },
         });
@@ -189,8 +210,7 @@ const RoomReservationList = () => {
     };
 
     fetchReservations();
-  }, [range.from, range.to, page, search, status]);
-
+  }, [range.from, range.to, page, debouncedSearch, status]);
   // Fetch historial para modal
   const fetchHistorial = async (reservaId: number, forceRefresh = false) => {
     if (!forceRefresh && historialCache[reservaId]) {
@@ -302,7 +322,6 @@ const RoomReservationList = () => {
     setShowModal(true);
   };
 
-
   const handleCancelClick = (reserva: any) => {
     const toastId = `cancel-reserva-${reserva.id}`;
 
@@ -312,7 +331,10 @@ const RoomReservationList = () => {
     toast(
       (t) => (
         <div>
-          <p>¿Estás seguro de que deseas cancelar esta reserva <strong>#{reserva.id}</strong>?</p>
+          <p>
+            ¿Estás seguro de que deseas cancelar esta reserva{" "}
+            <strong>#{reserva.id}</strong>?
+          </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button
               className="btn btn-sm btn-danger"
@@ -368,9 +390,6 @@ const RoomReservationList = () => {
     );
   };
 
-
-
-
   return (
     <div className="mt-4 px-3">
       <div className="table-responsive rounded shadow p-3 mt-4">
@@ -383,8 +402,8 @@ const RoomReservationList = () => {
                 onClick={handleBack}
                 title="Regresar"
                 style={{
-                  cursor: 'pointer',
-                  fontSize: '2rem',
+                  cursor: "pointer",
+                  fontSize: "2rem",
                 }}
               />
               <h2 className="fw-bold m-0">Reservas de Aulas</h2>
@@ -392,7 +411,11 @@ const RoomReservationList = () => {
           </Col>
 
           {/* Columna derecha: botón alineado a la derecha */}
-          <Col xs={12} md={6} className="d-flex justify-content-end mt-3 mt-md-0">
+          <Col
+            xs={12}
+            md={6}
+            className="d-flex justify-content-end mt-3 mt-md-0"
+          >
             <Button
               onClick={() => navigate("/qrScan")}
               className="btn btn-outline-success d-flex align-items-center gap-2 px-3 py-2 me-3"
@@ -408,9 +431,7 @@ const RoomReservationList = () => {
               Crear reserva
             </Button>
           </Col>
-
         </Row>
-
 
         <Filters
           from={range.from}
@@ -440,7 +461,9 @@ const RoomReservationList = () => {
               const today = new Date();
               const pastWeek = new Date(today);
               pastWeek.setDate(today.getDate() - 7);
-              setRange({ from: pastWeek, to: today });
+              const plusWeek = new Date(today);
+              plusWeek.setDate(today.getDate() + 7);
+              setRange({ from: pastWeek, to: plusWeek });
             }
             setSearch("");
             setStatus("todos");
@@ -510,7 +533,8 @@ const RoomReservationList = () => {
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform = "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -529,13 +553,16 @@ const RoomReservationList = () => {
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform = "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
                               }
                               onClick={() => handleEditClick(res)}
-                              disabled={res.estado.toLowerCase() !== "pendiente"}
+                              disabled={
+                                res.estado.toLowerCase() !== "pendiente"
+                              }
                             >
                               <FaEdit className="fs-5" />
                             </button>
@@ -549,7 +576,8 @@ const RoomReservationList = () => {
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform = "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -558,8 +586,6 @@ const RoomReservationList = () => {
                             >
                               <FaExchangeAlt className="fs-5" />
                             </button>
-
-
 
                             <button
                               className="btn btn-outline-danger rounded-circle"
@@ -570,13 +596,16 @@ const RoomReservationList = () => {
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform = "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
                               }
                               onClick={() => handleCancelClick(res)}
-                              disabled={res.estado.toLowerCase() !== "pendiente"}
+                              disabled={
+                                res.estado.toLowerCase() !== "pendiente"
+                              }
                             >
                               <FaTimes className="fs-5" />
                             </button>

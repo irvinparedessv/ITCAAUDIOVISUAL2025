@@ -27,18 +27,30 @@ export function formatTo12h(time24: string): string {
 }
 
 export function formatDateTimeTo12h(dateTimeStr?: string | null): string {
-  if (!dateTimeStr) return "—"; // valor predeterminado si es null o undefined
+  if (!dateTimeStr) return "—";
 
   const date = new Date(dateTimeStr);
-  if (isNaN(date.getTime())) return "—"; // si no es una fecha válida
+  if (isNaN(date.getTime())) return "—";
 
+  // Fecha en formato DD/MM/YYYY
+  const formattedDate = date.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  // Hora en formato 12h
   const hours = date.getHours();
   const minutes = date.getMinutes();
   const ampm = hours >= 12 ? "PM" : "AM";
   const formattedHours = hours % 12 || 12;
   const formattedMinutes = minutes.toString().padStart(2, "0");
-  return `${formattedHours}:${formattedMinutes} ${ampm}`;
+
+  const formattedTime = `${formattedHours}:${formattedMinutes} ${ampm}`;
+
+  return `${formattedDate} ${formattedTime}`;
 }
+
 
 
 export function formatTimeRangeTo12h(range24: string): string {

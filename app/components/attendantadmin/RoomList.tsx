@@ -71,7 +71,9 @@ export default function AulaList() {
       (t) => (
         <div>
           <p>
-            ¿Desea eliminar el aula <strong>{name}</strong>?
+            ¿Desea eliminar el espacio <strong>{name}</strong> (Al eliminar el
+            espacio esta sera deshabilitada y las reservas pendientes
+            canceladas)?
           </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button

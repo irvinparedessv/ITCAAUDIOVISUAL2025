@@ -18,7 +18,6 @@ export default function EquipmentEditPage() {
       try {
         if (id) {
           const data = await getEquipoById(Number(id));
-          console.log("ID recibido:", id);
           if (!data) {
             toast.error("Equipo no encontrado");
             setEquipo(null); // explícitamente nulo, aunque ya está
@@ -28,12 +27,10 @@ export default function EquipmentEditPage() {
           setEquipo({
             ...data,
             tipo_reserva_id: data.tipo_reserva_id || 0,
-            imagen: data.imagen || '',
-            imagen_url: data.imagen_url || undefined
+            imagen: data.imagen || "",
+            imagen_url: data.imagen_url || undefined,
           });
         }
-
-
       } catch (error: any) {
         if (error.response?.status === 404) {
           setEquipo(null); // Para mostrar <EquipoNoEncontrado />
@@ -59,7 +56,7 @@ export default function EquipmentEditPage() {
       // Construir los datos del formulario
       const updateData: any = {
         ...data,
-        id: equipoId
+        id: equipoId,
       };
 
       // Solo incluir imagen si es un archivo nuevo
@@ -75,25 +72,23 @@ export default function EquipmentEditPage() {
     }
   };
 
-
   if (loading) {
-    return <>
-      <div className="text-center my-5">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-3">Cargando datos...</p>
-      </div>
-    </>
-
+    return (
+      <>
+        <div className="text-center my-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando datos...</p>
+        </div>
+      </>
+    );
   }
 
   if (!equipo) {
     return <EquipoNoEncontrado />;
   }
 
-
   return (
     <div className="container py-4">
-
       <EquipmentForm
         equipoEditando={equipo}
         onSubmit={handleSubmit}

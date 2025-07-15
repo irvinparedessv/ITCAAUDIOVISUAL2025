@@ -41,7 +41,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = !!token && !!user;
 
   useEffect(() => {
-    console.log("[AuthContext] Cargando credenciales...");
     const loadCredentials = async () => {
       try {
         const storedToken = localStorage.getItem("token");
@@ -49,7 +48,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const storedTheme = localStorage.getItem("darkMode");
 
         if (!storedToken || !storedUser) {
-          console.log("[AuthContext] No hay token o usuario");
           setIsLoading(false);
           return;
         }
@@ -59,13 +57,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
         if (response.data.valid) {
-          console.log("[AuthContext] Token válido. Estableciendo usuario.");
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
           if (storedTheme) setInitialTheme(JSON.parse(storedTheme));
           initializeEcho(storedToken);
         } else {
-          console.log("[AuthContext] Token inválido.");
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           localStorage.removeItem("darkMode");
@@ -92,7 +88,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const handleStorage = (event: StorageEvent) => {
       if (event.key === "logout") {
-        console.log("Logout detectado desde otra pestaña");
         setToken(null);
         setUser(null);
         setInitialTheme(null);

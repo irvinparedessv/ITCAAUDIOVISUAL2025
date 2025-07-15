@@ -36,9 +36,6 @@ function AppContent() {
   const shouldShowNavbar =
     isAuthenticated && !hideNavbarRoutes.includes(location.pathname);
 
-  // Puedes usar `theme` para condicionar algo, por ejemplo:
-  console.log("Tema actual:", darkMode);
-
   return (
     <>
       {shouldShowNavbar && <NavbarMenu />}

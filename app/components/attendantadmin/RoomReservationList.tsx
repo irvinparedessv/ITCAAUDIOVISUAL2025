@@ -387,7 +387,7 @@ const RoomReservationList = () => {
                   fontSize: '2rem',
                 }}
               />
-              <h2 className="fw-bold m-0">Reservas de Aulas</h2>
+              <h2 className="fw-bold m-0">Reservas de Espacios</h2>
             </div>
           </Col>
 
@@ -468,7 +468,7 @@ const RoomReservationList = () => {
                 <thead className="table-dark">
                   <tr>
                     <th>#</th>
-                    <th>Aula</th>
+                    <th>Espacio</th>
                     <th>Fecha</th>
                     <th>Horario</th>
                     <th>Reservado por</th>

@@ -535,7 +535,7 @@ const NavbarMenu = () => {
                   className="d-flex align-items-center gap-2 text-dark"
                   onClick={handleCloseSidebar}
                 >
-                  <FaCalendarAlt className="me-2" /> Reservas de Aulas
+                  <FaCalendarAlt className="me-2" /> Reservas de Espacios
                 </Dropdown.Item>
                 <Dropdown.Item
                   as={Link}

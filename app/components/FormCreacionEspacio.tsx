@@ -17,6 +17,7 @@ import { diasSemana } from "../constants/day";
 import type { AvailableTime } from "../types/aula";
 import * as exifr from "exifr";
 import EspacioNoEncontrado from "./error/EspacioNoEncontrado";
+import { formatDate } from "~/utils/time";
 
 type RenderImageInfo = {
   file: File | null;
@@ -85,12 +86,12 @@ export const CreateSpaceForm = () => {
     }
   }, [id]);
 
-  const checkIf360ByAspect = (file: File): Promise<boolean> => {
+  const checkIfPanoramicByAspect = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         const aspect = img.width / img.height;
-        resolve(Math.abs(aspect - 2) < 0.1);
+        resolve(aspect > 1.5); // Panorámica si aspect ratio mayor a 1.5
       };
       img.src = URL.createObjectURL(file);
     });
@@ -106,6 +107,14 @@ export const CreateSpaceForm = () => {
     } catch {
       return false;
     }
+  };
+
+  const detectIs360 = async (file: File): Promise<boolean> => {
+    const isExif360 = await checkIf360ByExif(file);
+    if (isExif360) return true;
+
+    const isPanoramic = await checkIfPanoramicByAspect(file);
+    return isPanoramic; // Si es panorámica, cuenta como 360 también
   };
 
   const handleDropImages = async (acceptedFiles: File[]) => {
@@ -125,12 +134,7 @@ export const CreateSpaceForm = () => {
     const results: RenderImageInfo[] = [];
 
     for (const file of validFiles) {
-      const [isExif360, isAspect360] = await Promise.all([
-        checkIf360ByExif(file),
-        checkIf360ByAspect(file),
-      ]);
-      const is360 = isExif360 || isAspect360;
-
+      const is360 = await detectIs360(file);
       results.push({
         file,
         preview: URL.createObjectURL(file),
@@ -250,8 +254,21 @@ export const CreateSpaceForm = () => {
       );
       if (!isEdit) handleClear();
       navigate("/rooms");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+
+      if (err.response?.status === 422) {
+        const errors = err.response.data.errors;
+        if (errors) {
+          Object.values(errors).forEach((msgs) => {
+            (msgs as string[]).forEach((msg) => {
+              toast.error(msg);
+            });
+          });
+          return;
+        }
+      }
+
       toast.error(
         isEdit ? "Error actualizando el espacio" : "Error creando el espacio"
       );
@@ -275,23 +292,22 @@ export const CreateSpaceForm = () => {
 
   return (
     <div className="form-container position-relative">
-  <div
-    className="d-flex align-items-center gap-2 gap-md-3"
-    style={{ marginBottom: '30px' }}
-  >
-    <FaLongArrowAltLeft
-      onClick={handleBack}
-      title="Regresar"
-      style={{
-        cursor: 'pointer',
-        fontSize: '2rem',
-      }}
-    />
-    <h2 className="fw-bold m-0">
-      {isEdit ? "Editar Espacio" : "Crear Nuevo Espacio"}
-    </h2>
-  </div>
-
+      <div
+        className="d-flex align-items-center gap-2 gap-md-3"
+        style={{ marginBottom: "30px" }}
+      >
+        <FaLongArrowAltLeft
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: "pointer",
+            fontSize: "2rem",
+          }}
+        />
+        <h2 className="fw-bold m-0">
+          {isEdit ? "Editar Espacio" : "Crear Nuevo Espacio"}
+        </h2>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -337,7 +353,7 @@ export const CreateSpaceForm = () => {
                     }}
                   />
                   <small className="text-muted mb-1">
-                    {img.is360 ? "✅ 360° detectada" : "❌ No 360°"}
+                    {img.is360 ? "✅ Panorámica/360° detectada" : "❌ Normal"}
                   </small>
                   <button
                     type="button"
@@ -352,6 +368,7 @@ export const CreateSpaceForm = () => {
           )}
         </div>
 
+        {/* Horarios */}
         <div className="mb-4">
           <h5 className="mb-3">Horarios disponibles</h5>
           <div className="row mb-3">
@@ -428,7 +445,7 @@ export const CreateSpaceForm = () => {
                 className="list-group-item d-flex justify-content-between align-items-center"
               >
                 <span>
-                  Del {t.start_date} al {t.end_date}–{" "}
+                  Del {formatDate(t.start_date)} al {formatDate(t.end_date)} –{" "}
                   {t.days
                     .map((d) => diasSemana.find((x) => x.value === d)?.label)
                     .join(", ")}

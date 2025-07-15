@@ -51,14 +51,15 @@ export function formatDateTimeTo12h(dateTimeStr?: string | null): string {
   return `${formattedDate} ${formattedTime}`;
 }
 
-
-
 export function formatTimeRangeTo12h(range24: string): string {
   const [start, end] = range24.split(" - ");
   return `${formatTo12h(start)} - ${formatTo12h(end)}`;
 }
 
-
-
+export const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  const [yyyy, mm, dd] = dateStr.split("-");
+  return `${dd}/${mm}/${yyyy}`;
+};
 
 export const timeOptions = generateTimeOptions();

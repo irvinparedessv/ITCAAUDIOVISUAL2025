@@ -8,7 +8,7 @@ export type OptionType = {
   value: string;
   label: string;
   tipo?: string;
-  tipo_equipo_id?: string;
+  tipoequipo?: string;
 };
 
 export type ReservaData = {
@@ -18,6 +18,7 @@ export type ReservaData = {
   horaFin: string;
   ubicacion: string;
   equipos: string[];
+  documento?: File;
 };
 export type ReservaDataRoom = {
   aula: string;

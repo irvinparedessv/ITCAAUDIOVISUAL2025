@@ -278,6 +278,45 @@ const InputBox = ({
     );
   }
 
+  if (step === Steps.SubirDocumento) {
+    return (
+      <div className="chat-input-file">
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              setReservaData((prev: any) => ({
+                ...prev,
+                documento: file,
+              }));
+              setMessages((prev: any) => [
+                ...prev,
+                {
+                  id: prev.length + 1,
+                  text: file.name,
+                  sender: "user",
+                },
+              ]);
+              addBotMessage("Gracias. Ahora selecciona la ubicacion:");
+              setStep("seleccionarUbicacion");
+            }
+          }}
+        />
+        <button
+          className="btn btn-secondary"
+          onClick={() => {
+            setStep(Steps.Initial);
+          }}
+          style={{ marginLeft: "10px" }}
+        >
+          Cancelar
+        </button>
+      </div>
+    );
+  }
+
   if (step === "horaFinEquipo") {
     return (
       <div className="chat-input">

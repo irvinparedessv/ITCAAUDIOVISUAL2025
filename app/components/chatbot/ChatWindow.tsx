@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import React, { forwardRef } from "react";
 import { formatDate } from "./../../utils/time";
+import { Steps } from "./steps";
 
 type Props = {
   messages: MessageType[];
@@ -15,7 +16,7 @@ type Props = {
   handleOptionClick: (option: string) => void;
   handleUbicacionClick: (ubicacion: string) => void;
   handleTipoClick: (tipo: string, label: string) => void;
-  handleEquipoClick: (equipo: string) => void;
+  handleEquipoClick: (equipo: string, tipoEquipo: string) => void;
   handleDiasClick: (dia: string) => void;
   handleAulaClick: (aula: string) => void;
   handleAulaFechaClick: (fecha: string) => void;
@@ -121,26 +122,51 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
         )}
       </div>
     );
-    const renderEquipos = () => (
-      <div className="equipo-botones">
-        <label>{reservaData.tipo}</label>
-        {equipos
-          .filter((equipo) => equipo.tipo == reservaData.tipo)
-          .map((equipo) => (
-            <button
-              key={equipo.value}
-              className={`equipo-btn ${
-                reservaData.equipos.includes(equipo.value) ? "seleccionado" : ""
-              }`}
-              onClick={() => handleEquipoClick(equipo.value)}
-            >
-              {reservaData.equipos.includes(equipo.value) ? "✅ " : ""}
-              {equipo.label}
-            </button>
-          ))}
-      </div>
-    );
+    const renderEquipos = () => {
+      // Obtener todos los tipoEquipo ya seleccionados
+      const tiposSeleccionados = reservaData.equipos
+        .map((e) => {
+          const equipoObj = equipos.find((eq) => eq.value === e);
+          return equipoObj?.tipoequipo;
+        })
+        .filter(Boolean);
 
+      return (
+        <div className="equipo-botones">
+          {equipos
+            .filter((equipo) => {
+              // Mostrar solo si:
+              // - Es del tipo correcto
+              // - Y (no hay otro del mismo tipo seleccionado O es el mismo equipo seleccionado)
+              const yaSeleccionado = reservaData.equipos.includes(equipo.value);
+              const tipoYaSeleccionado = tiposSeleccionados.includes(
+                equipo.tipoequipo
+              );
+
+              return (
+                equipo.tipo == reservaData.tipo &&
+                (!tipoYaSeleccionado || yaSeleccionado)
+              );
+            })
+            .map((equipo) => (
+              <button
+                key={equipo.value}
+                className={`equipo-btn ${
+                  reservaData.equipos.includes(equipo.value)
+                    ? "seleccionado"
+                    : ""
+                }`}
+                onClick={() =>
+                  handleEquipoClick(equipo.value, equipo.tipoequipo ?? "")
+                }
+              >
+                {reservaData.equipos.includes(equipo.value) ? "✅ " : ""}
+                {equipo.label}
+              </button>
+            ))}
+        </div>
+      );
+    };
     const renderSeleccionarAula = () => (
       <div className="aula-botones">
         {espacios.map((aula) => (
@@ -238,19 +264,6 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
         <p>
           🕒 De: {reservaDataRoom.horarioInicio} a {reservaDataRoom.horarioFin}
         </p>
-      </div>
-    );
-    const renderExitoReserva = () => (
-      <div className="mensaje-exito">
-        ✅ Tu reserva de aula fue realizada con éxito.
-        <button onClick={() => setStep("initial")}>Volver al inicio</button>
-      </div>
-    );
-
-    const renderErrorReserva = () => (
-      <div className="mensaje-error">
-        ❌ Ocurrió un error al realizar la reserva.
-        <button onClick={() => setStep("initial")}>Volver al inicio</button>
       </div>
     );
 

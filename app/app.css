@@ -581,7 +581,7 @@ input[type="time"] {
   color: white;
   border: none;
   border-radius: 20px;
-  padding: 0 15px;
+  padding: 10px 15px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -1471,4 +1471,13 @@ input.form-control.border-color-login {
 .tipo-botones,
 .dias-botones {
   display: contents;
+}
+
+.chat-input-file input {
+  padding: 1px;
+  margin-right: 10px;
+  background-color: var(--bs-card-bg);
+  color: var(--bs-body-color);
+  margin: 1rem;
+  width: 90%;
 }

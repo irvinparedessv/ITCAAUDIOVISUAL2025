@@ -11,7 +11,7 @@ import Spinner from "react-bootstrap/Spinner";
 import moment from "moment";
 import "moment/locale/es";
 
-moment.lang("es");
+moment.locale("es");
 moment.updateLocale("es", {
   months: [
     "enero",

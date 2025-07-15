@@ -1,5 +1,6 @@
-import { Steps } from "./steps";
+import { handledSteps, Steps } from "./steps";
 import type { ReservaDataRoom } from "./types";
+import { formatDate } from "./../../utils/time";
 
 type Props = {
   inputMessage: string;
@@ -54,7 +55,20 @@ const InputBox = ({
     }
     return true;
   };
+  const validateDateAula = (selectedDateStr: string) => {
+    const [year, month, day] = selectedDateStr.split("-").map(Number);
+    const selectedDate = new Date(year, month - 1, day); // local time
+    selectedDate.setHours(0, 0, 0, 0);
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      addBotMessage("No puedes seleccionar una fecha pasada.");
+      return false;
+    }
+    return true;
+  };
   const validateStartDateTime = (dateStr: string, timeStr: string) => {
     if (!dateStr || !timeStr) return false;
 
@@ -92,7 +106,11 @@ const InputBox = ({
       if (!validateDate(reservaData.fecha)) return;
       setMessages((prev: any) => [
         ...prev,
-        { id: prev.length + 1, text: reservaData.fecha, sender: "user" },
+        {
+          id: prev.length + 1,
+          text: formatDate(reservaData.fecha),
+          sender: "user",
+        },
       ]);
       addBotMessage("Perfecto, Seleccione la hora de inicio.");
       setStep("horaInicioEquipo");
@@ -121,12 +139,45 @@ const InputBox = ({
       addBotMessage("Perfecto, Seleccione el tipo de evento.");
       setStep("mostrarTipoEventos");
     } else if (step === Steps.SeleccionarFechaAula) {
-      if (!validateDate(reservaDataRoom.fecha)) return;
+      if (!validateDateAula(reservaDataRoom.fecha)) return;
       setMessages((prev: any) => [
         ...prev,
-        { id: prev.length + 1, text: reservaDataRoom.fecha, sender: "user" },
+        {
+          id: prev.length + 1,
+          text: formatDate(reservaDataRoom.fecha),
+          sender: "user",
+        },
       ]);
-      addBotMessage("Perfecto, Seleccione la hora de inicio");
+      if (reservaDataRoom.type === "clase_recurrente") {
+        addBotMessage("Ahora seleccione la fecha de fin de la reserva:");
+        setStep(Steps.SeleccionarFechaFinAula);
+      } else {
+        addBotMessage("Perfecto, Seleccione la hora de inicio");
+        setStep(Steps.SeleccionarHoraInicioAula);
+      }
+    } else if (step === Steps.SeleccionarFechaFinAula) {
+      setMessages((prev: any) => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          text: reservaDataRoom.fecha_fin
+            ? formatDate(reservaDataRoom.fecha_fin)
+            : "",
+          sender: "user",
+        },
+      ]);
+      addBotMessage("Perfecto, Debe Seleccionar los dias");
+      setStep(Steps.SeleccionarDias);
+    } else if (step === Steps.SeleccionarDias) {
+      setMessages((prev: any) => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          text: reservaDataRoom.dias ? reservaDataRoom.dias.join(", ") : "",
+          sender: "user",
+        },
+      ]);
+      addBotMessage("Perfecto, Debe Seleccionar la hora de inicio");
       setStep(Steps.SeleccionarHoraInicioAula);
     } else if (step === Steps.SeleccionarHoraInicioAula) {
       if (
@@ -169,6 +220,13 @@ const InputBox = ({
         },
       ]);
       setStep(Steps.ResumenAula);
+    } else if (step === Steps.SeleccionarTituloReservaAula) {
+      setMessages((prev: any) => [
+        ...prev,
+        { id: prev.length + 1, text: reservaDataRoom.titulo, sender: "user" },
+      ]);
+      addBotMessage("Perfecto, Seleccione el tipo de reserva.");
+      setStep(Steps.SeleccionarTipoReservaAula);
     }
   };
 
@@ -204,6 +262,7 @@ const InputBox = ({
       <div className="chat-input">
         <input
           type="time"
+          step="1800"
           value={reservaData.horaInicio || ""}
           onChange={(e) =>
             setReservaData((prev: any) => ({
@@ -224,6 +283,7 @@ const InputBox = ({
       <div className="chat-input">
         <input
           type="time"
+          step="1800"
           value={reservaData.horaFin || ""}
           onChange={(e) =>
             setReservaData((prev: any) => ({
@@ -286,10 +346,12 @@ const InputBox = ({
   }
 
   if (step === Steps.SeleccionarFechaAula) {
+    const todayStr = new Date().toISOString().split("T")[0];
     return (
       <div className="chat-input">
         <input
           type="date"
+          min={todayStr}
           value={reservaDataRoom.fecha || ""}
           onChange={(e) =>
             setReservaDataRoom((prev: any) => ({
@@ -304,7 +366,56 @@ const InputBox = ({
       </div>
     );
   }
+  if (step === Steps.SeleccionarFechaFinAula) {
+    const todayStr = new Date().toISOString().split("T")[0];
+    return (
+      <div className="chat-input">
+        <input
+          type="date"
+          min={todayStr}
+          value={reservaDataRoom.fecha_fin || ""}
+          onChange={(e) =>
+            setReservaDataRoom((prev: any) => ({
+              ...prev,
+              fecha_fin: e.target.value,
+            }))
+          }
+        />
+        <button onClick={handleNext} disabled={!reservaDataRoom.fecha}>
+          Siguiente
+        </button>
+      </div>
+    );
+  }
+  if (step === Steps.SeleccionarTituloReservaAula) {
+    return (
+      <div className="chat-input">
+        <input
+          type="text"
+          value={reservaDataRoom.titulo || ""}
+          onChange={(e) =>
+            setReservaDataRoom((prev: any) => ({
+              ...prev,
+              titulo: e.target.value,
+            }))
+          }
+        />
+        <button onClick={handleNext} disabled={!reservaDataRoom.titulo}>
+          Siguiente
+        </button>
+      </div>
+    );
+  }
 
+  if (step === Steps.SeleccionarDias) {
+    return (
+      <div className="chat-input">
+        <button onClick={handleNext} disabled={reservaDataRoom.dias.length < 1}>
+          Siguiente
+        </button>
+      </div>
+    );
+  }
   if (step === Steps.SeleccionarHoraInicioAula) {
     return (
       <div className="chat-input">
@@ -369,18 +480,19 @@ const InputBox = ({
   if (step === Steps.Initial) {
     return null;
   }
-
-  return (
-    <div className="chat-input">
-      <input
-        type="text"
-        value={inputMessage}
-        onChange={(e) => setInputMessage(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && onSend()}
-      />
-      <button onClick={onSend}>Enviar</button>
-    </div>
-  );
+  if (!handledSteps.includes(step)) {
+    return (
+      <div className="chat-input">
+        <input
+          type="text"
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && onSend()}
+        />
+        <button onClick={onSend}>Enviar</button>
+      </div>
+    );
+  }
 };
 
 export default InputBox;

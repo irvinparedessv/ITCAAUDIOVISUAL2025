@@ -7,6 +7,8 @@ export type Message = {
 export type OptionType = {
   value: string;
   label: string;
+  tipo?: string;
+  tipo_equipo_id?: string;
 };
 
 export type ReservaData = {
@@ -23,4 +25,7 @@ export type ReservaDataRoom = {
   fecha: string;
   horarioInicio: string;
   horarioFin: string;
+  titulo: string;
+  fecha_fin?: string;
+  dias: string[];
 };

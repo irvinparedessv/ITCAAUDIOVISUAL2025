@@ -6,10 +6,31 @@ export enum Steps {
   MostrarTipoEventos = "mostrarTipoEventos",
   MostrarEquipos = "mostrarEquipos",
   SeleccionarAula = "seleccionarAula",
+  SeleccionarTituloReservaAula = "SeleccionarTituloReservaAula",
   SeleccionarTipoReservaAula = "SeleccionarTipoReservaAula",
   SeleccionarFechaAula = "seleccionarFechaAula",
+  SeleccionarFechaFinAula = "SeleccionarFechaFinAula",
+  SeleccionarDias = "SeleccionarDias",
   SeleccionarHoraInicioAula = "seleccionarHoraInicioAula",
   SeleccionarHoraFinAula = "seleccionarHoraFinAula",
   Resumen = "resumen",
   ResumenAula = "resumenAula",
 }
+
+export const handledSteps = [
+  "fechaEquipo",
+  "horaInicioEquipo",
+  "horaFinEquipo",
+  Steps.MostrarEquipos,
+  Steps.Resumen,
+  Steps.SeleccionarAula,
+  Steps.SeleccionarTipoReservaAula,
+  Steps.SeleccionarFechaAula,
+  Steps.SeleccionarFechaFinAula,
+  Steps.SeleccionarTituloReservaAula,
+  Steps.SeleccionarHoraInicioAula,
+  Steps.SeleccionarHoraFinAula,
+  Steps.ResumenAula,
+  Steps.Initial,
+  // ... agrega cualquier otro paso que tenga UI específica
+];

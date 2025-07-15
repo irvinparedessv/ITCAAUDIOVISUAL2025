@@ -1,3 +1,4 @@
+import { Spinner } from "react-bootstrap";
 import Message from "./Message";
 import type {
   Message as MessageType,
@@ -6,6 +7,7 @@ import type {
   ReservaDataRoom,
 } from "./types";
 import React, { forwardRef } from "react";
+import { formatDate } from "./../../utils/time";
 
 type Props = {
   messages: MessageType[];
@@ -14,6 +16,7 @@ type Props = {
   handleUbicacionClick: (ubicacion: string) => void;
   handleTipoClick: (tipo: string, label: string) => void;
   handleEquipoClick: (equipo: string) => void;
+  handleDiasClick: (dia: string) => void;
   handleAulaClick: (aula: string) => void;
   handleAulaFechaClick: (fecha: string) => void;
   completarReserva: () => void;
@@ -21,6 +24,7 @@ type Props = {
   ubicaciones: OptionType[];
   equipos: OptionType[];
   tipos: OptionType[];
+  espacios: OptionType[];
   reservaData: ReservaData;
   reservaDataRoom: ReservaDataRoom;
   setStep: (step: string) => void;
@@ -38,10 +42,12 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
       handleAulaClick,
       handleTypeClick,
       handleEquipoClick,
+      handleDiasClick,
       handleAulaFechaClick,
       handleTipoClick,
       completarReserva,
       ubicaciones,
+      espacios,
       equipos,
       reservaData,
       reservaDataRoom,
@@ -58,7 +64,7 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
             className={`ubicacion-btn ${
               reservaData.ubicacion === ubicacion.label ? "seleccionado" : ""
             }`}
-            onClick={() => handleUbicacionClick(ubicacion.value)}
+            onClick={() => handleUbicacionClick(ubicacion.label)}
           >
             {ubicacion.label}
           </button>
@@ -117,36 +123,67 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
     );
     const renderEquipos = () => (
       <div className="equipo-botones">
-        {equipos.map((equipo) => (
-          <button
-            key={equipo.value}
-            className={`equipo-btn ${
-              reservaData.equipos.includes(equipo.label) ? "seleccionado" : ""
-            }`}
-            onClick={() => handleEquipoClick(equipo.value)}
-          >
-            {reservaData.equipos.includes(equipo.value) ? "✅ " : ""}
-            {equipo.label}
-          </button>
-        ))}
+        <label>{reservaData.tipo}</label>
+        {equipos
+          .filter((equipo) => equipo.tipo == reservaData.tipo)
+          .map((equipo) => (
+            <button
+              key={equipo.value}
+              className={`equipo-btn ${
+                reservaData.equipos.includes(equipo.value) ? "seleccionado" : ""
+              }`}
+              onClick={() => handleEquipoClick(equipo.value)}
+            >
+              {reservaData.equipos.includes(equipo.value) ? "✅ " : ""}
+              {equipo.label}
+            </button>
+          ))}
       </div>
     );
 
     const renderSeleccionarAula = () => (
       <div className="aula-botones">
-        {ubicaciones.map((aula) => (
+        {espacios.map((aula) => (
           <button
             key={aula.value}
             className={`btn btn-primary ${
               reservaData.ubicacion === aula.label ? "seleccionado" : ""
             }`}
-            onClick={() => handleAulaClick(aula.label)}
+            onClick={() => handleAulaClick(aula.value)}
           >
             {aula.label}
           </button>
         ))}
       </div>
     );
+    const renderSeleccionarDias = () => {
+      const diasDisponibles = [
+        "Lunes",
+        "Martes",
+        "Miércoles",
+        "Jueves",
+        "Viernes",
+        "Sábado",
+        "Domingo",
+      ];
+
+      return (
+        <div className="dias-botones">
+          {diasDisponibles.map((dia) => (
+            <button
+              key={dia}
+              className={`btn btn-primary ${
+                reservaDataRoom.dias?.includes(dia) ? "seleccionado" : ""
+              }`}
+              onClick={() => handleDiasClick(dia)}
+            >
+              {reservaDataRoom.dias?.includes(dia) ? "✅ " : ""}
+              {dia}
+            </button>
+          ))}
+        </div>
+      );
+    };
 
     const renderSeleccionarTipo = () => (
       <div className="tipo-botones">
@@ -159,20 +196,50 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
         >
           evento
         </button>
+        <button
+          key={"clase"}
+          className={`btn btn-primary ${
+            reservaDataRoom.type === "clase" ? "seleccionado" : ""
+          }`}
+          onClick={() => handleTypeClick("clase")}
+        >
+          clase
+        </button>
+        <button
+          key={"clase_recurrente"}
+          className={`btn btn-primary ${
+            reservaDataRoom.type === "clase_recurrente" ? "seleccionado" : ""
+          }`}
+          onClick={() => handleTypeClick("clase_recurrente")}
+        >
+          clase_recurrente
+        </button>
       </div>
     );
 
     const renderResumenAula = () => (
       <div className="resumen-aula">
         <h4>Resumen de tu reserva de espacio:</h4>
-        <p>🏫 Aula: {reservaDataRoom.aula}</p>
-        <p>📅 Fecha: {reservaDataRoom.fecha}</p>
+
+        <p>
+          🏫 Aula:
+          {(() => {
+            const aula = espacios.find((t) => t.value === reservaDataRoom.aula);
+            return aula?.label || reservaDataRoom.aula;
+          })()}
+        </p>
+        <p>📝 Título: {reservaDataRoom.titulo}</p>
+        <p>📌 Tipo: {reservaDataRoom.type}</p>
+        <p>📅 Fecha inicio: {formatDate(reservaDataRoom.fecha)}</p>
+        {reservaDataRoom.type === "clase_recurrente" &&
+          reservaDataRoom.fecha_fin && (
+            <p>📅 Fecha fin: {formatDate(reservaDataRoom.fecha_fin)}</p>
+          )}
         <p>
           🕒 De: {reservaDataRoom.horarioInicio} a {reservaDataRoom.horarioFin}
         </p>
       </div>
     );
-
     const renderExitoReserva = () => (
       <div className="mensaje-exito">
         ✅ Tu reserva de aula fue realizada con éxito.
@@ -220,8 +287,9 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
         {step === "resumen" && renderResumen()}
         {step === "seleccionarAula" && renderSeleccionarAula()}
         {step === "SeleccionarTipoReservaAula" && renderSeleccionarTipo()}
-
+        {step === "SeleccionarDias" && renderSeleccionarDias()}
         {step === "resumenAula" && renderResumenAula()}
+        {step === "loading" && <Spinner animation="border" variant="primary" />}
         <div ref={ref}></div>
       </div>
     );

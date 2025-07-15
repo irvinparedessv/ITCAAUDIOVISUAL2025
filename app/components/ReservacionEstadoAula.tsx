@@ -53,7 +53,7 @@ export default function AulaReservaEstado({
 
   return (
     <div className="form-container">
-      <h2 className="mb-4 text-center fw-bold">Actualizar Estado de Reserva de Aula</h2>
+      <h2 className="mb-4 text-center fw-bold">Actualizar Estado de Reserva de Espacio</h2>
       <form onSubmit={handleSubmit}>
         {/* Estado */}
         <div className="mb-4">

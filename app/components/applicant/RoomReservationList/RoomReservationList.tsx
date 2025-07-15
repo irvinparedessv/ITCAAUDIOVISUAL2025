@@ -465,7 +465,7 @@ const RoomReservationList = () => {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Aula</th>
+                  <th>Espacio</th>
                   <th>Recurrente</th>
                   <th>Fecha</th>
                   <th>Fecha Finalizacion</th>

@@ -36,6 +36,7 @@ const Chatbot = () => {
     handleAulaFechaClick,
     handleTipoClick,
     handleAulaClick,
+    handleTypeClick,
   } = useChatbotLogic(user);
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -65,7 +66,10 @@ const Chatbot = () => {
   }, [isOpen, setIsOpen]);
 
   return (
-    <div className={`chatbot-container ${isOpen ? "open" : ""}`} ref={containerRef}>
+    <div
+      className={`chatbot-container ${isOpen ? "open" : ""}`}
+      ref={containerRef}
+    >
       {isOpen && (
         <>
           <div className="chat-header">
@@ -88,6 +92,7 @@ const Chatbot = () => {
               handleEquipoClick={handleEquipoClick}
               handleAulaClick={handleAulaClick}
               handleTipoClick={handleTipoClick}
+              handleTypeClick={handleTypeClick}
               handleAulaFechaClick={handleAulaFechaClick}
               completarReserva={completarReserva}
               setReservaData={setReservaData}
@@ -120,7 +125,11 @@ const Chatbot = () => {
 
       {/* Mostrar botón de burbuja solo si el chatbot está cerrado */}
       {!isOpen && (
-        <button className="chatbot-button" onClick={toggleChat} aria-label="Abrir chatbot">
+        <button
+          className="chatbot-button"
+          onClick={toggleChat}
+          aria-label="Abrir chatbot"
+        >
           <FaCommentDots />
         </button>
       )}

@@ -1,10 +1,10 @@
 /* ==================== */
 /* ESTILOS ESPECÍFICOS DEL NAVBAR (NO AFECTAN AL RESTO) */
 /* ==================== */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 :root {
-  --font-poppins: 'Poppins', sans-serif;
+  --font-poppins: "Poppins", sans-serif;
   --text-base-size: 14px; /* Tamaño base reducido desde 16px */
 }
 
@@ -66,18 +66,16 @@ h6 {
   :root {
     --text-base-size: 13px; /* Tamaño aún más pequeño en móviles */
   }
-  
+
   h1 {
     font-size: 1.6rem; /* Reducción adicional para móviles */
   }
-  
+
   .btn {
     font-size: 0.85rem;
     padding: 0.3rem 0.6rem;
   }
 }
-
-
 
 /* Variables específicas solo para el navbar */
 :root {
@@ -1236,11 +1234,6 @@ input.form-control.border-color-login {
   color: #fff !important; /* Texto blanco para mejor contraste */
 }
 
-
-
-
-
-
 /* Dashboard.module.css */
 .dashboardContainer {
   /* padding: 2rem; */
@@ -1251,7 +1244,7 @@ input.form-control.border-color-login {
 .welcomeHeader {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(90deg, #8B0000, #b1291d, #8B0000);
+  background: linear-gradient(90deg, #8b0000, #b1291d, #8b0000);
   background-size: 200% auto;
   color: transparent;
   -webkit-background-clip: text;
@@ -1261,9 +1254,15 @@ input.form-control.border-color-login {
 }
 
 @keyframes gradientBackground {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .welcomeText {
@@ -1281,7 +1280,7 @@ input.form-control.border-color-login {
   transform: translateY(-50%);
   height: 70%;
   width: 4px;
-  background: linear-gradient(to bottom, #b1291d, #8B0000);
+  background: linear-gradient(to bottom, #b1291d, #8b0000);
   border-radius: 2px;
 }
 
@@ -1304,9 +1303,15 @@ input.form-control.border-color-login {
 }
 
 @keyframes floatAnimation {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .iconWrapper {
@@ -1317,14 +1322,13 @@ input.form-control.border-color-login {
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
-  background: #8B0000; /* Fondo rojo SIEMPRE */
+  background: #8b0000; /* Fondo rojo SIEMPRE */
   box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
 }
 
 .iconWrapper svg {
   color: #ffffff !important; /* Ícono blanco SIEMPRE */
 }
-
 
 .cardTitle {
   font-weight: 600;
@@ -1364,7 +1368,7 @@ input.form-control.border-color-login {
   left: 0;
   width: 50px;
   height: 3px;
-  background: linear-gradient(90deg, #8B0000, #b1291d);
+  background: linear-gradient(90deg, #8b0000, #b1291d);
   border-radius: 3px;
 }
 
@@ -1382,7 +1386,7 @@ input.form-control.border-color-login {
 }
 
 [data-bs-theme="dark"] .iconWrapper {
-  background: linear-gradient(145deg, #8B0000, #b1291d);
+  background: linear-gradient(145deg, #8b0000, #b1291d);
 }
 
 [data-bs-theme="dark"] .welcomeText {
@@ -1410,8 +1414,6 @@ input.form-control.border-color-login {
   z-index: 1000;
 }
 
- 
-
 /* FORBBIDEN DESIGN */
 .forbidden-container {
   background: radial-gradient(circle at center, #1f2937, #0f172a);
@@ -1420,7 +1422,7 @@ input.form-control.border-color-login {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   padding: 1rem;
 }
 
@@ -1463,4 +1465,8 @@ input.form-control.border-color-login {
   text-decoration: none;
   box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
   transition: transform 0.3s ease;
+}
+
+.aula-botones {
+  display: contents;
 }

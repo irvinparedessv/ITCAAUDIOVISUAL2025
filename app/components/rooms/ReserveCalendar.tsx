@@ -141,7 +141,7 @@ const ReservaCalendar = () => {
         return {
           id: bloque.id,
           title: `${getIcon(bloque.estado)} ${
-            bloque.reserva?.comentario || ""
+            bloque.reserva?.titulo || ""
           } - ${bloque.hora_inicio.slice(0, 5)} a ${bloque.hora_fin.slice(
             0,
             5

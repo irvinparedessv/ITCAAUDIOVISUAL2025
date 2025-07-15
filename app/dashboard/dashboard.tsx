@@ -190,7 +190,7 @@ export default function Dashboard() {
               description="Crear nueva reserva de espacio"
             />
             <DashboardCard
-              title="Nueva Reserva"
+              title="Reservar Equipo"
               icon={<FaComputer size={24} />}
               link="/addreservation"
               description="Solicitar préstamo de equipos"

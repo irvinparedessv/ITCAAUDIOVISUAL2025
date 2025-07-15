@@ -265,7 +265,7 @@ const PrediccionAulaPage = () => {
           }}
         />
         <h2 className="fw-bold m-0">
-          Predicción de Reservas por Aula
+          Predicción de Reservas por Espacios
         </h2>
       </div>
 

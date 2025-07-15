@@ -50,8 +50,8 @@ const ReporteReservasPorAula = () => {
         const res = await api.get("/aulas");
         setAulas(res.data);
       } catch (error) {
-        console.error("Error cargando aulas", error);
-        toast.error("Error cargando aulas", { id: "error-cargar-aulas" });
+        console.error("Error cargando espacios", error);
+        toast.error("Error cargando espacios", { id: "error-cargar-aulas" });
       }
     };
 
@@ -63,7 +63,7 @@ const ReporteReservasPorAula = () => {
     const ERROR_REPORTE_ID = "error-obtener-reporte";
 
     if (!fechaInicio || !fechaFin || !aulaId) {
-      toast.error("Selecciona aula y ambas fechas", { id: ERROR_FILTROS_ID });
+      toast.error("Selecciona espacio y ambas fechas", { id: ERROR_FILTROS_ID });
       return;
     }
 
@@ -149,7 +149,7 @@ const ReporteReservasPorAula = () => {
                   const datos = all.map((r) => ({
                     ID: r.id,
                     Usuario: r.usuario,
-                    Aula: r.aula,
+                    Espacio: r.aula,
                     Fecha: r.fecha,
                     Horario: r.horario,
                     Estado: r.estado,
@@ -157,9 +157,9 @@ const ReporteReservasPorAula = () => {
 
                   const ws = XLSX.utils.json_to_sheet(datos);
                   const wb = XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(wb, ws, "Uso de Aulas por Aula");
+                  XLSX.utils.book_append_sheet(wb, ws, "Uso de Espacio por Espacio");
                   const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-                  saveAs(new Blob([buffer], { type: "application/octet-stream" }), "ReporteReservasPorAula.xlsx");
+                  saveAs(new Blob([buffer], { type: "application/octet-stream" }), "ReporteReservasPorEspacio.xlsx");
 
                   toast.success("Excel descargado correctamente", { id: "excel-download" });
                 } catch (error) {
@@ -235,7 +235,7 @@ const ReporteReservasPorAula = () => {
                       let startY = 45;
 
                       autoTable(doc, {
-                        head: [["#", "Usuario", "Aula", "Fecha", "Horario", "Estado"]],
+                        head: [["#", "Usuario", "Espacio", "Fecha", "Horario", "Estado"]],
                         body,
                         startY: startY,
                         styles: { fontSize: 8, cellPadding: 3 },
@@ -244,10 +244,10 @@ const ReporteReservasPorAula = () => {
                         didDrawPage: (data) => {
                           if (data.pageNumber === 1) {
                             doc.addImage(logo, "PNG", 15, 15, 45, 11);
-                            doc.setFontSize(16).text("Reporte de Uso de Aulas por Aula", 60, 18);
+                            doc.setFontSize(16).text("Reporte de Uso de Espacio por Espacio", 60, 18);
                             doc.setFontSize(10)
                               .text(`Generado: ${fechaStr} - ${horaStr}`, 60, 25)
-                              .text(`Aula: ${aulaNombre}`, 60, 30)
+                              .text(`Espacio: ${aulaNombre}`, 60, 30)
                               .text(`Estado: ${estado || "Todos"}`, 60, 35)
                               .text(`Rango: ${fechaInicio || "N/A"} a ${fechaFin || "N/A"}`, 60, 40);
                           }
@@ -350,7 +350,7 @@ const ReporteReservasPorAula = () => {
           }}
         />
         <h2 className="fw-bold m-0">
-          Reporte de uso de aulas
+          Reporte de uso de espacios
         </h2>
       </div>
 
@@ -359,9 +359,9 @@ const ReporteReservasPorAula = () => {
           <Row className="g-3 align-items-end">
             <Col md={3}>
               <Form.Group controlId="aulaId">
-                <Form.Label className="fw-bold">Aula</Form.Label>
+                <Form.Label className="fw-bold">Espacio</Form.Label>
                 <label className="form-label d-flex align-items-center">
-                  Seleccionar Aula <span className="text-danger">*</span>
+                  Seleccionar Espacio <span className="text-danger">*</span>
                 </label>
                 <Select
                   options={aulas.map((a) => ({
@@ -377,7 +377,7 @@ const ReporteReservasPorAula = () => {
                       : null
                   }
                   onChange={(selected) => setAulaId(selected ? parseInt(selected.value) : null)}
-                  placeholder="Selecciona un aula"
+                  placeholder="Selecciona un espacio"
                   className="react-select-container"
                   classNamePrefix="react-select"
                   isClearable
@@ -509,7 +509,7 @@ const ReporteReservasPorAula = () => {
                 <tr>
                   <th>#</th>
                   <th>Usuario</th>
-                  <th>Aula</th>
+                  <th>Espacio</th>
                   <th>Fecha</th>
                   <th>Horario</th>
                   <th>Estado</th>

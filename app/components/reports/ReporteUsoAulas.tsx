@@ -145,7 +145,7 @@ const ReporteUsoAulas = () => {
                   const datos = all.map((r) => ({
                     ID: r.id,
                     Usuario: r.usuario,
-                    Aula: r.aula,
+                    Espacio: r.aula,
                     Fecha: r.fecha,
                     Horario: r.horario,
                     Estado: r.estado,
@@ -153,9 +153,9 @@ const ReporteUsoAulas = () => {
 
                   const ws = XLSX.utils.json_to_sheet(datos);
                   const wb = XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(wb, ws, "Uso de Aulas por Usuario");
+                  XLSX.utils.book_append_sheet(wb, ws, "Uso de Espacios por Usuario");
                   const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-                  saveAs(new Blob([buffer], { type: "application/octet-stream" }), "ReporteUsoAulas.xlsx");
+                  saveAs(new Blob([buffer], { type: "application/octet-stream" }), "ReporteUsoEspacios.xlsx");
 
                   toast.success("Excel descargado correctamente", { id: "excel-download" });
                 } catch (error) {
@@ -234,7 +234,7 @@ const ReporteUsoAulas = () => {
                       let startY = 45;
 
                       autoTable(doc, {
-                        head: [["#", "Usuario", "Aula", "Fecha", "Horario", "Estado"]],
+                        head: [["#", "Usuario", "Espacio", "Fecha", "Horario", "Estado"]],
                         body,
                         startY: startY,
                         styles: { fontSize: 8, cellPadding: 3 },
@@ -243,7 +243,7 @@ const ReporteUsoAulas = () => {
                         didDrawPage: (data) => {
                           if (data.pageNumber === 1) {
                             doc.addImage(logo, "PNG", 15, 15, 45, 11);
-                            doc.setFontSize(16).text("Reporte de Uso de Aulas por Usuario", 60, 18);
+                            doc.setFontSize(16).text("Reporte de Uso de Espacios por Usuario", 60, 18);
                             doc.setFontSize(10)
                               .text(`Generado: ${fechaStr} - ${horaStr}`, 60, 25)
                               .text(`Usuario: ${usuarioNombre}`, 60, 30)
@@ -270,7 +270,7 @@ const ReporteUsoAulas = () => {
                         }
                       });
 
-                      doc.save("ReporteUsoAulas.pdf");
+                      doc.save("ReporteUsoEspacios.pdf");
                       resolve();
                     } catch (error) {
                       reject(error);
@@ -345,7 +345,7 @@ const ReporteUsoAulas = () => {
           }}
         />
         <h2 className="fw-bold m-0">
-          Reporte de uso de aulas por usuario
+          Reporte de uso de espacios por usuario
         </h2>
       </div>
 
@@ -505,7 +505,7 @@ const ReporteUsoAulas = () => {
                 <tr>
                   <th>#</th>
                   <th>Usuario</th>
-                  <th>Aula</th>
+                  <th>Espacio</th>
                   <th>Fecha</th>
                   <th>Horario</th>
                   <th>Estado</th>

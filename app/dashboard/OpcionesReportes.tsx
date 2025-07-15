@@ -20,15 +20,15 @@ const opciones = [
     roles: [Role.Administrador, Role.Encargado]
   },
   {
-    nombre: 'Reporte de reservas aulas',
-    descripcion: 'Reporte de uso de aulas por aulas',
+    nombre: 'Reporte de reservas espacios',
+    descripcion: 'Reporte de uso de espacios por aulas',
     ruta: '/reporteReservasAulas',
     icono: <FaRegFileAlt size={24} />,
     roles: [Role.Administrador, Role.EspacioEncargado]
   },
   {
-    nombre: 'Reporte de reservas aulas',
-    descripcion: 'Reporte de uso de aulas por usuarios',
+    nombre: 'Reporte de reservas espacios',
+    descripcion: 'Reporte de uso de espacios por usuarios',
     ruta: '/reporteAulas',
     icono: <FaRegFileAlt size={24} />,
     roles: [Role.Administrador]

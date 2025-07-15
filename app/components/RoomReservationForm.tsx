@@ -148,6 +148,9 @@ export default function ReserveClassroom() {
             label: `${data.user.first_name} ${data.user.last_name} (${data.user.email})`,
           });
         }
+        setTipoReserva(data.tipo || "");
+        setDiasSeleccionados(data.dias || []);
+        setEndDate(data.fecha_fin ? new Date(data.fecha_fin) : null);
       } catch {
         toast.error("Error al cargar datos de la reserva");
       } finally {
@@ -436,7 +439,7 @@ export default function ReserveClassroom() {
             className="form-control"
             placeholder="Ejemplo: Grupo A - Familia X"
             value={descripcion}
-            minLength={5}
+            minLength={1}
             onChange={(e) => setDescripcion(e.target.value)}
             required
           ></textarea>
@@ -447,7 +450,7 @@ export default function ReserveClassroom() {
           </label>
           <select
             id="tipoReserva"
-            disabled={descripcion.trim().length < 5}
+            disabled={!!id || descripcion.trim().length < 1} // aquí agregas el !!id para bloquear edición en modo editar
             className="form-select"
             value={tipoReserva}
             onChange={(e) => {
@@ -501,6 +504,7 @@ export default function ReserveClassroom() {
             <DatePicker
               id="endDate"
               selected={endDate}
+              filterDate={isDateEnabled}
               onChange={(date) => {
                 if (date) {
                   date.setHours(12, 0, 0, 0);
@@ -512,8 +516,11 @@ export default function ReserveClassroom() {
               placeholderText="Selecciona la fecha de finalización"
               minDate={selectedDate || new Date()}
               required
-              disabled={selectedDate == null}
+              disabled={selectedDate == null || loadingHorarios}
             />
+            {loadingHorarios && (
+              <small className="text-muted">Restringiendo horarios...</small>
+            )}
           </div>
         )}
         {tipoReserva === "clase_recurrente" && (

@@ -32,30 +32,43 @@ export default function EquipmentPage() {
   // Para forzar recarga lista de equipos después de crear/editar/eliminar
   const toggleRecarga = () => setRecargarLista((v) => !v);
 
-  const handleCreateOrUpdate = async (
-  data: EquipoCreateDTO | EquipoUpdateDTO,
+const handleCreateOrUpdate = async (
+  data: EquipoCreateDTO,
   isEdit?: boolean,
   id?: number
-) => {
+): Promise<boolean> => {
   try {
     if (isEdit && id) {
-      // Aseguramos que data tiene el id para actualización
       const updateData: EquipoUpdateDTO = {
         ...data,
-        id: id // Añadimos el id si no está presente
+        id: id
       };
       await updateEquipo(id, updateData);
+
     } else {
-      // Para creación, eliminamos el id si existe
-      const { id: _, ...createData } = data as any;
-      await createEquipo(createData as EquipoCreateDTO);
+      await createEquipo(data);
     }
     setEditando(null);
     toggleRecarga();
-  } catch (error) {
+    return true; // Indicar éxito
+  } catch (error: any) {
     console.error("Error al guardar el equipo:", error);
-    // Puedes agregar manejo de errores más específico aquí
-    toast.error("Error al guardar el equipo");
+    
+    if (error?.response?.status === 422) {
+      const errors = error.response.data.errors;
+      if (errors) {
+        Object.values(errors).forEach((msgs) => {
+          (msgs as string[]).forEach((msg) => {
+            toast.error(msg);
+          });
+        });
+      } else {
+        toast.error(error.response.data.message || "Error de validación");
+      }
+    } else {
+      toast.error(error?.response?.data?.message || "Error al guardar el equipo");
+    }
+    return false; // Indicar fallo
   }
 };
 

@@ -14,6 +14,7 @@ export enum Steps {
   SeleccionarHoraInicioAula = "seleccionarHoraInicioAula",
   SeleccionarHoraFinAula = "seleccionarHoraFinAula",
   Resumen = "resumen",
+  SubirDocumento = "SubirDocumento",
   ResumenAula = "resumenAula",
 }
 

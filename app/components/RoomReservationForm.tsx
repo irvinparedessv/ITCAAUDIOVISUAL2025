@@ -430,6 +430,18 @@ export default function ReserveClassroom() {
             </div>
           )}
         </div>
+        {selectedClassroomData?.imagenes?.length! > 0 && (
+          <button
+            type="button"
+            className="btn btn-info ms-3"
+            onClick={() => {
+              setCarouselIndex(0);
+              setShowModal(true);
+            }}
+          >
+            <FaImages className="me-2" /> Visualizar Imágenes
+          </button>
+        )}
         <div className="mb-4">
           <label htmlFor="descripcion" className="form-label">
             Titulo{" "}
@@ -621,19 +633,6 @@ export default function ReserveClassroom() {
           </div>
         )}
 
-        {selectedClassroomData?.imagenes?.length! > 0 && (
-          <button
-            type="button"
-            className="btn btn-info ms-3"
-            onClick={() => {
-              setCarouselIndex(0);
-              setShowModal(true);
-            }}
-          >
-            <FaImages className="me-2" /> Visualizar Imágenes
-          </button>
-        )}
-
         <br />
         <div className="form-actions">
           <button
@@ -711,14 +710,17 @@ export default function ReserveClassroom() {
                     />
                   </Card>
                 )}
-                <div className="mt-3 d-flex justify-content-between">
-                  <Button variant="secondary" onClick={handlePrev}>
-                    Anterior
-                  </Button>
-                  <Button variant="secondary" onClick={handleNext}>
-                    Siguiente
-                  </Button>
-                </div>
+                {selectedClassroomData?.imagenes &&
+                  selectedClassroomData.imagenes.length > 1 && (
+                    <div className="mt-3 d-flex justify-content-between">
+                      <Button variant="secondary" onClick={handlePrev}>
+                        Anterior
+                      </Button>
+                      <Button variant="secondary" onClick={handleNext}>
+                        Siguiente
+                      </Button>
+                    </div>
+                  )}
               </>
             )}
         </Modal.Body>

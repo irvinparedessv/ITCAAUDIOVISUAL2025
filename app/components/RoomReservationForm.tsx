@@ -394,7 +394,7 @@ export default function ReserveClassroom() {
         />
         <h2 className="fw-bold m-0">
           <FaDoorOpen className="me-2" />
-          {id ? "Editar Reserva" : "Reserva de Aula"}
+          {id ? "Editar Reserva" : "Reserva de Espacio"}
         </h2>
       </div>
 

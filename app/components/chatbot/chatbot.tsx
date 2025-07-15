@@ -5,18 +5,17 @@ import ChatWindow from "./ChatWindow";
 import InputBox from "./InputBox";
 import "./chatbot.css";
 import { useEffect, useRef } from "react";
+import { FaCommentDots, FaRobot, FaTimes } from "react-icons/fa";
 
 const Chatbot = () => {
   const { user } = useAuth();
   const {
     isOpen,
-    isDarkMode,
     inputMessage,
     setInputMessage,
     messages,
     handleSendMessage,
     setIsOpen,
-    messagesEndRef,
     equipmentOptions,
     reservaData,
     reservaDataRoom,
@@ -38,17 +37,46 @@ const Chatbot = () => {
     handleTipoClick,
     handleAulaClick,
   } = useChatbotLogic(user);
-  const bottomRef = useRef<HTMLDivElement>(null);
 
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll al final del chat cuando hay nuevos mensajes
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Cierra el chatbot al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, setIsOpen]);
+
   return (
-    <div className={`chatbot-container ${isOpen ? "open" : ""}`}>
+    <div className={`chatbot-container ${isOpen ? "open" : ""}`} ref={containerRef}>
       {isOpen && (
         <>
           <div className="chat-header">
             <h3 id="chatbot-title">Asistente Virtual</h3>
+            <button
+              className="chat-close-button"
+              aria-label="Cerrar"
+              onClick={() => setIsOpen(false)}
+            >
+              <FaTimes />
+            </button>
           </div>
 
           <div className="chat-window" role="log" aria-live="polite">
@@ -70,7 +98,7 @@ const Chatbot = () => {
               reservaDataRoom={reservaDataRoom}
               setStep={setStep}
               ref={bottomRef}
-            />{" "}
+            />
             <InputBox
               inputMessage={inputMessage}
               setInputMessage={setInputMessage}
@@ -89,9 +117,13 @@ const Chatbot = () => {
           </div>
         </>
       )}
-      <button className="chatbot-button" onClick={() => toggleChat()}>
-        💬
-      </button>
+
+      {/* Mostrar botón de burbuja solo si el chatbot está cerrado */}
+      {!isOpen && (
+        <button className="chatbot-button" onClick={toggleChat} aria-label="Abrir chatbot">
+          <FaCommentDots />
+        </button>
+      )}
     </div>
   );
 };

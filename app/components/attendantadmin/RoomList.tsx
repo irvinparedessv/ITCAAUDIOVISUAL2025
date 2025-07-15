@@ -176,8 +176,8 @@ export default function AulaList() {
           </InputGroup>
         </div>
       </div>
-      <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
-        {/* Filtro por imagen */}
+      {/* <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
+       
         <Form.Select
           value={
             filters.has_images === null ? "" : filters.has_images ? "yes" : "no"
@@ -194,7 +194,7 @@ export default function AulaList() {
           <option value="yes">Con imagen</option>
           <option value="no">Sin imagen</option>
         </Form.Select>
-      </div>
+      </div> */}
 
       {loading ? (
         <div className="text-center my-5">

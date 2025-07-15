@@ -154,7 +154,7 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
 
     const renderResumenAula = () => (
       <div className="resumen-aula">
-        <h4>Resumen de tu reserva de aula:</h4>
+        <h4>Resumen de tu reserva de espacio:</h4>
         <p>🏫 Aula: {reservaDataRoom.aula}</p>
         <p>📅 Fecha: {reservaDataRoom.fecha}</p>
         <p>

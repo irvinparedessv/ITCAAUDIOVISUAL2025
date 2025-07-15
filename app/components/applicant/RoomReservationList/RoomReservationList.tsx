@@ -462,7 +462,7 @@ const RoomReservationList = () => {
         ) : (
           <>
             <Table striped bordered hover responsive>
-              <thead>
+              <thead className="table-dark">
                 <tr>
                   <th>#</th>
                   <th>Espacio</th>

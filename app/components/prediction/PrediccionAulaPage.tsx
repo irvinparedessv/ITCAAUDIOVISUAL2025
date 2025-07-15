@@ -114,8 +114,8 @@ const PrediccionAulaPage = () => {
       const result = await getListaAulas();
       setAulas(result);
     } catch (error) {
-      console.error("Error al cargar aulas:", error);
-      toast.error("Error al cargar la lista de aulas");
+      console.error("Error al cargar espacios:", error);
+      toast.error("Error al cargar la lista de espacios");
     }
   };
 
@@ -178,9 +178,9 @@ const PrediccionAulaPage = () => {
       const datos = [encabezados, ...filas];
       const ws = XLSX.utils.aoa_to_sheet(datos);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Predicción Aulas");
+      XLSX.utils.book_append_sheet(wb, ws, "Predicción Espacios");
       const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-      saveAs(new Blob([buffer], { type: "application/octet-stream" }), "PrediccionAulas.xlsx");
+      saveAs(new Blob([buffer], { type: "application/octet-stream" }), "PrediccionEspacios.xlsx");
       
       toast.success("Excel exportado correctamente", { id: "excel-download" });
     } catch (error) {
@@ -274,10 +274,10 @@ const PrediccionAulaPage = () => {
           <Row className="g-3 align-items-end">
             <Col md={6}>
               <Form.Group controlId="aulaSeleccionada">
-                <Form.Label className="fw-bold">Aula</Form.Label>
+                <Form.Label className="fw-bold">Espacio</Form.Label>
                 <Select
                   options={[
-                    { value: "", label: "Todas las aulas" },
+                    { value: "", label: "Todos los espacios" },
                     ...aulas.map((aula) => ({
                       value: aula.id.toString(),
                       label: aula.name,
@@ -289,7 +289,7 @@ const PrediccionAulaPage = () => {
                         value: aulaSeleccionada.toString(),
                         label: aulas.find((a) => a.id === aulaSeleccionada)?.name || "",
                       }
-                      : { value: "", label: "Todas las aulas" }
+                      : { value: "", label: "Todos los espacios" }
                   }
                   onChange={(selected) => {
                     const id = selected?.value ? parseInt(selected.value) : undefined;

@@ -98,11 +98,15 @@ const RoomDetailsModal: React.FC<Props> = ({
                     <strong>Aula:</strong> {selectedReservation.aula.name}
                   </p>
                   <p>
+                    <strong>Titulo:</strong> {selectedReservation.titulo}
+                  </p>
+                  <p>
                     <strong>Fecha:</strong>{" "}
                     {formatDate(selectedReservation.fecha)}
                   </p>
                   <p>
-                    <strong>Horario:</strong> {formatTimeRangeTo12h(selectedReservation.horario)}
+                    <strong>Horario:</strong>{" "}
+                    {formatTimeRangeTo12h(selectedReservation.horario)}
                   </p>
                   <p>
                     <strong>Estado:</strong>{" "}

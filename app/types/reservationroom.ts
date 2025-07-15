@@ -11,6 +11,7 @@ export interface ReservationRoom {
   updated_at?: string;
   comentario: string;
   codigo_qr: CodigoQR;
+  titulo: string;
 }
 export interface Room {
   id: number;

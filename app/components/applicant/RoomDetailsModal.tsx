@@ -43,7 +43,7 @@ const RoomDetailsModal: React.FC<Props> = ({
             className="bi bi-card-checklist me-2"
             style={{ color: "#D4A017" }}
           ></i>
-          Detalles de Reserva #{selectedReservation?.id ?? ""}
+          Detalles de Reservass #{selectedReservation?.id ?? ""}
         </Modal.Title>
       </Modal.Header>
 
@@ -137,6 +137,18 @@ const RoomDetailsModal: React.FC<Props> = ({
                     </span>
                     <p className="mb-0 fw-semibold flex-grow-1">
                       {selectedReservation.aula?.name ?? "Aula desconocida"}
+                    </p>
+                  </div>
+                  <div className="d-flex align-items-center mb-3">
+                    <span
+                      className="d-inline-block text-nowrap me-3"
+                      style={{ width: "100px", fontWeight: "500" }}
+                    >
+                      <i className="bi bi-door-open me-2 text-body-emphasis"></i>
+                      Titulo
+                    </span>
+                    <p className="mb-0 fw-semibold flex-grow-1">
+                      {selectedReservation.titulo}
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">

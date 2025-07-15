@@ -24,6 +24,7 @@ type Props = {
   reservaData: ReservaData;
   reservaDataRoom: ReservaDataRoom;
   setStep: (step: string) => void;
+  handleTypeClick: (type: string) => void;
 };
 
 const ChatWindow = forwardRef<HTMLDivElement, Props>(
@@ -35,6 +36,7 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
       handleOptionClick,
       handleUbicacionClick,
       handleAulaClick,
+      handleTypeClick,
       handleEquipoClick,
       handleAulaFechaClick,
       handleTipoClick,
@@ -135,7 +137,7 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
         {ubicaciones.map((aula) => (
           <button
             key={aula.value}
-            className={`aula-btn ${
+            className={`btn btn-primary ${
               reservaData.ubicacion === aula.label ? "seleccionado" : ""
             }`}
             onClick={() => handleAulaClick(aula.label)}
@@ -143,11 +145,19 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
             {aula.label}
           </button>
         ))}
+      </div>
+    );
+
+    const renderSeleccionarTipo = () => (
+      <div className="tipo-botones">
         <button
-          onClick={() => setStep("seleccionarFechaAula")}
-          disabled={!reservaData.ubicacion}
+          key={"evento"}
+          className={`btn btn-primary ${
+            reservaDataRoom.type === "evento" ? "seleccionado" : ""
+          }`}
+          onClick={() => handleTypeClick("evento")}
         >
-          Siguiente
+          evento
         </button>
       </div>
     );
@@ -184,13 +194,22 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
         ))}
         {step === "initial" && (
           <div className="bot-options">
-            <button onClick={() => handleOptionClick("Crear reserva equipo")}>
+            <button
+              className="btn btn-primary"
+              onClick={() => handleOptionClick("Crear reserva equipo")}
+            >
               Crear reserva equipo
             </button>
-            <button onClick={() => handleOptionClick("Crear reserva aula")}>
+            <button
+              className="btn btn-primary"
+              onClick={() => handleOptionClick("Crear reserva aula")}
+            >
               Crear reserva aula
             </button>
-            <button onClick={() => handleOptionClick("Consultas")}>
+            <button
+              className="btn btn-primary"
+              onClick={() => handleOptionClick("Consultas")}
+            >
               Consultas
             </button>
           </div>
@@ -198,9 +217,10 @@ const ChatWindow = forwardRef<HTMLDivElement, Props>(
         {step === "mostrarTipoEventos" && renderTiposEventos()}
         {step === "seleccionarUbicacion" && renderUbicaciones()}
         {step === "mostrarEquipos" && renderEquipos()}
-
         {step === "resumen" && renderResumen()}
         {step === "seleccionarAula" && renderSeleccionarAula()}
+        {step === "SeleccionarTipoReservaAula" && renderSeleccionarTipo()}
+
         {step === "resumenAula" && renderResumenAula()}
         <div ref={ref}></div>
       </div>

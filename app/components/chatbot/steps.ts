@@ -6,6 +6,7 @@ export enum Steps {
   MostrarTipoEventos = "mostrarTipoEventos",
   MostrarEquipos = "mostrarEquipos",
   SeleccionarAula = "seleccionarAula",
+  SeleccionarTipoReservaAula = "SeleccionarTipoReservaAula",
   SeleccionarFechaAula = "seleccionarFechaAula",
   SeleccionarHoraInicioAula = "seleccionarHoraInicioAula",
   SeleccionarHoraFinAula = "seleccionarHoraFinAula",

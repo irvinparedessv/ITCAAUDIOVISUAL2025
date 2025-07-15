@@ -19,6 +19,7 @@ export type ReservaData = {
 };
 export type ReservaDataRoom = {
   aula: string;
+  type: string;
   fecha: string;
   horarioInicio: string;
   horarioFin: string;

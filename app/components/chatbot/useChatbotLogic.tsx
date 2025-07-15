@@ -43,6 +43,7 @@ export const useChatbotLogic = (user: any) => {
     fecha: "",
     horarioInicio: "",
     horarioFin: "",
+    type: "",
   });
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -53,26 +54,31 @@ export const useChatbotLogic = (user: any) => {
   }, [messages]);
 
   useEffect(() => {
-    const fetchEquipments = async () => {
-      const response = await api.get("/equiposReserva");
-      const data = response.data;
-      const options = data.map((item: any) => ({
-        value: item.id,
-        label: item.nombre,
-      }));
+    const fetchData = async () => {
+      try {
+        const [equipResponse, aulaResponse] = await Promise.all([
+          api.get("/equiposReserva"),
+          api.get("/aulasEquipos"),
+        ]);
 
-      setEquipmentOptions(options);
+        const equipmentOptions = equipResponse.data.map((item: any) => ({
+          value: item.id,
+          label: item.nombre,
+        }));
 
-      const responsex = await api.get("/aulasEquipos");
-      const datax = responsex.data;
-      const optionsx = datax.map((item: any) => ({
-        value: item.id,
-        label: item.name,
-      }));
-      setAulaOptions(optionsx);
+        const aulaOptions = aulaResponse.data.map((item: any) => ({
+          value: item.id,
+          label: item.name,
+        }));
+
+        setEquipmentOptions(equipmentOptions);
+        setAulaOptions(aulaOptions);
+      } catch (error) {
+        console.error("Error cargando equipos y aulas", error);
+      }
     };
 
-    fetchEquipments();
+    fetchData();
   }, []);
 
   const chatRef = useRef<HTMLDivElement | null>(null);
@@ -149,6 +155,7 @@ export const useChatbotLogic = (user: any) => {
       fecha: "",
       horarioInicio: "",
       horarioFin: "",
+      type: "",
     });
   };
 
@@ -297,17 +304,26 @@ export const useChatbotLogic = (user: any) => {
   };
 
   const handleAulaClick = (aula: string) => {
-    const aulaSeleccionada = aulaOptions.find((x) => x.value == aula);
+    console.log(aula);
+    const aulaSeleccionada = aulaOptions.find((x) => x.label == aula);
     const message = aulaSeleccionada?.label ?? "";
     setMessages((prev) => [
       ...prev,
       { id: prev.length + 1, text: message, sender: "user" },
     ]);
     setReservaDataRoom((prev) => ({ ...prev, aula }));
-    addBotMessage("Gracias. Ahora selecciona una fecha disponible:");
+    addBotMessage("Gracias. Ahora seleccione el tipo de reserva:");
+    setStep(Steps.SeleccionarTipoReservaAula);
+  };
+  const handleTypeClick = (type: string) => {
+    setMessages((prev) => [
+      ...prev,
+      { id: prev.length + 1, text: type, sender: "user" },
+    ]);
+    setReservaDataRoom((prev) => ({ ...prev, type }));
+    addBotMessage("Gracias. Ahora seleccione la fecha de reserva:");
     setStep(Steps.SeleccionarFechaAula);
   };
-
   const handleAulaFechaClick = (ubicacion: string) => {
     setMessages((prev) => [
       ...prev,
@@ -483,6 +499,7 @@ export const useChatbotLogic = (user: any) => {
     handleEliminarEquipo,
     handleAulaFechaClick,
     handleAulaClick,
+    handleTypeClick,
     completarReserva,
     completarReservaAula,
     resetChat,

@@ -1,6 +1,6 @@
 import api from "../api/axios";
 
-export const getReservas = (mes, aulaId) => {
+export const getBloquesPorMes = (mes, aulaId) => {
   return api.get(`/getreservasmonth`, {
     params: { mes, aula_id: aulaId },
   });

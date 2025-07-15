@@ -61,7 +61,7 @@ const Filters: React.FC<FiltersProps> = ({
           </Form.Select>
         </Col>
         <Col md={3}>
-          <Form.Label>Buscar (Aula o Prestamista)</Form.Label>
+          <Form.Label>Buscar (Prestamista)</Form.Label>
           <Form.Control
             type="text"
             placeholder="Buscar..."

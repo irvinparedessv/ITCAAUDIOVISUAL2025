@@ -4,7 +4,13 @@ import { Button, Spinner, Table, Badge, Row, Col } from "react-bootstrap";
 import api from "../../../api/axios";
 import Filters from "./Filter";
 import PaginationComponent from "../../../utils/Pagination";
-import { FaEdit, FaEye, FaLongArrowAltLeft, FaPlus, FaTimes } from "react-icons/fa";
+import {
+  FaEdit,
+  FaEye,
+  FaLongArrowAltLeft,
+  FaPlus,
+  FaTimes,
+} from "react-icons/fa";
 import type { ReservationRoom } from "~/types/reservationroom";
 import RoomDetailsModal from "../RoomDetailsModal";
 import type { Bitacora } from "~/types/bitacora";
@@ -62,7 +68,9 @@ const RoomReservationList = () => {
     const today = new Date();
     const pastWeek = new Date(today);
     pastWeek.setDate(today.getDate() - 7);
-    const initial = { from: pastWeek, to: today };
+    const plusWeek = new Date(today);
+    plusWeek.setDate(today.getDate() + 7);
+    const initial = { from: pastWeek, to: plusWeek };
     setRange(initial);
     setInitialRange(initial);
   }, []);
@@ -85,7 +93,9 @@ const RoomReservationList = () => {
       initialHighlightHandled.current = false;
 
       // Buscar si la reserva ya está en la lista actual
-      const existsInList = reservations.some(r => r.id === highlightReservaId);
+      const existsInList = reservations.some(
+        (r) => r.id === highlightReservaId
+      );
 
       // Si no está en la lista actual, recarga los datos forzadamente
       if (!existsInList) {
@@ -112,7 +122,8 @@ const RoomReservationList = () => {
     };
 
     window.addEventListener("force-refresh", handleForceRefresh);
-    return () => window.removeEventListener("force-refresh", handleForceRefresh);
+    return () =>
+      window.removeEventListener("force-refresh", handleForceRefresh);
   }, [page, range.from, range.to, search, status, reservations]);
 
   // Obtener highlightId y página del state de navegación
@@ -296,7 +307,9 @@ const RoomReservationList = () => {
       const today = new Date();
       const pastWeek = new Date(today);
       pastWeek.setDate(today.getDate() - 7);
-      setRange({ from: pastWeek, to: today });
+      const plusWeek = new Date(today);
+      plusWeek.setDate(today.getDate() + 7);
+      setRange({ from: pastWeek, to: plusWeek });
     }
     setPage(1);
     setHighlightId(null);
@@ -312,7 +325,10 @@ const RoomReservationList = () => {
     toast(
       (t) => (
         <div>
-          <p>¿Estás seguro de que deseas cancelar esta reserva <strong>#{reserva.id}</strong>?</p>
+          <p>
+            ¿Estás seguro de que deseas cancelar esta reserva{" "}
+            <strong>#{reserva.id}</strong>?
+          </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button
               className="btn btn-sm btn-danger"
@@ -333,17 +349,23 @@ const RoomReservationList = () => {
 
                   // Actualiza la lista de reservas
                   setReservations((prev) =>
-                    prev.map((r) => (r.id === data.reserva?.id ? data.reserva : r))
+                    prev.map((r) =>
+                      r.id === data.reserva?.id ? data.reserva : r
+                    )
                   );
 
                   // Actualiza la reserva seleccionada si corresponde
-                  if (data.reserva && selectedReservation?.id === data.reserva.id) {
+                  if (
+                    data.reserva &&
+                    selectedReservation?.id === data.reserva.id
+                  ) {
                     setSelectedReservation(data.reserva);
                   }
                 } catch (err: any) {
                   toast.dismiss(t.id);
                   toast.error(
-                    err?.response?.data?.message || "No se pudo cancelar la reserva.",
+                    err?.response?.data?.message ||
+                      "No se pudo cancelar la reserva.",
                     { id: `${toastId}-error` }
                   );
                 }
@@ -368,8 +390,6 @@ const RoomReservationList = () => {
     );
   };
 
-
-
   return (
     <div className="container">
       <div className="table-responsive rounded shadow p-3 mt-4">
@@ -381,8 +401,8 @@ const RoomReservationList = () => {
               onClick={handleBack}
               title="Regresar"
               style={{
-                cursor: 'pointer',
-                fontSize: '2rem',
+                cursor: "pointer",
+                fontSize: "2rem",
                 flexShrink: 0,
               }}
             />
@@ -404,9 +424,6 @@ const RoomReservationList = () => {
             </Button>
           </Col>
         </Row>
-
-
-
 
         <Filters
           from={range.from}

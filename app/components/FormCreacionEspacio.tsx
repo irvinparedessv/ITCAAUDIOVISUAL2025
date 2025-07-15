@@ -20,6 +20,7 @@ import EspacioNoEncontrado from "./error/EspacioNoEncontrado";
 import { formatDate } from "~/utils/time";
 
 type RenderImageInfo = {
+  id?: number; // 👈 nuevo, para imagen existente
   file: File | null;
   preview: string;
   is360: boolean;
@@ -61,6 +62,7 @@ export const CreateSpaceForm = () => {
           setName(aula.name);
 
           const imageUrls = aula.imagenes.map((img: any) => ({
+            id: img.id, // 👈 guarda ID
             file: null,
             preview: img.image_path.startsWith("http")
               ? img.image_path
@@ -91,7 +93,7 @@ export const CreateSpaceForm = () => {
       const img = new Image();
       img.onload = () => {
         const aspect = img.width / img.height;
-        resolve(aspect > 1.5); // Panorámica si aspect ratio mayor a 1.5
+        resolve(aspect > 1.5);
       };
       img.src = URL.createObjectURL(file);
     });
@@ -114,7 +116,7 @@ export const CreateSpaceForm = () => {
     if (isExif360) return true;
 
     const isPanoramic = await checkIfPanoramicByAspect(file);
-    return isPanoramic; // Si es panorámica, cuenta como 360 también
+    return isPanoramic;
   };
 
   const handleDropImages = async (acceptedFiles: File[]) => {
@@ -236,6 +238,8 @@ export const CreateSpaceForm = () => {
       if (img.file) {
         formData.append(`render_images[${index}]`, img.file);
         formData.append(`render_images_is360[${index}]`, img.is360 ? "1" : "0");
+      } else if (img.id) {
+        formData.append(`keep_images[${index}]`, img.id.toString()); // 👈 envía ID real
       }
     });
 

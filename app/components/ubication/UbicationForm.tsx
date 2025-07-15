@@ -8,7 +8,13 @@ import {
 import toast from "react-hot-toast";
 import UbicacionNoEncontrada from "../error/UbicacionNoEncontrada";
 import { Spinner } from "react-bootstrap";
-import { FaSave, FaTimes, FaPlus, FaBroom, FaLongArrowAltLeft } from "react-icons/fa";
+import {
+  FaSave,
+  FaTimes,
+  FaPlus,
+  FaBroom,
+  FaLongArrowAltLeft,
+} from "react-icons/fa";
 
 interface UbicacionCreateDTO {
   nombre: string;
@@ -69,7 +75,6 @@ export default function UbicacionForm() {
               onClick={() => {
                 onConfirm();
                 toast.dismiss(t.id);
-                toast.success("Ubicación actualizada correctamente", { id: "action-success" });
               }}
             >
               Sí, actualizar
@@ -104,11 +109,21 @@ export default function UbicacionForm() {
         setLoadingSubmit(true);
         try {
           await updateUbicacion(Number(id), form);
+          toast.success("Ubicación actualizada correctamente");
           setTimeout(() => {
             navigate("/ubications");
           }, 500);
-        } catch (error) {
-          toast.error("Error al actualizar");
+        } catch (error: any) {
+          if (error.response && error.response.status === 422) {
+            const errors = error.response.data.errors;
+            if (errors?.nombre) {
+              toast.error(errors.nombre[0]);
+            } else {
+              toast.error("Error de validación");
+            }
+          } else {
+            toast.error("Error al actualizar");
+          }
         } finally {
           setLoadingSubmit(false);
         }
@@ -124,13 +139,21 @@ export default function UbicacionForm() {
       setTimeout(() => {
         navigate("/ubications");
       }, 500);
-    } catch (error) {
-      toast.error("Error al crear");
+    } catch (error: any) {
+      if (error.response && error.response.status === 422) {
+        const errors = error.response.data.errors;
+        if (errors?.nombre) {
+          toast.error(errors.nombre[0]);
+        } else {
+          toast.error("Error de validación");
+        }
+      } else {
+        toast.error("Error al crear");
+      }
     } finally {
       setLoadingSubmit(false);
     }
   };
-
   const handleClear = () => {
     setForm({
       nombre: "",
@@ -156,14 +179,14 @@ export default function UbicacionForm() {
       {/* Encabezado con flecha y título */}
       <div
         className="d-flex align-items-center gap-2 gap-md-3"
-        style={{ marginBottom: '30px' }}
+        style={{ marginBottom: "30px" }}
       >
         <FaLongArrowAltLeft
           onClick={handleBack}
           title="Regresar"
           style={{
-            cursor: 'pointer',
-            fontSize: '2rem',
+            cursor: "pointer",
+            fontSize: "2rem",
           }}
         />
         <h2 className="fw-bold m-0">
@@ -211,7 +234,11 @@ export default function UbicacionForm() {
               >
                 {loadingSubmit ? (
                   <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    />
                     Actualizando...
                   </>
                 ) : (
@@ -240,7 +267,11 @@ export default function UbicacionForm() {
               >
                 {loadingSubmit ? (
                   <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    />
                     Creando...
                   </>
                 ) : (

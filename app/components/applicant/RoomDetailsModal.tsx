@@ -43,7 +43,7 @@ const RoomDetailsModal: React.FC<Props> = ({
             className="bi bi-card-checklist me-2"
             style={{ color: "#D4A017" }}
           ></i>
-          Detalles de Reservass #{selectedReservation?.id ?? ""}
+          Detalles de Reservas #{selectedReservation?.id ?? ""}
         </Modal.Title>
       </Modal.Header>
 

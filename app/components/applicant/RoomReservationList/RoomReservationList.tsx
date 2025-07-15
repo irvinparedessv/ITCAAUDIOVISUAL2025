@@ -19,6 +19,7 @@ import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import "animate.css";
 import { formatTimeRangeTo12h } from "~/utils/time";
+import { FaCheck } from "react-icons/fa6";
 
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -465,7 +466,9 @@ const RoomReservationList = () => {
                 <tr>
                   <th>#</th>
                   <th>Aula</th>
+                  <th>Recurrente</th>
                   <th>Fecha</th>
+                  <th>Fecha Finalizacion</th>
                   <th>Horario</th>
                   <th>Reservado por</th>
                   <th>Estado</th>
@@ -487,7 +490,16 @@ const RoomReservationList = () => {
                     >
                       <td>{res.id}</td>
                       <td>{res.aula?.name || "Aula Desconocida"}</td>
+
+                      <td className="text-center">
+                        {res.tipo === "clase_recurrente" ? (
+                          <FaCheck color="green" />
+                        ) : (
+                          <FaTimes color="red" />
+                        )}
+                      </td>
                       <td>{formatDate(res.fecha)}</td>
+                      <td>{formatDate(res.fecha_fin || res.fecha)}</td>
                       <td>{formatTimeRangeTo12h(res.horario)}</td>
                       <td>{res.user?.first_name || "Desconocido"}</td>
                       <td>

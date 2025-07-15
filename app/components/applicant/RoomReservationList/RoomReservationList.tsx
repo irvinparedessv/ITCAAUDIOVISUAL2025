@@ -57,7 +57,7 @@ const RoomReservationList = () => {
   const initialHighlightHandled = useRef(false);
 
   const handleBack = () => {
-    navigate(-1); // Regresa a la página anterior
+    navigate("/"); // Regresa a la página anterior
   };
 
   const [totalPages, setTotalPages] = useState(1);

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button, Card, Container, Form, Row, Col, Spinner, Table } from "react-bootstrap";
-import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser, FaChartBar } from "react-icons/fa";
+import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
@@ -9,18 +9,7 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import PaginationComponent from "~/utils/Pagination";
-import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend, Title } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
 import { useTheme } from "~/hooks/ThemeContext";
-
-ChartJS.register(
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-  Title
-);
 
 interface EquipoUsoReporte {
   equipo: string;
@@ -37,7 +26,6 @@ const ReporteUsoEquipos = () => {
   const [loading, setLoading] = useState(false);
   const { darkMode } = useTheme();
   const navigate = useNavigate();
-  const chartRef = useRef<any>(null);
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -271,142 +259,8 @@ const ReporteUsoEquipos = () => {
     });
   };
 
-  const downloadChart = () => {
-    if (!chartRef.current) return;
-
-    const toastId = "download-chart";
-    toast.dismiss(toastId);
-
-    toast((t) => (
-      <div>
-        <p>¿Deseas descargar el gráfico como imagen?</p>
-        <div className="d-flex justify-content-end gap-2 mt-2">
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={() => {
-              toast.dismiss(t.id);
-              const chart = chartRef.current;
-
-              if (chart) {
-                const canvas = chart.canvas;
-                const ctx = canvas.getContext("2d");
-
-                // Usar darkMode desde el contexto
-                const bgColor = darkMode ? '#1e1e1e' : '#ffffff';
-
-                // Guardar imagen actual del canvas
-                const original = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-                // Dibujar fondo adecuado
-                ctx.save();
-                ctx.globalCompositeOperation = "destination-over";
-                ctx.fillStyle = bgColor;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.restore();
-
-                // Descargar imagen
-                const imageLink = document.createElement('a');
-                imageLink.download = 'GraficoUsoEquipos.png';
-                imageLink.href = chart.toBase64Image();
-                imageLink.click();
-
-                // Restaurar canvas
-                ctx.putImageData(original, 0, 0);
-
-                toast.success("Gráfico descargado correctamente", { id: toastId });
-              }
-            }}
-          >
-            Descargar
-          </button>
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    ), {
-      duration: 5000,
-      id: toastId,
-    });
-  };
-
   const handleBack = () => {
     navigate(-1);
-  };
-
-  // Configuración del gráfico
-  const chartData = {
-    labels: equipos.map(item => item.equipo),
-    datasets: [
-      {
-        label: 'Cantidad Total Reservada',
-        data: equipos.map(item => item.total_cantidad),
-        backgroundColor: '#6b0000',
-        borderColor: '#4a0000',
-        borderWidth: 1,
-      }
-    ]
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
-          color: darkMode ? '#fff' : '#333',
-          font: {
-            size: 14
-          }
-        }
-      },
-      title: {
-        display: true,
-        text: `Uso de equipos${tipoEquipo ? ` - Tipo: ${tipoEquipo}` : ''}`,
-        color: darkMode ? '#fff' : '#333',
-        font: {
-          size: 16,
-          weight: 'bold' as const
-        }
-      },
-      tooltip: {
-        backgroundColor: darkMode ? '#333' : '#fff',
-        titleColor: darkMode ? '#fff' : '#333',
-        bodyColor: darkMode ? '#fff' : '#333',
-        borderColor: '#6b0000',
-        borderWidth: 1,
-        padding: 10,
-        callbacks: {
-          label: function (context: any) {
-            return `Cantidad: ${context.raw}`;
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        ticks: {
-          color: darkMode ? '#fff' : '#333'
-        },
-        grid: {
-          color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-        }
-      },
-      y: {
-        beginAtZero: true,
-        ticks: {
-          color: darkMode ? '#fff' : '#333',
-          precision: 0
-        },
-        grid: {
-          color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-        }
-      }
-    }
   };
 
   return (
@@ -528,26 +382,8 @@ const ReporteUsoEquipos = () => {
               >
                 <FaFilePdf /> PDF
               </Button>
-              <Button
-                variant="warning"
-                onClick={downloadChart}
-                disabled={loading || equipos.length === 0}
-                className="d-flex align-items-center gap-2"
-              >
-                <FaChartBar /> Gráfico
-              </Button>
             </div>
           </div>
-
-          {equipos.length > 0 && (
-            <div style={{ width: "100%", height: "400px", marginBottom: "30px" }}>
-              <Bar
-                ref={chartRef}
-                data={chartData}
-                options={chartOptions}
-              />
-            </div>
-          )}
 
           <div className="table-responsive">
             <Table striped hover className="mb-0">

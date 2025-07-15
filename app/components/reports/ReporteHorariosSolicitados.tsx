@@ -134,7 +134,7 @@ const ReporteHorariosSolicitados = () => {
     const getNombreSeleccionado = () => {
         if (tipo === "aula" && aulaId) {
             const aula = aulas.find(a => a.id === aulaId);
-            return aula ? ` - Aula: ${aula.name}` : "";
+            return aula ? ` - Espacio: ${aula.name}` : "";
         } else if (tipo === "equipo" && equipoSeleccionado) {
             return ` - Equipo: ${equipoSeleccionado.label}`;
         }
@@ -171,7 +171,7 @@ const ReporteHorariosSolicitados = () => {
             return;
         }
         if (tipo === "aula" && !aulaId) {
-            toast.error("Selecciona un aula", { id: ERROR_FILTROS_ID });
+            toast.error("Selecciona un espacio", { id: ERROR_FILTROS_ID });
             return;
         }
         if (tipo === "equipo" && !equipoSeleccionado) {
@@ -325,7 +325,7 @@ const ReporteHorariosSolicitados = () => {
                                     .text(`Tipo: ${tipo || "Todos"}`, 60, 35)
                                     .text(
                                         tipo === "aula" && aulaId
-                                            ? `Aula: ${aulas.find(a => a.id === aulaId)?.name || ""}`
+                                            ? `Espacio: ${aulas.find(a => a.id === aulaId)?.name || ""}`
                                             : tipo === "equipo" && equipoSeleccionado
                                                 ? `Equipo: ${equipoSeleccionado.label}`
                                                 : "",
@@ -579,7 +579,7 @@ const ReporteHorariosSolicitados = () => {
                                 >
                                     <option value="">-- Selecciona --</option>
                                     {user?.role !== Role.Encargado && (
-                                        <option value="aula">Aula</option>
+                                        <option value="aula">Espacio</option>
                                     )}
                                     <option value="equipo">Equipo</option>
                                 </Form.Select>
@@ -589,7 +589,7 @@ const ReporteHorariosSolicitados = () => {
                         {tipo === "aula" && (
                             <Col md={3}>
                                 <Form.Group controlId="aulaId">
-                                    <Form.Label className="fw-bold">Aula <span className="text-danger">*</span></Form.Label>
+                                    <Form.Label className="fw-bold">Espacio <span className="text-danger">*</span></Form.Label>
                                     <Select
                                         options={aulas.map((a) => ({
                                             value: a.id,
@@ -604,7 +604,7 @@ const ReporteHorariosSolicitados = () => {
                                                 : null
                                         }
                                         onChange={(selected) => setAulaId(selected ? selected.value : "")}
-                                        placeholder="Selecciona un aula"
+                                        placeholder="Selecciona un espacio"
                                         className="react-select-container"
                                         classNamePrefix="react-select"
                                         menuPortalTarget={document.body}

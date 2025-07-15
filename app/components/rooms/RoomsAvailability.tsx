@@ -22,8 +22,9 @@ interface Rango {
 }
 
 interface Reserva {
-  fecha: string;
-  horario: string;
+  fecha_inicio: string; // ahora es bloque real
+  hora_inicio: string;
+  hora_fin: string;
   estado: string;
 }
 
@@ -39,7 +40,7 @@ interface Resultado {
 interface Aula {
   id: number;
   nombre: string;
-  disponibilidad?: Resultado; // solo el primero
+  disponibilidad?: Resultado;
 }
 
 export default function RoomsAvailabilityList() {
@@ -64,7 +65,6 @@ export default function RoomsAvailabilityList() {
     endDate: null,
   });
 
-  // Modal control
   const [modalShow, setModalShow] = useState(false);
   const [modalReservasAprobadas, setModalReservasAprobadas] = useState<
     Reserva[]
@@ -165,12 +165,19 @@ export default function RoomsAvailabilityList() {
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
 
-  // Abrir modal con reservas
   const handleShowReservas = (room: Aula) => {
     setModalReservasAprobadas(room.disponibilidad?.reservas_aprobadas || []);
     setModalReservasPendientes(room.disponibilidad?.reservas_pendientes || []);
     setModalAulaNombre(room.nombre);
     setModalShow(true);
+  };
+
+  // ✅ Formatear fecha a dd/mm/yyyy
+  const formatFecha = (fecha: string) => {
+    const dateObj = new Date(fecha);
+    return `${String(dateObj.getDate()).padStart(2, "0")}/${String(
+      dateObj.getMonth() + 1
+    ).padStart(2, "0")}/${dateObj.getFullYear()}`;
   };
 
   return (
@@ -342,14 +349,16 @@ export default function RoomsAvailabilityList() {
               <thead>
                 <tr>
                   <th>Fecha</th>
-                  <th>Horario</th>
+                  <th>Hora Inicio</th>
+                  <th>Hora Fin</th>
                 </tr>
               </thead>
               <tbody>
                 {modalReservasAprobadas.map((r, i) => (
                   <tr key={i}>
-                    <td>{r.fecha}</td>
-                    <td>{r.horario}</td>
+                    <td>{formatFecha(r.fecha_inicio)}</td>
+                    <td>{r.hora_inicio}</td>
+                    <td>{r.hora_fin}</td>
                   </tr>
                 ))}
               </tbody>
@@ -364,14 +373,16 @@ export default function RoomsAvailabilityList() {
               <thead>
                 <tr>
                   <th>Fecha</th>
-                  <th>Horario</th>
+                  <th>Hora Inicio</th>
+                  <th>Hora Fin</th>
                 </tr>
               </thead>
               <tbody>
                 {modalReservasPendientes.map((r, i) => (
                   <tr key={i}>
-                    <td>{r.fecha}</td>
-                    <td>{r.horario}</td>
+                    <td>{formatFecha(r.fecha_inicio)}</td>
+                    <td>{r.hora_inicio}</td>
+                    <td>{r.hora_fin}</td>
                   </tr>
                 ))}
               </tbody>

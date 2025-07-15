@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FaSave, FaTimes, FaPlus, FaTrash, FaLongArrowAltLeft } from "react-icons/fa";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import Select from 'react-select';
 
 import type { User } from "../types/user";
 import api from "./../api/axios";
@@ -54,7 +55,6 @@ export default function AsignarEncargadosForm() {
       } finally {
         setLoading(false);
       }
-
     };
 
     fetchData();
@@ -64,15 +64,15 @@ export default function AsignarEncargadosForm() {
     return <EspacioNoEncontrado />;
   }
 
-
   const handleBack = () => {
     navigate("/rooms");
   };
 
-  const handleAddEncargado = () => {
-    if (!selectedEncargado) return;
+  const handleAddEncargado = (selectedOption: any) => {
+    if (!selectedOption) return;
 
-    const user = usuarios.find((u) => u.id === selectedEncargado);
+    const userId = selectedOption.value;
+    const user = usuarios.find((u) => u.id === userId);
     if (!user) return;
 
     if (encargados.find((e) => e.id === user.id)) {
@@ -106,7 +106,7 @@ export default function AsignarEncargadosForm() {
       toast.success("Encargados asignados correctamente");
       setTimeout(() => {
         navigate(-1);
-      }, 1500);
+      }, 500);
     } catch {
       toast.error("Error al asignar encargados");
     } finally {
@@ -134,9 +134,14 @@ export default function AsignarEncargadosForm() {
     (u) => !encargados.some((e) => e.id === u.id)
   );
 
+  // Preparar opciones para react-select
+  const options = encargadosDisponibles.map((u) => ({
+    value: u.id,
+    label: `${u.first_name} ${u.last_name}`
+  }));
+
   return (
     <div className="form-container position-relative">
-
       <div className="d-flex align-items-center gap-3">
         <FaLongArrowAltLeft
           onClick={handleBack}
@@ -149,8 +154,6 @@ export default function AsignarEncargadosForm() {
         <h2 className="fw-bold m-0 flex-grow-1">Asignar Encargados</h2>
       </div>
       <br />
-
-
 
       {aula && (
         <div className="mb-4 aula-info">
@@ -172,31 +175,76 @@ export default function AsignarEncargadosForm() {
           </label>
           <div className="row">
             <div className="col-md-8 mb-2 mb-md-0">
-              <select
+              <Select
                 id="encargado"
-                value={selectedEncargado}
-                onChange={(e) => setSelectedEncargado(Number(e.target.value))}
-                className="form-select"
-                disabled={encargadosDisponibles.length === 0}
-              >
-                <option value="">-- Selecciona un encargado --</option>
-                {encargadosDisponibles.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.first_name} {u.last_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-4">
-              <button
-                type="button"
-                className="btn primary-btn w-100"
-                onClick={handleAddEncargado}
-                disabled={!selectedEncargado || encargadosDisponibles.length === 0}
-              >
-                <FaPlus className="me-2" />
-                Agregar
-              </button>
+                options={options}
+                onChange={handleAddEncargado}
+                placeholder="Buscar encargado..."
+                isDisabled={encargadosDisponibles.length === 0}
+                noOptionsMessage={() => "No hay encargados disponibles"}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                isSearchable
+                isClearable
+                value={null}
+                menuPortalTarget={document.body}
+                styles={{
+                  control: (provided, state) => ({
+                    ...provided,
+                    minHeight: '38px',
+                    height: '38px',
+                    borderColor: state.isFocused ? '#b90a01ff' : '#ced4da',
+                    boxShadow: state.isFocused ? '0 0 0 1px #db2209ff' : 'none',
+                    '&:hover': {
+                      borderColor: state.isFocused ? '#b60000ff' : '#adb5bd'
+                    },
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }),
+                  valueContainer: (provided) => ({
+                    ...provided,
+                    height: '38px',
+                    padding: '0 12px',
+                  }),
+                  input: (provided) => ({
+                    ...provided,
+                    margin: '0',
+                    padding: '0',
+                    color: '#495057'
+                  }),
+                  placeholder: (provided) => ({
+                    ...provided,
+                    color: '#6c757d'
+                  }),
+                  option: (provided, state) => ({
+                    ...provided,
+                    backgroundColor: state.isSelected ? '#2684FF' : state.isFocused ? '#e9ecef' : 'white',
+                    color: state.isSelected ? 'white' : '#495057',
+                    padding: '10px 16px',
+                    fontSize: '0.95rem'
+                  }),
+                  menu: (provided) => ({
+                    ...provided,
+                    zIndex: 9999,
+                    borderRadius: '6px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                  }),
+                  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                  indicatorSeparator: () => ({
+                    display: 'none'
+                  }),
+                  dropdownIndicator: (provided) => ({
+                    ...provided,
+                    color: '#6c757d',
+                    padding: '8px'
+                  }),
+                  clearIndicator: (provided) => ({
+                    ...provided,
+                    color: '#6c757d',
+                    padding: '8px'
+                  })
+                }}
+              />
             </div>
           </div>
         </div>
@@ -212,7 +260,6 @@ export default function AsignarEncargadosForm() {
                 >
                   <div>
                     <strong>{e.first_name} {e.last_name}</strong>
-                    <span className="badge bg-secondary ms-2">ID: {e.id}</span>
                   </div>
                   <button
                     type="button"

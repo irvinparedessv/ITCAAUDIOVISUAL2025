@@ -108,16 +108,16 @@ export default function Dashboard() {
           <h2 className={"roleTitle"}>Encargado de Espacios</h2>
           <Row xs={1} md={2} lg={3} className="g-4">
             <DashboardCard
-              title="Gestion de Reservas"
-              icon={<FaClipboardList size={24} />}
-              link="/reservations-room"
-              description="Revisar y aprobar reservas pendientes"
-            />
-            <DashboardCard
               title="Creacion de Reservas"
               icon={<FaDoorOpen size={24} />}
               link="/reservationsroom"
               description="Gestionar reservas de espacios físicos"
+            />
+            <DashboardCard
+              title="Gestion de Reservas"
+              icon={<FaClipboardList size={24} />}
+              link="/reservations-room"
+              description="Revisar y aprobar reservas pendientes"
             />
             <DashboardCard
               title="Lector QR"
@@ -126,7 +126,7 @@ export default function Dashboard() {
               description="Leer Codigo QR"
             />
             <DashboardCard
-              title="Reporte de reserva de aulas"
+              title="Reporte de reserva de espacios"
               icon={<FaRegFileAlt size={24} />}
               link="/reporteReservasAulas"
               description="Reporte de reserva de espacios"

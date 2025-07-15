@@ -18,7 +18,7 @@ import type { Room } from "~/types/reservationroom";
 import type { ReservationStatus } from "~/types/reservation";
 import { FaCalendarAlt, FaLongArrowAltLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { formatTo12h } from "~/utils/time";
+import { formatDateTimeTo12hHOURS } from "~/utils/time";
 import ReservaNoEncontrada from "./error/ReservaNoEncontrada";
 
 type Reserva = {
@@ -31,6 +31,8 @@ type Reserva = {
   horaSalida?: string;
   horaEntrada?: string;
   horario?: string;
+  fechafin?: string;
+  dias: string[];
   estado: ReservationStatus;
   isRoom: boolean;
 };
@@ -81,7 +83,8 @@ export default function ReservationDetail() {
             setError("No tiene autorización para ver esta reserva.");
           } else {
             setError(
-              `Error ${err.response.status}: ${err.response.data?.message || "Error desconocido"
+              `Error ${err.response.status}: ${
+                err.response.data?.message || "Error desconocido"
               }`
             );
           }
@@ -130,8 +133,9 @@ export default function ReservationDetail() {
 
   const qrData = reserva.isRoom
     ? `Reserva de aula para ${reserva.usuario} en ${reserva.espacio.name} el ${reserva.dia}`
-    : `Reserva de ${reserva.usuario} - ${reserva.equipo?.join(", ")} en ${reserva.aula
-    } el ${reserva.dia}`;
+    : `Reserva de ${reserva.usuario} - ${reserva.equipo?.join(", ")} en ${
+        reserva.aula
+      } el ${reserva.dia}`;
 
   const cleanEstado = reserva.estado.trim().toLowerCase();
 
@@ -150,8 +154,8 @@ export default function ReservationDetail() {
             onClick={handleBack}
             title="Regresar"
             style={{
-              cursor: 'pointer',
-              fontSize: '2rem',
+              cursor: "pointer",
+              fontSize: "2rem",
             }}
           />
           <FaCalendarAlt />
@@ -188,18 +192,23 @@ export default function ReservationDetail() {
                 <ListGroup.Item>
                   <strong>Día:</strong> {formatDayWithDate(reserva.dia)}
                 </ListGroup.Item>
-
+                {reserva.isRoom && reserva.fechafin && (
+                  <ListGroup.Item>
+                    <strong>Fecha Finalizacion:</strong>{" "}
+                    {formatDayWithDate(reserva.fechafin)}
+                  </ListGroup.Item>
+                )}
                 {!reserva.isRoom && reserva.horaSalida && (
                   <ListGroup.Item>
                     <strong>Hora de Reserva:</strong>{" "}
-                    {formatTo12h(reserva.horaSalida)}
+                    {formatDateTimeTo12hHOURS(reserva.horaSalida)}
                   </ListGroup.Item>
                 )}
 
                 {!reserva.isRoom && reserva.horaEntrada && (
                   <ListGroup.Item>
                     <strong>Hora de Entrega:</strong>{" "}
-                    {formatTo12h(reserva.horaEntrada)}
+                    {formatDateTimeTo12hHOURS(reserva.horaEntrada)}
                   </ListGroup.Item>
                 )}
 
@@ -208,7 +217,11 @@ export default function ReservationDetail() {
                     <strong>Horario:</strong> {reserva.horario}
                   </ListGroup.Item>
                 )}
-
+                {reserva.isRoom && reserva.dias && (
+                  <ListGroup.Item>
+                    <strong>Dias:</strong> {reserva.dias.join()}
+                  </ListGroup.Item>
+                )}
                 <ListGroup.Item>
                   <strong>Estado:</strong>{" "}
                   <Badge

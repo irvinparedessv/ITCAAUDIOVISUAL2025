@@ -51,6 +51,31 @@ export function formatDateTimeTo12h(dateTimeStr?: string | null): string {
   return `${formattedDate} ${formattedTime}`;
 }
 
+export function formatDateTimeTo12hHOURS(dateTimeStr?: string | null): string {
+  if (!dateTimeStr) return "—";
+
+  const date = new Date(dateTimeStr);
+  if (isNaN(date.getTime())) return "—";
+
+  // Fecha en formato DD/MM/YYYY
+  const formattedDate = date.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  // Hora en formato 12h
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const formattedHours = hours % 12 || 12;
+  const formattedMinutes = minutes.toString().padStart(2, "0");
+
+  const formattedTime = `${formattedHours}:${formattedMinutes} ${ampm}`;
+
+  return `${formattedTime}`;
+}
+
 export function formatTimeRangeTo12h(range24: string): string {
   const [start, end] = range24.split(" - ");
   return `${formatTo12h(start)} - ${formatTo12h(end)}`;

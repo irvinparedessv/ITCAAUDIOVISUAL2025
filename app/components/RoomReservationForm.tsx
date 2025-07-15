@@ -312,8 +312,8 @@ export default function ReserveClassroom() {
         horario: horarioFinal,
         user_id: selectedPrestamista?.value?.toString() || userId,
         estado: selectedPrestamista?.value?.toString()
-          ? "aprobado"
-          : "pendiente",
+          ? "Aprobado"
+          : "Pendiente",
         comentario: descripcion.trim(),
         tipo: tipoReserva,
         fecha_fin: endDate ? formatDateLocal(endDate) : null,

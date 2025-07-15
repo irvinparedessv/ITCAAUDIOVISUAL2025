@@ -161,18 +161,17 @@ export default function RoomReservationStateModal({
                 disabled={isReadOnly || loading}
               />
             </Form.Group>
-
-            {isRecurrent && blockId && (
+            {Boolean(isRecurrent) && blockId != null ? (
               <Form.Group className="mb-4">
                 <Form.Check
                   type="checkbox"
-                  label="Aplicar cambio a toda la serie"
+                  label="Aplicar cambio a toda la serie(Cambiará todas las series con el mismo estado)"
                   checked={updateSeries}
                   onChange={(e) => setUpdateSeries(e.target.checked)}
                   disabled={loading}
                 />
               </Form.Group>
-            )}
+            ) : null}
 
             <div className="d-flex justify-content-end">
               <Button

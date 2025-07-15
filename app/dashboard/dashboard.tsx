@@ -129,7 +129,7 @@ export default function Dashboard() {
               title="Reporte de reserva de aulas"
               icon={<FaRegFileAlt size={24} />}
               link="/reporteReservasAulas"
-              description="Reporte de reserva de aulas"
+              description="Reporte de reserva de espacios"
             />
             <DashboardCard
               title="Gestion de Conflictos y Disponibilidad"

@@ -46,31 +46,45 @@ export default function EquipmentEditPage() {
   }, [id, navigate]);
 
   const handleSubmit = async (
-    data: EquipoCreateDTO,
-    isEdit?: boolean,
-    equipoId?: number
-  ) => {
-    try {
-      if (!isEdit || !equipoId) return;
+  data: EquipoCreateDTO,
+  isEdit?: boolean,
+  equipoId?: number
+): Promise<boolean> => {
+  try {
+    if (!isEdit || !equipoId) return false;
 
-      // Construir los datos del formulario
-      const updateData: any = {
-        ...data,
-        id: equipoId,
-      };
+    const updateData: any = {
+      ...data,
+      id: equipoId,
+    };
 
-      // Solo incluir imagen si es un archivo nuevo
-      if (data.imagen instanceof File) {
-        updateData.imagen = data.imagen;
-      }
-
-      await updateEquipo(equipoId, updateData);
-      navigate("/equipolist");
-    } catch (error) {
-      console.error("Error al actualizar equipo:", error);
-      toast.error("Error al actualizar el equipo");
+    if (data.imagen instanceof File) {
+      updateData.imagen = data.imagen;
     }
-  };
+
+    await updateEquipo(equipoId, updateData);
+    navigate("/equipolist");
+    return true;
+  } catch (error: any) {
+    console.error("Error al actualizar equipo:", error);
+    
+    if (error?.response?.status === 422) {
+      const errors = error.response.data.errors;
+      if (errors) {
+        Object.values(errors).forEach((msgs) => {
+          (msgs as string[]).forEach((msg) => {
+            toast.error(msg);
+          });
+        });
+      } else {
+        toast.error(error.response.data.message || "Error de validación");
+      }
+    } else {
+      toast.error(error?.response?.data?.message || "Error al actualizar el equipo");
+    }
+    return false;
+  }
+};
 
   if (loading) {
     return (

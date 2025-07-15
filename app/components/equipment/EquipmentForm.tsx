@@ -19,11 +19,11 @@ import {
 import { useNavigate } from "react-router-dom";
 
 interface Props {
-  onSubmit: (data: EquipoCreateDTO, isEdit?: boolean, id?: number) => void;
+  onSubmit: (data: EquipoCreateDTO, isEdit?: boolean, id?: number) => Promise<boolean>;
   equipoEditando?: Equipo | null;
   resetEdit: () => void;
   onCancel?: () => void;
-  onDelete?: (id: number) => void;
+  onDelete?: (id: number) => Promise<void>;
 }
 
 export default function EquipmentForm({
@@ -50,11 +50,11 @@ export default function EquipmentForm({
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate("/equipolist"); // Regresa a la página anterior
+    navigate("/equipolist");
   };
 
   useEffect(() => {
-    toast.dismiss(); // limpia cualquier confirmación colgada
+    toast.dismiss();
   }, []);
 
   const onDrop = useCallback(
@@ -94,25 +94,24 @@ export default function EquipmentForm({
   };
 
   const showConfirmationToast = (
-    action: "update" | "delete",
-    onConfirm: () => void
-  ) => {
+  action: "update" | "delete",
+  onConfirm: () => Promise<void>
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
     const messages = {
       update: {
         question: "¿Seguro que deseas actualizar este equipo?",
         confirmText: "Sí, actualizar",
-        success: "Equipo actualizado correctamente",
       },
       delete: {
         question: "¿Seguro que deseas eliminar este equipo?",
         confirmText: "Sí, eliminar",
-        success: "Equipo eliminado correctamente",
       },
     };
 
-    const { question, confirmText, success } = messages[action];
+    const { question, confirmText } = messages[action];
 
-    toast.dismiss("confirmation-toast"); // 👈 Cierra uno previo si existe
+    toast.dismiss("confirmation-toast");
 
     toast(
       (t) => (
@@ -121,17 +120,25 @@ export default function EquipmentForm({
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button
               className="btn btn-sm btn-success"
-              onClick={() => {
-                onConfirm();
-                toast.dismiss(t.id);
-                toast.success(success, { id: "action-success" }); // opcional: evita duplicados de éxito también
+              onClick={async () => {
+                try {
+                  await onConfirm();
+                  toast.dismiss(t.id);
+                  resolve();
+                } catch (error) {
+                  toast.dismiss(t.id);
+                  reject(error);
+                }
               }}
             >
               {confirmText}
             </button>
             <button
               className="btn btn-sm btn-secondary"
-              onClick={() => toast.dismiss(t.id)}
+              onClick={() => {
+                toast.dismiss(t.id);
+                reject(new Error("cancelled"));
+              }}
             >
               Cancelar
             </button>
@@ -139,12 +146,13 @@ export default function EquipmentForm({
         </div>
       ),
       {
-        duration: 5000,
-        id: "confirmation-toast", // 👈 ID único para evitar múltiples toasts simultáneos
+        duration: 999999, // Para que no se cierre solo
+        id: "confirmation-toast",
       }
     );
+  });
+};
 
-  };
 
   useEffect(() => {
     const loadTipos = async () => {
@@ -156,9 +164,29 @@ export default function EquipmentForm({
 
         setTipos(tiposEquipoData);
         setTipoReservas(tiposReservaData);
-      } catch (err) {
-        console.error("Error cargando tipos:", err);
-        toast.error("Error al cargar tipos");
+      } catch (error: any) {
+        console.error(error);
+        toast.dismiss("error-guardar");
+
+        const message = error?.response?.data?.message;
+
+        if (error?.response?.status === 422 && message) {
+          toast.error(message, {
+            id: "error-nombre-duplicado",
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          });
+        } else {
+          toast.error("Ocurrió un error al cargar los tipos de equipo", {
+            id: "error-guardar",
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          });
+        }
       } finally {
         setLoading(false);
       }
@@ -184,62 +212,108 @@ export default function EquipmentForm({
     }
   }, [equipoEditando]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  toast.dismiss("submit-toast");
 
-    // Cierra cualquier toast anterior de submit
-    toast.dismiss("submit-toast");
+  // Validaciones ...
+  if (!form.nombre.trim()) {
+    toast.error("El nombre es obligatorio", { id: "submit-toast" });
+    return;
+  }
+  if (!form.descripcion.trim()) {
+    toast.error("La descripción es obligatoria", { id: "submit-toast" });
+    return;
+  }
+  if (form.cantidad <= 0) {
+    toast.error("La cantidad debe ser mayor a cero", { id: "submit-toast" });
+    return;
+  }
+  if (!form.tipo_equipo_id) {
+    toast.error("Debe seleccionar un tipo de equipo", { id: "submit-toast" });
+    return;
+  }
+  if (!form.tipo_reserva_id) {
+    toast.error("Debe seleccionar un tipo de reserva", { id: "submit-toast" });
+    return;
+  }
 
-    // Validaciones
-    if (!form.nombre.trim()) {
-      toast.error("El nombre es obligatorio", { id: "submit-toast" });
-      return;
-    }
-
-    if (!form.descripcion.trim()) {
-      toast.error("La descripción es obligatoria", { id: "submit-toast" });
-      return;
-    }
-
-    if (form.cantidad <= 0) {
-      toast.error("La cantidad debe ser mayor a cero", { id: "submit-toast" });
-      return;
-    }
-
-    if (!form.tipo_equipo_id) {
-      toast.error("Debe seleccionar un tipo de equipo", { id: "submit-toast" });
-      return;
-    }
-
-    if (!form.tipo_reserva_id) {
-      toast.error("Debe seleccionar un tipo de reserva", { id: "submit-toast" });
-      return;
-    }
-
-    // Edición con confirmación
+ try {
     if (equipoEditando) {
-      showConfirmationToast("update", () => {
-        onSubmit(form, true, equipoEditando.id);
-        handleClear();
+      await showConfirmationToast("update", async () => {
+        try {
+          const success = await onSubmit(form, true, equipoEditando.id);
+          if (success) {
+            toast.success("Equipo actualizado correctamente", {
+              id: "submit-toast",
+            });
+            handleClear();
+          }
+        } catch (error: any) {
+          throw error;
+        }
       });
     } else {
-      // Creación directa
-      onSubmit(form, false);
-      toast.success("Equipo creado exitosamente", { id: "submit-toast" });
-      handleClear();
-      setTimeout(() => {
-        navigate("/equipolist"); // Ajusta según ruta real
-      }, 2000);
+      try {
+        const success = await onSubmit(form, false);
+        if (success) {
+          toast.success("Equipo creado exitosamente", { id: "submit-toast" });
+          handleClear();
+          setTimeout(() => {
+            navigate("/equipolist");
+          }, 500);
+        }
+      } catch (error: any) {
+        throw error;
+      }
     }
-  };
+  } catch (error: any) {
+    if (error.message === "cancelled") return;
+
+    if (error?.response?.status === 422) {
+      const errors = error.response.data.errors;
+      if (errors) {
+        Object.values(errors).forEach((msgs) => {
+          (msgs as string[]).forEach((msg) => {
+            toast.error(msg, { id: "submit-toast" });
+          });
+        });
+        return;
+      }
+    }
+
+    const msg =
+      error?.response?.data?.message ||
+      (equipoEditando
+        ? "Error al actualizar equipo"
+        : "Error al crear equipo");
+
+    toast.error(msg, { id: "submit-toast" });
+  }
+};
+
 
 
   const handleDelete = () => {
     if (!equipoEditando || !onDelete) return;
 
-    showConfirmationToast("delete", () => {
-      onDelete(equipoEditando.id);
-      handleClear();
+    showConfirmationToast("delete", async () => {
+      try {
+        await onDelete(equipoEditando.id);
+        handleClear();
+        toast.success("Equipo eliminado correctamente", {
+          id: "submit-toast",
+        });
+      } catch (error: any) {
+        const msg = error?.response?.data?.message || "Error al eliminar equipo";
+        toast.error(msg, { id: "submit-toast" });
+        throw error;
+      }
+    }).catch((error) => {
+      if (error.message !== "cancelled") {
+        toast.error("Error al eliminar equipo");
+      }
+      // Si fue cancelado no mostrar nada
     });
   };
 
@@ -264,27 +338,22 @@ export default function EquipmentForm({
 
   return (
     <div className="form-container position-relative">
-  {/* Encabezado con flecha y título */}
-  <div
-    className="d-flex align-items-center gap-2 gap-md-3"
-    style={{ marginBottom: '30px' }}
-  >
-    <FaLongArrowAltLeft
-      onClick={handleBack}
-      title="Regresar"
-      style={{
-        cursor: 'pointer',
-        fontSize: '2rem',
-      }}
-    />
-    <h2 className="fw-bold m-0">
-      {equipoEditando ? "Editar Equipo" : "Agregar Nuevo Equipo"}
-    </h2>
-  </div>
-
-
-
-
+      <div
+        className="d-flex align-items-center gap-2 gap-md-3"
+        style={{ marginBottom: "30px" }}
+      >
+        <FaLongArrowAltLeft
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: "pointer",
+            fontSize: "2rem",
+          }}
+        />
+        <h2 className="fw-bold m-0">
+          {equipoEditando ? "Editar Equipo" : "Agregar Nuevo Equipo"}
+        </h2>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -322,9 +391,7 @@ export default function EquipmentForm({
             <select
               id="estado"
               value={form.estado ? "1" : "0"}
-              onChange={(e) =>
-                setForm({ ...form, estado: e.target.value === "1" })
-              }
+              onChange={(e) => setForm({ ...form, estado: e.target.value === "1" })}
               className="form-select"
               disabled={!equipoEditando}
             >
@@ -332,8 +399,6 @@ export default function EquipmentForm({
               <option value="0">No disponible</option>
             </select>
           </div>
-
-
 
           <div className="col-md-6">
             <label htmlFor="cantidad" className="form-label">
@@ -376,8 +441,9 @@ export default function EquipmentForm({
           ) : (
             <div
               {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : ""
-                }`}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
+                isDragActive ? "border-primary bg-light" : ""
+              }`}
             >
               <input {...getInputProps()} />
               <div className="d-flex flex-column align-items-center justify-content-center">
@@ -394,7 +460,8 @@ export default function EquipmentForm({
                     </p>
                     {equipoEditando?.imagen_url && (
                       <p className="text-info small mt-2">
-                        Ya hay una imagen cargada para este equipo. Subir una nueva la reemplazará.
+                        Ya hay una imagen cargada para este equipo. Subir una nueva la
+                        reemplazará.
                       </p>
                     )}
                   </>
@@ -482,7 +549,6 @@ export default function EquipmentForm({
                 <FaBroom className="me-2" />
                 Limpiar
               </button>
-
             </>
           )}
         </div>

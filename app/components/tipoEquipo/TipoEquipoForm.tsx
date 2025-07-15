@@ -31,7 +31,7 @@ export default function TipoEquipoForm({
   }, [tipoEditado]);
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/equipolist");
   };
 
   const handleSubmit = async () => {
@@ -70,16 +70,31 @@ export default function TipoEquipoForm({
 
       setNombre("");
       onSuccess();
-    } catch (error) {
-      console.error(error);
-      toast.error("Ocurrió un error al guardar el tipo de equipo", {
-        id: "error-guardar",
-        style: {
-          background: "#363636",
-          color: "#fff",
-        },
-      });
-    }
+    } catch (error: any) {
+  console.error(error);
+  toast.dismiss("error-guardar");
+
+  const message = error?.response?.data?.message;
+
+  if (error?.response?.status === 422 && message) {
+    toast.error(message, {
+      id: "error-nombre-duplicado",
+      style: {
+        background: "#363636",
+        color: "#fff",
+      },
+    });
+  } else {
+    toast.error("Ocurrió un error al guardar el tipo de equipo", {
+      id: "error-guardar",
+      style: {
+        background: "#363636",
+        color: "#fff",
+      },
+    });
+  }
+}
+
   };
 
   const handleClear = () => {

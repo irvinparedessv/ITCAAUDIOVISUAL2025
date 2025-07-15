@@ -1467,6 +1467,8 @@ input.form-control.border-color-login {
   transition: transform 0.3s ease;
 }
 
-.aula-botones {
+.aula-botones,
+.tipo-botones,
+.dias-botones {
   display: contents;
 }

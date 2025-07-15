@@ -11,6 +11,7 @@ const Chatbot = () => {
   const { user } = useAuth();
   const {
     isOpen,
+    isReady,
     inputMessage,
     setInputMessage,
     messages,
@@ -20,6 +21,7 @@ const Chatbot = () => {
     reservaData,
     reservaDataRoom,
     handleEquipoClick,
+    handleDiasClick,
     completarReserva,
     completarReservaAula,
     step,
@@ -28,6 +30,7 @@ const Chatbot = () => {
     setReservaDataRoom,
     setMessages,
     aulaOptions,
+    espacioOptions,
     tipoReservaOptions,
     addBotMessage,
     handleUbicacionClick,
@@ -90,6 +93,7 @@ const Chatbot = () => {
               handleOptionClick={handleOptionClick}
               handleUbicacionClick={handleUbicacionClick}
               handleEquipoClick={handleEquipoClick}
+              handleDiasClick={handleDiasClick}
               handleAulaClick={handleAulaClick}
               handleTipoClick={handleTipoClick}
               handleTypeClick={handleTypeClick}
@@ -97,6 +101,7 @@ const Chatbot = () => {
               completarReserva={completarReserva}
               setReservaData={setReservaData}
               ubicaciones={aulaOptions}
+              espacios={espacioOptions}
               equipos={equipmentOptions}
               tipos={tipoReservaOptions}
               reservaData={reservaData}
@@ -127,10 +132,25 @@ const Chatbot = () => {
       {!isOpen && (
         <button
           className="chatbot-button"
-          onClick={toggleChat}
+          onClick={() => {
+            if (isReady) {
+              toggleChat();
+            }
+          }}
           aria-label="Abrir chatbot"
+          disabled={!isReady} // Desactiva clics mientras carga (opcional)
         >
-          <FaCommentDots />
+          {isReady ? (
+            <FaCommentDots />
+          ) : (
+            <div
+              className="spinner-border text-light"
+              role="status"
+              style={{ width: "1.5rem", height: "1.5rem" }}
+            >
+              <span className="visually-hidden">Cargando...</span>
+            </div>
+          )}
         </button>
       )}
     </div>

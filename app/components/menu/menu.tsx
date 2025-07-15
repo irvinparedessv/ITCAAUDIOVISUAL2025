@@ -28,6 +28,7 @@ import type {
   Notificacion,
   ReservaNotification,
 } from "../../types/notification";
+import { APPLARAVEL } from "~/constants/constant";
 
 interface HoverDropdownProps {
   title: ReactNode; // Change from string to ReactNode
@@ -746,7 +747,7 @@ const NavbarMenu = () => {
           <Dropdown.Toggle as={CustomToggle} id="dropdown-user-sidebar">
             {user?.image ? (
               <img
-                src={`http://localhost:8000/storage/${user.image}`}
+                src={`${APPLARAVEL}/storage/${user.image}`}
                 alt="User"
                 className="rounded-circle me-2"
                 style={{ width: "30px", height: "30px", objectFit: "cover" }}
@@ -814,7 +815,7 @@ const NavbarMenu = () => {
           <div className="custom-user-icon">
             {user?.image ? (
               <img
-                src={`http://localhost:8000/storage/${user.image}`}
+                src={`${APPLARAVEL}/storage/${user.image}`}
                 alt="User"
                 className="rounded-circle"
                 style={{ width: "30px", height: "30px", objectFit: "cover" }}

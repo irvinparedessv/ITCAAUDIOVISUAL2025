@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Calendar, momentLocalizer } from "react-big-calendar";
+import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import { format, parse, startOfWeek, getDay, formatDate } from "date-fns";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import {
   getBloquesPorMes,
@@ -8,32 +9,43 @@ import {
 import type { Aula } from "../../types/aula";
 import AulaReservacionEstadoModal from "../../components/attendantadmin/RoomReservationStateModal";
 import Spinner from "react-bootstrap/Spinner";
+import { es } from "date-fns/locale/es";
 import moment from "moment";
-import "moment/locale/es";
+import Select from "react-select";
+import { Card } from "react-bootstrap";
 
-moment.locale("es");
-moment.updateLocale("es", {
-  months: [
-    "enero",
-    "febrero",
-    "marzo",
-    "abril",
-    "mayo",
-    "junio",
-    "julio",
-    "agosto",
-    "septiembre",
-    "octubre",
-    "noviembre",
-    "diciembre",
-  ],
+const locales = {
+  es,
+};
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek: () => startOfWeek(new Date(), { locale: es }),
+  getDay,
+  locales,
 });
-
-const localizer = momentLocalizer(moment);
 
 const ESTADOS_POSIBLES = ["aprobado", "pendiente", "rechazado", "cancelado"];
 
 const ReservaCalendar = () => {
+  // Iconos para estados
+  const getIcon = (estado: string) => {
+    const e = estado.toLowerCase();
+    if (e === "aprobado") return "✔️";
+    if (e === "rechazado") return "❌";
+    if (e === "cancelado") return "🚫";
+    return "⏳"; // pendiente
+  };
+
+  // Opciones para react-select con iconos
+  const estadoOptions = ESTADOS_POSIBLES.map((estado) => ({
+    value: estado,
+    label: `${getIcon(estado)} ${
+      estado.charAt(0).toUpperCase() + estado.slice(1)
+    }`,
+  }));
+
   const [aulas, setAulas] = useState<Aula[]>([]);
   const [aulaId, setAulaId] = useState<number | null>(null);
   const [events, setEvents] = useState<any[]>([]);
@@ -42,11 +54,16 @@ const ReservaCalendar = () => {
   const [loadingAulas, setLoadingAulas] = useState<boolean>(true);
   const [view, setView] = useState<string>("month");
 
-  // Estados seleccionados en filtro (default aprobado y pendiente)
+  // filtroEstados string[] para filtro
   const [filtroEstados, setFiltroEstados] = useState<string[]>([
     "aprobado",
     "pendiente",
   ]);
+
+  // filtro para react-select (array de objetos)
+  const [filtroEstadosSelect, setFiltroEstadosSelect] = useState(
+    estadoOptions.filter((o) => filtroEstados.includes(o.value))
+  );
 
   const [showEstadoModal, setShowEstadoModal] = useState(false);
   const [selectedReserva, setSelectedReserva] = useState<any>(null);
@@ -63,6 +80,11 @@ const ReservaCalendar = () => {
     });
   }, []);
 
+  // Sincroniza filtroEstados string[] con filtroEstadosSelect
+  useEffect(() => {
+    setFiltroEstados(filtroEstadosSelect.map((o) => o.value));
+  }, [filtroEstadosSelect]);
+
   useEffect(() => {
     if (aulaId) {
       fetchBloques();
@@ -76,7 +98,6 @@ const ReservaCalendar = () => {
     getBloquesPorMes(mes, aulaId).then((res) => {
       let bloques = res.data;
 
-      // Aplicar filtro de estados
       bloques = bloques.filter((b: any) =>
         filtroEstados.includes(b.estado.toLowerCase())
       );
@@ -158,14 +179,6 @@ const ReservaCalendar = () => {
     });
   };
 
-  const getIcon = (estado: string) => {
-    const e = estado.toLowerCase();
-    if (e === "aprobado") return "✔️";
-    if (e === "rechazado") return "❌";
-    if (e === "cancelado") return "🚫";
-    return "⏳"; // pendiente
-  };
-
   const eventPropGetter = (event: any) => ({
     style: {
       backgroundColor: event.color,
@@ -205,25 +218,12 @@ const ReservaCalendar = () => {
     setView(newView);
   };
 
-  // Cambia selección en filtro de estados
-  const toggleEstado = (estado: string) => {
-    setFiltroEstados((prev) => {
-      if (prev.includes(estado)) {
-        // quitar
-        return prev.filter((e) => e !== estado);
-      } else {
-        // agregar
-        return [...prev, estado];
-      }
-    });
-  };
-
   return (
     <div>
-      <h3>Calendario de Reservas</h3>
+      <h3 className="mb-4 text-center">Calendario de Reservas</h3>
 
       {loadingAulas ? (
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center justify-content-center">
           <Spinner animation="border" role="status" className="me-2" />
           <span>Cargando aulas encargadas...</span>
         </div>
@@ -241,29 +241,73 @@ const ReservaCalendar = () => {
             ))}
           </select>
 
-          <h5 className="mb-3">Mes actual: {mesActual.format("MMMM YYYY")}</h5>
-
-          <div className="mb-3 d-flex flex-wrap gap-2 align-items-center">
-            <span className="fw-bold me-2">Filtrar estados:</span>
-            {ESTADOS_POSIBLES.map((estado) => {
-              const seleccionado = filtroEstados.includes(estado);
-              return (
-                <button
-                  key={estado}
-                  type="button"
-                  className={`btn btn-sm ${
-                    seleccionado ? "btn-primary" : "btn-outline-primary"
-                  }`}
-                  onClick={() => toggleEstado(estado)}
-                >
-                  {getIcon(estado)}{" "}
-                  {estado.charAt(0).toUpperCase() + estado.slice(1)}
-                </button>
-              );
-            })}
+          {/* Select múltiple filtro estados */}
+          <div className="mb-3" style={{ maxWidth: "100%" }}>
+            <label className="form-label fw-bold">Filtrar estados:</label>
+            <Select
+              options={estadoOptions}
+              isMulti
+              closeMenuOnSelect={false}
+              hideSelectedOptions={false}
+              value={filtroEstadosSelect}
+              onChange={(selected) =>
+                setFiltroEstadosSelect(Array.isArray(selected) ? selected : [])
+              }
+              classNamePrefix="react-select"
+              placeholder="Selecciona estados..."
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  borderRadius: "0.5rem",
+                  width: "100%",
+                }),
+                multiValue: (base) => ({
+                  ...base,
+                  backgroundColor: "#d1e7dd",
+                  color: "#0f5132",
+                  borderRadius: "0.3rem",
+                  padding: "2px 6px",
+                }),
+                multiValueLabel: (base) => ({
+                  ...base,
+                  color: "#0f5132",
+                  fontWeight: "600",
+                }),
+                option: (base, state) => ({
+                  ...base,
+                  backgroundColor: state.isFocused ? "#e2f0d9" : "white",
+                  color: "#0f5132",
+                  cursor: "pointer",
+                }),
+              }}
+            />
           </div>
 
-          <div className="mb-3 d-flex gap-2">
+          {/* Header mes con botones centrados dentro de card */}
+          <Card className="mb-3 shadow-sm">
+            <Card.Body className="d-flex justify-content-center align-items-center gap-3">
+              <button
+                className="btn btn-primary"
+                onClick={handleMesAnterior}
+                style={{ minWidth: 120 }}
+              >
+                ← Mes anterior
+              </button>
+              <h5 className="mb-0 text-center flex-grow-1">
+                Mes actual:{" "}
+                {formatDate(mesActual.toDate(), "MMMM yyyy", { locale: es })}
+              </h5>
+              <button
+                className="btn btn-primary"
+                onClick={handleMesSiguiente}
+                style={{ minWidth: 120 }}
+              >
+                Mes siguiente →
+              </button>
+            </Card.Body>
+          </Card>
+
+          <div className="mb-3 d-flex gap-2 justify-content-center">
             <button
               className={`btn ${
                 view === "month" ? "btn-secondary" : "btn-outline-secondary"
@@ -283,7 +327,7 @@ const ReservaCalendar = () => {
           </div>
 
           {loading ? (
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center justify-content-center">
               <Spinner animation="border" role="status" className="me-2" />
               <span>Cargando datos...</span>
             </div>
@@ -332,8 +376,8 @@ const ReservaCalendar = () => {
               }}
               reservationId={selectedReserva.id}
               currentStatus={selectedReserva.estado}
-              blockId={selectedReserva.blockId} // tu lógica
-              isRecurrent={selectedReserva.isRecurrent} // true o false
+              blockId={selectedReserva.blockId}
+              isRecurrent={selectedReserva.isRecurrent}
               onSuccess={handleEstadoSuccess}
             />
           )}

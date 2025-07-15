@@ -13,12 +13,6 @@ export default function ProtectedLayout() {
   const { loading: themeLoading, isInitialized } = useTheme();
   const location = useLocation();
 
-  console.log("[ProtectedLayout] Ruta:", location.pathname);
-  console.log("[ProtectedLayout] isAuthenticated:", isAuthenticated);
-  console.log("[ProtectedLayout] isLoading:", isLoading);
-  console.log("[ProtectedLayout] themeLoading:", themeLoading);
-  console.log("[ProtectedLayout] isInitialized:", isInitialized);
-
   // Mostrar spinner si está cargando la autenticación o el tema no está inicializado
   if (isLoading || !isInitialized) {
     return (
@@ -38,7 +32,10 @@ export default function ProtectedLayout() {
   const allowedRoles = getAllowedRoles(location.pathname);
   const userRole = Number(user?.role);
 
-  if (allowedRoles.length > 0 && (!userRole || !allowedRoles.includes(userRole))) {
+  if (
+    allowedRoles.length > 0 &&
+    (!userRole || !allowedRoles.includes(userRole))
+  ) {
     return <Navigate to="/forbidden" replace />;
   }
 

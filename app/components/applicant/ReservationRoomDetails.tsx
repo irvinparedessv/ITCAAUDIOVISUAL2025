@@ -93,7 +93,6 @@ export default function ReservationDetailAula() {
     }
   };
 
-
   if (loading) {
     return (
       <div className="text-center my-5">
@@ -115,11 +114,7 @@ export default function ReservationDetailAula() {
     );
   }
 
-
   if (!reserva) return null;
-
-  // Debug del estado recibido
-  console.log("Estado recibido:", reserva.estado);
 
   const qrData = `Reserva Aula: ${reserva.aula.name} | ${reserva.fecha} | ${reserva.horario} | Usuario: ${reserva.user.first_name} ${reserva.user.last_name}`;
 
@@ -137,8 +132,8 @@ export default function ReservationDetailAula() {
           onClick={handleBack}
           title="Regresar"
           style={{
-            cursor: 'pointer',
-            fontSize: '2rem',
+            cursor: "pointer",
+            fontSize: "2rem",
           }}
         />
         <FaCalendarAlt />

@@ -69,7 +69,6 @@ export const useChatbotLogic = (user: any) => {
             api.get("/aulasEquipos"),
             api.get("/ubicaciones"),
           ]);
-        console.log(equipResponse);
         const equipmentOptions = equipResponse.data.map((item: any) => ({
           value: item.id,
           label: item.nombre,
@@ -80,7 +79,6 @@ export const useChatbotLogic = (user: any) => {
           value: item.id,
           label: item.nombre,
         }));
-        console.log(aulaResponse);
         const espacioOptions = aulaResponse.data.map((item: any) => ({
           value: item.id,
           label: item.name,
@@ -324,7 +322,6 @@ export const useChatbotLogic = (user: any) => {
   };
 
   const handleAulaClick = (aula: string) => {
-    console.log(aula);
     const aulaSeleccionada = espacioOptions.find((x) => x.value == aula);
     const message = aulaSeleccionada?.label ?? "";
     setMessages((prev) => [

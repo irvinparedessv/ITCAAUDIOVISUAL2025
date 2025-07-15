@@ -28,10 +28,8 @@ moment.updateLocale("es", {
     "diciembre",
   ],
 });
-console.log(moment.lang()); // debería imprimir "es"
 
 const localizer = momentLocalizer(moment);
-console.log(localizer); // debería imprimir "es"
 
 const ESTADOS_POSIBLES = ["aprobado", "pendiente", "rechazado", "cancelado"];
 
@@ -137,7 +135,6 @@ const ReservaCalendar = () => {
           `${bloque.fecha_fin} ${bloque.hora_fin}`,
           "YYYY-MM-DD HH:mm:ss"
         ).toDate();
-
         return {
           id: bloque.id,
           title: `${getIcon(bloque.estado)} ${
@@ -152,6 +149,7 @@ const ReservaCalendar = () => {
           color: bloque.conflicto ? "red" : "transparent",
           estado: bloque.estado,
           reservaId: bloque.reserva_id,
+          isRecurrent: bloque.recurrente,
         };
       });
 
@@ -181,7 +179,6 @@ const ReservaCalendar = () => {
   });
 
   const handleSelectEvent = (event: any) => {
-    console.log(event);
     setSelectedReserva({
       id: event.reservaId,
       estado: event.estado,

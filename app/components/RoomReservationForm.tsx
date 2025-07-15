@@ -200,11 +200,12 @@ export default function ReserveClassroom() {
     if (date < today) return false;
 
     const dateString = formatDateLocal(date);
-    const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+    const dayName = date.toLocaleDateString("es-ES", { weekday: "long" });
+    const dayNameCapital = dayName.charAt(0).toUpperCase() + dayName.slice(1);
 
     const horariosValidos = aulaHorarios.filter((h) => {
       return (
-        h.days.includes(dayName) &&
+        h.days.includes(dayNameCapital) &&
         dateString >= h.start_date &&
         dateString <= h.end_date
       );
@@ -246,7 +247,9 @@ export default function ReserveClassroom() {
       );
     });
   };
-
+  const diasDisponibles = Array.from(
+    new Set(aulaHorarios.flatMap((h) => h.days))
+  );
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     toast.dismiss("submit-toast");
@@ -527,15 +530,7 @@ export default function ReserveClassroom() {
           <div className="mb-4">
             <label className="form-label">Días de la semana</label>
             <div className="d-flex flex-wrap gap-3">
-              {[
-                "Lunes",
-                "Martes",
-                "Miércoles",
-                "Jueves",
-                "Viernes",
-                "Sábado",
-                "Domingo",
-              ].map((dia) => (
+              {diasDisponibles.map((dia) => (
                 <div key={dia} className="form-check">
                   <input
                     type="checkbox"

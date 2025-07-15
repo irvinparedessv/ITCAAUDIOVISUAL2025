@@ -10,7 +10,19 @@ import {
 import api from "../api/axios";
 import { useAuth } from "../hooks/AuthContext";
 import toast from "react-hot-toast";
-import { FaCalendarAlt, FaCalendarDay, FaEdit, FaExchangeAlt, FaEye, FaFilter, FaLongArrowAltLeft, FaPlus, FaQrcode, FaSearch, FaTimes } from "react-icons/fa";
+import {
+  FaCalendarAlt,
+  FaCalendarDay,
+  FaEdit,
+  FaExchangeAlt,
+  FaEye,
+  FaFilter,
+  FaLongArrowAltLeft,
+  FaPlus,
+  FaQrcode,
+  FaSearch,
+  FaTimes,
+} from "react-icons/fa";
 import type { TipoReserva } from "app/types/tipoReserva";
 import type { Bitacora } from "app/types/bitacora";
 import { QRURL } from "~/constants/constant";
@@ -82,14 +94,17 @@ export default function ReservationList() {
       fetchReservations();
     };
 
-    window.addEventListener("force-refresh", handleForceRefresh as EventListener);
+    window.addEventListener(
+      "force-refresh",
+      handleForceRefresh as EventListener
+    );
     return () => {
-      window.removeEventListener("force-refresh", handleForceRefresh as EventListener);
+      window.removeEventListener(
+        "force-refresh",
+        handleForceRefresh as EventListener
+      );
     };
   }, []);
-
-
-
 
   useEffect(() => {
     if (location.state?.page) setCurrentPage(location.state.page);
@@ -206,7 +221,6 @@ export default function ReservationList() {
   // Handlers
   const handleDetailClick = (reservation: Reservation) => {
     toast.dismiss();
-    console.log("Abriendo modal con reserva:", reservation);
     setHistorial([]);
     setSelectedReservation(reservation);
     setShowModal(true);
@@ -260,66 +274,68 @@ export default function ReservationList() {
     // Cierra todos los toasts activos (igual que confirmarEliminacion)
     toast.dismiss();
 
-    toast((t) => (
-      <div>
-        <p>
-          ¿Deseas cancelar la reserva <strong>#{reservaId}</strong>?
-        </p>
-        <div className="d-flex justify-content-end gap-2 mt-2">
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={async () => {
-              try {
-                await api.put(`/reservas-equipo/${reservaId}/estado`, {
-                  estado: "Cancelado",
-                  comentario: "Cancelada por el usuario",
-                });
+    toast(
+      (t) => (
+        <div>
+          <p>
+            ¿Deseas cancelar la reserva <strong>#{reservaId}</strong>?
+          </p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={async () => {
+                try {
+                  await api.put(`/reservas-equipo/${reservaId}/estado`, {
+                    estado: "Cancelado",
+                    comentario: "Cancelada por el usuario",
+                  });
 
-                toast.dismiss(t.id);
-                toast.success(`Reserva #${reservaId} cancelada correctamente`, {
-                  id: `${toastId}-success`,
-                });
+                  toast.dismiss(t.id);
+                  toast.success(
+                    `Reserva #${reservaId} cancelada correctamente`,
+                    {
+                      id: `${toastId}-success`,
+                    }
+                  );
 
-                setReservations(prev =>
-                  prev.map(r =>
-                    r.id === reservaId
-                      ? { ...r, estado: "Cancelado" }
-                      : r
-                  )
-                );
-              } catch (err: any) {
-                toast.dismiss(t.id);
-                toast.error(
-                  err?.response?.data?.message ||
-                  `Error al cancelar la reserva #${reservaId}`,
-                  {
-                    id: `${toastId}-error`,
-                  }
-                );
-              }
-            }}
-          >
-            Sí, cancelar
-          </button>
+                  setReservations((prev) =>
+                    prev.map((r) =>
+                      r.id === reservaId ? { ...r, estado: "Cancelado" } : r
+                    )
+                  );
+                } catch (err: any) {
+                  toast.dismiss(t.id);
+                  toast.error(
+                    err?.response?.data?.message ||
+                      `Error al cancelar la reserva #${reservaId}`,
+                    {
+                      id: `${toastId}-error`,
+                    }
+                  );
+                }
+              }}
+            >
+              Sí, cancelar
+            </button>
 
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancelar
-          </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
-    ), {
-      duration: 8000,
-      id: toastId,
-    });
+      ),
+      {
+        duration: 8000,
+        id: toastId,
+      }
+    );
   };
-
 
   // Render
   return (
-
     <div className="table-responsive rounded shadow p-3 mt-4">
       {/* Header */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 position-relative">
@@ -329,8 +345,8 @@ export default function ReservationList() {
             onClick={handleBack}
             title="Regresar"
             style={{
-              cursor: 'pointer',
-              fontSize: '2rem',
+              cursor: "pointer",
+              fontSize: "2rem",
             }}
           />
           <h2 className="fw-bold m-0">Listado de Reservas</h2>
@@ -338,7 +354,8 @@ export default function ReservationList() {
 
         {/* Botones alineados a la derecha incluso en mobile */}
         <div className="d-flex flex-column flex-md-row flex-wrap gap-2 align-self-end align-self-md-auto">
-          {(user?.role === Role.Administrador || user?.role === Role.Encargado) && (
+          {(user?.role === Role.Administrador ||
+            user?.role === Role.Encargado) && (
             <>
               <Button
                 onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
@@ -367,9 +384,6 @@ export default function ReservationList() {
           </Button>
         </div>
       </div>
-
-
-
 
       {/* Buscador con icono y limpiar + botón de filtros */}
       <div className="d-flex flex-column flex-md-row justify-content-between mb-3 gap-2">
@@ -408,7 +422,6 @@ export default function ReservationList() {
           <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
         </Button>
       </div>
-
 
       {showFilters && !isFirstLoad && (
         <div className="p-3 rounded mb-4 border border-secondary">
@@ -557,7 +570,7 @@ export default function ReservationList() {
                         {reserva.equipos.length > 2 && "..."}
                       </td>
                       <td>{reserva.aula}</td>
-                     <td>{formatDateTimeTo12h(reserva.fecha_reserva)}</td>
+                      <td>{formatDateTimeTo12h(reserva.fecha_reserva)}</td>
 
                       <td>{formatDateTimeTo12h(reserva.fecha_entrega)}</td>
                       <td>
@@ -593,15 +606,25 @@ export default function ReservationList() {
                           <button
                             className="btn btn-outline-warning rounded-circle btn-icon-white-hover"
                             title="Editar reserva"
-                            onClick={() => navigate(`/equipmentreservation/edit/${reserva.id}`)}
-                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out" }}
+                            onClick={() =>
+                              navigate(
+                                `/equipmentreservation/edit/${reserva.id}`
+                              )
+                            }
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
                             }
                             onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
-                            disabled={reserva.estado.toLowerCase() !== "pendiente"}
+                            disabled={
+                              reserva.estado.toLowerCase() !== "pendiente"
+                            }
                           >
                             <FaEdit className="fs-5" />
                           </button>
@@ -620,8 +643,8 @@ export default function ReservationList() {
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform =
-                                "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")

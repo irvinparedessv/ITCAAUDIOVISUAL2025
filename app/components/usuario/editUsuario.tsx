@@ -338,7 +338,7 @@ const EditUsuario = () => {
               value={formData.role_id}
               onChange={handleChange}
               required
-              disabled={isSubmitting} // Deshabilitar si se está enviando
+              disabled={true}
             >
               {rolesMap.map((role) => (
                 <option key={role.id} value={role.id}>
@@ -375,15 +375,18 @@ const EditUsuario = () => {
             value={formData.estado}
             onChange={handleChange}
             required
-            disabled={isSubmitting} // Deshabilitar si se está enviando
+            disabled={isSubmitting}
           >
-            {estadosMap.map((estado) => (
-              <option key={estado.id} value={estado.id}>
-                {estado.nombre}
-              </option>
-            ))}
+            {estadosMap
+              .filter((estado) => estado.nombre !== "Pendiente")
+              .map((estado) => (
+                <option key={estado.id} value={estado.id}>
+                  {estado.nombre}
+                </option>
+              ))}
           </select>
         </div>
+
 
         <div className="form-actions">
           <button

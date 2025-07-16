@@ -173,11 +173,14 @@ const NotificationItem = ({
               {(reservaData as ReservaNotification).equipos && (
                 <small className="d-block text-dark">
                   Equipos:{" "}
-                  {(reservaData as ReservaNotification).equipos
-                    ?.map((e) => e.nombre)
-                    .join(", ")}
+                  {(() => {
+                    const equipos = (reservaData as ReservaNotification).equipos;
+                    const nombres = equipos?.map((e) => e.nombre).join(", ") ?? "";
+                    return nombres.length > 55 ? `${nombres.slice(0, 55)}...` : nombres;
+                  })()}
                 </small>
               )}
+
             </>
           )}
 

@@ -415,18 +415,21 @@ export default function UsuarioList() {
                           <Button
                             variant="outline-warning"
                             className="rounded-circle"
-                            title="Restablecer contraseña"
+                            title={user.estado !== 1 ? "Usuario debe estar activo para restablecer contraseña" : "Restablecer contraseña"}
                             onClick={() => handleResetPassword(user.id, user.email)}
+                            disabled={user.estado !== 1} // Deshabilitar si no está activo (1)
                             style={{
                               width: "44px",
                               height: "44px",
-                              transition: "transform 0.2s ease-in-out"
+                              transition: user.estado === 1 ? "transform 0.2s ease-in-out" : "none",
+                              opacity: user.estado !== 1 ? 0.6 : 1,
+                              cursor: user.estado !== 1 ? "not-allowed" : "pointer"
                             }}
                             onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
+                              user.estado === 1 && (e.currentTarget.style.transform = "scale(1.15)")
                             }
                             onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
+                              user.estado === 1 && (e.currentTarget.style.transform = "scale(1)")
                             }
                           >
                             <FaKey />

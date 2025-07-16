@@ -361,7 +361,9 @@ export const useChatbotLogic = (user: any) => {
       { id: prev.length + 1, text: message, sender: "user" },
     ]);
     setReservaDataRoom((prev) => ({ ...prev, aula }));
-    addBotMessage("Gracias. Ahora escriba el titulo de su reserva:");
+    addBotMessage(
+      "Gracias. Ahora escriba el titulo de su reserva: Ej DS19-PO-PRACTICA"
+    );
     setStep(Steps.SeleccionarTituloReservaAula);
   };
 
@@ -525,7 +527,7 @@ export const useChatbotLogic = (user: any) => {
       fecha_fin: reservaDataRoom.fecha_fin,
       comentario: reservaDataRoom.titulo,
       tipo: reservaDataRoom.type,
-      horario: `${reservaDataRoom.horarioInicio}-${reservaDataRoom.horarioFin}`,
+      horario: `${reservaDataRoom.horarioInicio} - ${reservaDataRoom.horarioFin}`,
       estado: "Pendiente",
       dias:
         reservaDataRoom.type === "clase_recurrente"

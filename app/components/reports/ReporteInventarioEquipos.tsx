@@ -35,15 +35,19 @@ const ReporteInventarioEquipos = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [perPage] = useState(20);
 
-  const fetchEquipos = async (page = 1) => {
+  const fetchEquipos = async (
+    page = 1,
+    tipo_id = filtroTipo,
+    estado = filtroEstado
+  ) => {
     setLoading(true);
     try {
       const params: any = {
         page,
         per_page: perPage,
       };
-      if (filtroTipo) params.tipo_id = filtroTipo;
-      if (filtroEstado) params.estado = filtroEstado;
+      if (tipo_id) params.tipo_id = tipo_id;
+      if (estado !== "") params.estado = estado;
 
       const res = await api.get("/reportes/inventario-equipos", { params });
 
@@ -56,6 +60,7 @@ const ReporteInventarioEquipos = () => {
       setLoading(false);
     }
   };
+
 
   const fetchTipos = async () => {
     try {
@@ -279,8 +284,9 @@ const ReporteInventarioEquipos = () => {
 
   const handleBuscarClick = () => {
     setCurrentPage(1);
-    fetchEquipos(1);
+    fetchEquipos(1, filtroTipo, filtroEstado);
   };
+
 
   const limpiarFiltros = () => {
     setFiltroTipo("");
@@ -450,9 +456,10 @@ const ReporteInventarioEquipos = () => {
                 totalPages={totalPages}
                 onPageChange={(p) => {
                   setCurrentPage(p);
-                  fetchEquipos(p);
+                  fetchEquipos(p, filtroTipo, filtroEstado); // usa filtros actuales
                 }}
               />
+
             </div>
           )}
         </Card.Body>

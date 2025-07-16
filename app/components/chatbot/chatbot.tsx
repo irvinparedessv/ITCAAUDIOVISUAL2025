@@ -40,6 +40,7 @@ const Chatbot = () => {
     handleTipoClick,
     handleAulaClick,
     handleTypeClick,
+    handleFileSelect,
   } = useChatbotLogic(user);
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -111,6 +112,7 @@ const Chatbot = () => {
             />
             <InputBox
               inputMessage={inputMessage}
+              handleFileSelect={handleFileSelect}
               setInputMessage={setInputMessage}
               onSend={handleSendMessage}
               completarReserva={completarReserva}

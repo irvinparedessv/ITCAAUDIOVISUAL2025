@@ -32,6 +32,7 @@ export const useChatbotLogic = (user: any) => {
   const [equipmentOptions, setEquipmentOptions] = useState<OptionType[]>([]);
   const [aulaOptions, setAulaOptions] = useState<OptionType[]>([]);
   const [espacioOptions, setEspacioOptions] = useState<OptionType[]>([]);
+  const [documento, setDocumento] = useState<File | null>(null);
 
   const [reservaData, setReservaData] = useState<ReservaData>({
     fecha: "",
@@ -40,7 +41,6 @@ export const useChatbotLogic = (user: any) => {
     ubicacion: "",
     equipos: [],
     tipo: "",
-    documento: undefined,
   });
 
   const [reservaDataRoom, setReservaDataRoom] = useState<ReservaDataRoom>({
@@ -159,6 +159,7 @@ export const useChatbotLogic = (user: any) => {
         sender: "bot",
       },
     ]);
+    setDocumento(null);
     setReservaData({
       fecha: "",
       horaInicio: "",
@@ -282,6 +283,19 @@ export const useChatbotLogic = (user: any) => {
         });
     }
   };
+  const handleFileSelect = (file: File) => {
+    setDocumento(file);
+    setMessages((prev: any) => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        text: file.name,
+        sender: "user",
+      },
+    ]);
+    addBotMessage("Gracias. Ahora selecciona la ubicacion:");
+    setStep("seleccionarUbicacion");
+  };
 
   const handleOptionClick = (option: string) => {
     setMessages((prev) => [
@@ -297,9 +311,6 @@ export const useChatbotLogic = (user: any) => {
     } else if (option === "Consultas") {
       addBotMessage("¿Qué deseas consultar? Por favor, escribe tu pregunta.");
       setStep("consultas");
-    } else if (option === "Crear reserva equipo") {
-      addBotMessage("Perfecto, ¿qué fecha deseas? (dd/mm/yyyy)");
-      setStep("fecha");
     }
   };
 
@@ -438,7 +449,7 @@ export const useChatbotLogic = (user: any) => {
       startTime: reservaData.horaInicio,
       endTime: reservaData.horaFin,
       tipo_reserva_id: reservaData.tipo,
-      documento_evento: reservaData.documento,
+      documento_evento: documento,
     };
     api
       .post("/BOTreservas", payload, {
@@ -565,6 +576,7 @@ export const useChatbotLogic = (user: any) => {
     addBotMessage,
     handleSendMessage,
     handleOptionClick,
+    handleFileSelect,
     handleUbicacionClick,
     handleEquipoClick,
     handleDiasClick,

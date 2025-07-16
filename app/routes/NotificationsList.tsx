@@ -119,7 +119,7 @@ export default function NotificationsList() {
 
   const confirmDeleteAll = () => {
     toast.dismiss();
-    
+
     toast(
       (t) => (
         <div className="p-2">
@@ -163,23 +163,6 @@ export default function NotificationsList() {
           minWidth: '300px',
         },
       }
-    );
-  };
-
-  const leadingActions = (id: string) => {
-    return (
-      <LeadingActions>
-        <SwipeAction onClick={() => markAsRead(id)}>
-          <div className="d-flex align-items-center justify-content-center h-100 px-3"
-            style={{
-              background: "#d1e7dd",
-              color: "#0f5132",
-            }}
-          >
-            ✅ Leída
-          </div>
-        </SwipeAction>
-      </LeadingActions>
     );
   };
 
@@ -477,7 +460,6 @@ export default function NotificationsList() {
                           {unreadNotifications.map((notification) => (
                             <SwipeableListItem
                               key={notification.id}
-                              leadingActions={leadingActions(notification.id)}
                               trailingActions={trailingActions(notification.id)}
                             >
                               <ListGroup.Item

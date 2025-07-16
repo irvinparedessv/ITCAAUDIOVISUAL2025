@@ -309,7 +309,9 @@ export const useChatbotLogic = (user: any) => {
       addBotMessage("Perfecto, Seleccione el aula.");
       setStep("seleccionarAula");
     } else if (option === "Consultas") {
-      addBotMessage("¿Qué deseas consultar? Por favor, escribe tu pregunta.");
+      addBotMessage(
+        "¿Qué deseas consultar? Por favor, escribe tu pregunta.(Puedo ayudarte con Disponibilidad de Espacios,Sugerencias de Equipos para eventos)"
+      );
       setStep("consultas");
     }
   };

@@ -1,6 +1,7 @@
 import { handledSteps, Steps } from "./steps";
 import type { ReservaDataRoom } from "./types";
 import { formatDate } from "./../../utils/time";
+import { useRef } from "react";
 
 type Props = {
   inputMessage: string;
@@ -16,6 +17,7 @@ type Props = {
   setStep: (step: string) => void;
   completarReserva: () => void;
   completarReservaAula: () => void;
+  handleFileSelect: (file: File) => void;
 };
 
 const InputBox = ({
@@ -32,7 +34,10 @@ const InputBox = ({
   completarReserva,
   completarReservaAula,
   addBotMessage,
+  handleFileSelect,
 }: Props) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const validateDate = (selectedDateStr: string) => {
     const [year, month, day] = selectedDateStr.split("-").map(Number);
     const selectedDate = new Date(year, month - 1, day); // local time
@@ -287,20 +292,7 @@ const InputBox = ({
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) {
-              setReservaData((prev: any) => ({
-                ...prev,
-                documento: file,
-              }));
-              setMessages((prev: any) => [
-                ...prev,
-                {
-                  id: prev.length + 1,
-                  text: file.name,
-                  sender: "user",
-                },
-              ]);
-              addBotMessage("Gracias. Ahora selecciona la ubicacion:");
-              setStep("seleccionarUbicacion");
+              handleFileSelect(file);
             }
           }}
         />
@@ -371,8 +363,8 @@ const InputBox = ({
   if (step === Steps.Resumen) {
     return (
       <div className="chat-input">
-        <button onClick={() => setStep("mostrarEquipos")}>
-          Volver a equipos
+        <button onClick={() => setStep(Steps.FechaEquipo)}>
+          Cambiar Datos
         </button>{" "}
         <button
           onClick={completarReserva}

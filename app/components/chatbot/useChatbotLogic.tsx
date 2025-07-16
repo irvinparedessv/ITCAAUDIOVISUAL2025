@@ -258,9 +258,18 @@ export const useChatbotLogic = (user: any) => {
       setStep("seleccionarUbicacion");
     } else if (step === "consultas") {
       addBotMessage("Procesando tu consulta...");
-
+      const contextForGPT = messages
+        .map((msg) => ({
+          role: msg.sender === "bot" ? "assistant" : "user",
+          content: msg.text,
+        }))
+        // además agregas el mensaje nuevo que acabas de poner (userText)
+        .concat([{ role: "user", content: userText }]);
       api
-        .post("/chatGPT", { question: userText })
+        .post("/chatGPT", {
+          question: userText,
+          context: contextForGPT,
+        })
         .then((response) => {
           if (response.data.error) {
             addBotMessage(response.data.error.message);
@@ -270,10 +279,11 @@ export const useChatbotLogic = (user: any) => {
                 "Perfecto , te ayudare creando la reservacion de equipos sigue los pasos a continuacion, ¿qué fecha deseas? (dd/mm/yyyy)"
               );
               setStep(Steps.FechaEquipo);
-            } else if (response.data.reply == "rEspacio ") {
+            } else if (response.data.reply == "rEspacio") {
               addBotMessage(
                 "Perfecto , te ayudare creando la reservacion de espacios sigue los pasos a continuacion"
               );
+              addBotMessage("Selecciona el espacio");
               setStep(Steps.SeleccionarAula);
             } else addBotMessage(response.data.reply);
           }
@@ -516,7 +526,7 @@ export const useChatbotLogic = (user: any) => {
       comentario: reservaDataRoom.titulo,
       tipo: reservaDataRoom.type,
       horario: `${reservaDataRoom.horarioInicio}-${reservaDataRoom.horarioFin}`,
-      estado: "pendiente",
+      estado: "Pendiente",
       dias:
         reservaDataRoom.type === "clase_recurrente"
           ? reservaDataRoom.dias

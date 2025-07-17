@@ -53,6 +53,7 @@ import UbicacionForm from "./components/ubication/UbicationForm";
 import UbicacionList from "./components/ubication/listUbications";
 import PublicOnlyRoute from "./layouts/PublicOnlyRoute";
 import ReservaCalendar from "./components/rooms/ReserveCalendar";
+import SceneCanvas from "./components/renders/rooms/Scene";
 
 const router = createBrowserRouter([
   {
@@ -146,6 +147,10 @@ const router = createBrowserRouter([
           {
             path: "reservations-room",
             element: <EspacioListWrapper />,
+          },
+          {
+            path: "visualizacion",
+            element: <SceneCanvas />,
           },
           {
             path: "aulas/encargados/:aulaId",

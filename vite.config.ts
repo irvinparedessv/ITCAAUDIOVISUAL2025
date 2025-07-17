@@ -8,6 +8,7 @@ export default defineConfig({
     noExternal: ["react-datepicker", "react-360-view", "pannellum"],
   },
   plugins: [tailwindcss(), tsconfigPaths()],
+  assetsInclude: ["**/*.glb"],
   base: "/",
   resolve: {
     alias: {

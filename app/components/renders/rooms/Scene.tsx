@@ -5,18 +5,15 @@ import useSceneItems from "../hooks/useSceneItems";
 import { useState } from "react";
 import ModelItem from "../items/ModelItem";
 import RoomModel from "../items/RoomModel";
-import RoomOrbitControls from "../controls/RoomOrbitControls"; // importalo así
+import RoomOrbitControls from "../controls/RoomOrbitControls";
 import type { Models, ItemType } from "../types/Item";
 import { roomModel, availableModels } from "../types/data";
 import * as THREE from "three";
-import { useThree } from "@react-three/fiber";
 
 export default function InteractiveRoom() {
   const { items, addItem, updatePosition } = useSceneItems();
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [transformMode, setTransformMode] = useState<"translate" | "rotate">(
-    "translate"
-  );
+  const [transformMode, setTransformMode] = useState<"translate" | "rotate">("translate");
   const [roomObject, setRoomObject] = useState<THREE.Object3D | null>(null);
 
   const scales: Record<ItemType, number> = {
@@ -32,7 +29,6 @@ export default function InteractiveRoom() {
 
   const renderItem = (item: any) => {
     const scale = scales[item.type] ?? 0.5;
-
     return (
       <MoveableItem
         key={item.id}
@@ -47,42 +43,110 @@ export default function InteractiveRoom() {
     );
   };
 
+  const equiposFlotantes = [
+    { name: "desk", label: "Escritorio" },
+    { name: "projector", label: "Proyector" },
+    { name: "plant", label: "Planta" },
+  ];
+
   return (
     <>
-      <div
+      <nav
         style={{
-          position: "absolute",
-          top: 10,
+          position: "fixed",
+          top: "50%",
           left: 10,
-          zIndex: 1,
-          pointerEvents: "auto",
-          backgroundColor: "rgba(255,255,255,0.8)",
-          padding: 10,
-          borderRadius: 4,
+          transform: "translateY(-50%)",
+          background: "#01071F", // fondo negro
+          borderRadius: "12px",
+          padding: "1rem",
+          boxShadow: "0 4px 15px rgba(0,0,0,0.6)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "1rem",
+          width: "180px",
+          color: "#fff",
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+          userSelect: "none",
+          zIndex: 20,
         }}
       >
-        {availableModels.map((model) => (
-          <div key={model.name} style={{ marginBottom: 6 }}>
-            <button onClick={() => handleAddItem(model.name, model.path)}>
-              Agregar {model.name.charAt(0).toUpperCase() + model.name.slice(1)}
-            </button>
-          </div>
+        <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", textAlign: "center" }}>
+          Equipos 3D
+        </h2>
+
+        {equiposFlotantes.map(({ name, label }) => (
+          <button
+            key={name}
+            onClick={() => {
+              const model = availableModels.find((m) => m.name === name);
+              if (model) handleAddItem(model.name as ItemType, model.path);
+            }}
+            style={{
+              backgroundColor: "#822468",  // color cambiado
+              border: "none",
+              borderRadius: "8px",
+              padding: "0.6rem 1rem",
+              color: "#fff",
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "background-color 0.3s ease",
+              textAlign: "left",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#9D2F7B"; // un tono más claro para hover
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#822468";
+            }}
+          >
+            + {label}
+          </button>
         ))}
-        <button
-          onClick={() => setTransformMode("translate")}
-          disabled={transformMode === "translate"}
-          style={{ marginTop: 8 }}
-        >
-          Mover
-        </button>
-        <button
-          onClick={() => setTransformMode("rotate")}
-          disabled={transformMode === "rotate"}
-          style={{ marginLeft: 8 }}
-        >
-          Rotar
-        </button>
-      </div>
+
+        <hr style={{ borderColor: "#ffffff99" }} />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <button
+            onClick={() => setTransformMode("translate")}
+            disabled={transformMode === "translate"}
+            style={{
+              padding: "0.5rem",
+              borderRadius: "8px",
+              border: "none",
+              fontWeight: "bold",
+              cursor: transformMode === "translate" ? "default" : "pointer",
+              backgroundColor: transformMode === "translate" ? "#444" : "#4caf50",
+              color: "#fff",
+              boxShadow:
+                transformMode === "translate" ? "none" : "0 3px 8px rgba(76, 175, 80, 0.7)",
+              transition: "background-color 0.3s ease",
+            }}
+          >
+            Modo: Mover
+          </button>
+
+          <button
+            onClick={() => setTransformMode("rotate")}
+            disabled={transformMode === "rotate"}
+            style={{
+              padding: "0.5rem",
+              borderRadius: "8px",
+              border: "none",
+              fontWeight: "bold",
+              cursor: transformMode === "rotate" ? "default" : "pointer",
+              backgroundColor: transformMode === "rotate" ? "#444" : "#2196f3",
+              color: "#fff",
+              boxShadow:
+                transformMode === "rotate" ? "none" : "0 3px 8px rgba(33, 150, 243, 0.7)",
+              transition: "background-color 0.3s ease",
+            }}
+          >
+            Modo: Rotar
+          </button>
+        </div>
+      </nav>
+
       <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
         <Canvas
           style={{ position: "absolute", top: 0, left: 0, zIndex: 0 }}

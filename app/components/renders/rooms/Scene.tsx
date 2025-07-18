@@ -57,7 +57,7 @@ export default function InteractiveRoom() {
           top: "50%",
           left: 10,
           transform: "translateY(-50%)",
-          background: "#01071F", // fondo negro
+          background: "#01071F", 
           borderRadius: "12px",
           padding: "1rem",
           boxShadow: "0 4px 15px rgba(0,0,0,0.6)",
@@ -83,7 +83,7 @@ export default function InteractiveRoom() {
               if (model) handleAddItem(model.name as ItemType, model.path);
             }}
             style={{
-              backgroundColor: "#822468",  // color cambiado
+              backgroundColor: "#822468",  
               border: "none",
               borderRadius: "8px",
               padding: "0.6rem 1rem",

@@ -54,6 +54,8 @@ import UbicacionList from "./components/ubication/listUbications";
 import PublicOnlyRoute from "./layouts/PublicOnlyRoute";
 import ReservaCalendar from "./components/rooms/ReserveCalendar";
 import SceneCanvas from "./components/renders/rooms/Scene";
+import ItemListPage from "./routes/equipment/ItemListPage";
+import ItemCreatePage from "./routes/equipment/ItemCreatePage";
 
 const router = createBrowserRouter([
   {
@@ -163,6 +165,14 @@ const router = createBrowserRouter([
           {
             path: "equipo",
             element: <Equipos />,
+          },
+          {
+            path: "inventario",
+            element: <ItemListPage />,
+          },
+          {
+            path: "crearItem",
+            element: <ItemCreatePage />,
           },
           {
             path: "/equipos/editar/:id",

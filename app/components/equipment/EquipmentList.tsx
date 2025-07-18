@@ -164,38 +164,38 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
 
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
         <div className="d-flex align-items-center gap-3">
-  <FaLongArrowAltLeft
-    onClick={handleBack}
-    title="Regresar"
-    style={{
-      cursor: 'pointer',
-      fontSize: '2rem',
-    }}
-  />
-  <h2 className="fw-bold m-0">Listado de Equipos</h2>
-</div>
+          <FaLongArrowAltLeft
+            onClick={handleBack}
+            title="Regresar"
+            style={{
+              cursor: 'pointer',
+              fontSize: '2rem',
+            }}
+          />
+          <h2 className="fw-bold m-0">Listado de Equipos</h2>
+        </div>
 
-<div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
-  <Button
-    variant="primary"
-    className="d-flex align-items-center gap-2"
-    onClick={() => navigate('/tipoEquipo')}
-  >
-    <FaTools />
-    Tipo de Equipo
-  </Button>
+        <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
+          <Button
+            variant="primary"
+            className="d-flex align-items-center gap-2"
+            onClick={() => navigate('/tipoEquipo')}
+          >
+            <FaTools />
+            Tipo de Equipo
+          </Button>
 
-  <Button
-    variant="primary"
-    className="d-flex align-items-center gap-2"
-    onClick={() => navigate('/equipo')}
-  >
-    <FaPlus />
-    Crear Nuevo Equipo
-  </Button>
-</div>
+          <Button
+            variant="primary"
+            className="d-flex align-items-center gap-2"
+            onClick={() => navigate('/equipo')}
+          >
+            <FaPlus />
+            Crear Nuevo Equipo
+          </Button>
+        </div>
 
-</div>
+      </div>
       {/* Buscador + botón de filtros */}
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
         {/* Input con ícono */}

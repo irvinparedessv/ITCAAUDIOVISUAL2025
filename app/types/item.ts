@@ -19,6 +19,17 @@ export interface Modelo {
   updated_at?: string;
   marca?: Marca; // Relación opcional
 }
+export interface Caracteristica {
+  id: number;
+  nombre: string;
+  tipo_dato: 'string' | 'integer' | 'decimal' | 'boolean';
+}
+
+export interface CaracteristicaValor {
+  caracteristica_id: number;
+  valor: string | number | boolean;
+}
+
 
 
 export interface ItemBase {
@@ -26,8 +37,8 @@ export interface ItemBase {
   detalles?: string;
   estado_id: number;
   tipo_equipo_id: number;
-  marca_id: number;
   modelo_id: number;
+  cantidad: number;
   tipo_reserva_id?: number;
   fecha_adquisicion?: string;
   imagen_url?: string;
@@ -36,7 +47,6 @@ export interface ItemBase {
   tipo: ItemTipo;
 
   // Relaciones opcionales
-  marca?: Marca;
   modelo?: Modelo;
 }
 

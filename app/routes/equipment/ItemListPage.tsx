@@ -55,8 +55,8 @@ export default function ItemListPage() {
       <ItemList
         tipos={tipos}
         loading={loading}
-        selectedType={selectedType}
-        onTypeChange={setSelectedType}
+        //selectedType={selectedType}
+        //onTypeChange={setSelectedType}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />

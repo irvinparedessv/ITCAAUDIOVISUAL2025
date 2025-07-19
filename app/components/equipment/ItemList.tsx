@@ -11,23 +11,17 @@ import {
     FaSearch,
     FaLongArrowAltLeft,
     FaPlus,
-    FaBoxes,
-    FaBoxOpen
+    FaBoxes
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
 import type { TipoEquipo } from "~/types/tipoEquipo";
-import type { ButtonVariant } from 'react-bootstrap/esm/types';
 
-
-// Definimos un tipo Item explícito
 type Item = Equipo | Insumo;
 
 interface Props {
     tipos: TipoEquipo[];
     loading: boolean;
-    selectedType: ItemTipo | 'todos';
-    onTypeChange: (type: ItemTipo | 'todos') => void;
     onEdit: (item: Item) => void;
     onDelete: (id: number, tipo: ItemTipo) => void;
 }
@@ -35,8 +29,6 @@ interface Props {
 export default function ItemList({
     tipos,
     loading,
-    selectedType,
-    onTypeChange,
     onEdit,
     onDelete
 }: Props) {
@@ -51,23 +43,21 @@ export default function ItemList({
     const [showFilters, setShowFilters] = useState(false);
     const navigate = useNavigate();
     const [showImageModal, setShowImageModal] = useState(false);
-    const buttonVariants: ButtonVariant[] = ['primary', 'outline-primary'];
-
     const [selectedItemImage, setSelectedItemImage] = useState<{
         imageUrl: string;
         name: string;
     } | null>(null);
 
-    // Type guard para Equipo
-    function isEquipo(item: Item): item is Equipo {
-        return (item as Equipo).numero_serie !== undefined;
-    }
+   function isEquipo(item: Item): item is Equipo {
+    return (item as Equipo).numero_serie !== undefined && (item as Equipo).numero_serie !== null;
+}
+
 
     const fetchItems = async () => {
         try {
             const res = await getItems({
                 ...filters,
-                tipo: selectedType === 'todos' ? 'todos' : `${selectedType}s`
+                tipo: 'todos'
             });
             setItems(Array.isArray(res.data) ? res.data : []);
             setTotal(res.total);
@@ -80,7 +70,7 @@ export default function ItemList({
 
     useEffect(() => {
         fetchItems();
-    }, [filters, selectedType]);
+    }, [filters]);
 
     const getTipoNombre = (id: number) => {
         const tipo = tipos.find((t) => t.id === id);
@@ -166,11 +156,17 @@ export default function ItemList({
 
     const getItemTypeBadge = (tipo: ItemTipo) => {
         return (
-            <Badge bg={tipo === 'equipo' ? 'primary' : 'info'} className="text-capitalize">
+            <Badge 
+                bg={tipo === 'equipo' ? 'primary' : 'info'} 
+                className="text-capitalize"
+            >
                 {tipo}
             </Badge>
         );
     };
+
+
+
 
     return (
         <div className="table-responsive rounded shadow p-3 mt-4">
@@ -220,35 +216,6 @@ export default function ItemList({
                         Crear Nuevo Item
                     </Button>
                 </div>
-            </div>
-
-            <div className="d-flex gap-2 mb-3">
-                {/* <Button
-          variant={selectedType === 'todos' ? 'primary' : 'outline-primary'}
-          onClick={() => onTypeChange('todos')}
-        >
-          Todos
-        </Button> */}
-                <Button
-                    variant={selectedType === 'todos' ? buttonVariants[0] : buttonVariants[1]}
-                    onClick={() => onTypeChange('todos')}
-                >
-                    Todos
-                </Button>
-                <Button
-                    variant={selectedType === 'equipo' ? 'primary' : 'outline-primary'}
-                    onClick={() => onTypeChange('equipo')}
-                    className="d-flex align-items-center gap-2"
-                >
-                    <FaBoxes /> Equipos
-                </Button>
-                <Button
-                    variant={selectedType === 'insumo' ? 'primary' : 'outline-primary'}
-                    onClick={() => onTypeChange('insumo')}
-                    className="d-flex align-items-center gap-2"
-                >
-                    <FaBoxOpen /> Insumos
-                </Button>
             </div>
 
             <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
@@ -361,8 +328,8 @@ export default function ItemList({
                                     <th>Marca</th>
                                     <th>Modelo</th>
                                     <th>Estado</th>
-                                    {selectedType !== 'insumo' && <th>N° Serie</th>}
-                                    {selectedType !== 'equipo' && <th>Cantidad</th>}
+                                    <th>N° Serie</th>
+                                    <th>Cantidad</th>
                                     <th>Detalles</th>
                                     <th>Imagen</th>
                                     <th className="rounded-top-end">Acciones</th>
@@ -371,36 +338,29 @@ export default function ItemList({
                             <tbody>
                                 {items.length > 0 ? (
                                     items.map((item) => {
-                                        const cantidadTexto = isEquipo(item)
-                                            ? 'Único'
-                                            : item.cantidad || 0;
-                                        const marcaNombre = item.marca?.nombre || 'N/A';
+                                        const isEquipoItem = isEquipo(item);
                                         const modeloNombre = item.modelo?.nombre || 'N/A';
 
                                         return (
                                             <tr key={item.id}>
                                                 <td>{getItemTypeBadge(item.tipo)}</td>
-                                                <td>
-                                                    <em>{getTipoNombre(item.tipo_equipo_id)}</em>
-                                                </td>
+                                                <td><em>{getTipoNombre(item.tipo_equipo_id)}</em></td>
+                                                <td>{item.modelo?.marca?.nombre || 'Sin marca'}</td>
 
-                                                <td>{marcaNombre}</td>
+
                                                 <td>{modeloNombre}</td>
                                                 <td>
                                                     <Badge bg={
                                                         item.estado_id === 1 ? 'success' :
-                                                            item.estado_id === 2 ? 'warning' : 'danger'
+                                                        item.estado_id === 2 ? 'warning' : 'danger'
                                                     }>
                                                         {item.estado_id === 1 ? 'Disponible' :
-                                                            item.estado_id === 2 ? 'Mantenimiento' : 'Dañado'}
+                                                         item.estado_id === 2 ? 'Mantenimiento' : 'Dañado'}
                                                     </Badge>
                                                 </td>
-                                                {selectedType !== 'insumo' && (
-                                                    <td>{isEquipo(item) ? item.numero_serie : 'N/A'}</td>
-                                                )}
-                                                {selectedType !== 'equipo' && (
-                                                    <td>{cantidadTexto}</td>
-                                                )}
+                                                <td>{isEquipoItem ? item.numero_serie : '-'}</td>
+
+                                                <td>{item.cantidad}</td>
                                                 <td>{item.detalles || 'N/A'}</td>
                                                 <td>
                                                     {item.imagen_url ? (

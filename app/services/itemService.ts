@@ -9,6 +9,7 @@ import type {
   Marca,
   Modelo,
   Estado,
+  Caracteristica,
 } from "../types/item";
 
 export interface ItemFilters {
@@ -71,7 +72,6 @@ export const createItem = async (data: EquipoCreateDTO | InsumoCreateDTO, tipo: 
   // Comunes
   formData.append("tipo", tipo);
   formData.append("tipo_equipo_id", data.tipo_equipo_id.toString());
-  formData.append("marca_id", data.marca_id.toString());
   formData.append("modelo_id", data.modelo_id.toString());
   formData.append("estado_id", data.estado_id.toString());
   if (data.tipo_reserva_id) formData.append("tipo_reserva_id", data.tipo_reserva_id.toString());
@@ -106,7 +106,6 @@ export const updateItem = async (
   formData.append("tipo", tipo);
 
   if (data.tipo_equipo_id) formData.append("tipo_equipo_id", data.tipo_equipo_id.toString());
-  if (data.marca_id) formData.append("marca_id", data.marca_id.toString());
   if (data.modelo_id) formData.append("modelo_id", data.modelo_id.toString());
   if (data.estado_id) formData.append("estado_id", data.estado_id.toString());
   if (data.tipo_reserva_id) formData.append("tipo_reserva_id", data.tipo_reserva_id.toString());
@@ -142,3 +141,11 @@ export const getEquiposPorTipoReserva = async (tipoReservaId: number) => {
   const res = await api.get(`/equipos/por-tipo-reserva/${tipoReservaId}`);
   return res.data;
 };
+
+export const getCaracteristicasPorTipoEquipo = async (
+  tipoEquipoId: number
+): Promise<Caracteristica[]> => {
+  const res = await api.get(`/caracteristicas/tipo-equipo/${tipoEquipoId}`);
+  return res.data;
+};
+

@@ -1,11 +1,10 @@
+import React, { useRef, useEffect, useState, useMemo, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Environment, TransformControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { useEffect, useRef, useState } from "react";
 import useSceneItems from "../hooks/useSceneItems";
-import { availableModels, roomModel } from "../types/data";
+import { availableModels } from "../types/data";
 import type { ItemType } from "../types/Item";
-import type { Vector3 } from "@react-three/fiber";
 
 // @ts-ignore
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
@@ -15,26 +14,12 @@ interface ModelItemProps {
   scale?: number;
 }
 
-function RoomModel({
-  path,
-  onReady,
-}: {
-  path: string;
-  onReady?: (obj: THREE.Object3D) => void;
-}) {
-  const { scene } = useGLTF(path);
-  const cloned = scene.clone(true);
-  useEffect(() => {
-    if (onReady) onReady(cloned);
-  }, [cloned, onReady]);
-
-  return <primitive object={cloned} />;
-}
-
 function ModelItem({ path, scale = 1 }: ModelItemProps) {
-  const { scene } = useGLTF(path);
-  const cloned = scene.clone(true);
-  return <primitive object={cloned} scale={[scale, scale, scale]} />;
+  const { scene: raw } = useGLTF(path);
+  const scene = useMemo(() => raw.clone(true), [raw]);
+  return (
+    <primitive object={scene} scale={[scale, scale, scale]} dispose={null} />
+  );
 }
 
 function MoveableItem({
@@ -54,9 +39,11 @@ function MoveableItem({
 }) {
   const groupRef = useRef<THREE.Group>(null!);
 
-  // sincroniza el grupo con la posición del estado
   useEffect(() => {
-    groupRef.current.position.set(...position);
+    if (groupRef.current) {
+      groupRef.current.position.set(...position);
+      groupRef.current.userData.addedByUser = true; // Marca como agregado por el usuario
+    }
   }, [position]);
 
   return (
@@ -70,15 +57,14 @@ function MoveableItem({
       >
         {children}
       </group>
-
-      {selected && groupRef.current && (
+      {selected && (
         <TransformControls
           object={groupRef.current}
           mode={mode}
           showY
           onObjectChange={() => {
             const p = groupRef.current.position;
-            onPositionChange && onPositionChange([p.x, p.y, p.z]);
+            onPositionChange?.([p.x, p.y, p.z]);
           }}
         />
       )}
@@ -93,7 +79,10 @@ export default function InteractiveScene() {
   const [transformMode, setTransformMode] = useState<"translate" | "rotate">(
     "translate"
   );
-  const [roomObject, setRoomObject] = useState<THREE.Object3D | null>(null);
+
+  useEffect(() => {
+    availableModels.forEach((model) => useGLTF.preload(model.path));
+  }, []);
 
   const scales: Record<ItemType, number> = {
     desk: 0.8,
@@ -106,74 +95,91 @@ export default function InteractiveScene() {
     setSelectedId(id);
   };
 
-  const renderItem = (item: any) => {
-    const scale = scales[item.type] ?? 0.5;
-    return (
-      <MoveableItem
-        key={item.id}
-        position={item.position}
-        selected={item.id === selectedId}
-        onSelect={() => setSelectedId(item.id)}
-        onPositionChange={(newPos) => updatePosition(item.id, newPos)}
-        mode={transformMode}
-      >
-        <ModelItem path={item.path} scale={scale} />
-      </MoveableItem>
-    );
-  };
+  const renderItem = (item: any) => (
+    <MoveableItem
+      key={item.id}
+      position={item.position}
+      selected={item.id === selectedId}
+      onSelect={() => setSelectedId(item.id)}
+      onPositionChange={(newPos) => updatePosition(item.id, newPos)}
+      mode={transformMode}
+    >
+      <ModelItem path={item.path} scale={scales[item.type] ?? 0.5} />
+    </MoveableItem>
+  );
 
   const handleExport = (type: "glb" | "gltf") => {
-    const group = exportGroupRef.current;
-    if (!group) {
-      console.warn("📤 No hay grupo para exportar");
+    const root = exportGroupRef.current;
+    if (!root) {
+      console.warn("❌ No hay root definido");
       return;
     }
 
-    console.log("📤 ExportGroupRef:", group);
-    console.log(
-      "📤 Children to export:",
-      group.children.map((c) => c.type + (c.name ? `('${c.name}')` : ""))
-    );
+    console.log("✅ Exportando desde root:", root);
 
-    // forzar recálculo de matrices en todo el árbol
-    group.updateMatrixWorld(true);
+    const exportGroup = new THREE.Group();
+
+    root.traverse((obj) => {
+      // Solo exportar objetos explícitamente marcados por el usuario
+      if (!obj.userData?.addedByUser) return;
+
+      if (obj instanceof THREE.Mesh) {
+        const mesh = obj.clone();
+        mesh.material = new THREE.MeshStandardMaterial({
+          color: (mesh.material as any)?.color || new THREE.Color("white"),
+          map: (mesh.material as any)?.map || null,
+        });
+        exportGroup.add(mesh);
+        console.log("✅ Mesh exportado:", mesh.name || mesh.uuid);
+      } else if (
+        obj instanceof THREE.Group ||
+        (obj instanceof THREE.Object3D && obj.type !== "Scene")
+      ) {
+        const clone = obj.clone(true);
+        exportGroup.add(clone);
+        console.log("✅ Grupo exportado:", clone.name || clone.uuid);
+      }
+    });
+
+    try {
+      exportGroup.updateMatrixWorld(true);
+      console.log("✅ updateMatrixWorld() ejecutado correctamente");
+    } catch (err) {
+      console.error("💥 Error en updateMatrixWorld:", err);
+      console.log("🧱 exportGroup.children:", exportGroup.children);
+      return;
+    }
 
     const exporter = new GLTFExporter();
     exporter.parse(
-      group,
+      exportGroup,
       (result) => {
-        console.log("✅ Resultado export:", result);
         if (type === "glb" && result instanceof ArrayBuffer) {
-          console.log("→ Es ArrayBuffer, tamaño:", result.byteLength);
           const blob = new Blob([result], { type: "model/gltf-binary" });
           const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = "escena.glb";
-          link.click();
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "escena.glb";
+          a.click();
           URL.revokeObjectURL(url);
         } else if (type === "gltf" && typeof result === "object") {
-          console.log("→ Es JSON, claves:", Object.keys(result));
           const json = JSON.stringify(result, null, 2);
           const blob = new Blob([json], { type: "application/json" });
           const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = "escena.gltf";
-          link.click();
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "escena.gltf";
+          a.click();
           URL.revokeObjectURL(url);
-        } else {
-          console.error("🚨 Resultado inesperado:", result);
         }
       },
-      (err) => console.error("🚨 Error al exportar GLTF:", err),
-      { binary: type === "glb" }
+      (err) => console.error("❌ Error durante exportación:", err),
+      { binary: type === "glb", embedImages: false }
     );
   };
 
   return (
     <>
-      {/* UI Controls */}
       <div
         style={{
           position: "absolute",
@@ -192,7 +198,6 @@ export default function InteractiveScene() {
             </button>
           </div>
         ))}
-
         <button
           onClick={() => setTransformMode("translate")}
           disabled={transformMode === "translate"}
@@ -206,7 +211,6 @@ export default function InteractiveScene() {
         >
           Rotar
         </button>
-
         <div style={{ marginTop: 10 }}>
           <button onClick={() => handleExport("glb")}>Exportar GLB</button>
           <button
@@ -218,7 +222,6 @@ export default function InteractiveScene() {
         </div>
       </div>
 
-      {/* 3D Scene */}
       <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
         <Canvas
           style={{ width: "100%", height: "100%", display: "block" }}
@@ -226,15 +229,10 @@ export default function InteractiveScene() {
         >
           <ambientLight intensity={0.5} />
           <directionalLight position={[5, 5, 5]} />
-          <Environment preset="sunset" />
-
-          <group ref={exportGroupRef}>
-            {/* room model */}
-            <RoomModel path={roomModel.path} onReady={setRoomObject} />
-
-            {/* scene items */}
-            {items.map(renderItem)}
-          </group>
+          <Suspense fallback={null}>
+            <Environment preset="sunset" />
+            <group ref={exportGroupRef}>{items.map(renderItem)}</group>
+          </Suspense>
         </Canvas>
       </div>
     </>

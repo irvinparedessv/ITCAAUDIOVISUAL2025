@@ -43,23 +43,13 @@ function MoveableItem({
   mode?: "translate" | "rotate";
 }) {
   const groupRef = useRef<THREE.Group>(null!);
-  const controlRef = useRef<any>(null);
 
   useEffect(() => {
     if (groupRef.current) {
       groupRef.current.position.set(...position);
-      groupRef.current.userData.addedByUser = true;
+      groupRef.current.userData.addedByUser = true; // Marca como agregado por el usuario
     }
   }, [position]);
-
-  useEffect(() => {
-    if (controlRef.current && groupRef.current && selected) {
-      controlRef.current.attach(groupRef.current);
-    }
-    return () => {
-      controlRef.current?.detach();
-    };
-  }, [selected]);
 
   return (
     <>
@@ -72,10 +62,9 @@ function MoveableItem({
       >
         {children}
       </group>
-
       {selected && (
         <TransformControls
-          ref={controlRef}
+          object={groupRef.current}
           mode={mode}
           showY
           onObjectChange={() => {

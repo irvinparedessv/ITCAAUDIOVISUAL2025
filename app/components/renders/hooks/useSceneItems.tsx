@@ -10,7 +10,7 @@ export default function useSceneItems() {
       id: newId,
       type,
       path,
-      position: [0, 0, 0],
+      position: [0, 2.5, 0],
     };
     setItems((prev) => [...prev, newItem]);
     return newId;

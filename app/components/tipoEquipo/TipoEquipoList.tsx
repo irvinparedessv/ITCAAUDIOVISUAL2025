@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { getTipoEquipo, getTipoEquipos } from "../../services/tipoEquipoService";
+import { getTipoEquipo } from "../../services/tipoEquipoService";
 import type { TipoEquipo } from "app/types/tipoEquipo";
-import TipoEquipoForm from "./TipoEquipoForm";
 import toast from "react-hot-toast";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { Button, Spinner } from "react-bootstrap";
 import PaginationComponent from "~/utils/Pagination";
+import { useNavigate } from "react-router-dom"; // 👈 Importa useNavigate
 
 interface Props {
   onEdit: (tipo: TipoEquipo) => void;
@@ -14,11 +14,11 @@ interface Props {
 }
 
 export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
-  const [tipoEditado, setTipoEditado] = useState<TipoEquipo | undefined>();
   const [tipos, setTipos] = useState<TipoEquipo[]>([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const navigate = useNavigate(); // 👈 Hook para navegación
 
   const cargarTipos = async () => {
     setIsLoading(true);
@@ -38,12 +38,7 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
   }, [paginaActual]);
 
   const handleEdit = (tipo: TipoEquipo) => {
-    setTipoEditado(tipo);
     onEdit(tipo);
-  };
-
-  const handleCancel = () => {
-    setTipoEditado(undefined);
   };
 
   const confirmarEliminacion = async (id: number) => {
@@ -115,15 +110,24 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
 
   return (
     <div className="container">
-      <TipoEquipoForm
-        tipoEditado={tipoEditado}
-        onSuccess={() => {
-          setTipoEditado(undefined);
-          cargarTipos();
-          onSuccess();
-        }}
-        onCancel={handleCancel}
-      />
+      {/* Botón para ir a /tipoEquipoForm */}
+      <div className="d-flex justify-content-end mt-3">
+        <Button
+          variant="primary"
+          onClick={() => navigate("/formTipoEquipo")}
+          style={{
+            transition: "transform 0.2s ease-in-out",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.transform = "scale(1.03)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.transform = "scale(1)")
+          }
+        >
+          Nuevo Tipo de Equipo
+        </Button>
+      </div>
 
       <div className="table-responsive rounded shadow p-3 mt-4">
         <div className="d-flex align-items-center gap-3 mb-4">
@@ -134,82 +138,81 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
             <Spinner animation="border" variant="primary" />
             <p className="mt-3">Cargando datos...</p>
           </div>
-        ) :
-          tipos.length === 0 ? (
-            <div
-              className="d-flex justify-content-center align-items-center"
-              style={{ height: "50vh" }}
+        ) : tipos.length === 0 ? (
+          <div
+            className="d-flex justify-content-center align-items-center"
+            style={{ height: "50vh" }}
+          >
+            <p>No hay tipos de equipo registrados</p>
+          </div>
+        ) : (
+          <>
+            <table
+              className="table table-hover align-middle text-center overflow-hidden"
+              style={{ borderRadius: "0.8rem" }}
             >
-              <p>No hay tipos de equipo registrados</p>
-            </div>
-
-          ) : (
-            <>
-              <table
-                className="table table-hover align-middle text-center overflow-hidden"
-                style={{ borderRadius: "0.8rem" }}
-              >
-                <thead className="table-dark">
-                  <tr>
-                    <th className="rounded-top-start">Nombre</th>
-                    <th className="rounded-top-end">Acciones</th>
+              <thead className="table-dark">
+                <tr>
+                  <th className="rounded-top-start">Nombre</th>
+                  <th className="rounded-top-end">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tipos.map((tipo) => (
+                  <tr key={tipo.id}>
+                    <td className="fw-bold">{tipo.nombre}</td>
+                    <td>
+                      <div className="d-flex justify-content-center gap-2">
+                        <button
+                          className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+                          title="Editar tipo de equipo"
+                          onClick={() => handleEdit(tipo)}
+                          style={{
+                            width: "44px",
+                            height: "44px",
+                            transition: "transform 0.2s ease-in-out",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.transform = "scale(1.15)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.transform = "scale(1)")
+                          }
+                        >
+                          <FaEdit className="fs-5" />
+                        </button>
+                        <button
+                          className="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center"
+                          title="Eliminar tipo de equipo"
+                          onClick={() => confirmarEliminacion(tipo.id)}
+                          style={{
+                            width: "44px",
+                            height: "44px",
+                            transition: "transform 0.2s ease-in-out",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.transform = "scale(1.15)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.transform = "scale(1)")
+                          }
+                        >
+                          <FaTrash className="fs-5" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {tipos.map((tipo) => (
-                    <tr key={tipo.id}>
-                      <td className="fw-bold">{tipo.nombre}</td>
-                      <td>
-                        <div className="d-flex justify-content-center gap-2">
-                          <button
-                            className="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
-                            title="Editar tipo de equipo"
-                            onClick={() => handleEdit(tipo)}
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              transition: "transform 0.2s ease-in-out",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                          >
-                            <FaEdit className="fs-5" />
-                          </button>
-                          <button
-                            className="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center"
-                            title="Eliminar tipo de equipo"
-                            onClick={() => confirmarEliminacion(tipo.id)}
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              transition: "transform 0.2s ease-in-out",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                          >
-                            <FaTrash className="fs-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </tbody>
+            </table>
 
-              <PaginationComponent
-                page={paginaActual}
-                totalPages={totalPaginas}
-                onPageChange={setPaginaActual}
-              />
-            </>)}
+            <PaginationComponent
+              page={paginaActual}
+              totalPages={totalPaginas}
+              onPageChange={setPaginaActual}
+            />
+          </>
+        )}
       </div>
     </div>
   );

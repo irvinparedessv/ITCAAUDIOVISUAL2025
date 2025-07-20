@@ -7,6 +7,14 @@ import toast from "react-hot-toast";
 import type { Marca, Modelo, Estado } from "../../types/item";
 import type { TipoEquipo } from "~/types/tipoEquipo";
 import type { TipoReserva } from "~/types/tipoReserva";
+import api from "../../api/axios";
+
+interface Caracteristica {
+  id: number;
+  nombre: string;
+  tipo_dato: string;
+  valor: string;
+}
 
 interface Props {
   loading: boolean;
@@ -44,6 +52,8 @@ export default function ItemForm({
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [filteredModelos, setFilteredModelos] = useState<Modelo[]>([]);
+  const [caracteristicas, setCaracteristicas] = useState<Caracteristica[]>([]);
+  const [loadingCaracteristicas, setLoadingCaracteristicas] = useState(false);
 
   // Filtrar modelos cuando cambia la marca seleccionada
   useEffect(() => {
@@ -55,6 +65,36 @@ export default function ItemForm({
       setFilteredModelos([]);
     }
   }, [form.marca_id, modelos]);
+
+  // Cargar características cuando cambia el tipo de equipo
+  useEffect(() => {
+   const fetchCaracteristicas = async () => {
+  if (form.tipo_equipo_id) {
+    setLoadingCaracteristicas(true);
+    try {
+      const response = await api.get(`/tipo-equipos/${form.tipo_equipo_id}/caracteristicas`);
+
+      const data = response.data;
+
+      setCaracteristicas(data.map((c: any) => ({
+        ...c,
+        valor: ''
+      })));
+    } catch (error) {
+      toast.error('Error al cargar características');
+      console.error(error);
+    } finally {
+      setLoadingCaracteristicas(false);
+    }
+  } else {
+    setCaracteristicas([]);
+  }
+};
+
+
+
+    fetchCaracteristicas();
+  }, [form.tipo_equipo_id]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -90,7 +130,7 @@ export default function ItemForm({
   };
 
   const handleBack = () => {
-    navigate("/items");
+    navigate("/inventario");
   };
 
   const handleClear = () => {
@@ -108,6 +148,15 @@ export default function ItemForm({
       imagen: null
     });
     setImagePreview(null);
+    setCaracteristicas([]);
+  };
+
+  const handleCaracteristicaChange = (id: number, valor: string) => {
+    setCaracteristicas(prev => 
+      prev.map(c => 
+        c.id === id ? { ...c, valor } : c
+      )
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,9 +193,18 @@ export default function ItemForm({
     }
 
     try {
-      await onSubmit(form, tipoItem);
+      const dataToSubmit = {
+        ...form,
+        caracteristicas: caracteristicas.map(c => ({
+          id: c.id,
+          valor: c.valor
+        }))
+      };
+      
+      await onSubmit(dataToSubmit, tipoItem);
     } catch (error) {
       console.error("Error al guardar:", error);
+      toast.error("Error al guardar el equipo");
     }
   };
 
@@ -306,6 +364,61 @@ export default function ItemForm({
               placeholder="Cantidad disponible"
             />
           </Form.Group>
+        )}
+
+        {/* Sección de Características */}
+        {loadingCaracteristicas ? (
+          <div className="mb-4 text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Cargando características...</span>
+            </div>
+            <p className="mt-2">Cargando características...</p>
+          </div>
+        ) : (
+          caracteristicas.length > 0 && (
+            <div className="mb-4 characteristics-section">
+              <h5>Características del Equipo</h5>
+              <div className="border rounded p-3">
+                {caracteristicas.map((caracteristica) => (
+                  <Form.Group key={caracteristica.id} className="mb-3">
+                    <Form.Label>
+                      {caracteristica.nombre}
+                      <Badge bg="info" className="ms-2">
+                        {caracteristica.tipo_dato}
+                      </Badge>
+                    </Form.Label>
+                    {caracteristica.tipo_dato === 'boolean' ? (
+                      <Form.Select
+                        value={caracteristica.valor}
+                        onChange={(e) => 
+                          handleCaracteristicaChange(caracteristica.id, e.target.value)
+                        }
+                        required
+                      >
+                        <option value="">Seleccione...</option>
+                        <option value="true">Sí</option>
+                        <option value="false">No</option>
+                      </Form.Select>
+                    ) : (
+                      <Form.Control
+                        type={
+                          caracteristica.tipo_dato === 'integer' ? 'number' : 
+                          caracteristica.tipo_dato === 'decimal' ? 'number' : 'text'
+                        }
+                        step={caracteristica.tipo_dato === 'decimal' ? '0.01' : undefined}
+                        value={caracteristica.valor}
+                        onChange={(e) => 
+                          handleCaracteristicaChange(caracteristica.id, e.target.value)
+                        }
+                        placeholder={`Ingrese ${caracteristica.nombre.toLowerCase()}`}
+                        required
+                      />
+                    )}
+                  </Form.Group>
+                ))}
+              </div>
+            </div>
+          )
         )}
 
         <Form.Group className="mb-4">

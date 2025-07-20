@@ -2,12 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTipoEquipos } from "../../services/tipoEquipoService";
 import { getTipoReservas } from "../../services/tipoReservaService";
-
 import { createItem, getEstados, getMarcas, getModelos } from "../../services/itemService";
-
 import type { TipoEquipo } from "app/types/tipoEquipo";
 import type { TipoReserva } from "app/types/tipoReserva";
-
 import toast from "react-hot-toast";
 import type { Estado, Marca, Modelo } from "~/types/item";
 import ItemForm from "~/components/equipment/ItemForm";
@@ -49,15 +46,16 @@ export default function ItemCreatePage() {
     loadData();
   }, []);
 
-  const handleSubmit = async (data: any, tipo: 'equipo' | 'insumo') => {
+  const handleSubmit = async (data: any) => {
     try {
+      // Determinar el tipo basado en si tiene número de serie o cantidad
+      const tipo = data.numero_serie ? 'equipo' : 'insumo';
       await createItem(data, tipo);
       toast.success(`${tipo === 'equipo' ? 'Equipo' : 'Insumo'} creado exitosamente`);
       navigate('/items');
     } catch (error: any) {
       console.error("Error creando ítem:", error);
-      const errorMsg = error.response?.data?.message || 
-        `Error al crear ${tipo === 'equipo' ? 'equipo' : 'insumo'}`;
+      const errorMsg = error.response?.data?.message || "Error al crear el ítem";
       toast.error(errorMsg);
     }
   };

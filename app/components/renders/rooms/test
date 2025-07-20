@@ -1,0 +1,34 @@
+const handleExport = (type) => {
+  if (!exportGroupRef.current) return;
+
+  const exporter = new GLTFExporter();
+  exporter.parse(
+    exportGroupRef.current,
+    (result) => {
+      if (type === "glb" && result instanceof ArrayBuffer) {
+        const blob = new Blob([result], { type: "model/gltf-binary" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "escena.glb";
+        link.click();
+        URL.revokeObjectURL(url);
+      } else if (type === "gltf" && typeof result === "object") {
+        const gltf = JSON.stringify(result);
+        const blob = new Blob([gltf], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "escena.gltf";
+        link.click();
+        URL.revokeObjectURL(url);
+      } else {
+        console.error("Error al exportar");
+      }
+    },
+    (error) => {
+      console.error("Error al exportar GLTF:", error);
+    },
+    { binary: type === "glb" }
+  );
+};

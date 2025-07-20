@@ -7,6 +7,6 @@ export const roomModel = {
 };
 
 export const availableModels: Models[] = [
-  { name: "desk", path: "/models/desk.glb", scale: 0.8 },
-  { name: "projector", path: "/models/projector.glb", scale: 0.01 },
+  { id: 1, name: "desk", path: "/models/desk.glb", scale: 0.8 },
+  { id: 2, name: "projector", path: "/models/projector.glb", scale: 0.01 },
 ];

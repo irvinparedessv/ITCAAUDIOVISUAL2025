@@ -1,5 +1,5 @@
 import api from "../api/axios";
-import type { TipoEquipo } from "app/types/tipoEquipo";
+import type { Categoria, TipoEquipo } from "app/types/tipoEquipo";
 
 interface TipoEquipoResponse {
   data: TipoEquipo[];
@@ -8,6 +8,21 @@ interface TipoEquipoResponse {
   total: number;
   per_page: number;
 }
+
+
+
+
+
+export const getCategorias = async (): Promise<Categoria[]> => {
+  const res = await api.get("/categorias");
+  return Array.isArray(res.data) ? res.data : res.data.data; // por si acaso
+};
+
+
+export const getCaracteristicas = async () => {
+  const res = await api.get("/caracteristicas");
+  return res.data;
+};
 
 export const getTipoEquipo = async (page = 1): Promise<TipoEquipoResponse> => {
   try {
@@ -29,30 +44,38 @@ export const getTipoEquipos = async (): Promise<TipoEquipo[]> => {
   }
 };
 
-export const createTipoEquipo = async (
-  tipoEquipo: Omit<TipoEquipo, "id" | "is_deleted">
-): Promise<TipoEquipo> => {
-  try {
-    const res = await api.post("/tipoEquipos", tipoEquipo);
-    return res.data;
-  } catch (error) {
-    console.error("Error al crear el tipo de equipo:", error);
-    throw error;
-  }
+
+
+export const createTipoEquipo = async (data: {
+  nombre: string;
+  categoria_id: number;
+  caracteristicas: Array<{
+    id?: number;
+    nombre?: string;
+    tipo_dato?: string;
+  }>;
+}) => {
+  const response = await api.post('/tipoEquipos', data);
+  return response.data;
 };
 
-export const updateTipoEquipo = async (
-  id: number,
-  tipoEquipo: Partial<Omit<TipoEquipo, "id" | "is_deleted">>
-): Promise<TipoEquipo> => {
-  try {
-    const res = await api.put(`/tipoEquipos/${id}`, tipoEquipo);
-    return res.data;
-  } catch (error) {
-    console.error(`Error al actualizar el tipo de equipo con ID ${id}:`, error);
-    throw error;
-  }
+export const updateTipoEquipo = async (id: number, data: {
+  nombre: string;
+  categoria_id: number;
+  caracteristicas: Array<{
+    id?: number;
+    nombre?: string;
+    tipo_dato?: string;
+  }>;
+}) => {
+  const response = await api.put(`/tipoEquipos/${id}`, data);
+  return response.data;
 };
+
+
+
+
+
 
 export const deleteTipoEquipo = async (
   id: number
@@ -68,3 +91,11 @@ export const deleteTipoEquipo = async (
     throw error;
   }
 };
+
+export async function createCaracteristica(data: {
+  nombre: string;
+  tipo_dato: string;
+}) {
+  const response = await api.post("/nuevaCaracteristica", data);
+  return response.data;
+}

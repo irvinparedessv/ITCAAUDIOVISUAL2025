@@ -57,6 +57,7 @@ import SceneCanvas from "./components/renders/rooms/Scene";
 import SceneCanvas2 from "./components/renders/rooms/Scene2";
 import ItemListPage from "./routes/equipment/ItemListPage";
 import ItemCreatePage from "./routes/equipment/ItemCreatePage";
+import TipoEquipoForm from "./components/tipoEquipo/TipoEquipoForm";
 
 const router = createBrowserRouter([
   {
@@ -166,6 +167,10 @@ const router = createBrowserRouter([
           {
             path: "tipoEquipo",
             element: <TipoEquipos />,
+          },
+          {
+            path: "formTipoEquipo",
+            element: <TipoEquipoForm />,
           },
           {
             path: "equipo",

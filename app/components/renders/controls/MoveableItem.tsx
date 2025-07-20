@@ -43,25 +43,19 @@ export default function MoveableItem({
   }, [selected, onPositionChange]);
 
   return (
-    <>
-      {selected && groupRef.current && (
-        <TransformControls
-          ref={transformRef}
-          object={groupRef.current}
-          mode={mode}
-          showY={true}
-        />
+    <group
+      ref={groupRef}
+      position={position}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+    >
+      {/* Esto hace que el TransformControls sea parte del mismo árbol exportable */}
+      {selected && (
+        <TransformControls ref={transformRef} mode={mode} showY={true} />
       )}
-      <group
-        ref={groupRef}
-        position={position}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect();
-        }}
-      >
-        {children}
-      </group>
-    </>
+      {children}
+    </group>
   );
 }

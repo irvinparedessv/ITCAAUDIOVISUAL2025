@@ -54,6 +54,7 @@ import UbicacionList from "./components/ubication/listUbications";
 import PublicOnlyRoute from "./layouts/PublicOnlyRoute";
 import ReservaCalendar from "./components/rooms/ReserveCalendar";
 import SceneCanvas from "./components/renders/rooms/Scene";
+import SceneCanvas2 from "./components/renders/rooms/Scene2";
 import ItemListPage from "./routes/equipment/ItemListPage";
 import ItemCreatePage from "./routes/equipment/ItemCreatePage";
 
@@ -153,6 +154,10 @@ const router = createBrowserRouter([
           {
             path: "visualizacion",
             element: <SceneCanvas />,
+          },
+          {
+            path: "visualizacion2",
+            element: <SceneCanvas2 />,
           },
           {
             path: "aulas/encargados/:aulaId",

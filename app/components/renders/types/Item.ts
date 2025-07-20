@@ -9,6 +9,7 @@ export interface SceneItem {
   scale?: [number, number, number];
 }
 export interface Models {
+  id: number;
   name: ItemType;
   path: string;
   scale: number;

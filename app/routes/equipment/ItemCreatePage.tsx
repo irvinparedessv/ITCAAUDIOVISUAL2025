@@ -21,7 +21,7 @@ export default function ItemCreatePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [tiposData, reservasData, marcasData, modelosData, estadosData] = 
+        const [tiposData, reservasData, marcasData, modelosData, estadosData] =
           await Promise.all([
             getTipoEquipos(),
             getTipoReservas(),
@@ -29,7 +29,7 @@ export default function ItemCreatePage() {
             getModelos(),
             getEstados()
           ]);
-        
+
         setTiposEquipo(tiposData);
         setTipoReservas(reservasData);
         setMarcas(marcasData);
@@ -48,11 +48,12 @@ export default function ItemCreatePage() {
 
   const handleSubmit = async (data: any) => {
     try {
-      // Determinar el tipo basado en si tiene número de serie o cantidad
-      const tipo = data.numero_serie ? 'equipo' : 'insumo';
+      const tipoEquipo = tiposEquipo.find(t => t.id === data.tipo_equipo_id);
+      const tipo = tipoEquipo?.categoria_id === 2 ? "insumo" : "equipo";
+
       await createItem(data, tipo);
-      toast.success(`${tipo === 'equipo' ? 'Equipo' : 'Insumo'} creado exitosamente`);
-      navigate('/items');
+      toast.success(`${tipo === "equipo" ? "Equipo" : "Insumo"} creado exitosamente`);
+      navigate("/items");
     } catch (error: any) {
       console.error("Error creando ítem:", error);
       const errorMsg = error.response?.data?.message || "Error al crear el ítem";

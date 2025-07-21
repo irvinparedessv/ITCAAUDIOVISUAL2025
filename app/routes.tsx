@@ -53,11 +53,13 @@ import UbicacionForm from "./components/ubication/UbicationForm";
 import UbicacionList from "./components/ubication/listUbications";
 import PublicOnlyRoute from "./layouts/PublicOnlyRoute";
 import ReservaCalendar from "./components/rooms/ReserveCalendar";
+import ViewScene from "./components/renders/rooms/Visualizacion";
 import SceneCanvas from "./components/renders/rooms/Scene";
 import SceneCanvas2 from "./components/renders/rooms/Scene2";
 import ItemListPage from "./routes/equipment/ItemListPage";
 import ItemCreatePage from "./routes/equipment/ItemCreatePage";
 import TipoEquipoForm from "./components/tipoEquipo/TipoEquipoForm";
+import { APIURL, APPLARAVEL } from "./constants/constant";
 
 const router = createBrowserRouter([
   {
@@ -159,6 +161,12 @@ const router = createBrowserRouter([
           {
             path: "visualizacion2",
             element: <SceneCanvas2 />,
+          },
+          {
+            path: "demo",
+            element: (
+              <ViewScene filePath={`${APPLARAVEL}/api/models/escena.glb`} />
+            ),
           },
           {
             path: "aulas/encargados/:aulaId",

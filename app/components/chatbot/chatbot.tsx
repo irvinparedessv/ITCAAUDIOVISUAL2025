@@ -2,7 +2,6 @@
 import { useAuth } from "../../hooks/AuthContext";
 import { useChatbotLogic } from "./useChatbotLogic";
 import ChatWindow from "./ChatWindow";
-import InputBox from "./InputBox";
 import "./chatbot.css";
 import { useEffect, useRef } from "react";
 import { FaCommentDots, FaRobot, FaTimes } from "react-icons/fa";
@@ -17,30 +16,16 @@ const Chatbot = () => {
     messages,
     handleSendMessage,
     setIsOpen,
-    equipmentOptions,
     reservaData,
     reservaDataRoom,
-    handleEquipoClick,
-    handleDiasClick,
-    completarReserva,
-    completarReservaAula,
+
     step,
     setStep,
     setReservaData,
     setReservaDataRoom,
     setMessages,
-    aulaOptions,
-    espacioOptions,
-    tipoReservaOptions,
     addBotMessage,
-    handleUbicacionClick,
-    handleOptionClick,
     toggleChat,
-    handleAulaFechaClick,
-    handleTipoClick,
-    handleAulaClick,
-    handleTypeClick,
-    handleFileSelect,
   } = useChatbotLogic(user);
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -91,41 +76,13 @@ const Chatbot = () => {
             <ChatWindow
               messages={messages}
               step={step}
-              handleOptionClick={handleOptionClick}
-              handleUbicacionClick={handleUbicacionClick}
-              handleEquipoClick={handleEquipoClick}
-              handleDiasClick={handleDiasClick}
-              handleAulaClick={handleAulaClick}
-              handleTipoClick={handleTipoClick}
-              handleTypeClick={handleTypeClick}
-              handleAulaFechaClick={handleAulaFechaClick}
-              completarReserva={completarReserva}
               setReservaData={setReservaData}
-              ubicaciones={aulaOptions}
-              espacios={espacioOptions}
-              equipos={equipmentOptions}
-              tipos={tipoReservaOptions}
               reservaData={reservaData}
               reservaDataRoom={reservaDataRoom}
               setStep={setStep}
               ref={bottomRef}
             />
-            <InputBox
-              inputMessage={inputMessage}
-              handleFileSelect={handleFileSelect}
-              setInputMessage={setInputMessage}
-              onSend={handleSendMessage}
-              completarReserva={completarReserva}
-              completarReservaAula={completarReservaAula}
-              step={step}
-              reservaData={reservaData}
-              setReservaData={setReservaData}
-              reservaDataRoom={reservaDataRoom}
-              setReservaDataRoom={setReservaDataRoom}
-              setStep={setStep}
-              setMessages={setMessages}
-              addBotMessage={addBotMessage}
-            />
+            <input className="form form-control" />
           </div>
         </>
       )}

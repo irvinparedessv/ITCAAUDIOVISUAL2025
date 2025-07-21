@@ -14,6 +14,11 @@ import type { ItemType } from "../types/Item";
 // @ts-ignore
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
 import { uploadModel } from "~/services/uploadModelService";
+import toast from "react-hot-toast";
+
+interface InteractiveSceneProps {
+  reserveId: number;
+}
 
 interface ModelItemProps {
   path: string;
@@ -89,13 +94,14 @@ function MoveableItem({
   );
 }
 
-export default function InteractiveScene() {
+export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
   const exportGroupRef = useRef<THREE.Group>(null);
   const { items, addItem, updatePosition } = useSceneItems();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [transformMode, setTransformMode] = useState<"translate" | "rotate">(
     "translate"
   );
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     availableModels.forEach((model) => useGLTF.preload(model.path));
@@ -175,7 +181,6 @@ export default function InteractiveScene() {
       }
     });
 
-    // Agregar cámara manual con posición y orientación
     const camera = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
     camera.position.set(0, 3.5, 3);
     camera.lookAt(new THREE.Vector3(0, 2.2, 0));
@@ -185,41 +190,55 @@ export default function InteractiveScene() {
     exportGroup.updateMatrixWorld(true);
 
     const exporter = new GLTFExporter();
+    setLoading(true);
+
     exporter.parse(
       exportGroup,
       async (result) => {
         if (type === "glb" && result instanceof ArrayBuffer) {
           const blob = new Blob([result], { type: "model/gltf-binary" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "escena.glb";
-          a.click();
-          URL.revokeObjectURL(url);
           try {
-            const res = await uploadModel(blob, "escena.glb");
+            const res = await uploadModel(blob, "escena.glb", reserveId);
+            toast.success("Archivo adjuntado a la reserva");
             console.log("✅ Subido al servidor:", res.path);
           } catch (err) {
             console.error("❌ Error al subir:", err);
           }
-        } else if (type === "gltf" && typeof result === "object") {
-          const json = JSON.stringify(result, null, 2);
-          const blob = new Blob([json], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "escena.gltf";
-          a.click();
-          URL.revokeObjectURL(url);
         }
+
+        setLoading(false);
       },
-      (err) => console.error("❌ Error durante exportación:", err),
+      (err) => {
+        console.error("❌ Error durante exportación:", err);
+        setLoading(false);
+      },
       { binary: type === "glb", embedImages: false }
     );
   };
 
   return (
     <>
+      {loading && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            color: "white",
+            fontSize: "24px",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          Subiendo archivo...
+        </div>
+      )}
+
       <div
         style={{
           position: "absolute",

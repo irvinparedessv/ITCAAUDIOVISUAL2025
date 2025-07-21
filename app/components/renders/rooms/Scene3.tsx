@@ -217,36 +217,98 @@ export default function InteractiveScene() {
           top: 10,
           left: 10,
           zIndex: 2,
-          backgroundColor: "rgba(255,255,255,0.9)",
-          padding: 10,
-          borderRadius: 6,
+          backgroundColor: "#0B2545", // azul oscuro plano
+          padding: 14,
+          borderRadius: 8,
+          color: "white",
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+          userSelect: "none",
+          maxWidth: 200,
         }}
       >
         {availableModels.map((model) => (
-          <div key={model.name} style={{ marginBottom: 6 }}>
-            <button onClick={() => handleAddItem(model.name, model.path)}>
+          <div key={model.name} style={{ marginBottom: 10 }}>
+            <button
+              onClick={() => handleAddItem(model.name, model.path)}
+              style={{
+                width: "100%",
+                padding: "8px 0",
+                backgroundColor: "#00bcd4", // aqua plano
+                border: "none",
+                borderRadius: 5,
+                color: "white",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
               Agregar {model.name}
             </button>
           </div>
         ))}
-        <button
-          onClick={() => setTransformMode("translate")}
-          disabled={transformMode === "translate"}
-        >
-          Mover
-        </button>
-        <button
-          onClick={() => setTransformMode("rotate")}
-          disabled={transformMode === "rotate"}
-          style={{ marginLeft: 8 }}
-        >
-          Rotar
-        </button>
-        <div style={{ marginTop: 10 }}>
-          <button onClick={() => handleExport("glb")}>Exportar GLB</button>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+          <button
+            onClick={() => setTransformMode("translate")}
+            disabled={transformMode === "translate"}
+            style={{
+              flex: 1,
+              padding: "8px 0",
+              backgroundColor:
+                transformMode === "translate" ? "#007a8a" : "#00bcd4",
+              border: "none",
+              borderRadius: 5,
+              color: "white",
+              fontWeight: "600",
+              cursor: transformMode === "translate" ? "default" : "pointer",
+            }}
+          >
+            Mover
+          </button>
+          <button
+            onClick={() => setTransformMode("rotate")}
+            disabled={transformMode === "rotate"}
+            style={{
+              flex: 1,
+              padding: "8px 0",
+              backgroundColor:
+                transformMode === "rotate" ? "#007a8a" : "#00bcd4",
+              border: "none",
+              borderRadius: 5,
+              color: "white",
+              fontWeight: "600",
+              cursor: transformMode === "rotate" ? "default" : "pointer",
+            }}
+          >
+            Rotar
+          </button>
+        </div>
+        <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
+          <button
+            onClick={() => handleExport("glb")}
+            style={{
+              flex: 1,
+              padding: "8px 0",
+              backgroundColor: "#00bcd4",
+              border: "none",
+              borderRadius: 5,
+              color: "white",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            Exportar GLB
+          </button>
           <button
             onClick={() => handleExport("gltf")}
-            style={{ marginLeft: 8 }}
+            style={{
+              flex: 1,
+              padding: "8px 0",
+              backgroundColor: "#00bcd4",
+              border: "none",
+              borderRadius: 5,
+              color: "white",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
           >
             Exportar GLTF
           </button>

@@ -239,46 +239,111 @@ export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
         </div>
       )}
 
+      {/* Menú flotante actualizado sin sombras y con colores sólidos */}
       <div
         style={{
           position: "absolute",
-          top: 10,
-          left: 10,
+          left: 20,
+          top: "50%",
+          transform: "translateY(-50%)",
           zIndex: 2,
-          backgroundColor: "rgba(255,255,255,0.9)",
-          padding: 10,
-          borderRadius: 6,
+          backgroundColor: "#1e293b", // azul oscuro elegante
+          padding: "20px 16px",
+          borderRadius: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+          minWidth: "180px",
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+          userSelect: "none",
+          color: "#e0e0e0",
         }}
       >
         {availableModels.map((model) => (
-          <div key={model.name} style={{ marginBottom: 6 }}>
-            <button onClick={() => handleAddItem(model.name, model.path)}>
-              Agregar {model.name}
-            </button>
-          </div>
+          <button
+            key={model.name}
+            onClick={() => handleAddItem(model.name, model.path)}
+            style={{
+              padding: "10px 14px",
+              borderRadius: "10px",
+              border: "none",
+              backgroundColor: "#06b6d4", // color aqua sólido
+              color: "white",
+              fontWeight: "600",
+              fontSize: "15px",
+              cursor: "pointer",
+            }}
+          >
+            Agregar {model.name}
+          </button>
         ))}
+
         <button
           onClick={() => setTransformMode("translate")}
           disabled={transformMode === "translate"}
+          style={{
+            padding: "10px 14px",
+            backgroundColor:
+              transformMode === "translate" ? "#d1d5db" : "#10b981",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            fontSize: "15px",
+          }}
         >
           Mover
         </button>
+
         <button
           onClick={() => setTransformMode("rotate")}
           disabled={transformMode === "rotate"}
-          style={{ marginLeft: 8 }}
+          style={{
+            padding: "10px 14px",
+            backgroundColor: transformMode === "rotate" ? "#d1d5db" : "#f59e0b",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            fontSize: "15px",
+          }}
         >
           Rotar
         </button>
-        <div style={{ marginTop: 10 }}>
-          <button onClick={() => handleExport("glb")}>Exportar GLB</button>
-          <button
-            onClick={() => handleExport("gltf")}
-            style={{ marginLeft: 8 }}
-          >
-            Exportar GLTF
-          </button>
-        </div>
+
+        <button
+          onClick={() => handleExport("glb")}
+          style={{
+            padding: "10px 14px",
+            borderRadius: "10px",
+            border: "none",
+            fontWeight: "600",
+            fontSize: "15px",
+            backgroundColor: "#2563eb", // azul vibrante sólido
+            color: "white",
+            cursor: "pointer",
+          }}
+        >
+          Exportar GLB
+        </button>
+
+        <button
+          onClick={() => handleExport("gltf")}
+          style={{
+            padding: "10px 14px",
+            borderRadius: "10px",
+            border: "none",
+            fontWeight: "600",
+            fontSize: "15px",
+            backgroundColor: "#6b7280", // gris sólido moderno
+            color: "white",
+            cursor: "pointer",
+          }}
+        >
+          Exportar GLTF
+        </button>
       </div>
 
       <div style={{ width: "100vw", height: "100vh", position: "relative" }}>

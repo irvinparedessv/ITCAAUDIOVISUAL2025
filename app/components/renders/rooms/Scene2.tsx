@@ -112,10 +112,7 @@ export default function InteractiveScene() {
       box.getSize(size);
       box.getCenter(center);
 
-      console.log("📏 Tamaño habitación (size):", size);
-      console.log("🎯 Centro original:", center);
-
-      // ✅ Centramos la habitación en X, Z y la bajamos en Y (para que repose en el suelo)
+      // Centrar habitación en X,Z y bajarla en Y para que repose en suelo
       clonedScene.position.x = clonedScene.position.x - center.x;
       clonedScene.position.y = clonedScene.position.y - center.y + size.y / 2;
       clonedScene.position.z = clonedScene.position.z - center.z;
@@ -146,12 +143,9 @@ export default function InteractiveScene() {
       return;
     }
 
-    console.log("✅ Exportando desde root:", root);
-
     const exportGroup = new THREE.Group();
 
     root.traverse((obj) => {
-      // Solo exportar objetos explícitamente marcados por el usuario
       if (!obj.userData?.addedByUser) return;
 
       if (obj instanceof THREE.Mesh) {
@@ -161,25 +155,16 @@ export default function InteractiveScene() {
           map: (mesh.material as any)?.map || null,
         });
         exportGroup.add(mesh);
-        console.log("✅ Mesh exportado:", mesh.name || mesh.uuid);
       } else if (
         obj instanceof THREE.Group ||
         (obj instanceof THREE.Object3D && obj.type !== "Scene")
       ) {
         const clone = obj.clone(true);
         exportGroup.add(clone);
-        console.log("✅ Grupo exportado:", clone.name || clone.uuid);
       }
     });
 
-    try {
-      exportGroup.updateMatrixWorld(true);
-      console.log("✅ updateMatrixWorld() ejecutado correctamente");
-    } catch (err) {
-      console.error("💥 Error en updateMatrixWorld:", err);
-      console.log("🧱 exportGroup.children:", exportGroup.children);
-      return;
-    }
+    exportGroup.updateMatrixWorld(true);
 
     const exporter = new GLTFExporter();
     exporter.parse(
@@ -211,46 +196,111 @@ export default function InteractiveScene() {
 
   return (
     <>
+      {/* Menú flotante con diseño azul oscuro y botones aqua */}
       <div
         style={{
           position: "absolute",
-          top: 10,
-          left: 10,
+          left: 20,
+          top: "50%",
+          transform: "translateY(-50%)",
           zIndex: 2,
-          backgroundColor: "rgba(255,255,255,0.9)",
-          padding: 10,
-          borderRadius: 6,
+          backgroundColor: "#1e293b",
+          padding: "20px 16px",
+          borderRadius: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+          minWidth: "180px",
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+          userSelect: "none",
+          color: "#e0e0e0",
         }}
       >
         {availableModels.map((model) => (
-          <div key={model.name} style={{ marginBottom: 6 }}>
-            <button onClick={() => handleAddItem(model.name, model.path)}>
-              Agregar {model.name}
-            </button>
-          </div>
+          <button
+            key={model.name}
+            onClick={() => handleAddItem(model.name, model.path)}
+            style={{
+              padding: "10px 14px",
+              borderRadius: "10px",
+              border: "none",
+              backgroundColor: "#06b6d4", // aqua sólido
+              color: "white",
+              fontWeight: "600",
+              fontSize: "15px",
+              cursor: "pointer",
+            }}
+          >
+            Agregar {model.name}
+          </button>
         ))}
+
         <button
           onClick={() => setTransformMode("translate")}
           disabled={transformMode === "translate"}
+          style={{
+            padding: "10px 14px",
+            backgroundColor:
+              transformMode === "translate" ? "#d1d5db" : "#10b981",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            fontSize: "15px",
+          }}
         >
           Mover
         </button>
+
         <button
           onClick={() => setTransformMode("rotate")}
           disabled={transformMode === "rotate"}
-          style={{ marginLeft: 8 }}
+          style={{
+            padding: "10px 14px",
+            backgroundColor: transformMode === "rotate" ? "#d1d5db" : "#f59e0b",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            fontSize: "15px",
+          }}
         >
           Rotar
         </button>
-        <div style={{ marginTop: 10 }}>
-          <button onClick={() => handleExport("glb")}>Exportar GLB</button>
-          <button
-            onClick={() => handleExport("gltf")}
-            style={{ marginLeft: 8 }}
-          >
-            Exportar GLTF
-          </button>
-        </div>
+
+        <button
+          onClick={() => handleExport("glb")}
+          style={{
+            padding: "10px 14px",
+            borderRadius: "10px",
+            border: "none",
+            fontWeight: "600",
+            fontSize: "15px",
+            backgroundColor: "#06b6d4", // aqua sólido para exportar
+            color: "white",
+            cursor: "pointer",
+          }}
+        >
+          Exportar GLB
+        </button>
+
+        <button
+          onClick={() => handleExport("gltf")}
+          style={{
+            padding: "10px 14px",
+            borderRadius: "10px",
+            border: "none",
+            fontWeight: "600",
+            fontSize: "15px",
+            backgroundColor: "#06b6d4", // aqua sólido para exportar
+            color: "white",
+            cursor: "pointer",
+          }}
+        >
+          Exportar GLTF
+        </button>
       </div>
 
       <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
@@ -266,7 +316,7 @@ export default function InteractiveScene() {
             <gridHelper args={[10, 10]} position={[0, 0, 0]} />
             <axesHelper args={[2]} />
             <RoomModel
-              path="/models/room.glb" // ⚠️ Ajustá esta ruta si es diferente
+              path="/models/room.glb"
               scale={1}
               onReady={(obj) => {
                 obj.userData.addedByUser = true;

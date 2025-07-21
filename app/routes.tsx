@@ -156,7 +156,7 @@ const router = createBrowserRouter([
           },
           {
             path: "visualizacion",
-            element: <SceneCanvas />,
+            element: <SceneCanvas reserveId={1} />,
           },
           {
             path: "visualizacion2",
@@ -164,9 +164,7 @@ const router = createBrowserRouter([
           },
           {
             path: "demo",
-            element: (
-              <ViewScene filePath={`${APPLARAVEL}/api/models/escena.glb`} />
-            ),
+            element: <ViewScene reserveId={1} />,
           },
           {
             path: "aulas/encargados/:aulaId",

@@ -13,6 +13,7 @@ import type { ItemType } from "../types/Item";
 
 // @ts-ignore
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
+import { uploadModel } from "~/services/uploadModelService";
 
 interface ModelItemProps {
   path: string;
@@ -123,13 +124,9 @@ export default function InteractiveScene() {
       box.getSize(size);
       box.getCenter(center);
 
-      console.log("📏 Tamaño habitación (size):", size);
-      console.log("🎯 Centro original:", center);
-
-      // ✅ Centramos la habitación en X, Z y la bajamos en Y (para que repose en el suelo)
-      clonedScene.position.x = clonedScene.position.x - center.x;
-      clonedScene.position.y = clonedScene.position.y - center.y + size.y / 2;
-      clonedScene.position.z = clonedScene.position.z - center.z;
+      clonedScene.position.x -= center.x;
+      clonedScene.position.y -= center.y - size.y / 2;
+      clonedScene.position.z -= center.z;
 
       onReady?.(clonedScene);
     }, [clonedScene, onReady]);
@@ -157,12 +154,9 @@ export default function InteractiveScene() {
       return;
     }
 
-    console.log("✅ Exportando desde root:", root);
-
     const exportGroup = new THREE.Group();
 
     root.traverse((obj) => {
-      // Solo exportar objetos explícitamente marcados por el usuario
       if (!obj.userData?.addedByUser) return;
 
       if (obj instanceof THREE.Mesh) {
@@ -172,30 +166,28 @@ export default function InteractiveScene() {
           map: (mesh.material as any)?.map || null,
         });
         exportGroup.add(mesh);
-        console.log("✅ Mesh exportado:", mesh.name || mesh.uuid);
       } else if (
         obj instanceof THREE.Group ||
         (obj instanceof THREE.Object3D && obj.type !== "Scene")
       ) {
         const clone = obj.clone(true);
         exportGroup.add(clone);
-        console.log("✅ Grupo exportado:", clone.name || clone.uuid);
       }
     });
 
-    try {
-      exportGroup.updateMatrixWorld(true);
-      console.log("✅ updateMatrixWorld() ejecutado correctamente");
-    } catch (err) {
-      console.error("💥 Error en updateMatrixWorld:", err);
-      console.log("🧱 exportGroup.children:", exportGroup.children);
-      return;
-    }
+    // Agregar cámara manual con posición y orientación
+    const camera = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
+    camera.position.set(0, 3.5, 3);
+    camera.lookAt(new THREE.Vector3(0, 2.2, 0));
+    camera.name = "MainCamera";
+    exportGroup.add(camera);
+
+    exportGroup.updateMatrixWorld(true);
 
     const exporter = new GLTFExporter();
     exporter.parse(
       exportGroup,
-      (result) => {
+      async (result) => {
         if (type === "glb" && result instanceof ArrayBuffer) {
           const blob = new Blob([result], { type: "model/gltf-binary" });
           const url = URL.createObjectURL(blob);
@@ -204,6 +196,12 @@ export default function InteractiveScene() {
           a.download = "escena.glb";
           a.click();
           URL.revokeObjectURL(url);
+          try {
+            const res = await uploadModel(blob, "escena.glb");
+            console.log("✅ Subido al servidor:", res.path);
+          } catch (err) {
+            console.error("❌ Error al subir:", err);
+          }
         } else if (type === "gltf" && typeof result === "object") {
           const json = JSON.stringify(result, null, 2);
           const blob = new Blob([json], { type: "application/json" });
@@ -276,10 +274,9 @@ export default function InteractiveScene() {
             <OrbitControls makeDefault target={[0, 2.2, 0]} />
             <gridHelper args={[10, 10]} position={[0, 0, 0]} />
             <axesHelper args={[2]} />
-
             <group ref={exportGroupRef}>
               <RoomModel
-                path="/models/room.glb" // ⚠️ Ajustá esta ruta si es diferente
+                path="/models/room.glb"
                 scale={1}
                 onReady={(obj) => {
                   obj.userData.addedByUser = true;

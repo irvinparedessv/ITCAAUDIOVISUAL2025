@@ -13,7 +13,8 @@ import Home from "./routes/home";
 import AddReservation from "./components/reserveE/EquipmentReservationForm";
 import ReservationList from "./routes/reservationList";
 import ReservationDetail from "./routes/reservationDetail";
-import CreacionEspacio from "./routes/creacionEspacio";
+import { CreateSpaceForm } from "./components/rooms/FormCreacionEspacio";
+
 import TipoEquipos from "./routes/tipoEquipos";
 import Equipos from "./routes/equipment/equipments";
 import FormUsuario from "./routes/formUsuario";
@@ -49,8 +50,6 @@ import ReporteReservasPorAula from "./components/reports/ReporteReservasPorAula"
 import PrediccionAulaPage from "./components/prediction/PrediccionAulaPage";
 import RoomsAvailabilityList from "./components/rooms/RoomsAvailability";
 import NoEncontrado from "./components/error/NoEncontrado";
-import UbicacionForm from "./components/ubication/UbicationForm";
-import UbicacionList from "./components/ubication/listUbications";
 import PublicOnlyRoute from "./layouts/PublicOnlyRoute";
 import ReservaCalendar from "./components/rooms/ReserveCalendar";
 import ViewScene from "./components/renders/rooms/Visualizacion";
@@ -111,10 +110,6 @@ const router = createBrowserRouter([
             element: <AulaList />,
           },
           {
-            path: "/aulas/editar/:id",
-            element: <CreacionEspacio />,
-          },
-          {
             path: "/reservas-aula/:id",
             element: <ReservaAulaDetail />,
           },
@@ -135,8 +130,12 @@ const router = createBrowserRouter([
             element: <EditEquipmentReservationForm />,
           },
           {
+            path: "/aulas/editar/:id",
+            element: <CreateSpaceForm />,
+          },
+          {
             path: "createRoom",
-            element: <CreacionEspacio />,
+            element: <CreateSpaceForm />,
           },
           {
             path: "equipmentavailability",
@@ -253,18 +252,6 @@ const router = createBrowserRouter([
           {
             path: "opcionesAnalisis",
             element: <OpcionesAnalisis />,
-          },
-          {
-            path: "ubications",
-            element: <UbicacionList />,
-          },
-          {
-            path: "ubications/add",
-            element: <UbicacionForm />,
-          },
-          {
-            path: "ubications/edit/:id",
-            element: <UbicacionForm />,
           },
           {
             path: "reporteReservasEquipo",

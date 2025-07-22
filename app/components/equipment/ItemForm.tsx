@@ -8,6 +8,8 @@ import type { Marca, Modelo, Estado } from "../../types/item";
 import type { TipoEquipo } from "~/types/tipoEquipo";
 import type { TipoReserva } from "~/types/tipoReserva";
 import api from "../../api/axios";
+import MarcaModal from "./MarcaModal";
+import ModeloModal from "./ModeloModal";
 
 interface Caracteristica {
   id: number;
@@ -54,6 +56,9 @@ export default function ItemForm({
   const [filteredModelos, setFilteredModelos] = useState<Modelo[]>([]);
   const [caracteristicas, setCaracteristicas] = useState<Caracteristica[]>([]);
   const [loadingCaracteristicas, setLoadingCaracteristicas] = useState(false);
+  const [showMarcaModal, setShowMarcaModal] = useState(false);
+  const [showModeloModal, setShowModeloModal] = useState(false);
+
 
   // Determina si el tipo seleccionado es insumo (ajustar el id segun tu DB)
   const esInsumo = (() => {
@@ -164,6 +169,121 @@ export default function ItemForm({
     );
   };
 
+const handleAddMarca = async (nombre: string) => {
+  const nombreNormalizado = nombre.trim().toLowerCase();
+  if (!nombreNormalizado) return;
+
+  // Verificar si ya existe localmente
+  const yaExiste = marcas.find(
+    (m) => m.nombre.trim().toLowerCase() === nombreNormalizado
+  );
+
+  if (yaExiste) {
+    setForm((prev) => ({
+      ...prev,
+      marca_id: String(yaExiste.id),
+      modelo_id: "", // Limpia modelo si cambia marca
+    }));
+    setShowMarcaModal(false);
+    toast.success("Marca ya existente seleccionada");
+    return;
+  }
+
+  try {
+    // Crear marca si no existe localmente
+    const response = await api.post("/marcas", { nombre: nombre.trim() });
+    const nuevaMarca = response.data;
+
+    marcas.push(nuevaMarca); // Agregar a la lista local
+
+    setForm((prev) => ({
+      ...prev,
+      marca_id: String(nuevaMarca.id),
+      modelo_id: "", // Limpia modelo si cambia marca
+    }));
+    setShowMarcaModal(false);
+    toast.success("Marca agregada y seleccionada");
+  } catch (error: any) {
+    // Manejar error de marca duplicada (conflicto o validación)
+    if (error.response?.status === 422 || error.response?.status === 409) {
+      const existente = marcas.find(
+        (m) => m.nombre.trim().toLowerCase() === nombreNormalizado
+      );
+
+      if (existente) {
+        setForm((prev) => ({
+          ...prev,
+          marca_id: String(existente.id),
+          modelo_id: "",
+        }));
+        setShowMarcaModal(false);
+        toast.success("Marca ya existente seleccionada");
+      } else {
+        toast.error("Marca duplicada, pero no encontrada localmente");
+      }
+    } else {
+      toast.error("Error al agregar marca");
+    }
+  }
+};
+
+
+
+  const handleAddModelo = async (nombre: string, marca_id: number) => {
+  const existente = modelos.find(
+    (m) =>
+      m.nombre.toLowerCase() === nombre.toLowerCase() &&
+      String(m.marca_id) === String(marca_id)
+  );
+
+  if (existente) {
+    setForm((prev) => ({
+      ...prev,
+      modelo_id: String(existente.id),
+    }));
+    setShowModeloModal(false);
+    toast.success("Modelo ya existente seleccionado");
+    return;
+  }
+
+  try {
+    const response = await api.post("/modelos", { nombre, marca_id });
+    const nuevoModelo = response.data;
+
+    modelos.push(nuevoModelo);
+    setForm((prev) => ({
+      ...prev,
+      modelo_id: String(nuevoModelo.id),
+    }));
+    setShowModeloModal(false);
+    toast.success("Modelo agregado");
+  } catch (error: any) {
+    if (error.response?.status === 422 || error.response?.status === 409) {
+      const existente = modelos.find(
+        (m) =>
+          m.nombre.toLowerCase() === nombre.toLowerCase() &&
+          String(m.marca_id) === String(marca_id)
+      );
+
+      if (existente) {
+        setForm((prev) => ({
+          ...prev,
+          modelo_id: String(existente.id),
+        }));
+        setShowModeloModal(false);
+        toast.success("Modelo ya existente seleccionado");
+      } else {
+        toast.error("Modelo duplicado, pero no encontrado localmente");
+      }
+    } else {
+      toast.error("Error al agregar modelo");
+    }
+  }
+};
+
+
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -261,35 +381,50 @@ export default function ItemForm({
 
         <Form.Group className="mb-3">
           <Form.Label>Marca</Form.Label>
-          <Form.Select
-            value={form.marca_id}
-            onChange={(e) => setForm({ ...form, marca_id: e.target.value })}
-            disabled={loading}
-          >
-            <option value="">Seleccione una marca</option>
-            {marcas.map((marca) => (
-              <option key={marca.id} value={marca.id}>
-                {marca.nombre}
-              </option>
-            ))}
-          </Form.Select>
+          <div className="d-flex gap-2">
+            <Form.Select
+              value={form.marca_id}
+              onChange={(e) => setForm({ ...form, marca_id: e.target.value })}
+              disabled={loading}
+            >
+              <option value="">Seleccione una marca</option>
+              {marcas.map((marca) => (
+                <option key={marca.id} value={marca.id}>
+                  {marca.nombre}
+                </option>
+              ))}
+            </Form.Select>
+            <Button variant="outline-secondary" onClick={() => setShowMarcaModal(true)}>
+              +
+            </Button>
+          </div>
         </Form.Group>
 
         <Form.Group className="mb-3">
           <Form.Label>Modelo</Form.Label>
-          <Form.Select
-            value={form.modelo_id}
-            onChange={(e) => setForm({ ...form, modelo_id: e.target.value })}
-            disabled={loading || !form.marca_id}
-          >
-            <option value="">Seleccione un modelo</option>
-            {filteredModelos.map((modelo) => (
-              <option key={modelo.id} value={modelo.id}>
-                {modelo.nombre}
-              </option>
-            ))}
-          </Form.Select>
+          <div className="d-flex gap-2">
+            <Form.Select
+              value={form.modelo_id}
+              onChange={(e) => setForm({ ...form, modelo_id: e.target.value })}
+              disabled={loading || !form.marca_id}
+            >
+              <option value="">Seleccione un modelo</option>
+              {filteredModelos.map((modelo) => (
+                <option key={modelo.id} value={modelo.id}>
+                  {modelo.nombre}
+                </option>
+              ))}
+            </Form.Select>
+            <Button
+              variant="outline-secondary"
+              onClick={() => setShowModeloModal(true)}
+              disabled={!form.marca_id}
+            >
+              +
+            </Button>
+          </div>
         </Form.Group>
+
 
         <Form.Group className="mb-3">
           <Form.Label>Estado</Form.Label>
@@ -421,8 +556,8 @@ export default function ItemForm({
                             caracteristica.tipo_dato === "integer"
                               ? "number"
                               : caracteristica.tipo_dato === "decimal"
-                              ? "number"
-                              : "text"
+                                ? "number"
+                                : "text"
                           }
                           step={caracteristica.tipo_dato === "decimal" ? "0.01" : undefined}
                           value={caracteristica.valor}
@@ -444,9 +579,8 @@ export default function ItemForm({
           <Form.Label>Imagen</Form.Label>
           <div
             {...getRootProps()}
-            className={`dropzone p-4 mb-3 border border-secondary rounded text-center ${
-              isDragActive ? "bg-light" : ""
-            }`}
+            className={`dropzone p-4 mb-3 border border-secondary rounded text-center ${isDragActive ? "bg-light" : ""
+              }`}
             style={{ cursor: "pointer" }}
           >
             <input {...getInputProps()} />
@@ -489,6 +623,34 @@ export default function ItemForm({
           </Button>
         </div>
       </Form>
+
+      <MarcaModal
+        show={showMarcaModal}
+        onHide={() => setShowMarcaModal(false)}
+        marcas={marcas}
+        onAdd={handleAddMarca}
+      />
+
+     <ModeloModal
+  show={showModeloModal}
+  onHide={() => setShowModeloModal(false)}
+  modelos={modelos}
+  marcaSeleccionada={marcas.find((m) => m.id === Number(form.marca_id))}
+  onAdd={(nombre) => {
+    const marcaId = Number(form.marca_id);
+    if (marcaId) {
+      return handleAddModelo(nombre, marcaId);
+    } else {
+      return Promise.reject("Marca no seleccionada");
+    }
+  }}
+/>
+
+
     </div>
+
+
   );
+
+
 }

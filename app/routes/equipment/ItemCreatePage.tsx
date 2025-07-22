@@ -53,7 +53,7 @@ export default function ItemCreatePage() {
 
       await createItem(data, tipo);
       toast.success(`${tipo === "equipo" ? "Equipo" : "Insumo"} creado exitosamente`);
-      navigate("/items");
+      navigate("/inventario");
     } catch (error: any) {
       console.error("Error creando ítem:", error);
       const errorMsg = error.response?.data?.message || "Error al crear el ítem";

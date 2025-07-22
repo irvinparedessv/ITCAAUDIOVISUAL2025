@@ -10,6 +10,7 @@ import type {
   Modelo,
   Estado,
   Caracteristica,
+  Insumo,
 } from "../types/item";
 
 export interface ItemFilters {
@@ -148,4 +149,14 @@ export const getCaracteristicasPorTipoEquipo = async (
   const res = await api.get(`/caracteristicas/tipo-equipo/${tipoEquipoId}`);
   return res.data;
 };
+
+export const getInsumosNoAsignados = async (equipoId: number): Promise<Insumo[]> => {
+    const res = await api.get(`/equipos/${equipoId}/insumos/no-asignados`);
+    return res.data;
+};
+
+export const asignarInsumoAEquipo = async (equipoId: number, insumoId: number) => {
+    await api.post(`/equipos/${equipoId}/insumos`, { insumo_id: insumoId });
+};
+
 

@@ -87,17 +87,17 @@ export default function EquipmentReservationForm() {
           uploadedFile={uploadedFile}
           setUploadedFile={setUploadedFile}
         />
-        <EquiposSelect
-          formData={formData}
-          setFormData={setFormData}
-          checkingAvailability={checkingAvailability}
-          isDateTimeComplete={isDateTimeComplete}
-        />
         <UbicacionSelect
           formData={formData}
           setFormData={setFormData}
           aulaOptions={aulaOptions}
           loadingAulas={loading.aulas}
+          isDateTimeComplete={isDateTimeComplete}
+        />
+        <EquiposSelect
+          formData={formData}
+          setFormData={setFormData}
+          checkingAvailability={checkingAvailability}
           isDateTimeComplete={isDateTimeComplete}
         />
         <FormActions

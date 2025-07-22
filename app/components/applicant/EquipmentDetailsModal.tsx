@@ -276,24 +276,52 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                 <div className="ps-5">
                   <div className="list-group">
                     {selectedReservation.equipos.map((equipo) => (
-                      <div
-                        key={equipo.id}
-                        className="list-group-item border-0 bg-body-secondary mb-2 rounded d-flex justify-content-between align-items-center"
-                      >
-                        <div>
-                          <h6 className="fw-bold mb-1 d-flex align-items-center">
-                            {equipo.nombre}
-                          </h6>
-                          <p className="small text-body-secondary mb-0">
-                            {equipo.descripcion}
-                          </p>
+                      <div key={equipo.id}>
+                        <div className="list-group-item border-0 bg-body-secondary mb-2 rounded">
+                          {/* Contenedor para nombre y número de serie */}
+                          <div className="d-flex justify-content-between align-items-start">
+                            {/* Nombre y descripción - 60% */}
+                            <div style={{ width: "50%" }} className="ms-4 mb-2">
+                              <h6 className="fw-bold mb-1">
+                                {equipo.modelo?.nombre || "Sin modelo"}
+                              </h6>
+                              <p className="small text-body-secondary mb-0">
+                                {equipo.descripcion}
+                              </p>
+                            </div>
+
+                            {/* Número de serie - 40% */}
+                            <div
+                              style={{ width: "50%" }}
+                              className="d-flex justify-content-end align-items-start"
+                            >
+                              <span
+                                className="badge rounded-pill bg-body-tertiary text-body-emphasis"
+                                style={{ minWidth: "2rem" }}
+                              >
+                                {equipo.numero_serie}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Insumos debajo */}
+                          {equipo.insumos && equipo.insumos.length > 0 && (
+                            <div className="ms-4 mt-2">
+                              <strong>Insumos Relacionados:</strong>
+                              <ul className="list-group list-group-flush mt-1">
+                                {equipo.insumos.map((insumo) => (
+                                  <li
+                                    key={insumo.id}
+                                    className="list-group-item small ps-3"
+                                  >
+                                    {insumo.modelo?.nombre ||
+                                      "Accesorio sin modelo"}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
-                        <span
-                          className="badge rounded-pill bg-body-tertiary text-body-emphasis"
-                          style={{ minWidth: "2rem" }}
-                        >
-                          1
-                        </span>
                       </div>
                     ))}
                   </div>

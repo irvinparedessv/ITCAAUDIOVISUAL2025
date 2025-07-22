@@ -1,4 +1,5 @@
 import type { TipoReserva } from "./tipoReserva";
+import type { Insumo } from "./item";
 
 export type Role = {
   id: number;
@@ -26,8 +27,13 @@ export type Equipo = {
   descripcion: string;
   estado: number;
   cantidad: number;
+  insumos: Insumo[];
+  numero_serie: string;
   is_deleted: number;
   tipo_equipo_id: number;
+  modelo: {
+    nombre: string;
+  };
   created_at: string;
   updated_at: string;
   pivot: {
@@ -35,7 +41,6 @@ export type Equipo = {
     equipo_id: number;
   };
 };
-
 export type CodigoQR = {
   id: string; // GUID
   reserva_id: number;

@@ -149,7 +149,7 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                       Aula
                     </span>
                     <p className="mb-0 fw-semibold flex-grow-1">
-                      {selectedReservation.aula}
+                      {selectedReservation.aula.name}
                     </p>
                   </div>
                   <div className="d-flex align-items-center mb-3">

@@ -25,7 +25,7 @@ import {
 } from "react-icons/fa";
 import type { TipoReserva } from "app/types/tipoReserva";
 import type { Bitacora } from "app/types/bitacora";
-import { QRURL } from "~/constants/constant";
+import { ITEMSPAGE, QRURL } from "~/constants/constant";
 import type { Reservation } from "~/types/reservation";
 import EquipmentDetailsModal from "./applicant/EquipmentDetailsModal";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -69,7 +69,7 @@ export default function ReservationList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 15;
+  const itemsPerPage = ITEMSPAGE;
   const [highlightId, setHighlightId] = useState<number | null>(null);
 
   // Estados de filtros
@@ -565,11 +565,11 @@ export default function ReservationList() {
                       <td>
                         {reserva.equipos
                           .slice(0, 2)
-                          .map((e) => e.nombre)
+                          .map((e) => e.modelo.nombre)
                           .join(", ")}
                         {reserva.equipos.length > 2 && "..."}
                       </td>
-                      <td>{reserva.aula}</td>
+                      <td>{reserva.aula.name}</td>
                       <td>{formatDateTimeTo12h(reserva.fecha_reserva)}</td>
 
                       <td>{formatDateTimeTo12h(reserva.fecha_entrega)}</td>

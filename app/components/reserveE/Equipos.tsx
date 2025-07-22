@@ -140,6 +140,7 @@ export default function EquiposSelect({
           )}
         </div>
         <button
+          type="button"
           onClick={() => setShowDetails(!showDetails)}
           className="btn btn-sm ms-3"
           style={{
@@ -239,6 +240,7 @@ export default function EquiposSelect({
                           }
                         />
                         <button
+                          type="button"
                           className="btn btn-sm btn-success"
                           onClick={() => agregarEquipo(equipo)}
                           disabled={max <= 0}
@@ -248,10 +250,18 @@ export default function EquiposSelect({
                       </div>
 
                       <div className="d-flex justify-content-between">
-                        <button className="btn btn-sm btn-info" disabled>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-info"
+                          disabled
+                        >
                           Detalle
                         </button>
-                        <button className="btn btn-sm btn-primary" disabled>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary"
+                          disabled
+                        >
                           Ver imagen
                         </button>
                       </div>
@@ -267,6 +277,7 @@ export default function EquiposSelect({
               <ul className="pagination justify-content-center">
                 <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
                   <button
+                    type="button"
                     className="page-link"
                     onClick={() => setPage(page - 1)}
                   >
@@ -284,6 +295,7 @@ export default function EquiposSelect({
                   }`}
                 >
                   <button
+                    type="button"
                     className="page-link"
                     onClick={() => setPage(page + 1)}
                   >

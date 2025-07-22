@@ -57,13 +57,16 @@ export type Reservation = {
   created_at: string;
   updated_at: string;
   user: User;
-  aula: string;
+  aula: Aula;
   equipos: Equipo[];
   codigo_qr: CodigoQR;
   tipo_reserva: TipoReserva;
   documento_url?: string;
 };
 
+export type Aula = {
+  name: string;
+};
 export type HistorialItem = {
   id: number;
   nombre_usuario: string;

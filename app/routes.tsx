@@ -10,7 +10,7 @@ import Forbidden from "./components/auth/Forbidden";
 
 // protegidas
 import Home from "./routes/home";
-import AddReservation from "./routes/reservation";
+import AddReservation from "./components/reserveE/EquipmentReservationForm";
 import ReservationList from "./routes/reservationList";
 import ReservationDetail from "./routes/reservationDetail";
 import CreacionEspacio from "./routes/creacionEspacio";

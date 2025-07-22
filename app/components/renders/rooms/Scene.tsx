@@ -182,7 +182,7 @@ export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
     });
 
     const camera = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
-    camera.position.set(0, 3.5, 3);
+    camera.position.set(0, 0, 2);
     camera.lookAt(new THREE.Vector3(0, 2.2, 0));
     camera.name = "MainCamera";
     exportGroup.add(camera);
@@ -295,8 +295,8 @@ export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
             <axesHelper args={[2]} />
             <group ref={exportGroupRef}>
               <RoomModel
-                path="/models/room.glb"
-                scale={1}
+                path="/models/clasroom.glb"
+                scale={0.01}
                 onReady={(obj) => {
                   obj.userData.addedByUser = true;
                   console.log("🏠 Habitación cargada:", obj);

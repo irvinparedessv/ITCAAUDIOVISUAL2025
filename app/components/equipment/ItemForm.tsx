@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { FaSave, FaTimes, FaBroom, FaUpload, FaTrash, FaLongArrowAltLeft } from "react-icons/fa";
+import { FaSave, FaTimes, FaBroom, FaUpload, FaTrash, FaLongArrowAltLeft, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { Form, Button, Badge } from "react-bootstrap";
 import toast from "react-hot-toast";
 import type { Marca, Modelo, Estado } from "../../types/item";
 import type { TipoEquipo } from "~/types/tipoEquipo";
@@ -59,8 +58,7 @@ export default function ItemForm({
   const [showMarcaModal, setShowMarcaModal] = useState(false);
   const [showModeloModal, setShowModeloModal] = useState(false);
 
-
-  // Determina si el tipo seleccionado es insumo (ajustar el id segun tu DB)
+  // Determina si el tipo seleccionado es insumo
   const esInsumo = (() => {
     const tipo = tiposEquipo.find((t) => t.id === Number(form.tipo_equipo_id));
     return tipo?.categoria_id === 2;
@@ -85,9 +83,7 @@ export default function ItemForm({
           const response = await api.get(
             `/tipo-equipos/${form.tipo_equipo_id}/caracteristicas`
           );
-
           const data = response.data;
-
           setCaracteristicas(
             data.map((c: any) => ({
               ...c,
@@ -169,123 +165,114 @@ export default function ItemForm({
     );
   };
 
-const handleAddMarca = async (nombre: string) => {
-  const nombreNormalizado = nombre.trim().toLowerCase();
-  if (!nombreNormalizado) return;
+  const handleAddMarca = async (nombre: string) => {
+    const nombreNormalizado = nombre.trim().toLowerCase();
+    if (!nombreNormalizado) return;
 
-  // Verificar si ya existe localmente
-  const yaExiste = marcas.find(
-    (m) => m.nombre.trim().toLowerCase() === nombreNormalizado
-  );
+    const yaExiste = marcas.find(
+      (m) => m.nombre.trim().toLowerCase() === nombreNormalizado
+    );
 
-  if (yaExiste) {
-    setForm((prev) => ({
-      ...prev,
-      marca_id: String(yaExiste.id),
-      modelo_id: "", // Limpia modelo si cambia marca
-    }));
-    setShowMarcaModal(false);
-    toast.success("Marca ya existente seleccionada");
-    return;
-  }
-
-  try {
-    // Crear marca si no existe localmente
-    const response = await api.post("/marcas", { nombre: nombre.trim() });
-    const nuevaMarca = response.data;
-
-    marcas.push(nuevaMarca); // Agregar a la lista local
-
-    setForm((prev) => ({
-      ...prev,
-      marca_id: String(nuevaMarca.id),
-      modelo_id: "", // Limpia modelo si cambia marca
-    }));
-    setShowMarcaModal(false);
-    toast.success("Marca agregada y seleccionada");
-  } catch (error: any) {
-    // Manejar error de marca duplicada (conflicto o validación)
-    if (error.response?.status === 422 || error.response?.status === 409) {
-      const existente = marcas.find(
-        (m) => m.nombre.trim().toLowerCase() === nombreNormalizado
-      );
-
-      if (existente) {
-        setForm((prev) => ({
-          ...prev,
-          marca_id: String(existente.id),
-          modelo_id: "",
-        }));
-        setShowMarcaModal(false);
-        toast.success("Marca ya existente seleccionada");
-      } else {
-        toast.error("Marca duplicada, pero no encontrada localmente");
-      }
-    } else {
-      toast.error("Error al agregar marca");
+    if (yaExiste) {
+      setForm((prev) => ({
+        ...prev,
+        marca_id: String(yaExiste.id),
+        modelo_id: "",
+      }));
+      setShowMarcaModal(false);
+      toast.success("Marca ya existente seleccionada");
+      return;
     }
-  }
-};
 
+    try {
+      const response = await api.post("/marcas", { nombre: nombre.trim() });
+      const nuevaMarca = response.data;
+      marcas.push(nuevaMarca);
 
+      setForm((prev) => ({
+        ...prev,
+        marca_id: String(nuevaMarca.id),
+        modelo_id: "",
+      }));
+      setShowMarcaModal(false);
+      toast.success("Marca agregada y seleccionada");
+    } catch (error: any) {
+      if (error.response?.status === 422 || error.response?.status === 409) {
+        const existente = marcas.find(
+          (m) => m.nombre.trim().toLowerCase() === nombreNormalizado
+        );
+
+        if (existente) {
+          setForm((prev) => ({
+            ...prev,
+            marca_id: String(existente.id),
+            modelo_id: "",
+          }));
+          setShowMarcaModal(false);
+          toast.success("Marca ya existente seleccionada");
+        } else {
+          toast.error("Marca duplicada, pero no encontrada localmente");
+        }
+      } else {
+        toast.error("Error al agregar marca");
+      }
+    }
+  };
 
   const handleAddModelo = async (nombre: string, marca_id: number) => {
-  const existente = modelos.find(
-    (m) =>
-      m.nombre.toLowerCase() === nombre.toLowerCase() &&
-      String(m.marca_id) === String(marca_id)
-  );
+    const existente = modelos.find(
+      (m) =>
+        m.nombre.toLowerCase() === nombre.toLowerCase() &&
+        String(m.marca_id) === String(marca_id)
+    );
 
-  if (existente) {
-    setForm((prev) => ({
-      ...prev,
-      modelo_id: String(existente.id),
-    }));
-    setShowModeloModal(false);
-    toast.success("Modelo ya existente seleccionado");
-    return;
-  }
-
-  try {
-    const response = await api.post("/modelos", { nombre, marca_id });
-    const nuevoModelo = response.data;
-
-    modelos.push(nuevoModelo);
-    setForm((prev) => ({
-      ...prev,
-      modelo_id: String(nuevoModelo.id),
-    }));
-    setShowModeloModal(false);
-    toast.success("Modelo agregado");
-  } catch (error: any) {
-    if (error.response?.status === 422 || error.response?.status === 409) {
-      const existente = modelos.find(
-        (m) =>
-          m.nombre.toLowerCase() === nombre.toLowerCase() &&
-          String(m.marca_id) === String(marca_id)
-      );
-
-      if (existente) {
-        setForm((prev) => ({
-          ...prev,
-          modelo_id: String(existente.id),
-        }));
-        setShowModeloModal(false);
-        toast.success("Modelo ya existente seleccionado");
-      } else {
-        toast.error("Modelo duplicado, pero no encontrado localmente");
-      }
-    } else {
-      toast.error("Error al agregar modelo");
+    if (existente) {
+      setForm((prev) => ({
+        ...prev,
+        modelo_id: String(existente.id),
+      }));
+      setShowModeloModal(false);
+      toast.success("Modelo ya existente seleccionado");
+      return;
     }
-  }
-};
 
+    try {
+      const response = await api.post("/modelos", { nombre, marca_id });
+      const nuevoModelo = response.data;
+      modelos.push(nuevoModelo);
+      setForm((prev) => ({
+        ...prev,
+        modelo_id: String(nuevoModelo.id),
+      }));
+      setShowModeloModal(false);
+      toast.success("Modelo agregado");
+    } catch (error: any) {
+      if (error.response?.status === 422 || error.response?.status === 409) {
+        const existente = modelos.find(
+          (m) =>
+            m.nombre.toLowerCase() === nombre.toLowerCase() &&
+            String(m.marca_id) === String(marca_id)
+        );
 
-
+        if (existente) {
+          setForm((prev) => ({
+            ...prev,
+            modelo_id: String(existente.id),
+          }));
+          setShowModeloModal(false);
+          toast.success("Modelo ya existente seleccionado");
+        } else {
+          toast.error("Modelo duplicado, pero no encontrado localmente");
+        }
+      } else {
+        toast.error("Error al agregar modelo");
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    toast.dismiss();
 
     if (!form.tipo_equipo_id) {
       toast.error("Seleccione un tipo de equipo");
@@ -343,6 +330,8 @@ const handleAddMarca = async (nombre: string) => {
         })),
       };
       await onSubmit(dataToSubmit);
+      toast.success("Ítem guardado correctamente");
+      handleClear();
     } catch (error) {
       console.error("Error al guardar:", error);
       toast.error("Error al guardar el equipo");
@@ -351,7 +340,7 @@ const handleAddMarca = async (nombre: string) => {
 
   return (
     <div className="form-container position-relative">
-      <div className="d-flex align-items-center gap-3 mb-4">
+      <div className="d-flex align-items-center gap-2 gap-md-3 mb-4">
         <FaLongArrowAltLeft
           onClick={handleBack}
           title="Regresar"
@@ -360,163 +349,207 @@ const handleAddMarca = async (nombre: string) => {
         <h2 className="fw-bold m-0">Crear Nuevo Ítem</h2>
       </div>
 
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
-          <Form.Label>Tipo de Equipo</Form.Label>
-          <Form.Select
-            value={form.tipo_equipo_id}
-            onChange={(e) =>
-              setForm({ ...form, tipo_equipo_id: e.target.value })
-            }
-            disabled={loading}
-          >
-            <option value="">Seleccione un tipo</option>
-            {tiposEquipo.map((tipo) => (
-              <option key={tipo.id} value={tipo.id}>
-                {tipo.nombre}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
-
-        <Form.Group className="mb-3">
-          <Form.Label>Marca</Form.Label>
-          <div className="d-flex gap-2">
-            <Form.Select
-              value={form.marca_id}
-              onChange={(e) => setForm({ ...form, marca_id: e.target.value })}
+      <form onSubmit={handleSubmit}>
+        <div className="row mb-4">
+          <div className="col-md-6 mb-3 mb-md-0">
+            <label htmlFor="tipo_equipo" className="form-label">
+              Tipo de Equipo
+            </label>
+            <select
+              id="tipo_equipo"
+              value={form.tipo_equipo_id}
+              onChange={(e) => setForm({ ...form, tipo_equipo_id: e.target.value })}
+              className="form-select"
               disabled={loading}
             >
-              <option value="">Seleccione una marca</option>
-              {marcas.map((marca) => (
-                <option key={marca.id} value={marca.id}>
-                  {marca.nombre}
+              <option value="">Seleccione un tipo</option>
+              {tiposEquipo.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nombre}
                 </option>
               ))}
-            </Form.Select>
-            <Button variant="outline-secondary" onClick={() => setShowMarcaModal(true)}>
-              +
-            </Button>
+            </select>
           </div>
-        </Form.Group>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Modelo</Form.Label>
-          <div className="d-flex gap-2">
-            <Form.Select
-              value={form.modelo_id}
-              onChange={(e) => setForm({ ...form, modelo_id: e.target.value })}
-              disabled={loading || !form.marca_id}
+          <div className="col-md-6">
+            <label htmlFor="tipo_reserva" className="form-label">
+              Tipo de Reserva
+            </label>
+            <select
+              id="tipo_reserva"
+              value={form.tipo_reserva_id}
+              onChange={(e) => setForm({ ...form, tipo_reserva_id: e.target.value })}
+              className="form-select"
+              disabled={loading}
             >
-              <option value="">Seleccione un modelo</option>
-              {filteredModelos.map((modelo) => (
-                <option key={modelo.id} value={modelo.id}>
-                  {modelo.nombre}
+              <option value="">Seleccione un tipo</option>
+              {tipoReservas.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nombre}
                 </option>
               ))}
-            </Form.Select>
-            <Button
-              variant="outline-secondary"
-              onClick={() => setShowModeloModal(true)}
-              disabled={!form.marca_id}
-            >
-              +
-            </Button>
+            </select>
           </div>
-        </Form.Group>
+        </div>
 
+        <div className="row mb-4">
+          <div className="col-md-4 mb-3 mb-md-0">
+            <label htmlFor="marca" className="form-label">
+              Marca
+            </label>
+            <div className="d-flex gap-2">
+              <select
+                id="marca"
+                value={form.marca_id}
+                onChange={(e) => setForm({ ...form, marca_id: e.target.value })}
+                className="form-select"
+                disabled={loading}
+              >
+                <option value="">Seleccione una marca</option>
+                {marcas.map((marca) => (
+                  <option key={marca.id} value={marca.id}>
+                    {marca.nombre}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setShowMarcaModal(true)}
+              >
+                <FaPlus />
+              </button>
+            </div>
+          </div>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Estado</Form.Label>
-          <Form.Select
-            value={form.estado_id}
-            onChange={(e) => setForm({ ...form, estado_id: e.target.value })}
-            disabled={loading}
-          >
-            <option value="">Seleccione un estado</option>
-            {estados.map((estado) => (
-              <option key={estado.id} value={estado.id}>
-                {estado.nombre}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
+          <div className="col-md-4 mb-3 mb-md-0">
+            <label htmlFor="modelo" className="form-label">
+              Modelo
+            </label>
+            <div className="d-flex gap-2">
+              <select
+                id="modelo"
+                value={form.modelo_id}
+                onChange={(e) => setForm({ ...form, modelo_id: e.target.value })}
+                className="form-select"
+                disabled={loading || !form.marca_id}
+              >
+                <option value="">Seleccione un modelo</option>
+                {filteredModelos.map((modelo) => (
+                  <option key={modelo.id} value={modelo.id}>
+                    {modelo.nombre}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setShowModeloModal(true)}
+                disabled={!form.marca_id}
+              >
+                <FaPlus />
+              </button>
+            </div>
+          </div>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Tipo de Reserva</Form.Label>
-          <Form.Select
-            value={form.tipo_reserva_id}
-            onChange={(e) =>
-              setForm({ ...form, tipo_reserva_id: e.target.value })
-            }
-            disabled={loading}
-          >
-            <option value="">Seleccione un tipo</option>
-            {tipoReservas.map((tipo) => (
-              <option key={tipo.id} value={tipo.id}>
-                {tipo.nombre}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
+          <div className="col-md-4">
+            <label htmlFor="estado" className="form-label">
+              Estado
+            </label>
+            <select
+              id="estado"
+              value={form.estado_id}
+              onChange={(e) => setForm({ ...form, estado_id: e.target.value })}
+              className="form-select"
+              disabled={loading}
+            >
+              <option value="">Seleccione un estado</option>
+              {estados.map((estado) => (
+                <option key={estado.id} value={estado.id}>
+                  {estado.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Detalles</Form.Label>
-          <Form.Control
-            as="textarea"
+        <div className="mb-4">
+          <label htmlFor="detalles" className="form-label">
+            Detalles
+          </label>
+          <textarea
+            id="detalles"
+            className="form-control"
             rows={3}
             value={form.detalles}
             onChange={(e) => setForm({ ...form, detalles: e.target.value })}
             placeholder="Descripción detallada del ítem"
           />
-        </Form.Group>
+        </div>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Fecha de Adquisición</Form.Label>
-          <Form.Control
-            type="date"
-            value={form.fecha_adquisicion}
-            onChange={(e) => setForm({ ...form, fecha_adquisicion: e.target.value })}
-          />
-        </Form.Group>
+        <div className="row mb-4">
+          <div className="col-md-6 mb-3 mb-md-0">
+            <label htmlFor="fecha_adquisicion" className="form-label">
+              Fecha de Adquisición
+            </label>
+            <input
+              id="fecha_adquisicion"
+              type="date"
+              className="form-control"
+              value={form.fecha_adquisicion}
+              onChange={(e) => setForm({ ...form, fecha_adquisicion: e.target.value })}
+            />
+          </div>
 
-        {form.tipo_equipo_id ? (
-          esInsumo ? (
-            <Form.Group className="mb-3">
-              <Form.Label>Cantidad</Form.Label>
-              <Form.Control
-                type="number"
-                min={1}
-                value={form.cantidad}
-                onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
-                placeholder="Cantidad disponible"
-              />
-            </Form.Group>
-          ) : (
-            <>
-              <Form.Group className="mb-3">
-                <Form.Label>Número de Serie</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={form.numero_serie}
-                  onChange={(e) => setForm({ ...form, numero_serie: e.target.value })}
-                  placeholder="Ingrese el número de serie"
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Vida Útil (años)</Form.Label>
-                <Form.Control
+          {form.tipo_equipo_id && (
+            esInsumo ? (
+              <div className="col-md-6">
+                <label htmlFor="cantidad" className="form-label">
+                  Cantidad
+                </label>
+                <input
+                  id="cantidad"
                   type="number"
-                  min={0}
-                  value={form.vida_util}
-                  onChange={(e) => setForm({ ...form, vida_util: e.target.value })}
-                  placeholder="Años de vida útil estimada"
+                  min={1}
+                  className="form-control"
+                  value={form.cantidad}
+                  onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
+                  placeholder="Cantidad disponible"
                 />
-              </Form.Group>
-            </>
-          )
-        ) : null}
+              </div>
+            ) : (
+              <>
+                <div className="col-md-3">
+                  <label htmlFor="numero_serie" className="form-label">
+                    Número de Serie
+                  </label>
+                  <input
+                    id="numero_serie"
+                    type="text"
+                    className="form-control"
+                    value={form.numero_serie}
+                    onChange={(e) => setForm({ ...form, numero_serie: e.target.value })}
+                    placeholder="Número de serie"
+                  />
+                </div>
+                <div className="col-md-3">
+                  <label htmlFor="vida_util" className="form-label">
+                    Vida Útil (años)
+                  </label>
+                  <input
+                    id="vida_util"
+                    type="number"
+                    min={0}
+                    className="form-control"
+                    value={form.vida_util}
+                    onChange={(e) => setForm({ ...form, vida_util: e.target.value })}
+                    placeholder="Años de vida útil"
+                  />
+                </div>
+              </>
+            )
+          )}
+        </div>
 
         {form.tipo_equipo_id && (
           loadingCaracteristicas ? (
@@ -528,19 +561,21 @@ const handleAddMarca = async (nombre: string) => {
             </div>
           ) : (
             caracteristicas.length > 0 && (
-              <div className="mb-4 characteristics-section">
-                <h5>Características del Equipo</h5>
+              <div className="mb-4">
+                <h5 className="mb-3">Características del Equipo</h5>
                 <div className="border rounded p-3">
                   {caracteristicas.map((caracteristica) => (
-                    <Form.Group key={caracteristica.id} className="mb-3">
-                      <Form.Label>
+                    <div key={caracteristica.id} className="mb-3">
+                      <label htmlFor={`caracteristica-${caracteristica.id}`} className="form-label">
                         {caracteristica.nombre}
-                        <Badge bg="info" className="ms-2">
+                        <span className="badge bg-info ms-2">
                           {caracteristica.tipo_dato}
-                        </Badge>
-                      </Form.Label>
+                        </span>
+                      </label>
                       {caracteristica.tipo_dato === "boolean" ? (
-                        <Form.Select
+                        <select
+                          id={`caracteristica-${caracteristica.id}`}
+                          className="form-select"
                           value={caracteristica.valor}
                           onChange={(e) =>
                             handleCaracteristicaChange(caracteristica.id, e.target.value)
@@ -549,9 +584,10 @@ const handleAddMarca = async (nombre: string) => {
                           <option value="">Seleccione...</option>
                           <option value="true">Sí</option>
                           <option value="false">No</option>
-                        </Form.Select>
+                        </select>
                       ) : (
-                        <Form.Control
+                        <input
+                          id={`caracteristica-${caracteristica.id}`}
                           type={
                             caracteristica.tipo_dato === "integer"
                               ? "number"
@@ -560,6 +596,7 @@ const handleAddMarca = async (nombre: string) => {
                                 : "text"
                           }
                           step={caracteristica.tipo_dato === "decimal" ? "0.01" : undefined}
+                          className="form-control"
                           value={caracteristica.valor}
                           onChange={(e) =>
                             handleCaracteristicaChange(caracteristica.id, e.target.value)
@@ -567,7 +604,7 @@ const handleAddMarca = async (nombre: string) => {
                           placeholder={`Ingrese ${caracteristica.nombre.toLowerCase()}`}
                         />
                       )}
-                    </Form.Group>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -575,54 +612,77 @@ const handleAddMarca = async (nombre: string) => {
           )
         )}
 
-        <Form.Group className="mb-3">
-          <Form.Label>Imagen</Form.Label>
-          <div
-            {...getRootProps()}
-            className={`dropzone p-4 mb-3 border border-secondary rounded text-center ${isDragActive ? "bg-light" : ""
-              }`}
-            style={{ cursor: "pointer" }}
-          >
-            <input {...getInputProps()} />
-            {isDragActive ? (
-              <p>Suelta la imagen aquí...</p>
-            ) : (
-              <p>Arrastra o haz clic para seleccionar una imagen (max 5MB)</p>
-            )}
-          </div>
-
-          {imagePreview && (
-            <div className="image-preview position-relative d-inline-block mb-3">
+        <div className="mb-4">
+          <label className="form-label">Imagen</label>
+          {imagePreview ? (
+            <div className="d-flex flex-column align-items-center">
               <img
                 src={imagePreview}
-                alt="Preview"
-                style={{ maxWidth: "300px", maxHeight: "300px" }}
-                className="img-thumbnail"
+                alt="Vista previa"
+                className="img-fluid rounded border mb-2"
+                style={{ maxWidth: "220px" }}
               />
               <button
                 type="button"
-                className="btn btn-danger position-absolute top-0 end-0"
                 onClick={removeImage}
-                aria-label="Eliminar imagen"
+                className="btn btn-outline-danger btn-sm"
               >
-                <FaTrash />
+                <FaTrash className="me-1" />
+                Eliminar imagen
               </button>
             </div>
+          ) : (
+            <div
+              {...getRootProps()}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
+                isDragActive ? "border-primary bg-light" : ""
+              }`}
+            >
+              <input {...getInputProps()} />
+              <div className="d-flex flex-column align-items-center justify-content-center">
+                <FaUpload className="text-muted mb-2" size={24} />
+                {isDragActive ? (
+                  <p className="text-primary mb-0">Suelta la imagen aquí...</p>
+                ) : (
+                  <>
+                    <p className="mb-1">
+                      Arrastra y suelta una imagen aquí, o haz clic para seleccionar
+                    </p>
+                    <p className="text-muted small mb-0">
+                      Formatos: JPEG, PNG, GIF (Máx. 5MB)
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
           )}
-        </Form.Group>
-
-        <div className="d-flex gap-3">
-          <Button variant="primary" type="submit" disabled={loading}>
-            <FaSave /> Guardar
-          </Button>
-          <Button variant="warning" type="button" onClick={handleClear} disabled={loading}>
-            <FaBroom /> Limpiar
-          </Button>
-          <Button variant="secondary" type="button" onClick={handleBack} disabled={loading}>
-            <FaTimes /> Cancelar
-          </Button>
         </div>
-      </Form>
+
+        <div className="form-actions">
+          <button type="submit" className="btn primary-btn" disabled={loading}>
+            <FaSave className="me-2" />
+            Guardar
+          </button>
+          <button
+            type="button"
+            className="btn secondary-btn"
+            onClick={handleClear}
+            disabled={loading}
+          >
+            <FaBroom className="me-2" />
+            Limpiar
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleBack}
+            disabled={loading}
+          >
+            <FaTimes className="me-2" />
+            Cancelar
+          </button>
+        </div>
+      </form>
 
       <MarcaModal
         show={showMarcaModal}
@@ -631,26 +691,20 @@ const handleAddMarca = async (nombre: string) => {
         onAdd={handleAddMarca}
       />
 
-     <ModeloModal
-  show={showModeloModal}
-  onHide={() => setShowModeloModal(false)}
-  modelos={modelos}
-  marcaSeleccionada={marcas.find((m) => m.id === Number(form.marca_id))}
-  onAdd={(nombre) => {
-    const marcaId = Number(form.marca_id);
-    if (marcaId) {
-      return handleAddModelo(nombre, marcaId);
-    } else {
-      return Promise.reject("Marca no seleccionada");
-    }
-  }}
-/>
-
-
+      <ModeloModal
+        show={showModeloModal}
+        onHide={() => setShowModeloModal(false)}
+        modelos={modelos}
+        marcaSeleccionada={marcas.find((m) => m.id === Number(form.marca_id))}
+        onAdd={(nombre) => {
+          const marcaId = Number(form.marca_id);
+          if (marcaId) {
+            return handleAddModelo(nombre, marcaId);
+          } else {
+            return Promise.reject("Marca no seleccionada");
+          }
+        }}
+      />
     </div>
-
-
   );
-
-
 }

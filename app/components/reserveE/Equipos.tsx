@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaBoxes, FaEye } from "react-icons/fa";
-import type { EquipoResumen } from "./types/equipos";
+import type { EquipoResumen } from "./types/Equipos";
 import type { FormDataType } from "./types/FormDataType";
 import api from "~/api/axios";
 import toast from "react-hot-toast";

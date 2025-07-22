@@ -10,17 +10,17 @@ import {
 } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import toast from "react-hot-toast";
-import api from "../api/axios";
+import api from "../../api/axios";
 import { APPLARAVEL } from "~/constants/constant";
 import { Spinner } from "react-bootstrap";
-import { diasSemana } from "../constants/day";
-import type { AvailableTime } from "../types/aula";
+import { diasSemana } from "../../constants/day";
+import type { AvailableTime } from "../../types/aula";
 import * as exifr from "exifr";
-import EspacioNoEncontrado from "./error/EspacioNoEncontrado";
+import EspacioNoEncontrado from "../error/EspacioNoEncontrado";
 import { formatDate } from "~/utils/time";
 
 type RenderImageInfo = {
-  id?: number; // 👈 nuevo, para imagen existente
+  id?: number;
   file: File | null;
   preview: string;
   is360: boolean;
@@ -32,6 +32,12 @@ export const CreateSpaceForm = () => {
   const isEdit = Boolean(id);
 
   const [name, setName] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+  const [capacidadMaxima, setCapacidadMaxima] = useState("");
+  const [useModel3D, setUseModel3D] = useState(false);
+  const [modelo3DFile, setModelo3DFile] = useState<File | null>(null);
+  const [pathModelo, setPathModelo] = useState("");
+
   const [renderImages, setRenderImages] = useState<RenderImageInfo[]>([]);
   const [availableTimes, setAvailableTimes] = useState<AvailableTime[]>([]);
   const [timeInput, setTimeInput] = useState<AvailableTime>({
@@ -60,13 +66,20 @@ export const CreateSpaceForm = () => {
         .then((res) => {
           const aula = res.data;
           setName(aula.name);
+          setDescripcion(aula.descripcion || "");
+          setCapacidadMaxima(aula.capacidad_maxima?.toString() || "");
+
+          if (aula.path_modelo) {
+            setUseModel3D(true);
+            setPathModelo(`${APPLARAVEL}/${aula.path_modelo}`);
+          }
 
           const imageUrls = aula.imagenes.map((img: any) => ({
-            id: img.id, // 👈 guarda ID
+            id: img.id,
             file: null,
             preview: img.image_path.startsWith("http")
               ? img.image_path
-              : `${APPLARAVEL + "/"}${img.image_path}`,
+              : `${APPLARAVEL}/${img.image_path}`,
             is360: img.is360 ?? false,
           }));
           setRenderImages(imageUrls);
@@ -209,6 +222,11 @@ export const CreateSpaceForm = () => {
 
   const handleClear = () => {
     setName("");
+    setDescripcion("");
+    setCapacidadMaxima("");
+    setUseModel3D(false);
+    setModelo3DFile(null);
+    setPathModelo("");
     setRenderImages([]);
     setAvailableTimes([]);
     setTimeInput({
@@ -231,17 +249,31 @@ export const CreateSpaceForm = () => {
       return;
     }
 
+    if (useModel3D && !modelo3DFile) {
+      toast.error("Debes subir un archivo de modelo 3D");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("name", name);
+    formData.append("descripcion", descripcion);
+    formData.append("capacidad_maxima", capacidadMaxima);
 
-    renderImages.forEach((img, index) => {
-      if (img.file) {
-        formData.append(`render_images[${index}]`, img.file);
-        formData.append(`render_images_is360[${index}]`, img.is360 ? "1" : "0");
-      } else if (img.id) {
-        formData.append(`keep_images[${index}]`, img.id.toString()); // 👈 envía ID real
-      }
-    });
+    if (useModel3D && modelo3DFile) {
+      formData.append("path_modelo", modelo3DFile);
+    } else {
+      renderImages.forEach((img, index) => {
+        if (img.file) {
+          formData.append(`render_images[${index}]`, img.file);
+          formData.append(
+            `render_images_is360[${index}]`,
+            img.is360 ? "1" : "0"
+          );
+        } else if (img.id) {
+          formData.append(`keep_images[${index}]`, img.id.toString());
+        }
+      });
+    }
 
     formData.append("available_times", JSON.stringify(availableTimes));
     setLoadingSubmit(true);
@@ -296,17 +328,11 @@ export const CreateSpaceForm = () => {
 
   return (
     <div className="form-container position-relative">
-      <div
-        className="d-flex align-items-center gap-2 gap-md-3"
-        style={{ marginBottom: "30px" }}
-      >
+      <div className="d-flex align-items-center gap-2 gap-md-3 mb-4">
         <FaLongArrowAltLeft
           onClick={handleBack}
           title="Regresar"
-          style={{
-            cursor: "pointer",
-            fontSize: "2rem",
-          }}
+          style={{ cursor: "pointer", fontSize: "2rem" }}
         />
         <h2 className="fw-bold m-0">
           {isEdit ? "Editar Espacio" : "Crear Nuevo Espacio"}
@@ -315,62 +341,136 @@ export const CreateSpaceForm = () => {
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label htmlFor="name" className="form-label">
-            Nombre del espacio
-          </label>
+          <label className="form-label">Nombre del espacio</label>
           <input
-            id="name"
             type="text"
+            className="form-control"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="form-control"
           />
         </div>
 
         <div className="mb-4">
-          <label className="form-label">Imágenes 360° (máx. 5)</label>
-
-          <div
-            {...getRootProps()}
-            className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
-              isDragActive ? "border-primary bg-light" : ""
-            }`}
-          >
-            <input {...getInputProps()} />
-            <FaUpload className="text-muted mb-2" />
-            <p>Arrastra y suelta imágenes aquí, o haz clic para seleccionar</p>
-            <p className="text-muted small mb-0">Formatos: JPEG, PNG, GIF</p>
-          </div>
-
-          {renderImages.length > 0 && (
-            <div className="d-flex flex-wrap justify-content-center gap-4 mt-3">
-              {renderImages.map((img, i) => (
-                <div key={i} className="d-flex flex-column align-items-center">
-                  <img
-                    src={img.preview}
-                    alt={`Vista previa ${i + 1}`}
-                    className="img-fluid rounded border mb-2"
-                    style={{
-                      maxWidth: "220px",
-                      maxHeight: "220px",
-                      objectFit: "cover",
-                    }}
-                  />
-                  <small className="text-muted mb-1">
-                    {img.is360 ? "✅ Panorámica/360° detectada" : "❌ Normal"}
-                  </small>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(i)}
-                    className="btn btn-outline-danger btn-sm"
-                  >
-                    <FaTrash className="me-1" /> Eliminar
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          <label className="form-label">Descripción</label>
+          <textarea
+            className="form-control"
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            rows={3}
+          />
         </div>
+
+        <div className="mb-4">
+          <label className="form-label">Capacidad máxima</label>
+          <input
+            type="number"
+            min={1}
+            className="form-control"
+            value={capacidadMaxima}
+            onChange={(e) => setCapacidadMaxima(e.target.value)}
+          />
+        </div>
+
+        <div className="form-check mb-4">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id="useModel3D"
+            checked={useModel3D}
+            onChange={() => {
+              setUseModel3D(!useModel3D);
+              setRenderImages([]);
+              setModelo3DFile(null);
+              setPathModelo("");
+            }}
+          />
+          <label className="form-check-label" htmlFor="useModel3D">
+            ¿Usar modelado 3D en lugar de imágenes 360°?
+          </label>
+        </div>
+
+        {useModel3D ? (
+          <>
+            <div className="mb-4">
+              <label className="form-label">Modelo 3D (.glb o .gltf)</label>
+              <input
+                type="file"
+                accept=".glb,.gltf"
+                className="form-control"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setModelo3DFile(file);
+                  setPathModelo(file ? URL.createObjectURL(file) : "");
+                }}
+              />
+            </div>
+
+            {modelo3DFile && pathModelo.match(/\.(glb|gltf)$/i) && (
+              <div className="mb-4">
+                {/* @ts-ignore */}
+                <model-viewer
+                  src={pathModelo}
+                  alt="Modelo 3D"
+                  camera-controls
+                  auto-rotate
+                  style={{
+                    width: "100%",
+                    height: "400px",
+                    background: "#f5f5f5",
+                  }}
+                />
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="mb-4">
+            <label className="form-label">Imágenes 360° (máx. 5)</label>
+            <div
+              {...getRootProps()}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
+                isDragActive ? "border-primary bg-light" : ""
+              }`}
+            >
+              <input {...getInputProps()} />
+              <FaUpload className="text-muted mb-2" />
+              <p>
+                Arrastra y suelta imágenes aquí, o haz clic para seleccionar
+              </p>
+              <p className="text-muted small mb-0">Formatos: JPEG, PNG, GIF</p>
+            </div>
+            {renderImages.length > 0 && (
+              <div className="d-flex flex-wrap justify-content-center gap-4 mt-3">
+                {renderImages.map((img, i) => (
+                  <div
+                    key={i}
+                    className="d-flex flex-column align-items-center"
+                  >
+                    <img
+                      src={img.preview}
+                      alt={`Vista previa ${i + 1}`}
+                      className="img-fluid rounded border mb-2"
+                      style={{
+                        maxWidth: "220px",
+                        maxHeight: "220px",
+                        objectFit: "cover",
+                      }}
+                    />
+                    <small className="text-muted mb-1">
+                      {img.is360 ? "✅ Panorámica/360° detectada" : "❌ Normal"}
+                    </small>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(i)}
+                      className="btn btn-outline-danger btn-sm"
+                    >
+                      <FaTrash className="me-1" /> Eliminar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Horarios */}
         <div className="mb-4">

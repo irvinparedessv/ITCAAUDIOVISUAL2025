@@ -32,11 +32,7 @@ export default function UbicacionSelect({
           placeholder="Selecciona aula"
           className="react-select-container"
           classNamePrefix="react-select"
-          isDisabled={
-            !isDateTimeComplete ||
-            !formData.tipoReserva ||
-            formData.equipment.length === 0
-          }
+          isDisabled={!isDateTimeComplete || !formData.tipoReserva}
         />
       )}
     </div>

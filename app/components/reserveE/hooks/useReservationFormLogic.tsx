@@ -9,7 +9,7 @@ import { Role } from "~/types/roles";
 import { timeOptions } from "~/utils/time";
 import type { TipoReserva } from "~/types/tipoReserva";
 import type { OptionType } from "../types/Common";
-import type { EquipoResumen } from "../types/equipos";
+import type { EquipoResumen } from "../types/Equipos";
 import type { FormDataType } from "../types/FormDataType";
 
 export type UserOption = OptionType & { value: number };
@@ -83,12 +83,12 @@ export default function useReservationFormLogic() {
   useEffect(() => {
     const fetchUbicaciones = async () => {
       try {
-        const response = await api.get("/ubicaciones");
+        const response = await api.get("/aulas");
         const data = response.data;
         setAulaOptions(
-          data.map((item: { nombre: string }) => ({
-            value: item.nombre,
-            label: item.nombre,
+          data.map((item: { name: string; id: number }) => ({
+            value: item.id,
+            label: item.name,
           }))
         );
       } catch {

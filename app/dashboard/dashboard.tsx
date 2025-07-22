@@ -88,12 +88,6 @@ export default function Dashboard() {
               description="Gestión de cuentas y permisos"
             />
             <DashboardCard
-              title="Ubicaciones"
-              icon={<FaMapLocation size={24} />}
-              link="/ubications"
-              description="Gestión de ubicaciones para prestamos de equipos"
-            />
-            <DashboardCard
               title="Administración"
               icon={<FaUserShield size={24} />}
               link="/administracion"

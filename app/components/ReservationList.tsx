@@ -414,6 +414,7 @@ export default function ReservationList() {
         </div>
 
         {/* Botón de filtros: alineado a la derecha en mobile */}
+        {/* @ts-ignore */}
         <Button
           variant="outline-secondary"
           onClick={() => setShowFilters(!showFilters)}

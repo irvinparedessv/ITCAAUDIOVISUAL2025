@@ -1,4 +1,4 @@
-import type { EquipmentSeleccionado, EquipoResumen } from "./equipos";
+import type { EquipmentSeleccionado, EquipoResumen } from "./Equipos";
 import type { OptionType } from "./Common";
 
 export interface FormDataType {

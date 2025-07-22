@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Equipo, Insumo, ItemTipo } from "../../types/item";
 import { Button, Form, InputGroup, Spinner, Modal, Badge } from "react-bootstrap";
-import { getItems, type ItemFilters } from "../../services/itemService";
+import { getItems, type ItemFilters, deleteItem, getInsumosNoAsignados, asignarInsumoAEquipo } from "../../services/itemService";
 import toast from "react-hot-toast";
 import {
     FaEdit,
@@ -11,11 +11,14 @@ import {
     FaSearch,
     FaLongArrowAltLeft,
     FaPlus,
-    FaBoxes
+    FaBoxes,
+    FaLink
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
 import type { TipoEquipo } from "~/types/tipoEquipo";
+
+
 
 type Item = Equipo | Insumo;
 
@@ -48,10 +51,17 @@ export default function ItemList({
         name: string;
     } | null>(null);
 
-   function isEquipo(item: Item): item is Equipo {
-    return (item as Equipo).numero_serie !== undefined && (item as Equipo).numero_serie !== null;
-}
+    // Estados para modal asignar insumo
+    const [showAccesorioModal, setShowAccesorioModal] = useState(false);
+    const [selectedEquipo, setSelectedEquipo] = useState<Equipo | null>(null);
+    const [insumosDisponibles, setInsumosDisponibles] = useState<Insumo[]>([]);
+    const [insumoSeleccionadoId, setInsumoSeleccionadoId] = useState<number | null>(null);
+    const [loadingInsumos, setLoadingInsumos] = useState(false);
+    const [asignando, setAsignando] = useState(false);
 
+    function isEquipo(item: Item): item is Equipo {
+        return (item as Equipo).numero_serie !== undefined && (item as Equipo).numero_serie !== null;
+    }
 
     const fetchItems = async () => {
         try {
@@ -96,8 +106,8 @@ export default function ItemList({
                     <div className="d-flex justify-content-end gap-2 mt-2">
                         <button
                             className="btn btn-sm btn-danger"
-                            onClick={() => {
-                                onDelete(id, tipo);
+                            onClick={async () => {
+                                await onDelete(id, tipo);
                                 toast.dismiss(t.id);
                                 toast.success(`${tipo === 'equipo' ? 'Equipo' : 'Insumo'} "${name}" eliminado`, { id: toastId });
                                 fetchItems();
@@ -156,8 +166,8 @@ export default function ItemList({
 
     const getItemTypeBadge = (tipo: ItemTipo) => {
         return (
-            <Badge 
-                bg={tipo === 'equipo' ? 'primary' : 'info'} 
+            <Badge
+                bg={tipo === 'equipo' ? 'primary' : 'info'}
                 className="text-capitalize"
             >
                 {tipo}
@@ -165,11 +175,45 @@ export default function ItemList({
         );
     };
 
+    // Función para abrir modal asignar insumo
+    const abrirModalAsignar = async (equipo: Equipo) => {
+        setSelectedEquipo(equipo);
+        setShowAccesorioModal(true);
+        setInsumoSeleccionadoId(null);
+        setLoadingInsumos(true);
 
+        try {
+            const insumos = await getInsumosNoAsignados(equipo.id);
+            setInsumosDisponibles(insumos);
+        } catch (error) {
+            toast.error("Error al cargar insumos disponibles");
+        } finally {
+            setLoadingInsumos(false);
+        }
+    };
 
+    // Función para asignar insumo seleccionado
+    const asignarInsumo = async () => {
+        if (!selectedEquipo || !insumoSeleccionadoId) {
+            toast.error("Selecciona un insumo");
+            return;
+        }
+        setAsignando(true);
+        try {
+            await asignarInsumoAEquipo(selectedEquipo.id, insumoSeleccionadoId);
+            toast.success("Insumo asignado correctamente");
+            setShowAccesorioModal(false);
+            fetchItems();
+        } catch (error) {
+            toast.error("Error al asignar insumo");
+        } finally {
+            setAsignando(false);
+        }
+    };
 
     return (
         <div className="table-responsive rounded shadow p-3 mt-4">
+            {/* Modal imagen */}
             <Modal
                 show={showImageModal}
                 onHide={() => setShowImageModal(false)}
@@ -193,6 +237,49 @@ export default function ItemList({
                 </Modal.Body>
             </Modal>
 
+            {/* Modal asignar insumo */}
+            <Modal
+                show={showAccesorioModal}
+                onHide={() => setShowAccesorioModal(false)}
+                centered
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Asignar insumo a {selectedEquipo?.detalles || 'Equipo'}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {loadingInsumos ? (
+                        <div className="text-center">
+                            <Spinner animation="border" />
+                        </div>
+                    ) : (
+                        <Form.Select
+                            value={insumoSeleccionadoId ?? ''}
+                            onChange={e => setInsumoSeleccionadoId(Number(e.target.value))}
+                        >
+                            <option value="">Selecciona un insumo</option>
+                            {insumosDisponibles.map(insumo => (
+                                <option key={insumo.id} value={insumo.id}>
+                                    {insumo.detalles || `Insumo #${insumo.id}`}
+                                </option>
+                            ))}
+                        </Form.Select>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowAccesorioModal(false)}>
+                        Cancelar
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={asignarInsumo}
+                        disabled={!insumoSeleccionadoId || asignando}
+                    >
+                        {asignando ? 'Asignando...' : 'Asignar'}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Encabezado */}
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
                 <div className="d-flex align-items-center gap-3">
                     <FaLongArrowAltLeft
@@ -218,6 +305,7 @@ export default function ItemList({
                 </div>
             </div>
 
+            {/* Filtros */}
             <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
                 <div className="d-flex flex-grow-1">
                     <InputGroup className="flex-grow-1">
@@ -317,6 +405,7 @@ export default function ItemList({
                 </div>
             )}
 
+            {/* Tabla de items */}
             {!loading && (
                 <>
                     <div className="table-responsive">
@@ -332,7 +421,7 @@ export default function ItemList({
                                     <th>Cantidad</th>
                                     <th>Detalles</th>
                                     <th>Imagen</th>
-                                    <th className="rounded-top-end">Acciones</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -346,8 +435,6 @@ export default function ItemList({
                                                 <td>{getItemTypeBadge(item.tipo)}</td>
                                                 <td><em>{getTipoNombre(item.tipo_equipo_id)}</em></td>
                                                 <td>{item.modelo?.marca?.nombre || 'Sin marca'}</td>
-
-
                                                 <td>{modeloNombre}</td>
                                                 <td>
                                                     <Badge bg={
@@ -359,7 +446,6 @@ export default function ItemList({
                                                     </Badge>
                                                 </td>
                                                 <td>{isEquipoItem ? item.numero_serie : '-'}</td>
-
                                                 <td>{item.cantidad}</td>
                                                 <td>{item.detalles || 'N/A'}</td>
                                                 <td>
@@ -405,6 +491,23 @@ export default function ItemList({
                                                         >
                                                             <FaEdit />
                                                         </Button>
+
+                                                        {isEquipoItem && (
+                                                            <Button
+                                                                variant="outline-success"
+                                                                className="rounded-circle"
+                                                                title="Asignar insumo"
+                                                                style={{
+                                                                    width: "44px",
+                                                                    height: "44px",
+                                                                    transition: "transform 0.2s ease-in-out"
+                                                                }}
+                                                                onClick={() => abrirModalAsignar(item)}
+                                                            >
+                                                                <FaLink />
+                                                            </Button>
+                                                        )}
+
                                                         <Button
                                                             variant="outline-danger"
                                                             className="rounded-circle"

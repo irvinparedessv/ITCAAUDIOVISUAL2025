@@ -38,7 +38,7 @@ export default function ItemListPage() {
   }, [selectedType]);
 
   const handleEdit = (item: Item) => {
-    navigate(`/items/editar/${item.id}`, { state: { tipo: item.tipo } });
+    navigate(`/items/edit/${item.id}`, { state: { tipo: item.tipo } });
   };
 
   const handleDelete = async (id: number, tipo: ItemTipo) => {

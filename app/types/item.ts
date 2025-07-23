@@ -68,17 +68,34 @@ export interface Insumo extends ItemBase {
 }
 
 // Tipos para crear
-export type EquipoCreateDTO = Omit<Equipo, 'id' | 'tipo' | 'imagen_url' | 'created_at' | 'updated_at'> & {
-  imagen?: File | null;
-};
+export interface CaracteristicaConValor extends Caracteristica {
+  valor: string; // Puedes ajustar el tipo según necesites
+}
 
-export type InsumoCreateDTO = Omit<Insumo, 'id' | 'tipo' | 'imagen_url' | 'created_at' | 'updated_at'> & {
-  imagen?: File | null;
-};
+export interface ItemConCaracteristicas extends ItemBase {
+  caracteristicas: CaracteristicaConValor[];
+}
 
-// Tipos para actualizar
-export type EquipoUpdateDTO = Partial<EquipoCreateDTO> & { id: number };
-export type InsumoUpdateDTO = Partial<InsumoCreateDTO> & { id: number };
+// Actualiza tus DTOs para incluir características
+export interface EquipoCreateDTO extends Omit<Equipo, 'id' | 'tipo' | 'imagen_url' | 'created_at' | 'updated_at'> {
+  imagen?: File | null;
+  caracteristicas?: CaracteristicaValor[]; // Nuevo campo
+}
+
+export interface InsumoCreateDTO extends Omit<Insumo, 'id' | 'tipo' | 'imagen_url' | 'created_at' | 'updated_at'> {
+  imagen?: File | null;
+  caracteristicas?: CaracteristicaValor[]; // Nuevo campo
+}
+
+export interface EquipoUpdateDTO extends Partial<EquipoCreateDTO> {
+  id: number;
+  caracteristicas?: CaracteristicaValor[]; // Nuevo campo
+}
+
+export interface InsumoUpdateDTO extends Partial<InsumoCreateDTO> {
+  id: number;
+  caracteristicas?: CaracteristicaValor[]; // Nuevo campo
+}
 
 // Tipo mixto para resultados
 export type Item = Equipo | Insumo;
@@ -90,3 +107,5 @@ export interface PaginatedItems<T = Item> {
   per_page: number;
   last_page: number;
 }
+
+

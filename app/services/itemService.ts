@@ -99,37 +99,62 @@ export const createItem = async (data: EquipoCreateDTO | InsumoCreateDTO, tipo: 
 
 export const updateItem = async (
   id: number,
-  data: EquipoUpdateDTO | InsumoUpdateDTO,
+  formData: FormData,
   tipo: 'equipo' | 'insumo'
 ) => {
-  const formData = new FormData();
-
   formData.append("tipo", tipo);
+  formData.append("_method", "PUT");
 
-  if (data.tipo_equipo_id) formData.append("tipo_equipo_id", data.tipo_equipo_id.toString());
-  if (data.modelo_id) formData.append("modelo_id", data.modelo_id.toString());
-  if (data.estado_id) formData.append("estado_id", data.estado_id.toString());
-  if (data.tipo_reserva_id) formData.append("tipo_reserva_id", data.tipo_reserva_id.toString());
-  if (data.fecha_adquisicion) formData.append("fecha_adquisicion", data.fecha_adquisicion);
-  if (data.detalles) formData.append("detalles", data.detalles);
+  // Depurar el contenido de FormData
+  console.log("Contenido de formData antes de enviar:");
+  for (const pair of formData.entries()) {
+    console.log(pair[0], ":", pair[1]);
+  }
 
-  if (tipo === 'equipo' && 'numero_serie' in data && data.numero_serie)
-    formData.append("numero_serie", data.numero_serie);
+  try {
+    const res = await api.post(`/equipos/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error en updateItem:", error);
+    throw error; // re-lanzar para manejarlo afuera si quieres
+  }
+};
 
-  if (tipo === 'equipo' && 'vida_util' in data && data.vida_util !== undefined)
-    formData.append("vida_util", data.vida_util!.toString());
 
-  if (tipo === 'insumo' && 'cantidad' in data)
-    formData.append("cantidad", data.cantidad!.toString());
 
-  if ((data as any).imagen) formData.append("imagen", (data as any).imagen);
+export const actualizarValoresCaracteristicasPorEquipo = async (
+  equipoId: number,
+  caracteristicas: any[]
+) => {
+  // Mapeamos para enviar solo los campos que espera el backend
+  const dataFormateada = caracteristicas.map(c => ({
+    caracteristica_id: c.id ?? c.caracteristica_id, // por si ya viene como id
+    valor: c.valor ?? "", // asegura que exista aunque sea vacío
+  }));
 
-  const res = await api.post(`/equipos/${id}?_method=PUT`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+  console.log("Datos que se enviarán a actualizarValoresCaracteristicasPorEquipo:", dataFormateada);
+
+  // Dependiendo de cómo espera el backend, puedes enviar JSON string o directamente objeto
+  // Aquí te dejo ambas opciones, usa la que funcione en tu backend:
+
+  // Opción 1: enviar como JSON string (si backend espera así)
+  /*
+  const res = await api.post(`/valores-caracteristica/equipo/${equipoId}/actualizar`, {
+    caracteristicas: JSON.stringify(dataFormateada),
+  });
+  */
+
+  // Opción 2: enviar como objeto normal (más común y recomendable)
+  const res = await api.post(`/valores-caracteristica/equipo/${equipoId}/actualizar`, {
+    caracteristicas: dataFormateada,
   });
 
   return res.data;
 };
+
+
 
 export const deleteItem = async (id: number, tipo: 'equipo' | 'insumo') => {
   const res = await api.delete(`/equipos/${id}`, {
@@ -157,6 +182,11 @@ export const getInsumosNoAsignados = async (equipoId: number): Promise<Insumo[]>
 
 export const asignarInsumoAEquipo = async (equipoId: number, insumoId: number) => {
     await api.post(`/equipos/${equipoId}/insumos`, { insumo_id: insumoId });
+};
+
+export const getValoresCaracteristicasPorEquipo = async (equipoId: number) => {
+  const res = await api.get(`/valores-caracteristica/equipo/${equipoId}`);
+  return res.data; // [{ id, valor, caracteristica: { id, nombre, tipo_dato } }]
 };
 
 

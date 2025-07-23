@@ -14,6 +14,7 @@ import { Role } from "~/types/roles";
 import useReservationFormLogic from "./hooks/useReservationFormLogic";
 import { useAuth } from "~/hooks/AuthContext";
 import type { FormDataType } from "./types/FormDataType";
+import Scene from "../renders/rooms/Scene";
 
 export default function EquipmentReservationForm() {
   const navigate = useNavigate();

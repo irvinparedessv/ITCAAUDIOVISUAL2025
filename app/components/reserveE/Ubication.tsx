@@ -1,4 +1,3 @@
-// src/components/reservas/UbicacionSelect.tsx
 import React from "react";
 import Select from "react-select";
 import { FaSchool } from "react-icons/fa";
@@ -10,6 +9,13 @@ export default function UbicacionSelect({
   loadingAulas,
   isDateTimeComplete,
 }: any) {
+  const formatOptionLabel = (option: any) => (
+    <div className="d-flex justify-content-between align-items-center">
+      <span>{option.label}</span>
+      {option.path_modelo && <span className="badge bg-success ms-2">3D</span>}
+    </div>
+  );
+
   return (
     <div className="mb-4">
       <label className="form-label d-flex align-items-center">
@@ -33,6 +39,7 @@ export default function UbicacionSelect({
           className="react-select-container"
           classNamePrefix="react-select"
           isDisabled={!isDateTimeComplete || !formData.tipoReserva}
+          formatOptionLabel={formatOptionLabel}
         />
       )}
     </div>

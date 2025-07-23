@@ -14,7 +14,19 @@ export interface Categoria {
   updated_at?: string;
 }
 
+
+// Esto representa una característica que puede tener un tipo de equipo
 export interface CaracteristicaTipoEquipo {
   id: number;
+  nombre: string;
+  tipo_dato: string;
+}
+
+// Esto representa una característica CON valor ya asignado a un equipo
+export interface CaracteristicaConValor {
+  id: number;
+  nombre: string;
+  tipo_dato: string;
+  caracteristica_id: number; // opcional si lo quieres explícito
   valor: string;
 }

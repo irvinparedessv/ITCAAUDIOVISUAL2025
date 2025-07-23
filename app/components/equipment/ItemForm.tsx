@@ -10,24 +10,27 @@ import api from "../../api/axios";
 import MarcaModal from "./MarcaModal";
 import ModeloModal from "./ModeloModal";
 
-interface Caracteristica {
+interface CaracteristicaForm {
   id: number;
   nombre: string;
   tipo_dato: string;
   valor: string;
 }
 
-interface Props {
+export interface Props {
+  initialValues?: any;
   loading: boolean;
   tiposEquipo: TipoEquipo[];
   tipoReservas: TipoReserva[];
   marcas: Marca[];
   modelos: Modelo[];
   estados: Estado[];
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: FormData) => Promise<void>;
+  isEditing?: boolean;
 }
 
 export default function ItemForm({
+  initialValues = null,
   loading,
   tiposEquipo,
   tipoReservas,
@@ -35,6 +38,7 @@ export default function ItemForm({
   modelos,
   estados,
   onSubmit,
+  isEditing = false,
 }: Props) {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -53,7 +57,7 @@ export default function ItemForm({
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [filteredModelos, setFilteredModelos] = useState<Modelo[]>([]);
-  const [caracteristicas, setCaracteristicas] = useState<Caracteristica[]>([]);
+  const [caracteristicas, setCaracteristicas] = useState<CaracteristicaForm[]>([]);
   const [loadingCaracteristicas, setLoadingCaracteristicas] = useState(false);
   const [showMarcaModal, setShowMarcaModal] = useState(false);
   const [showModeloModal, setShowModeloModal] = useState(false);
@@ -64,30 +68,58 @@ export default function ItemForm({
     return tipo?.categoria_id === 2;
   })();
 
+  // Inicialización del formulario
+  useEffect(() => {
+    if (initialValues) {
+      setForm(prev => ({
+        ...prev,
+        ...initialValues,
+        imagen: null,
+        cantidad: isEditing ? "" : initialValues.cantidad || ""
+      }));
+
+      if (initialValues.caracteristicas) {
+        setCaracteristicas(
+          initialValues.caracteristicas.map((c: any) => ({
+            id: c.caracteristica_id || c.id,
+            nombre: c.nombre || c.caracteristica?.nombre,
+            tipo_dato: c.tipo_dato || c.caracteristica?.tipo_dato,
+            valor: c.valor?.toString() || ""
+          }))
+        );
+      }
+    }
+  }, [initialValues, isEditing]);
+
+  // Filtrado de modelos por marca
   useEffect(() => {
     if (form.marca_id) {
       const filtrados = modelos.filter((m) => m.marca_id === Number(form.marca_id));
       setFilteredModelos(filtrados);
-      setForm((prev) => ({ ...prev, modelo_id: "" }));
+      if (!filtrados.some(m => m.id === Number(form.modelo_id))) {
+        setForm(prev => ({ ...prev, modelo_id: "" }));
+      }
     } else {
       setFilteredModelos([]);
-      setForm((prev) => ({ ...prev, modelo_id: "" }));
+      setForm(prev => ({ ...prev, modelo_id: "" }));
     }
-  }, [form.marca_id, modelos]);
+  }, [form.marca_id, modelos, form.modelo_id]);
 
+  // Carga de características (solo en modo creación)
   useEffect(() => {
+    if (isEditing) return;
+
     const fetchCaracteristicas = async () => {
       if (form.tipo_equipo_id) {
         setLoadingCaracteristicas(true);
         try {
-          const response = await api.get(
-            `/tipo-equipos/${form.tipo_equipo_id}/caracteristicas`
-          );
-          const data = response.data;
+          const response = await api.get(`/tipo-equipos/${form.tipo_equipo_id}/caracteristicas`);
           setCaracteristicas(
-            data.map((c: any) => ({
-              ...c,
-              valor: "",
+            response.data.map((c: any) => ({
+              id: c.id,
+              nombre: c.nombre,
+              tipo_dato: c.tipo_dato,
+              valor: ""
             }))
           );
         } catch (error) {
@@ -102,8 +134,9 @@ export default function ItemForm({
     };
 
     fetchCaracteristicas();
-  }, [form.tipo_equipo_id]);
+  }, [form.tipo_equipo_id, isEditing]);
 
+  // Dropzone para imágenes
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
@@ -125,21 +158,18 @@ export default function ItemForm({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      "image/*": [".jpeg", ".jpg", ".png", ".gif"],
-    },
+    accept: { "image/*": [".jpeg", ".jpg", ".png", ".gif"] },
     maxFiles: 1,
     multiple: false,
   });
 
+  // Handlers
   const removeImage = () => {
     setForm((prev) => ({ ...prev, imagen: null }));
     setImagePreview(null);
   };
 
-  const handleBack = () => {
-    navigate("/inventario");
-  };
+  const handleBack = () => navigate("/inventario");
 
   const handleClear = () => {
     setForm({
@@ -160,8 +190,9 @@ export default function ItemForm({
   };
 
   const handleCaracteristicaChange = (id: number, valor: string) => {
-    setCaracteristicas((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, valor } : c))
+    console.log("Cambiando característica", id, "a valor", valor);
+    setCaracteristicas(prev => 
+      prev.map(c => c.id === id ? { ...c, valor } : c)
     );
   };
 
@@ -270,83 +301,71 @@ export default function ItemForm({
     }
   };
 
+  // Submit handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     toast.dismiss();
+  console.log("Características en submit:", caracteristicas);
+    // Validaciones básicas
+    if (!form.tipo_equipo_id) return toast.error("Seleccione un tipo de equipo");
+    if (!form.marca_id) return toast.error("Seleccione una marca");
+    if (!form.modelo_id) return toast.error("Seleccione un modelo");
+    if (!form.estado_id) return toast.error("Seleccione un estado");
+    if (!form.detalles) return toast.error("Ingrese los detalles");
 
-    if (!form.tipo_equipo_id) {
-      toast.error("Seleccione un tipo de equipo");
-      return;
+    // Validaciones específicas
+    if (esInsumo && !isEditing && (!form.cantidad || Number(form.cantidad) <= 0)) {
+      return toast.error("La cantidad debe ser mayor a cero");
     }
-    if (!form.marca_id) {
-      toast.error("Seleccione una marca");
-      return;
-    }
-    if (!form.modelo_id) {
-      toast.error("Seleccione un modelo");
-      return;
-    }
-    if (!form.estado_id) {
-      toast.error("Seleccione un estado");
-      return;
-    }
-    if (!form.detalles) {
-      toast.error("Ingrese los detalles");
-      return;
+    if (!esInsumo && !form.numero_serie) {
+      return toast.error("Ingrese el número de serie");
     }
 
-    if (esInsumo) {
-      if (!form.cantidad || Number(form.cantidad) <= 0) {
-        toast.error("La cantidad debe ser mayor a cero");
-        return;
-      }
-    } else {
-      if (!form.numero_serie) {
-        toast.error("Ingrese el número de serie");
-        return;
-      }
-    }
-
+    // Validación de características
     for (const c of caracteristicas) {
       if (!c.valor || c.valor.trim() === "") {
-        toast.error(`La característica "${c.nombre}" es requerida`);
-        return;
+        return toast.error(`La característica "${c.nombre}" es requerida`);
       }
     }
 
     try {
-      const dataToSubmit = {
-        ...form,
-        tipo_equipo_id: Number(form.tipo_equipo_id),
-        marca_id: Number(form.marca_id),
-        modelo_id: Number(form.modelo_id),
-        estado_id: Number(form.estado_id),
-        tipo_reserva_id: Number(form.tipo_reserva_id),
-        vida_util: form.vida_util ? Number(form.vida_util) : 0,
-        cantidad: form.cantidad ? Number(form.cantidad) : 0,
-        caracteristicas: caracteristicas.map((c) => ({
-          id: c.id,
-          valor: c.valor,
-        })),
-      };
-      await onSubmit(dataToSubmit);
-      toast.success("Ítem guardado correctamente");
-      handleClear();
+      const formData = new FormData();
+      
+      // Campos básicos
+      formData.append("tipo", esInsumo ? "insumo" : "equipo");
+      if (isEditing) formData.append("_method", "PUT");
+      
+      Object.entries(form).forEach(([key, value]) => {
+        if (value !== null && value !== "") {
+          formData.append(key, value.toString());
+        }
+      });
+
+      // Características
+      caracteristicas.forEach((c, index) => {
+        formData.append(`caracteristicas[${index}][caracteristica_id]`, c.id.toString());
+        formData.append(`caracteristicas[${index}][valor]`, c.valor);
+      });
+
+      // Imagen
+      if (form.imagen) {
+        formData.append("imagen", form.imagen);
+      }
+
+      await onSubmit(formData);
+      toast.success(`Ítem ${isEditing ? 'actualizado' : 'creado'} correctamente`);
+      if (!isEditing) handleClear();
     } catch (error) {
       console.error("Error al guardar:", error);
-      toast.error("Error al guardar el equipo");
+      toast.error(`Error al ${isEditing ? 'actualizar' : 'crear'} el ítem`);
     }
   };
 
   return (
     <div className="form-container position-relative">
       <div className="d-flex align-items-center gap-2 gap-md-3 mb-4">
-        <FaLongArrowAltLeft
-          onClick={handleBack}
-          title="Regresar"
-          style={{ cursor: "pointer", fontSize: "2rem" }}
-        />
-        <h2 className="fw-bold m-0">Crear Nuevo Ítem</h2>
+        <FaLongArrowAltLeft onClick={handleBack} title="Regresar" style={{ cursor: "pointer", fontSize: "2rem" }} />
+        <h2 className="fw-bold m-0">{isEditing ? 'Editar' : 'Crear Nuevo'} Ítem</h2>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -360,7 +379,7 @@ export default function ItemForm({
               value={form.tipo_equipo_id}
               onChange={(e) => setForm({ ...form, tipo_equipo_id: e.target.value })}
               className="form-select"
-              disabled={loading}
+              disabled={loading || isEditing}
             >
               <option value="">Seleccione un tipo</option>
               {tiposEquipo.map((tipo) => (
@@ -403,7 +422,7 @@ export default function ItemForm({
                 value={form.marca_id}
                 onChange={(e) => setForm({ ...form, marca_id: e.target.value })}
                 className="form-select"
-                disabled={loading}
+                disabled={loading || isEditing}
               >
                 <option value="">Seleccione una marca</option>
                 {marcas.map((marca) => (
@@ -412,13 +431,15 @@ export default function ItemForm({
                   </option>
                 ))}
               </select>
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => setShowMarcaModal(true)}
-              >
-                <FaPlus />
-              </button>
+              {!isEditing && (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowMarcaModal(true)}
+                >
+                  <FaPlus />
+                </button>
+              )}
             </div>
           </div>
 
@@ -432,7 +453,7 @@ export default function ItemForm({
                 value={form.modelo_id}
                 onChange={(e) => setForm({ ...form, modelo_id: e.target.value })}
                 className="form-select"
-                disabled={loading || !form.marca_id}
+                disabled={loading || !form.marca_id || isEditing}
               >
                 <option value="">Seleccione un modelo</option>
                 {filteredModelos.map((modelo) => (
@@ -441,14 +462,16 @@ export default function ItemForm({
                   </option>
                 ))}
               </select>
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => setShowModeloModal(true)}
-                disabled={!form.marca_id}
-              >
-                <FaPlus />
-              </button>
+              {!isEditing && (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowModeloModal(true)}
+                  disabled={!form.marca_id}
+                >
+                  <FaPlus />
+                </button>
+              )}
             </div>
           </div>
 
@@ -503,20 +526,22 @@ export default function ItemForm({
 
           {form.tipo_equipo_id && (
             esInsumo ? (
-              <div className="col-md-6">
-                <label htmlFor="cantidad" className="form-label">
-                  Cantidad
-                </label>
-                <input
-                  id="cantidad"
-                  type="number"
-                  min={1}
-                  className="form-control"
-                  value={form.cantidad}
-                  onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
-                  placeholder="Cantidad disponible"
-                />
-              </div>
+              !isEditing && (
+                <div className="col-md-6">
+                  <label htmlFor="cantidad" className="form-label">
+                    Cantidad
+                  </label>
+                  <input
+                    id="cantidad"
+                    type="number"
+                    min={1}
+                    className="form-control"
+                    value={form.cantidad}
+                    onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
+                    placeholder="Cantidad disponible"
+                  />
+                </div>
+              )
             ) : (
               <>
                 <div className="col-md-3">
@@ -551,65 +576,51 @@ export default function ItemForm({
           )}
         </div>
 
-        {form.tipo_equipo_id && (
-          loadingCaracteristicas ? (
-            <div className="mb-4 text-center">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Cargando características...</span>
-              </div>
-              <p className="mt-2">Cargando características...</p>
-            </div>
-          ) : (
-            caracteristicas.length > 0 && (
-              <div className="mb-4">
-                <h5 className="mb-3">Características del Equipo</h5>
-                <div className="border rounded p-3">
-                  {caracteristicas.map((caracteristica) => (
-                    <div key={caracteristica.id} className="mb-3">
-                      <label htmlFor={`caracteristica-${caracteristica.id}`} className="form-label">
-                        {caracteristica.nombre}
-                        <span className="badge bg-info ms-2">
-                          {caracteristica.tipo_dato}
-                        </span>
-                      </label>
-                      {caracteristica.tipo_dato === "boolean" ? (
-                        <select
-                          id={`caracteristica-${caracteristica.id}`}
-                          className="form-select"
-                          value={caracteristica.valor}
-                          onChange={(e) =>
-                            handleCaracteristicaChange(caracteristica.id, e.target.value)
-                          }
-                        >
-                          <option value="">Seleccione...</option>
-                          <option value="true">Sí</option>
-                          <option value="false">No</option>
-                        </select>
-                      ) : (
-                        <input
-                          id={`caracteristica-${caracteristica.id}`}
-                          type={
-                            caracteristica.tipo_dato === "integer"
-                              ? "number"
-                              : caracteristica.tipo_dato === "decimal"
-                                ? "number"
-                                : "text"
-                          }
-                          step={caracteristica.tipo_dato === "decimal" ? "0.01" : undefined}
-                          className="form-control"
-                          value={caracteristica.valor}
-                          onChange={(e) =>
-                            handleCaracteristicaChange(caracteristica.id, e.target.value)
-                          }
-                          placeholder={`Ingrese ${caracteristica.nombre.toLowerCase()}`}
-                        />
-                      )}
-                    </div>
-                  ))}
+        {caracteristicas.length > 0 && (
+          <div className="mb-4">
+            <h5 className="mb-3">Características del Equipo</h5>
+            <div className="border rounded p-3">
+              {caracteristicas.map((caracteristica) => (
+                <div key={caracteristica.id} className="mb-3">
+                  <label htmlFor={`caracteristica-${caracteristica.id}`} className="form-label">
+                    {caracteristica.nombre}
+                    <span className="badge bg-info ms-2">
+                      {caracteristica.tipo_dato}
+                    </span>
+                  </label>
+                  
+                  {caracteristica.tipo_dato === "boolean" ? (
+                    <select
+                      id={`caracteristica-${caracteristica.id}`}
+                      className="form-select"
+                      value={caracteristica.valor}
+                      onChange={(e) => handleCaracteristicaChange(caracteristica.id, e.target.value)}
+                    >
+                      <option value="">Seleccione...</option>
+                      <option value="true">Sí</option>
+                      <option value="false">No</option>
+                    </select>
+                  ) : (
+                    <input
+                      id={`caracteristica-${caracteristica.id}`}
+                      type={
+                        caracteristica.tipo_dato === "integer"
+                          ? "number"
+                          : caracteristica.tipo_dato === "decimal"
+                            ? "number"
+                            : "text"
+                      }
+                      step={caracteristica.tipo_dato === "decimal" ? "0.01" : undefined}
+                      className="form-control"
+                      value={caracteristica.valor}
+                      onChange={(e) => handleCaracteristicaChange(caracteristica.id, e.target.value)}
+                      placeholder={`Valor para ${caracteristica.nombre.toLowerCase()}`}
+                    />
+                  )}
                 </div>
-              </div>
-            )
-          )
+              ))}
+            </div>
+          </div>
         )}
 
         <div className="mb-4">
@@ -661,7 +672,7 @@ export default function ItemForm({
         <div className="form-actions">
           <button type="submit" className="btn primary-btn" disabled={loading}>
             <FaSave className="me-2" />
-            Guardar
+            {isEditing ? 'Actualizar' : 'Guardar'}
           </button>
           <button
             type="button"
@@ -684,27 +695,31 @@ export default function ItemForm({
         </div>
       </form>
 
-      <MarcaModal
-        show={showMarcaModal}
-        onHide={() => setShowMarcaModal(false)}
-        marcas={marcas}
-        onAdd={handleAddMarca}
-      />
+      {!isEditing && (
+        <>
+          <MarcaModal
+            show={showMarcaModal}
+            onHide={() => setShowMarcaModal(false)}
+            marcas={marcas}
+            onAdd={handleAddMarca}
+          />
 
-      <ModeloModal
-        show={showModeloModal}
-        onHide={() => setShowModeloModal(false)}
-        modelos={modelos}
-        marcaSeleccionada={marcas.find((m) => m.id === Number(form.marca_id))}
-        onAdd={(nombre) => {
-          const marcaId = Number(form.marca_id);
-          if (marcaId) {
-            return handleAddModelo(nombre, marcaId);
-          } else {
-            return Promise.reject("Marca no seleccionada");
-          }
-        }}
-      />
+          <ModeloModal
+            show={showModeloModal}
+            onHide={() => setShowModeloModal(false)}
+            modelos={modelos}
+            marcaSeleccionada={marcas.find((m) => m.id === Number(form.marca_id))}
+            onAdd={(nombre) => {
+              const marcaId = Number(form.marca_id);
+              if (marcaId) {
+                return handleAddModelo(nombre, marcaId);
+              } else {
+                return Promise.reject("Marca no seleccionada");
+              }
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

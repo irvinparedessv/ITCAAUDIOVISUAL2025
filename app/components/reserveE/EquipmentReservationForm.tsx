@@ -95,12 +95,14 @@ export default function EquipmentReservationForm() {
           loadingAulas={loading.aulas}
           isDateTimeComplete={isDateTimeComplete}
         />
-        <EquiposSelect
-          formData={formData}
-          setFormData={setFormData}
-          checkingAvailability={checkingAvailability}
-          isDateTimeComplete={isDateTimeComplete}
-        />
+        {formData.aula && (
+          <EquiposSelect
+            formData={formData}
+            setFormData={setFormData}
+            checkingAvailability={checkingAvailability}
+            isDateTimeComplete={isDateTimeComplete}
+          />
+        )}
         <FormActions
           handleClear={handleClear}
           loadingSubmit={loading.submit}

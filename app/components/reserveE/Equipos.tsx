@@ -1,14 +1,65 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { FaBoxes, FaEye } from "react-icons/fa";
-import type { EquipoResumen } from "./types/Equipos";
 import type { FormDataType } from "./types/FormDataType";
 import api from "~/api/axios";
 import toast from "react-hot-toast";
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, useGLTF } from "@react-three/drei";
+import { APIURL } from "./../../constants/constant";
+import InteractiveScene from "../renders/rooms/Scene2";
+import type { EquipmentSeleccionado } from "./types/Equipos";
+
 interface Props {
   formData: FormDataType;
   setFormData: React.Dispatch<React.SetStateAction<FormDataType>>;
   checkingAvailability: boolean;
   isDateTimeComplete: boolean;
+}
+
+interface EquipoIndividual {
+  equipo_id: number;
+  modelo_id: number;
+  tipo_equipo: string;
+  estado: string;
+  imagen_gbl: string | null; // <- si tu campo real es modelo_path cámbialo
+  imagen_normal: string | null;
+  modelo_path?: string | null; // opcional si lo tienes aparte
+}
+
+interface GrupoEquiposPorModelo {
+  modelo_id: number;
+  nombre_modelo: string;
+  nombre_marca: string;
+  equipos: EquipoIndividual[];
+}
+
+/** --- Componente para mostrar GLB --- */
+function ModeloGLB({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+  return <primitive object={scene} />;
+}
+
+/** --- ErrorBoundary simple para Canvas/GLB --- */
+class CanvasErrorBoundary extends React.Component<
+  { onError: () => void; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch() {
+    this.props.onError();
+  }
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
 }
 
 export default function EquiposSelect({
@@ -17,22 +68,38 @@ export default function EquiposSelect({
   checkingAvailability,
   isDateTimeComplete,
 }: Props) {
-  // estados...
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [showDetails, setShowDetails] = useState(false); // NUEVO
+  const [showDetails, setShowDetails] = useState(false);
   const pageSize = 5;
   const [loadingEquipments, setLoadingEquipments] = useState(false);
   const [cantidadInputs, setCantidadInputs] = useState<Record<number, number>>(
     {}
   );
   const [availableEquipmentData, setAvailableEquipmentData] = useState<{
-    data: EquipoResumen[];
+    data: GrupoEquiposPorModelo[];
     total: number;
     current_page: number;
     per_page: number;
   } | null>(null);
+
+  // Modal GLB individual
+  const [showModalGLB, setShowModalGLB] = useState(false);
+  const [glbUrl, setGlbUrl] = useState<string | null>(null);
+
+  // Modal Fullscreen (aula + lista equipos 3D)
+  const [showFullView, setShowFullView] = useState(false);
+  const [equipoActivoUrl, setEquipoActivoUrl] = useState<string | null>(null);
+
+  const handleOpenModalGLB = (url: string) => {
+    setGlbUrl(url);
+    setShowModalGLB(true);
+  };
+
+  const handleImageError = () => {
+    toast.error("No se pudo cargar la imagen.");
+  };
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -68,6 +135,7 @@ export default function EquiposSelect({
 
   useEffect(() => {
     fetchEquipos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     formData.tipoReserva,
     formData.date,
@@ -81,54 +149,59 @@ export default function EquiposSelect({
     setCantidadInputs((prev) => ({ ...prev, [modeloId]: cantidad }));
   };
 
-  const agregarEquipo = (equipo: EquipoResumen) => {
-    const max = equipo.cantidad_disponible - equipo.cantidad_enreserva;
+  const agregarEquipo = (grupo: GrupoEquiposPorModelo) => {
+    const idsDisponibles = grupo.equipos.map((e) => e.equipo_id);
     const yaAgregado =
-      formData.equipment?.filter((e) => e.modelo_id === equipo.modelo_id)
+      formData.equipment?.filter((e: any) => e.modelo_id === grupo.modelo_id)
         .length || 0;
-    const restante = max - yaAgregado;
-    const cantidad = cantidadInputs[equipo.modelo_id] || 0;
+    const restante = idsDisponibles.length - yaAgregado;
+    const cantidad = cantidadInputs[grupo.modelo_id] || 0;
 
     if (cantidad < 1 || cantidad > restante) {
       toast.error(`Cantidad inválida. Máximo: ${restante}`);
       return;
     }
 
-    const idsDisponibles =
-      equipo.equipos_id_disponibles
-        ?.split(",")
-        .map((id) => parseInt(id))
-        .filter((id) => !isNaN(id)) || [];
-
     const idsAsignados = idsDisponibles.slice(
       yaAgregado,
       yaAgregado + cantidad
     );
 
-    if (idsAsignados.length < cantidad) {
-      toast.error("No hay suficientes equipos disponibles.");
-      return;
-    }
-
     setFormData((prev) => {
-      const actuales = [...(prev.equipment || [])];
+      const actuales: EquipmentSeleccionado[] = [...(prev.equipment || [])];
       idsAsignados.forEach((idEquipo) => {
+        // buscamos el equipo para sacar su modelo_path / imagen_gbl
+        const equipoObj = grupo.equipos.find((e) => e.equipo_id === idEquipo);
         actuales.push({
-          modelo_id: equipo.modelo_id,
-          nombre_modelo: equipo.nombre_modelo,
+          modelo_id: grupo.modelo_id,
+          nombre_modelo: grupo.nombre_modelo,
           id: idEquipo,
           cantidad: 1,
+          modelo_path: equipoObj?.modelo_path ?? equipoObj?.imagen_gbl ?? "",
         });
       });
       return { ...prev, equipment: actuales };
     });
 
-    setCantidadInputs((prev) => ({ ...prev, [equipo.modelo_id]: 0 }));
+    setCantidadInputs((prev) => ({ ...prev, [grupo.modelo_id]: 0 }));
   };
 
   const totalPages = Math.ceil((availableEquipmentData?.total || 0) / pageSize);
   const items = availableEquipmentData?.data || [];
 
+  // ---- Condiciones para botón Visualizar full
+  const aulaModelPath: string | null =
+    (formData as any)?.aula?.path_modelo || null;
+
+  const equiposConModeloPath =
+    formData.equipment?.filter(
+      (eq) => eq.modelo_path && eq.modelo_path !== null
+    ) || [];
+
+  const puedeVisualizarFull =
+    !!aulaModelPath && equiposConModeloPath.length > 0;
+
+  console.log(formData.equipment);
   return (
     <div className="mb-4">
       <label className="form-label d-flex align-items-center justify-content-between">
@@ -154,14 +227,40 @@ export default function EquiposSelect({
         </button>
       </label>
 
-      {/* LISTA DE SELECCIONADOS */}
+      {/* Siempre visible */}
+      <input
+        type="text"
+        className="form-control mb-3"
+        placeholder="Buscar modelo..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+
       {formData.equipment?.length > 0 && (
         <div className="mb-4 border rounded p-3 bg-light">
-          <h5 className="mb-3">Equipos seleccionados:</h5>
-          <ul className="list-group">
-            {formData.equipment.map((eq) => (
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="mb-0">Equipos seleccionados:</h5>
+
+            {puedeVisualizarFull && (
+              //@ts-ignore
+              <Button
+                variant="dark"
+                size="sm"
+                onClick={() => {
+                  setEquipoActivoUrl(null);
+                  setShowFullView(true);
+                }}
+              >
+                Visualizar full
+              </Button>
+            )}
+          </div>
+
+          {/* Lista normal */}
+          <ul className="list-group mb-3">
+            {(formData.equipment as any[]).map((eq) => (
               <li
-                key={eq.modelo_id}
+                key={eq.id}
                 className="list-group-item d-flex justify-content-between align-items-center"
               >
                 Modelo: {eq.nombre_modelo}
@@ -175,53 +274,73 @@ export default function EquiposSelect({
       )}
 
       {loadingEquipments ? (
-        <div className="text-center">
+        <div className="text-center my-4">
           <div className="spinner-border" role="status" />
         </div>
       ) : !items.length ? (
         <p className="text-center text-muted">No hay equipos disponibles.</p>
       ) : (
         <>
-          <input
-            type="text"
-            className="form-control mb-3"
-            placeholder="Buscar modelo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-
           <div className="row">
-            {items.map((equipo) => {
+            {items.map((grupo) => {
               const yaAgregado =
-                formData.equipment?.find(
-                  (e) => e.modelo_id === equipo.modelo_id
-                )?.cantidad || 0;
-              const max =
-                equipo.cantidad_disponible -
-                equipo.cantidad_enreserva -
-                yaAgregado;
+                (formData.equipment as any[])?.filter(
+                  (e) => e.modelo_id === grupo.modelo_id
+                ).length || 0;
+              const max = grupo.equipos.length - yaAgregado;
+              const equipoRef = grupo.equipos[0];
 
               return (
-                <div className="col-md-6 mb-3" key={equipo.modelo_id}>
+                <div className="col-md-6 mb-3" key={grupo.modelo_id}>
                   <div className="card h-100">
                     <div className="card-body">
                       <h5 className="card-title text-capitalize">
-                        Modelo: {equipo.nombre_modelo}
+                        {grupo.nombre_modelo}{" "}
+                        <span className="text-muted">
+                          ({grupo.equipos.length})
+                        </span>
+                        <br />
+                        <small className="text-muted">
+                          Marca: {grupo.nombre_marca}
+                        </small>
                       </h5>
 
-                      {showDetails && (
-                        <>
-                          <p className="card-text mb-1">
-                            Total: {equipo.cantidad_total}
-                          </p>
-                          <p className="card-text mb-1 text-success">
-                            Disponibles: {equipo.cantidad_disponible}
-                          </p>
-                          <p className="card-text mb-1 text-warning">
-                            En Reserva: {equipo.cantidad_enreserva}
-                          </p>
-                        </>
-                      )}
+                      {/* Imagen o botón GLB */}
+                      {equipoRef.imagen_normal ? (
+                        <img
+                          src={APIURL + equipoRef.imagen_normal}
+                          alt={grupo.nombre_modelo}
+                          className="img-fluid mb-2 rounded"
+                          style={{
+                            maxHeight: "150px",
+                            objectFit: "contain",
+                            width: "100%",
+                          }}
+                          onError={handleImageError}
+                        />
+                      ) : equipoRef.imagen_gbl ? (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary mb-2"
+                          onClick={() =>
+                            handleOpenModalGLB(APIURL + equipoRef.imagen_gbl!)
+                          }
+                        >
+                          Visualizar
+                        </button>
+                      ) : null}
+
+                      {/* Seriales */}
+                      <div className="mb-2 d-flex flex-wrap gap-1">
+                        {grupo.equipos.map((e) => (
+                          <span
+                            key={e.equipo_id}
+                            className="badge bg-secondary"
+                          >
+                            #{e.equipo_id}
+                          </span>
+                        ))}
+                      </div>
 
                       <div className="d-flex align-items-center mb-2">
                         <input
@@ -230,11 +349,11 @@ export default function EquiposSelect({
                           style={{ width: "80px" }}
                           min={0}
                           max={max}
-                          value={cantidadInputs[equipo.modelo_id] || ""}
+                          value={cantidadInputs[grupo.modelo_id] || ""}
                           placeholder="0"
                           onChange={(e) =>
                             handleCantidadChange(
-                              equipo.modelo_id,
+                              grupo.modelo_id,
                               parseInt(e.target.value) || 0
                             )
                           }
@@ -242,27 +361,10 @@ export default function EquiposSelect({
                         <button
                           type="button"
                           className="btn btn-sm btn-success"
-                          onClick={() => agregarEquipo(equipo)}
+                          onClick={() => agregarEquipo(grupo)}
                           disabled={max <= 0}
                         >
                           Agregar
-                        </button>
-                      </div>
-
-                      <div className="d-flex justify-content-between">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-info"
-                          disabled
-                        >
-                          Detalle
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-primary"
-                          disabled
-                        >
-                          Ver imagen
                         </button>
                       </div>
                     </div>
@@ -307,6 +409,58 @@ export default function EquiposSelect({
           )}
         </>
       )}
+
+      {/* Modal visor GLB individual */}
+      <Modal
+        show={showModalGLB}
+        onHide={() => setShowModalGLB(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Visualización del modelo 3D</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ height: "500px" }}>
+          {glbUrl && (
+            <CanvasErrorBoundary
+              onError={() => {
+                toast.error("No se pudo cargar el modelo 3D.");
+              }}
+            >
+              <Canvas camera={{ position: [0, 0, 5] }}>
+                <ambientLight />
+                <OrbitControls />
+                <Suspense fallback={null}>
+                  <ModeloGLB url={glbUrl} />
+                </Suspense>
+              </Canvas>
+            </CanvasErrorBoundary>
+          )}
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal Fullscreen Aula + lista de equipos 3D */}
+      <Modal
+        show={showFullView}
+        onHide={() => setShowFullView(false)}
+        fullscreen
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Visualización completa</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-0">
+          <div className="row g-0" style={{ height: "100%" }}>
+            <div className="col-12 col-md-12" style={{ height: "100%" }}>
+              <div style={{ height: "100%", minHeight: "500px" }}>
+                <InteractiveScene
+                  path_room={formData.aula.path_modelo}
+                  equipos={equiposConModeloPath}
+                />
+              </div>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

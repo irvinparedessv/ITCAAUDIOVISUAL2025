@@ -1,5 +1,6 @@
+import React, { useMemo } from "react";
+import { useEffect } from "react";
 import { useGLTF } from "@react-three/drei";
-import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 interface RoomModelProps {
@@ -8,18 +9,19 @@ interface RoomModelProps {
   onReady?: (obj: THREE.Object3D) => void;
 }
 
-export default function RoomModel({
+const RoomModel = React.memo(function RoomModel({
   path,
   scale = 1,
   onReady,
 }: RoomModelProps) {
   const { scene } = useGLTF(path);
-  const groupRef = useRef<THREE.Group>(null);
-
-  const clonedScene = useMemo(() => scene.clone(true), [scene]);
+  const clonedScene = useMemo(() => {
+    console.log("🔁 RoomModel: clonando escena");
+    return scene.clone(true);
+  }, [scene]);
 
   useEffect(() => {
-    if (!groupRef.current) return;
+    console.log("🏗️ RoomModel: ejecutando useEffect para centrar modelo");
 
     const box = new THREE.Box3().setFromObject(clonedScene);
     const size = new THREE.Vector3();
@@ -27,20 +29,13 @@ export default function RoomModel({
     box.getSize(size);
     box.getCenter(center);
 
-    // Mostrar info en consola
-    console.log("Tamaño (size):", size);
-    console.log("Centro original:", center);
+    clonedScene.position.x -= center.x;
+    clonedScene.position.y -= center.y - size.y / 2;
+    clonedScene.position.z -= center.z;
 
-    // Mover al centro del mundo y ajustar la altura
-    clonedScene.position.sub(center); // centro en (0, 0, 0)
-    clonedScene.position.y += size.y / 2; // levantar mitad de su altura
-
-    if (onReady) onReady(clonedScene);
+    onReady?.(clonedScene);
   }, [clonedScene, onReady]);
 
-  return (
-    <group ref={groupRef}>
-      <primitive object={clonedScene} scale={[scale, scale, scale]} />
-    </group>
-  );
-}
+  return <primitive object={clonedScene} scale={[scale, scale, scale]} />;
+});
+export default RoomModel;

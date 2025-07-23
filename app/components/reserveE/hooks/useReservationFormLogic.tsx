@@ -86,10 +86,17 @@ export default function useReservationFormLogic() {
         const response = await api.get("/aulas");
         const data = response.data;
         setAulaOptions(
-          data.map((item: { name: string; id: number }) => ({
-            value: item.id,
-            label: item.name,
-          }))
+          data.map(
+            (item: {
+              id: number;
+              name: string;
+              path_modelo: string | null;
+            }) => ({
+              value: item.id,
+              label: item.name,
+              path_modelo: item.path_modelo,
+            })
+          )
         );
       } catch {
         toast.error("Error cargando las ubicaciones");

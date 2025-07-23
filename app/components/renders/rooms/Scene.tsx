@@ -1,5 +1,13 @@
-import React, { useRef, useEffect, useState, useMemo, Suspense } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useMemo,
+  Suspense,
+  useCallback,
+} from "react";
 import { Canvas } from "@react-three/fiber";
+import RoomModel from "../items/RoomModel";
 import {
   Environment,
   OrbitControls,
@@ -95,6 +103,8 @@ function MoveableItem({
 }
 
 export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
+  console.log("🎬 InteractiveScene: renderizando componente completo");
+
   const exportGroupRef = useRef<THREE.Group>(null);
   const { items, addItem, updatePosition } = useSceneItems();
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -102,8 +112,12 @@ export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
     "translate"
   );
   const [loading, setLoading] = useState(false);
-
+  const handleRoomReady = useCallback((obj: THREE.Object3D) => {
+    obj.userData.addedByUser = true;
+    console.log("🏠 Habitación cargada:", obj);
+  }, []);
   useEffect(() => {
+    console.log("📦 Preloading modelos...");
     availableModels.forEach((model) => useGLTF.preload(model.path));
   }, []);
 
@@ -114,44 +128,29 @@ export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
   };
 
   const handleAddItem = (type: ItemType, path: string) => {
+    console.log("➕ Agregando item:", type, path);
     const id = addItem(type, path);
     setSelectedId(id);
   };
 
-  function RoomModel({ path, scale = 1, onReady }) {
-    //@ts-ignore
-    const { scene } = useGLTF(path);
-    const clonedScene = useMemo(() => scene.clone(true), [scene]);
-
-    useEffect(() => {
-      const box = new THREE.Box3().setFromObject(clonedScene);
-      const size = new THREE.Vector3();
-      const center = new THREE.Vector3();
-      box.getSize(size);
-      box.getCenter(center);
-
-      clonedScene.position.x -= center.x;
-      clonedScene.position.y -= center.y - size.y / 2;
-      clonedScene.position.z -= center.z;
-
-      onReady?.(clonedScene);
-    }, [clonedScene, onReady]);
-
-    return <primitive object={clonedScene} scale={[scale, scale, scale]} />;
-  }
-
-  const renderItem = (item: any) => (
-    <MoveableItem
-      key={item.id}
-      position={item.position}
-      selected={item.id === selectedId}
-      onSelect={() => setSelectedId(item.id)}
-      onPositionChange={(newPos) => updatePosition(item.id, newPos)}
-      mode={transformMode}
-    >
-      <ModelItem path={item.path} scale={scales[item.type] ?? 0.5} />
-    </MoveableItem>
-  );
+  const renderItem = (item: any) => {
+    console.log("🎯 renderItem: renderizando item", item.id);
+    return (
+      <MoveableItem
+        key={item.id}
+        position={item.position}
+        selected={item.id === selectedId}
+        onSelect={() => setSelectedId(item.id)}
+        onPositionChange={(newPos) => {
+          console.log("📍 Actualizando posición de item", item.id, newPos);
+          updatePosition(item.id, newPos);
+        }}
+        mode={transformMode}
+      >
+        <ModelItem path={item.path} scale={scales[item.type] ?? 0.5} />
+      </MoveableItem>
+    );
+  };
 
   const handleExport = (type: "glb" | "gltf") => {
     const root = exportGroupRef.current;
@@ -183,7 +182,7 @@ export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
 
     const camera = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
     camera.position.set(0, 0, 2);
-    camera.lookAt(new THREE.Vector3(0, 2.2, 0));
+    camera.lookAt(new THREE.Vector3(0, 1.8, 0));
     camera.name = "MainCamera";
     exportGroup.add(camera);
 
@@ -284,7 +283,7 @@ export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
       <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
         <Canvas
           style={{ width: "100%", height: "100%", display: "block" }}
-          camera={{ position: [0, 3.5, 3], fov: 60 }}
+          camera={{ position: [0, 1.7, 3], fov: 60 }}
         >
           <ambientLight intensity={0.5} />
           <directionalLight position={[5, 5, 5]} />
@@ -297,10 +296,7 @@ export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
               <RoomModel
                 path="/models/clasroom.glb"
                 scale={0.01}
-                onReady={(obj) => {
-                  obj.userData.addedByUser = true;
-                  console.log("🏠 Habitación cargada:", obj);
-                }}
+                onReady={handleRoomReady}
               />
               {items.map(renderItem)}
             </group>

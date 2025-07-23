@@ -27,13 +27,15 @@ interface Props {
     loading: boolean;
     onEdit: (item: Item) => void;
     onDelete: (id: number, tipo: ItemTipo) => void;
+    modeloId?: number;
 }
 
 export default function ItemList({
     tipos,
     loading,
     onEdit,
-    onDelete
+    onDelete,
+    modeloId,
 }: Props) {
     const [filters, setFilters] = useState<ItemFilters>({
         search: "",
@@ -64,10 +66,17 @@ export default function ItemList({
     }
 
     const fetchItems = async () => {
+        if (modeloId === undefined) {
+            setItems([]);
+            setTotal(0);
+            setLastPage(1);
+            return; // Evita llamar sin modeloId
+        }
         try {
             const res = await getItems({
                 ...filters,
-                tipo: 'todos'
+                tipo: 'todos',
+                modeloId,
             });
             setItems(Array.isArray(res.data) ? res.data : []);
             setTotal(res.total);
@@ -80,7 +89,7 @@ export default function ItemList({
 
     useEffect(() => {
         fetchItems();
-    }, [filters]);
+    }, [filters, modeloId]);
 
     const getTipoNombre = (id: number) => {
         const tipo = tipos.find((t) => t.id === id);
@@ -161,7 +170,7 @@ export default function ItemList({
     };
 
     const handleBack = () => {
-        navigate("/");
+        navigate("/inventario");
     };
 
     const getItemTypeBadge = (tipo: ItemTipo) => {
@@ -290,7 +299,7 @@ export default function ItemList({
                             fontSize: '2rem',
                         }}
                     />
-                    <h2 className="fw-bold m-0">Inventario</h2>
+                    <h2 className="fw-bold m-0">Inventario Individual</h2>
                 </div>
 
                 <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
@@ -439,10 +448,10 @@ export default function ItemList({
                                                 <td>
                                                     <Badge bg={
                                                         item.estado_id === 1 ? 'success' :
-                                                        item.estado_id === 2 ? 'warning' : 'danger'
+                                                            item.estado_id === 2 ? 'warning' : 'danger'
                                                     }>
                                                         {item.estado_id === 1 ? 'Disponible' :
-                                                         item.estado_id === 2 ? 'Mantenimiento' : 'Dañado'}
+                                                            item.estado_id === 2 ? 'Mantenimiento' : 'Dañado'}
                                                     </Badge>
                                                 </td>
                                                 <td>{isEquipoItem ? item.numero_serie : '-'}</td>

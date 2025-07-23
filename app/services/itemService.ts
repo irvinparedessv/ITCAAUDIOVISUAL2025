@@ -21,6 +21,7 @@ export interface ItemFilters {
   tipoEquipoId?: number;
   marcaId?: number;
   estadoId?: number;
+  modeloId?: number;
 }
 
 export const getMarcas = async (): Promise<Marca[]> => {
@@ -46,19 +47,25 @@ export const getEstados = async (): Promise<Estado[]> => {
 export const getItems = async (
   filters: ItemFilters = {}
 ): Promise<PaginatedItems> => {
-  const res = await api.get("/equipos", {
-    params: {
-      tipo: filters.tipo ?? 'todos',
-      search: filters.search,
-      page: filters.page ?? 1,
-      perPage: filters.perPage ?? 10,
-      tipo_equipo_id: filters.tipoEquipoId,
-      marca_id: filters.marcaId,
-      estado_id: filters.estadoId,
-    },
-  });
+  const { modeloId, page = 1, perPage = 10 } = filters;
+
+  if (!modeloId) {
+    throw new Error("modeloId es requerido");
+  }
+
+  const url = `/inventario/modelo/${modeloId}`;
+
+  const params = {
+    page,
+    perPage,
+  };
+
+  const res = await api.get(url, { params });
+
   return res.data;
 };
+
+
 
 export const getItemById = async (id: number, tipo: 'equipo' | 'insumo'): Promise<Item> => {
   const res = await api.get(`/equipos/${id}`, {
@@ -176,12 +183,12 @@ export const getCaracteristicasPorTipoEquipo = async (
 };
 
 export const getInsumosNoAsignados = async (equipoId: number): Promise<Insumo[]> => {
-    const res = await api.get(`/equipos/${equipoId}/insumos/no-asignados`);
-    return res.data;
+  const res = await api.get(`/equipos/${equipoId}/insumos/no-asignados`);
+  return res.data;
 };
 
 export const asignarInsumoAEquipo = async (equipoId: number, insumoId: number) => {
-    await api.post(`/equipos/${equipoId}/insumos`, { insumo_id: insumoId });
+  await api.post(`/equipos/${equipoId}/insumos`, { insumo_id: insumoId });
 };
 
 export const getValoresCaracteristicasPorEquipo = async (equipoId: number) => {

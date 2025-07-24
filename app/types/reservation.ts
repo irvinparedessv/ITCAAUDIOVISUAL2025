@@ -50,6 +50,7 @@ export type CodigoQR = {
 
 export type Reservation = {
   id: number;
+  path_model: string | null;
   user_id: number;
   fecha_reserva: string;
   fecha_entrega: string;

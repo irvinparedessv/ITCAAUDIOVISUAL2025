@@ -3,6 +3,7 @@ import React from "react";
 import { Modal, Badge } from "react-bootstrap";
 import { FaEye } from "react-icons/fa";
 import type { HistorialItem, Reservation } from "~/types/reservation";
+import { APIURL } from "./../../constants/constant";
 
 interface Props {
   showModal: boolean;
@@ -356,20 +357,44 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                       />
                     </div>
                   </div>
-
                   <div>
                     <p className="small text-body-secondary mb-1">
                       Escanee este código para verificar la reserva
                     </p>
-                    <p className="small bg-body-secondary p-2 rounded text-break">
-                      <code className="text-body-secondary">
-                        {qrBaseUrl}
-                        {selectedReservation.codigo_qr.id}
-                      </code>
-                    </p>
                   </div>
                 </div>
               </div>
+              {selectedReservation?.path_model && (
+                <div className="mt-4">
+                  <div className="d-flex align-items-center mb-3">
+                    <div
+                      className="p-2 rounded me-3"
+                      style={{ backgroundColor: "rgb(212, 158, 23)" }}
+                    >
+                      <i
+                        className="bi bi-qr-code-scan fs-4"
+                        style={{ color: "#D4A017" }}
+                      ></i>
+                    </div>
+                    <h5 className="fw-bold mb-0">MODELO 3D</h5>
+                  </div>
+                  <div className="ps-5">
+                    <div className="text-center">
+                      <div className="bg-body-secondary p-3 rounded-3 shadow-sm mb-3 d-inline-block">
+                        <div>
+                          <a
+                            href={APIURL + selectedReservation.path_model}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Descargar modelo 3D
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

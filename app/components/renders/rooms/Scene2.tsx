@@ -26,6 +26,7 @@ import { APIURL } from "../../../constants/constant";
 interface InteractiveSceneProps {
   path_room: string;
   equipos: EquipmentSeleccionado[];
+  setFormData;
 }
 
 function LoadingOverlay() {
@@ -194,6 +195,7 @@ function MoveableItem({
 export default function InteractiveScene({
   path_room,
   equipos,
+  setFormData,
 }: InteractiveSceneProps) {
   const exportGroupRef = useRef<THREE.Group>(null!);
   const { items, addItem, updatePosition, updateRotation } = useSceneItems();
@@ -276,15 +278,14 @@ export default function InteractiveScene({
       (result) => {
         if (type === "glb" && result instanceof ArrayBuffer) {
           const blob = new Blob([result], { type: "model/gltf-binary" });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = "scene.glb";
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          URL.revokeObjectURL(url);
-          toast.success("Archivo GLB descargado");
+          const file = new File([blob], "escena.glb", {
+            type: "model/gltf-binary",
+          });
+          setFormData((prev) => ({
+            ...prev,
+            modelFile: file,
+          }));
+          toast.success("Modelo adjuntado al formulario");
         }
         setLoading(false);
       },

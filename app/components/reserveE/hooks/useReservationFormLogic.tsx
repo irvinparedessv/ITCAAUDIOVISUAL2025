@@ -202,6 +202,7 @@ export default function useReservationFormLogic() {
       tipoReserva: null,
       equipment: [],
       aula: null,
+      modelFile: null,
     });
     setAvailableEquipmentOptions([]);
     setUploadedFile(null);
@@ -256,6 +257,9 @@ export default function useReservationFormLogic() {
 
     if (uploadedFile) {
       formPayload.append("documento_evento", uploadedFile);
+    }
+    if (formData.modelFile) {
+      formPayload.append("modelo_3d", formData.modelFile); // nombre que usará backend
     }
     console.log(formData.equipment);
     formData.equipment.forEach((eq, index) => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { FaBoxes, FaEye, FaEyeSlash } from "react-icons/fa";
 import type { FormDataType } from "./types/FormDataType";
 import api from "~/api/axios";
@@ -45,36 +45,44 @@ export default function EquiposSelect({
 }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [loadingEquipments, setLoadingEquipments] = useState(false);
   const [cantidadInputs, setCantidadInputs] = useState<Record<number, number>>(
     {}
   );
   const [availableEquipmentSlides, setAvailableEquipmentSlides] = useState<
-    GrupoEquiposPorModelo[][]
+    GrupoEquiposPorModelo[]
   >([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [glbUrl, setGlbUrl] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
+  const [loadingNextPage, setLoadingNextPage] = useState(false);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const pagesLoaded = useRef<Set<number>>(new Set());
 
   const handleImageError = () => {
     toast.error("No se pudo cargar la imagen.");
   };
 
+  // Debounce de búsqueda
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setPage(1);
       setAvailableEquipmentSlides([]);
+      pagesLoaded.current.clear();
+      setLoadingSearch(true);
     }, 400);
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
 
   const fetchEquipos = async (pageToLoad: number) => {
     if (!formData.tipoReserva || !isDateTimeComplete) return;
+    if (pagesLoaded.current.has(pageToLoad)) return;
+
     try {
-      setLoadingEquipments(true);
+      // Solo mostrar loadingSearch en la primera carga tras búsqueda.
+      if (pageToLoad !== 1) setLoadingNextPage(true);
+
       const response = await api.get("/equiposDisponiblesPorTipoYFecha", {
         params: {
           tipo_reserva_id: formData.tipoReserva.value,
@@ -87,18 +95,19 @@ export default function EquiposSelect({
         },
       });
 
-      setAvailableEquipmentSlides((prev) => [
-        ...prev,
-        response.data.data || response.data,
-      ]);
+      const rows: GrupoEquiposPorModelo[] = response.data.data || [];
+      setAvailableEquipmentSlides((prev) => [...prev, ...rows]);
       setTotalPages(response.data.last_page || 1);
+      pagesLoaded.current.add(pageToLoad);
     } catch {
       toast.error("Error al cargar equipos disponibles");
     } finally {
-      setLoadingEquipments(false);
+      if (pageToLoad === 1) setLoadingSearch(false);
+      setLoadingNextPage(false);
     }
   };
 
+  // Dispara fetch al cambiar página o filtros base
   useEffect(() => {
     fetchEquipos(page);
   }, [
@@ -159,19 +168,35 @@ export default function EquiposSelect({
   const sliderSettings = {
     dots: true,
     infinite: false,
-    slidesToShow: 1,
+    speed: 300,
+    slidesToShow: 2,
     slidesToScroll: 1,
-    arrows: false,
+    arrows: true,
     afterChange: (currentSlide: number) => {
-      const nextPage = currentSlide + 1;
+      const threshold = availableEquipmentSlides.length - 4; // precarga anticipada
       if (
-        nextPage > availableEquipmentSlides.length &&
-        nextPage <= totalPages
+        currentSlide >= threshold &&
+        page < totalPages &&
+        !pagesLoaded.current.has(page + 1)
       ) {
-        setPage(nextPage);
+        setPage((prev) => prev + 1);
       }
     },
+    responsive: [
+      {
+        breakpoint: 768,
+        settings: {
+          slidesToShow: 1,
+        },
+      },
+    ],
   };
+
+  const noResults =
+    !loadingSearch &&
+    availableEquipmentSlides.length === 0 &&
+    isDateTimeComplete &&
+    !!formData.tipoReserva;
 
   return (
     <div className="mb-4">
@@ -186,7 +211,7 @@ export default function EquiposSelect({
         <button
           type="button"
           onClick={() => setShowDetails(!showDetails)}
-          className="btn btn-sm ms-3"
+          className="btn btn-sm ms-3 bgpri"
           style={{
             backgroundColor: "rgb(2 71 102)",
             color: "#fff",
@@ -206,8 +231,23 @@ export default function EquiposSelect({
         onChange={(e) => setSearchTerm(e.target.value)}
       />
 
+      {/* Loader sólo cuando se hace búsqueda */}
+      {loadingSearch && (
+        <div className="text-center my-4">
+          <div className="spinner-border text-primary" role="status" />
+          <div className="mt-2">Buscando equipos...</div>
+        </div>
+      )}
+
+      {/* Sin resultados */}
+      {noResults && (
+        <div className="alert alert-warning text-center my-4" role="alert">
+          No se encontraron equipos con esos filtros.
+        </div>
+      )}
+
       {formData.equipment?.length > 0 && (
-        <div className="mb-4 border rounded p-3 bg-light">
+        <div className="mb-4 border rounded p-3">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="mb-0">Equipos seleccionados:</h5>
             {puedeVisualizarFull && (
@@ -215,6 +255,7 @@ export default function EquiposSelect({
               <Button
                 variant="dark"
                 size="sm"
+                className="bgpri"
                 onClick={() => setShowFullView(true)}
               >
                 Visualizar full
@@ -222,7 +263,7 @@ export default function EquiposSelect({
             )}
           </div>
           <ul className="list-group mb-3">
-            {(formData.equipment as any[]).map((eq) => (
+            {formData.equipment.map((eq) => (
               <li
                 key={eq.id}
                 className="list-group-item d-flex justify-content-between align-items-center"
@@ -237,120 +278,120 @@ export default function EquiposSelect({
         </div>
       )}
 
-      {loadingEquipments && (
-        <div className="text-center my-4">
-          <div className="spinner-border" role="status" />
-        </div>
-      )}
-
-      {!loadingEquipments && availableEquipmentSlides.length > 0 && (
+      {!loadingSearch && availableEquipmentSlides.length > 0 && (
         <Slider {...sliderSettings}>
-          {availableEquipmentSlides.map((grupoPagina, idx) => (
-            <div key={idx}>
-              <div className="row">
-                {grupoPagina.map((grupo) => {
-                  const equiposNoAgregados = grupo.equipos.filter(
-                    (eq) =>
-                      !formData.equipment?.some(
-                        (sel) => sel.id === eq.equipo_id
-                      )
-                  );
-                  if (equiposNoAgregados.length === 0) return null;
+          {availableEquipmentSlides.map((grupo, index) => {
+            const equiposNoAgregados = grupo.equipos.filter(
+              (eq) =>
+                !formData.equipment?.some((sel) => sel.id === eq.equipo_id)
+            );
+            if (equiposNoAgregados.length === 0) return null;
 
-                  const max = equiposNoAgregados.length;
+            const max = equiposNoAgregados.length;
 
-                  return (
-                    <div className="col-md-6 mb-3" key={grupo.modelo_id}>
-                      <div className="card h-100 shadow-sm border-0">
-                        {grupo.imagen_normal ? (
-                          <img
-                            src={APIURL + grupo.imagen_normal}
-                            alt={grupo.nombre_modelo}
-                            className="card-img-top"
-                            style={{
-                              height: "180px",
-                              objectFit: "contain",
-                              backgroundColor: "#f8f9fa",
-                            }}
-                            onError={handleImageError}
-                          />
-                        ) : grupo.imagen_glb ? (
-                          //@ts-ignore
-                          <model-viewer
-                            src={APIURL + grupo.imagen_glb}
-                            alt="Modelo 3D"
-                            camera-controls
-                            autoplay
-                            style={{
-                              height: "180px",
-                              width: "100%",
-                              backgroundColor: "#f8f9fa",
-                            }}
-                            shadow-intensity="1"
-                            interaction-prompt="none"
-                            auto-rotate
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              height: "180px",
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              backgroundColor: "#f8f9fa",
-                              fontSize: "1.5rem",
-                              color: "#999",
-                            }}
-                          >
-                            <FaEyeSlash className="me-2" />
-                            Sin imagen
-                          </div>
-                        )}
-
-                        <div className="card-body">
-                          <h5 className="card-title text-capitalize mb-1">
-                            {grupo.nombre_modelo}
-                          </h5>
-                          <p className="mb-1 text-muted">
-                            Marca: {grupo.nombre_marca}
-                          </p>
-                          <p className="mb-2 text-success fw-bold">
-                            {max} disponibles
-                          </p>
-
-                          <div className="d-flex align-items-center">
-                            <input
-                              type="number"
-                              className="form-control form-control-sm me-2"
-                              style={{ width: "80px" }}
-                              min={0}
-                              max={max}
-                              value={cantidadInputs[grupo.modelo_id] || ""}
-                              placeholder="0"
-                              onChange={(e) =>
-                                handleCantidadChange(
-                                  grupo.modelo_id,
-                                  parseInt(e.target.value) || 0
-                                )
-                              }
-                            />
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-success"
-                              onClick={() => agregarEquipo(grupo)}
-                              disabled={max <= 0}
-                            >
-                              Agregar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+            return (
+              <div
+                key={`${grupo.modelo_id}_${index}`}
+                className="px-2"
+                style={{ width: 300 }}
+              >
+                <div className="card h-100 shadow-sm border-0">
+                  {grupo.imagen_normal ? (
+                    <img
+                      src={APIURL + grupo.imagen_normal}
+                      alt={grupo.nombre_modelo}
+                      className="card-img-top"
+                      style={{
+                        height: "180px",
+                        objectFit: "contain",
+                        backgroundColor: "#f8f9fa",
+                      }}
+                      onError={handleImageError}
+                    />
+                  ) : grupo.imagen_glb ? (
+                    //@ts-ignore
+                    <model-viewer
+                      src={APIURL + grupo.imagen_glb}
+                      alt="Modelo 3D"
+                      camera-controls
+                      autoplay
+                      vr
+                      ar
+                      ar-modes="webxr scene-viewer quick-look"
+                      style={{
+                        height: "180px",
+                        width: "100%",
+                        backgroundColor: "#f8f9fa",
+                      }}
+                      shadow-intensity="1"
+                      interaction-prompt="none"
+                      auto-rotate
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        height: "180px",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        backgroundColor: "#f8f9fa",
+                        fontSize: "1.5rem",
+                        color: "#999",
+                      }}
+                    >
+                      <FaEyeSlash className="me-2" />
+                      Sin imagen
                     </div>
-                  );
-                })}
+                  )}
+
+                  <div className="card-body">
+                    <h5 className="card-title text-capitalize mb-1">
+                      {grupo.nombre_modelo}
+                    </h5>
+                    <p className="mb-1 text-muted">
+                      Marca: {grupo.nombre_marca}
+                    </p>
+                    <p className="mb-2 text-bgpri fw-bold">{max} disponibles</p>
+
+                    <div className="d-flex align-items-center">
+                      <input
+                        type="number"
+                        className="form-control form-control-sm me-2"
+                        style={{ width: "80px" }}
+                        min={0}
+                        max={max}
+                        value={cantidadInputs[grupo.modelo_id] || ""}
+                        placeholder="0"
+                        onChange={(e) =>
+                          handleCantidadChange(
+                            grupo.modelo_id,
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-success bgpri"
+                        onClick={() => agregarEquipo(grupo)}
+                        disabled={max <= 0}
+                      >
+                        Agregar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Skeleton para la página siguiente */}
+          {loadingNextPage && (
+            <div className="px-2" style={{ width: 300 }}>
+              <div className="card h-100 border-0 bg-light d-flex align-items-center justify-content-center">
+                <div className="spinner-border text-secondary" role="status" />
               </div>
             </div>
-          ))}
+          )}
         </Slider>
       )}
 

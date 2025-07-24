@@ -12,7 +12,7 @@ export default function UbicacionSelect({
   const formatOptionLabel = (option: any) => (
     <div className="d-flex justify-content-between align-items-center">
       <span>{option.label}</span>
-      {option.path_modelo && <span className="badge bg-success ms-2">3D</span>}
+      {option.path_modelo && <span className="badge bgpri ms-2">*</span>}
     </div>
   );
 

@@ -1,32 +1,36 @@
-import React, { Suspense, useRef, useEffect, useState } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
-import {
-  OrbitControls,
-  useGLTF,
-  PerspectiveCamera,
-  Html,
-} from "@react-three/drei";
+import React, { Suspense, useEffect, useState } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, useGLTF, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
-import { getModelPathByReserveId } from "~/services/uploadModelService";
 
 interface ViewerProps {
-  reserveId: number;
+  filePath: string;
 }
 
-function LoadedScene({ filePath }: { filePath: string }) {
-  const { scene, cameras } = useGLTF(filePath) as unknown as {
+function LoadedScene({
+  filePath,
+  onLoadComplete,
+}: {
+  filePath: string;
+  onLoadComplete: () => void;
+}) {
+  const { scene, cameras } = useGLTF(filePath, true) as unknown as {
     scene: THREE.Group;
     cameras: THREE.Camera[];
   };
 
+  useEffect(() => {
+    onLoadComplete();
+  }, [onLoadComplete]);
+
   const mainCamera = cameras.find((cam) => cam.name === "MainCamera");
 
   if (mainCamera) {
-    // Log info y sumamos altura
     console.log("✅ Usando cámara embebida:", mainCamera.name);
     const pos = mainCamera.position.clone();
-    pos.y += 1;
-    pos.z += 0.5;
+    pos.y += 1.5;
+    pos.z += 3; // alejamos más la cámara
+
     return (
       <>
         <PerspectiveCamera
@@ -46,8 +50,8 @@ function LoadedScene({ filePath }: { filePath: string }) {
       <>
         <PerspectiveCamera
           makeDefault
-          position={[0, 3.5, 3]}
-          fov={60}
+          position={[0, 3, 10]} // alejamos más la cámara
+          fov={50}
           near={0.1}
           far={1000}
         />
@@ -57,21 +61,8 @@ function LoadedScene({ filePath }: { filePath: string }) {
   }
 }
 
-export default function SceneViewer({ reserveId }: ViewerProps) {
-  const [filePath, setFilePath] = useState<string | null>(null);
+export default function SceneViewer({ filePath }: ViewerProps) {
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getModelPathByReserveId(reserveId)
-      .then((path) => {
-        setFilePath(path);
-        console.log("🗂️ Ruta del modelo:", path);
-      })
-      .catch((err) => {
-        console.error("❌ Error al obtener modelo:", err);
-      })
-      .finally(() => setLoading(false));
-  }, [reserveId]);
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
@@ -97,10 +88,16 @@ export default function SceneViewer({ reserveId }: ViewerProps) {
       )}
 
       <Canvas>
-        <ambientLight intensity={0.5} />
+        <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} />
+
         <Suspense fallback={null}>
-          {filePath && <LoadedScene filePath={filePath} />}
+          {filePath && (
+            <LoadedScene
+              filePath={filePath}
+              onLoadComplete={() => setLoading(false)}
+            />
+          )}
           <OrbitControls target={[0, 2.2, 0]} />
         </Suspense>
       </Canvas>

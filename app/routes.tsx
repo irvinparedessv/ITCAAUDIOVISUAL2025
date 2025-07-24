@@ -62,6 +62,7 @@ import { APIURL, APPLARAVEL } from "./constants/constant";
 import ItemEditPage from "./routes/equipment/ItemEditPage";
 import InventoryList from "./components/equipment/inventoryList";
 import TipoEquipoPage from "./routes/tipoEquipoPage";
+import ModeloAccesoriosForm from "./components/equipment/Modelo/ModeloAccesoriosForm";
 
 const router = createBrowserRouter([
   {
@@ -203,6 +204,10 @@ const router = createBrowserRouter([
           {
             path: "items/edit/:id",
             element: <ItemEditPage />,
+          },
+          {
+            path: "modelo/:id/accesorios",
+            element: <ModeloAccesoriosForm />
           },
           {
             path: "/equipos/editar/:id",

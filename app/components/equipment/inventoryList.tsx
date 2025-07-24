@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Spinner, Table, Badge, Button, Form, InputGroup } from "react-bootstrap";
+import { Spinner, Badge, Button, Form, InputGroup } from "react-bootstrap";
 import api from "../../api/axios";
-import { FaEye, FaBoxes, FaLongArrowAltLeft, FaFilter, FaTimes, FaSearch, FaTools } from "react-icons/fa";
+import { FaEye, FaBoxes, FaLongArrowAltLeft, FaFilter, FaTimes, FaSearch, FaTools, FaToolbox } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
 
@@ -13,9 +13,9 @@ interface ResumenItem {
   nombre_modelo: string;
   cantidad_total: number;
   cantidad_disponible: number;
+  cantidad_mantenimiento: number;
   cantidad_eliminada: number;
-  equipos_id_disponibles: string | null;
-  series_disponibles: string | null;
+  accesorios_completos: string | null;
 }
 
 const getCategoryColor = (category: string) => {
@@ -228,8 +228,9 @@ export default function InventoryList() {
                   <th style={{ borderColor: '#dee2e6' }}>Modelo</th>
                   <th style={{ borderColor: '#dee2e6' }}>Total</th>
                   <th style={{ borderColor: '#dee2e6' }}>Disponibles</th>
+                  <th style={{ borderColor: '#dee2e6' }}>Mantenimiento</th>
                   <th style={{ borderColor: '#dee2e6' }}>Dañados</th>
-                  <th style={{ borderColor: '#dee2e6' }}>Series Disponibles</th>
+                  <th style={{ borderColor: '#dee2e6' }}>COMBO</th>
                   <th style={{ borderTopRightRadius: '10px', borderColor: '#dee2e6' }}>Acciones</th>
                 </tr>
               </thead>
@@ -261,12 +262,17 @@ export default function InventoryList() {
                         </Badge>
                       </td>
                       <td style={{ borderColor: '#dee2e6' }}>
+                        <Badge bg="warning" pill>
+                          {item.cantidad_mantenimiento}
+                        </Badge>
+                      </td>
+                      <td style={{ borderColor: '#dee2e6' }}>
                         <Badge bg="danger" pill>
                           {item.cantidad_eliminada}
                         </Badge>
                       </td>
                       <td style={{ fontSize: "0.9rem", textAlign: "left", borderColor: '#dee2e6' }}>
-                        {item.series_disponibles || "-"}
+                        {item.accesorios_completos || "-"}
                       </td>
                       <td style={{ borderColor: '#dee2e6' }}>
                         <div className="d-flex justify-content-center gap-2">
@@ -288,6 +294,24 @@ export default function InventoryList() {
                             }
                           >
                             <FaEye className="fs-5" />
+                          </button>
+                          <button
+                            className="btn btn-outline-secondary rounded-circle"
+                            title="Asociar accesorios"
+                            onClick={() => navigate(`/modelo/${item.modelo_id}/accesorios`)}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                          >
+                            <FaToolbox className="fs-5" />
                           </button>
                         </div>
                       </td>

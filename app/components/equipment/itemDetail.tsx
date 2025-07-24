@@ -9,9 +9,14 @@ import {
   Button,
   Row,
   Col,
+  Container,
+  Tab,
+  Tabs,
 } from "react-bootstrap";
 import api from "~/api/axios";
-import { FaLongArrowAltLeft, FaTools } from "react-icons/fa";
+import { FaArrowLeft, FaTools, FaInfoCircle, FaCogs, FaHistory } from "react-icons/fa";
+import { MdOutlineDescription, MdDateRange } from "react-icons/md";
+import { BsFillTagFill } from "react-icons/bs";
 
 type Caracteristica = {
   nombre: string;
@@ -33,20 +38,20 @@ type EquipoDetalle = {
   comentario: string | null;
   caracteristicas: Caracteristica[];
 };
+
 type ItemDetailProps = {
-  id?: string; // Hacer el id opcional
+  id?: string;
 };
+
 export default function ItemDetail({ id: propId }: ItemDetailProps) {
   const { id: paramId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
-  // Usamos el id de las props si está disponible, sino de los params
   const id = propId || paramId;
 
-  // Resto del componente permanece igual...
   const [equipo, setEquipo] = useState<EquipoDetalle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("general");
 
   useEffect(() => {
     if (!id) return;
@@ -66,150 +71,201 @@ export default function ItemDetail({ id: propId }: ItemDetailProps) {
     fetchEquipo();
   }, [id]);
 
-  const handleBack = () => {
-    navigate(-1);
-  };
 
   if (loading) {
     return (
-      <div className="d-flex flex-column align-items-center justify-content-center my-5">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Cargando detalles del equipo...</p>
-      </div>
+      <Container className="d-flex flex-column align-items-center justify-content-center my-5 py-5">
+        <Spinner animation="grow" variant="primary" />
+        <p className="mt-3 text-muted fs-5">Cargando detalles del equipo...</p>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <Alert variant="danger" className="my-5 text-center">
-        {error}
-      </Alert>
+      <Container className="my-5">
+        <Alert variant="danger" className="text-center shadow">
+          <Alert.Heading>Error al cargar el equipo</Alert.Heading>
+          <p>{error}</p>
+          {/* <Button variant="outline-danger" onClick={handleBack}>
+            <FaArrowLeft className="me-2" />
+            Volver atrás
+          </Button> */}
+        </Alert>
+      </Container>
     );
   }
 
   if (!equipo) {
     return (
-      <Alert variant="warning" className="my-5 text-center">
-        No se encontró el equipo.
-      </Alert>
+      <Container className="my-5">
+        <Alert variant="warning" className="text-center shadow">
+          <Alert.Heading>Equipo no encontrado</Alert.Heading>
+          <p>El equipo solicitado no existe o no está disponible.</p>
+          {/* <Button variant="outline-warning" onClick={handleBack}>
+            <FaArrowLeft className="me-2" />
+            Volver atrás
+          </Button> */}
+        </Alert>
+      </Container>
     );
   }
 
   const cleanEstado = equipo.estado.trim().toLowerCase();
+  const formattedDate = equipo.fecha_adquisicion
+    ? new Date(equipo.fecha_adquisicion).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+    : "No disponible";
 
   return (
-    <Card className="shadow-lg my-4 border-0">
-      <Card.Header
-        className="text-white d-flex align-items-center gap-2"
-        style={{
-          backgroundColor: "#b1291d",
-          borderRadius: "0.5rem 0.5rem 0 0",
-          padding: "1.25rem",
-        }}
+    <Container className="my-4">
+      {/* <Button 
+        variant="outline-secondary" 
+        onClick={handleBack}
+        className="mb-3 d-flex align-items-center"
       >
-        <FaLongArrowAltLeft
-          onClick={handleBack}
-          title="Regresar"
-          style={{ cursor: "pointer", fontSize: "2rem" }}
-        />
-        <FaTools />
-        <h5 className="mb-0">Detalle de Equipo</h5>
-      </Card.Header>
-      <Card.Body>
-        <Row>
-          <Col md={8}>
-            <ListGroup variant="flush">
-              <ListGroup.Item>
-                <strong>Categoría:</strong> {equipo.categoria}
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Tipo de equipo:</strong> {equipo.tipo_equipo}
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Tipo de reserva:</strong>{" "}
-                {equipo.tipo_reserva ?? "N/A"}
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Estado:</strong>{" "}
-                <Badge
-                  bg={getBadgeColor(cleanEstado)}
-                  className="text-uppercase"
-                >
-                  {capitalize(cleanEstado)}
-                </Badge>
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Marca:</strong> {equipo.marca}
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Modelo:</strong> {equipo.modelo}
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Número de serie:</strong>{" "}
-                {equipo.numero_serie ?? "No disponible"}
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Vida útil:</strong>{" "}
-                {equipo.vida_util !== null ? equipo.vida_util + " años" : "N/A"}
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Detalles:</strong> {equipo.detalles || "Ninguno"}
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Fecha de adquisición:</strong>{" "}
-                {equipo.fecha_adquisicion ?? "No disponible"}
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Comentario:</strong> {equipo.comentario || "Ninguno"}
-              </ListGroup.Item>
-              <ListGroup.Item>
-                <strong>Características:</strong>
-                {equipo.caracteristicas.length === 0 && (
-                  <p className="mt-2">No hay características</p>
-                )}
-                {equipo.caracteristicas.length > 0 && (
-                  <ul className="mt-2">
-                    {equipo.caracteristicas.map((carac, i) => (
-                      <li key={i}>
-                        <strong>{carac.nombre}:</strong> {carac.valor}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </ListGroup.Item>
-            </ListGroup>
-          </Col>
-          {/* Si quieres agregar más contenido o imagen a la derecha, ponlo aquí */}
-          <Col
-            md={4}
-            className="d-flex flex-column align-items-center justify-content-center text-center mt-4 mt-md-0"
+        <FaArrowLeft className="me-2" />
+        Volver
+      </Button> */}
+
+      <Card className="shadow-sm border-0">
+        <Card.Header className="text-white py-3"
+          style={{
+            backgroundColor: "black",
+            borderRadius: "0.5rem 0.5rem 0 0",
+            padding: "1.25rem",
+          }}>
+          <div className="d-flex align-items-center">
+            <FaTools className="me-3 fs-4" />
+            <div>
+              <h2 className="h4 mb-0">{equipo.tipo_equipo}</h2>
+              <small className="opacity-75">{equipo.categoria}</small>
+            </div>
+            <Badge
+              pill
+              bg={getBadgeColor(cleanEstado)}
+              className="ms-auto text-uppercase py-2 px-3"
+            >
+              {capitalize(cleanEstado)}
+            </Badge>
+          </div>
+        </Card.Header>
+
+        <Card.Body>
+          <Tabs
+            activeKey={activeTab}
+            onSelect={(k) => setActiveTab(k || "general")}
+            className="mb-4"
           >
-            <p className="mb-2">
-              <strong>Información adicional</strong>
-            </p>
-            {/* Aquí podrías poner una imagen del modelo o QR si tienes */}
-          </Col>
-        </Row>
-      </Card.Body>
-    </Card>
+            <Tab eventKey="general" title={<><FaInfoCircle className="me-1" /> General</>}>
+              <Row className="mt-3">
+                <Col md={6}>
+                  <DetailItem
+                    icon={<BsFillTagFill />}
+                    title="Marca y Modelo"
+                    value={`${equipo.marca} ${equipo.modelo}`}
+                  />
+                  <DetailItem
+                    icon={<MdOutlineDescription />}
+                    title="Número de serie"
+                    value={equipo.numero_serie || "No disponible"}
+                  />
+                  <DetailItem
+                    icon={<FaCogs />}
+                    title="Tipo de reserva"
+                    value={equipo.tipo_reserva || "N/A"}
+                  />
+                </Col>
+                <Col md={6}>
+                  <DetailItem
+                    icon={<MdDateRange />}
+                    title="Fecha de adquisición"
+                    value={formattedDate}
+                  />
+                  <DetailItem
+                    icon={<FaHistory />}
+                    title="Vida útil"
+                    value={equipo.vida_util ? `${equipo.vida_util} años` : "N/A"}
+                  />
+                </Col>
+              </Row>
+            </Tab>
+
+            <Tab eventKey="details" title={<><MdOutlineDescription className="me-1" /> Detalles</>}>
+              <div className="mt-3">
+                <h5 className="mb-3">Información adicional</h5>
+                <DetailItem
+                  title="Detalles"
+                  value={equipo.detalles || "Ninguno"}
+                  fullWidth
+                />
+                <DetailItem
+                  title="Comentarios"
+                  value={equipo.comentario || "Ninguno"}
+                  fullWidth
+                />
+              </div>
+            </Tab>
+
+            <Tab eventKey="features" title={<><FaCogs className="me-1" /> Características</>}>
+              <div className="mt-3">
+                {equipo.caracteristicas.length === 0 ? (
+                  <Alert variant="info">
+                    No hay características registradas para este equipo
+                  </Alert>
+                ) : (
+                  <Row>
+                    {equipo.caracteristicas.map((carac, i) => (
+                      <Col md={6} key={i} className="mb-3">
+                        <div className="bg-light p-3 rounded">
+                          <strong>{carac.nombre}:</strong>
+                          <div className="mt-1">{carac.valor}</div>
+                        </div>
+                      </Col>
+                    ))}
+                  </Row>
+                )}
+              </div>
+            </Tab>
+          </Tabs>
+        </Card.Body>
+      </Card>
+    </Container>
+  );
+}
+
+function DetailItem({ icon, title, value, fullWidth = false }: {
+  icon?: React.ReactNode;
+  title: string;
+  value: string | React.ReactNode;
+  fullWidth?: boolean;
+}) {
+  return (
+    <div className={`mb-3 ${fullWidth ? 'w-100' : ''}`}>
+      <div className="d-flex align-items-center text-muted mb-1">
+        {icon && <span className="me-2">{icon}</span>}
+        <small className="fw-bold">{title}</small>
+      </div>
+      <div className="ps-4">
+        {typeof value === 'string' ? (
+          <p className="mb-0">{value}</p>
+        ) : value}
+      </div>
+    </div>
   );
 }
 
 function getBadgeColor(estado: string) {
-  switch (estado) {
-    case "pendiente":
-      return "warning";
-    case "aprobado":
-      return "success";
-    case "devuelto":
-      return "info";
-    case "cancelado":
-      return "danger";
-    case "rechazado":
-      return "secondary";
-    default:
-      return "dark";
-  }
+  const statusColors: Record<string, string> = {
+    disponible: "success",
+    mantenimiento: "warning",
+    dañado: "danger",
+  };
+
+  return statusColors[estado] || "dark";
 }
 
 function capitalize(text: string) {

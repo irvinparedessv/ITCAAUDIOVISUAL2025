@@ -18,8 +18,7 @@ import * as THREE from "three";
 import useSceneItems from "../hooks/useSceneItems";
 import { availableModels } from "../types/data";
 import type { ItemType } from "../types/Item";
-
-// @ts-ignore
+//@ts-ignore
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
 import { uploadModel } from "~/services/uploadModelService";
 import toast from "react-hot-toast";
@@ -28,50 +27,93 @@ interface InteractiveSceneProps {
   reserveId: number;
 }
 
+const LoadingOverlay = () => (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      backgroundColor: "rgba(0,0,0,0.5)",
+      color: "white",
+      fontSize: "24px",
+      zIndex: 9999,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    Subiendo archivo...
+  </div>
+);
+
 interface ModelItemProps {
   path: string;
   scale?: number;
 }
 
-function ModelItem({ path, scale = 1 }: ModelItemProps) {
+const ModelItem = React.memo(function ModelItem({
+  path,
+  scale = 1,
+}: ModelItemProps) {
   const { scene: raw } = useGLTF(path);
   const scene = useMemo(() => raw.clone(true), [raw]);
   return (
     <primitive object={scene} scale={[scale, scale, scale]} dispose={null} />
   );
-}
+});
 
-function MoveableItem({
+const MoveableItem = ({
   children,
   position,
+  rotation,
   selected,
   onSelect,
   onPositionChange,
+  onRotationChange,
   mode = "translate",
 }: {
   children: React.ReactNode;
   position: [number, number, number];
+  rotation?: [number, number, number];
   selected: boolean;
   onSelect: () => void;
   onPositionChange?: (newPos: [number, number, number]) => void;
+  onRotationChange?: (newRot: [number, number, number]) => void;
   mode?: "translate" | "rotate";
-}) {
+}) => {
   const groupRef = useRef<THREE.Group>(null!);
   const controlRef = useRef<any>(null);
 
   useEffect(() => {
-    if (groupRef.current) {
-      groupRef.current.position.set(...position);
-      groupRef.current.userData.addedByUser = true;
+    if (!groupRef.current) return;
+
+    groupRef.current.position.set(...position);
+    if (rotation) {
+      groupRef.current.rotation.set(...rotation);
     }
-  }, [position]);
+
+    groupRef.current.userData.addedByUser = true;
+    groupRef.current.name = `Item-${Math.floor(Math.random() * 10000)}`; // opcional para debug
+  }, [position, rotation]);
 
   useEffect(() => {
-    if (controlRef.current && groupRef.current && selected) {
-      controlRef.current.attach(groupRef.current);
+    if (selected && controlRef.current && groupRef.current) {
+      // Espera al siguiente frame para garantizar que la posición y rotación estén aplicadas
+      requestAnimationFrame(() => {
+        console.log(
+          "🛠️ (deferred) Attaching control to:",
+          groupRef.current.name
+        );
+        controlRef.current.attach(groupRef.current);
+      });
     }
     return () => {
-      controlRef.current?.detach();
+      if (controlRef.current) {
+        controlRef.current.detach();
+        console.log("🧹 Detached control");
+      }
     };
   }, [selected]);
 
@@ -81,43 +123,47 @@ function MoveableItem({
         ref={groupRef}
         onClick={(e) => {
           e.stopPropagation();
+          console.log("🟢 Item seleccionado:", groupRef.current?.name);
           onSelect();
         }}
       >
         {children}
       </group>
-
       {selected && (
         <TransformControls
           ref={controlRef}
           mode={mode}
           showY
           onObjectChange={() => {
+            if (!groupRef.current) return;
+
             const p = groupRef.current.position;
+            const r = groupRef.current.rotation;
+            console.log("📦 Nueva posición:", p.toArray());
+            console.log("🎯 Nueva rotación:", r.toArray());
             onPositionChange?.([p.x, p.y, p.z]);
+            onRotationChange?.([r.x, r.y, r.z]);
           }}
         />
       )}
     </>
   );
-}
+};
 
 export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
-  console.log("🎬 InteractiveScene: renderizando componente completo");
-
-  const exportGroupRef = useRef<THREE.Group>(null);
-  const { items, addItem, updatePosition } = useSceneItems();
+  const exportGroupRef = useRef<THREE.Group>(null!);
+  const { items, addItem, updatePosition, updateRotation } = useSceneItems();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [transformMode, setTransformMode] = useState<"translate" | "rotate">(
     "translate"
   );
   const [loading, setLoading] = useState(false);
+
   const handleRoomReady = useCallback((obj: THREE.Object3D) => {
     obj.userData.addedByUser = true;
-    console.log("🏠 Habitación cargada:", obj);
   }, []);
+
   useEffect(() => {
-    console.log("📦 Preloading modelos...");
     availableModels.forEach((model) => useGLTF.preload(model.path));
   }, []);
 
@@ -128,116 +174,88 @@ export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
   };
 
   const handleAddItem = (type: ItemType, path: string) => {
-    console.log("➕ Agregando item:", type, path);
     const id = addItem(type, path);
     setSelectedId(id);
   };
 
-  const renderItem = (item: any) => {
-    console.log("🎯 renderItem: renderizando item", item.id);
-    return (
+  const renderItem = useCallback(
+    (item) => (
       <MoveableItem
         key={item.id}
         position={item.position}
+        rotation={item.rotation}
         selected={item.id === selectedId}
         onSelect={() => setSelectedId(item.id)}
-        onPositionChange={(newPos) => {
-          console.log("📍 Actualizando posición de item", item.id, newPos);
-          updatePosition(item.id, newPos);
-        }}
+        onPositionChange={(pos) => updatePosition(item.id, pos)}
+        onRotationChange={(rot) => updateRotation(item.id, rot)}
         mode={transformMode}
       >
         <ModelItem path={item.path} scale={scales[item.type] ?? 0.5} />
       </MoveableItem>
-    );
-  };
+    ),
+    [selectedId, transformMode, updatePosition, updateRotation, scales]
+  );
 
-  const handleExport = (type: "glb" | "gltf") => {
-    const root = exportGroupRef.current;
-    if (!root) {
-      console.warn("❌ No hay root definido");
-      return;
-    }
+  const itemMeshes = useMemo(() => items.map(renderItem), [items, renderItem]);
 
-    const exportGroup = new THREE.Group();
+  const handleExport = useCallback(
+    (type: "glb" | "gltf") => {
+      const root = exportGroupRef.current;
+      if (!root) return;
 
-    root.traverse((obj) => {
-      if (!obj.userData?.addedByUser) return;
+      const exportGroup = new THREE.Group();
 
-      if (obj instanceof THREE.Mesh) {
-        const mesh = obj.clone();
-        mesh.material = new THREE.MeshStandardMaterial({
-          color: (mesh.material as any)?.color || new THREE.Color("white"),
-          map: (mesh.material as any)?.map || null,
-        });
-        exportGroup.add(mesh);
-      } else if (
-        obj instanceof THREE.Group ||
-        (obj instanceof THREE.Object3D && obj.type !== "Scene")
-      ) {
-        const clone = obj.clone(true);
-        exportGroup.add(clone);
-      }
-    });
-
-    const camera = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
-    camera.position.set(0, 0, 2);
-    camera.lookAt(new THREE.Vector3(0, 1.8, 0));
-    camera.name = "MainCamera";
-    exportGroup.add(camera);
-
-    exportGroup.updateMatrixWorld(true);
-
-    const exporter = new GLTFExporter();
-    setLoading(true);
-
-    exporter.parse(
-      exportGroup,
-      async (result) => {
-        if (type === "glb" && result instanceof ArrayBuffer) {
-          const blob = new Blob([result], { type: "model/gltf-binary" });
-          try {
-            const res = await uploadModel(blob, "escena.glb", reserveId);
-            toast.success("Archivo adjuntado a la reserva");
-            console.log("✅ Subido al servidor:", res.path);
-          } catch (err) {
-            console.error("❌ Error al subir:", err);
-          }
+      root.traverse((obj) => {
+        if (!obj.userData?.addedByUser) return;
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = (obj as THREE.Mesh).clone();
+          mesh.material = new THREE.MeshStandardMaterial({
+            color: (mesh.material as any)?.color || new THREE.Color("white"),
+            map: (mesh.material as any)?.map || null,
+          });
+          exportGroup.add(mesh);
+        } else if (obj.type !== "Scene") {
+          exportGroup.add(obj.clone(true));
         }
+      });
 
-        setLoading(false);
-      },
-      (err) => {
-        console.error("❌ Error durante exportación:", err);
-        setLoading(false);
-      },
-      { binary: type === "glb", embedImages: false }
-    );
-  };
+      const camera = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
+      camera.position.set(0, 0, 2);
+      camera.lookAt(new THREE.Vector3(0, 1.8, 0));
+      camera.name = "MainCamera";
+      exportGroup.add(camera);
+
+      exportGroup.updateMatrixWorld(true);
+      setLoading(true);
+
+      new GLTFExporter().parse(
+        exportGroup,
+        async (result) => {
+          if (type === "glb" && result instanceof ArrayBuffer) {
+            const blob = new Blob([result], { type: "model/gltf-binary" });
+            try {
+              const res = await uploadModel(blob, "escena.glb", reserveId);
+              toast.success("Archivo adjuntado a la reserva");
+              console.log("✅ Subido al servidor:", res.path);
+            } catch (err) {
+              console.error("❌ Error al subir:", err);
+            }
+          }
+          setLoading(false);
+        },
+        (err) => {
+          console.error("❌ Error durante exportación:", err);
+          setLoading(false);
+        },
+        { binary: type === "glb", embedImages: false }
+      );
+    },
+    [reserveId]
+  );
 
   return (
     <>
-      {loading && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            color: "white",
-            fontSize: "24px",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          Subiendo archivo...
-        </div>
-      )}
-
+      {loading && <LoadingOverlay />}
       <div
         style={{
           position: "absolute",
@@ -279,26 +297,25 @@ export default function InteractiveScene({ reserveId }: InteractiveSceneProps) {
           </button>
         </div>
       </div>
-
       <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
         <Canvas
-          style={{ width: "100%", height: "100%", display: "block" }}
+          style={{ width: "100%", height: "100%" }}
           camera={{ position: [0, 1.7, 3], fov: 60 }}
         >
           <ambientLight intensity={0.5} />
           <directionalLight position={[5, 5, 5]} />
+          <Environment preset="sunset" />
+          <OrbitControls makeDefault target={[0, 2.2, 0]} />
+          <gridHelper args={[10, 10]} />
+          <axesHelper args={[2]} />
           <Suspense fallback={null}>
-            <Environment preset="sunset" />
-            <OrbitControls makeDefault target={[0, 2.2, 0]} />
-            <gridHelper args={[10, 10]} position={[0, 0, 0]} />
-            <axesHelper args={[2]} />
             <group ref={exportGroupRef}>
               <RoomModel
-                path="/models/clasroom.glb"
-                scale={0.01}
+                path="/models/room.glb"
+                scale={1} // <-- Puedes ajustar según tu modelo
                 onReady={handleRoomReady}
               />
-              {items.map(renderItem)}
+              {itemMeshes}
             </group>
           </Suspense>
         </Canvas>

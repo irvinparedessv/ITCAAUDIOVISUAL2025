@@ -50,7 +50,6 @@ function LoadingOverlay() {
     </div>
   );
 }
-
 interface UIControlsProps {
   equipos: EquipmentSeleccionado[];
   transformMode: "translate" | "rotate";
@@ -106,7 +105,6 @@ function UIControls({
     </div>
   );
 }
-
 const MemoizedRoom = React.memo(RoomModel);
 
 interface ModelItemProps {
@@ -127,30 +125,39 @@ const ModelItem = React.memo(function ModelItem({
 interface MoveableItemProps {
   children: React.ReactNode;
   position: [number, number, number];
+  rotation?: [number, number, number];
   selected: boolean;
   onSelect: () => void;
   onPositionChange?: (newPos: [number, number, number]) => void;
+  onRotationChange?: (newRot: [number, number, number]) => void;
   mode?: "translate" | "rotate";
 }
 function MoveableItem({
   children,
   position,
+  rotation,
   selected,
   onSelect,
   onPositionChange,
+  onRotationChange,
   mode = "translate",
 }: MoveableItemProps) {
   const groupRef = useRef<THREE.Group>(null!);
   const controlRef = useRef<any>(null);
 
   useEffect(() => {
+    if (!groupRef.current) return;
     groupRef.current.position.set(...position);
+    if (rotation) groupRef.current.rotation.set(...rotation);
     groupRef.current.userData.addedByUser = true;
-  }, [position]);
+    groupRef.current.name = `Item-${Math.floor(Math.random() * 10000)}`;
+  }, [position, rotation]);
 
   useEffect(() => {
-    if (controlRef.current && selected) {
-      controlRef.current.attach(groupRef.current);
+    if (selected && controlRef.current && groupRef.current) {
+      requestAnimationFrame(() => {
+        controlRef.current.attach(groupRef.current);
+      });
     }
     return () => controlRef.current?.detach();
   }, [selected]);
@@ -172,8 +179,11 @@ function MoveableItem({
           mode={mode}
           showY
           onObjectChange={() => {
+            if (!groupRef.current) return;
             const p = groupRef.current.position;
+            const r = groupRef.current.rotation;
             onPositionChange?.([p.x, p.y, p.z]);
+            onRotationChange?.([r.x, r.y, r.z]);
           }}
         />
       )}
@@ -186,7 +196,7 @@ export default function InteractiveScene({
   equipos,
 }: InteractiveSceneProps) {
   const exportGroupRef = useRef<THREE.Group>(null!);
-  const { items, addItem, updatePosition } = useSceneItems();
+  const { items, addItem, updatePosition, updateRotation } = useSceneItems();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [transformMode, setTransformMode] = useState<"translate" | "rotate">(
     "translate"
@@ -195,7 +205,6 @@ export default function InteractiveScene({
 
   const handleRoomReady = useCallback((obj: THREE.Object3D) => {
     obj.userData.addedByUser = true;
-    console.log("🏠 Habitación cargada:", obj);
   }, []);
 
   useEffect(() => {
@@ -222,15 +231,17 @@ export default function InteractiveScene({
       <MoveableItem
         key={item.id}
         position={item.position}
+        rotation={item.rotation}
         selected={item.id === selectedId}
         onSelect={() => setSelectedId(item.id)}
         onPositionChange={(pos) => updatePosition(item.id, pos)}
+        onRotationChange={(rot) => updateRotation(item.id, rot)}
         mode={transformMode}
       >
         <ModelItem path={item.path} scale={scales[item.type] ?? 0.5} />
       </MoveableItem>
     ),
-    [selectedId, transformMode, updatePosition, scales]
+    [selectedId, transformMode, updatePosition, updateRotation, scales]
   );
 
   const itemMeshes = useMemo(() => items.map(renderItem), [items, renderItem]);
@@ -239,7 +250,6 @@ export default function InteractiveScene({
     const root = exportGroupRef.current;
     if (!root) return;
     const exportGroup = new THREE.Group();
-    // include room and items
     root.traverse((obj) => {
       if (!obj.userData?.addedByUser) return;
       if ((obj as THREE.Mesh).isMesh) {
@@ -253,17 +263,6 @@ export default function InteractiveScene({
         exportGroup.add(obj.clone(true));
       }
     });
-    // also add room root
-    const roomObj = new THREE.Group();
-    const sceneGroup = exportGroupRef.current.parent as THREE.Group;
-    sceneGroup.traverse((obj) => {
-      if (obj.userData?.addedByUser === true && !(obj as THREE.Mesh).isMesh) {
-        roomObj.add(obj.clone(true));
-      }
-    });
-    exportGroup.add(roomObj);
-
-    // camera for export
     const camera = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
     camera.position.set(0, 0, 2);
     camera.lookAt(new THREE.Vector3(0, 1.8, 0));
@@ -319,13 +318,11 @@ export default function InteractiveScene({
         <axesHelper args={[2]} />
         <Suspense fallback={null}>
           <group ref={exportGroupRef}>
-            {/* Room */}
             <MemoizedRoom
               path={APIURL + path_room}
               scale={0.01}
               onReady={handleRoomReady}
             />
-            {/* Items */}
             {itemMeshes}
           </group>
         </Suspense>

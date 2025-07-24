@@ -1,4 +1,3 @@
-// src/components/reservas/EquiposSelect.tsx
 import React, { useEffect, useState } from "react";
 import { FaBoxes, FaEye, FaEyeSlash } from "react-icons/fa";
 import type { FormDataType } from "./types/FormDataType";
@@ -46,28 +45,18 @@ export default function EquiposSelect({
 }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 5;
   const [loadingEquipments, setLoadingEquipments] = useState(false);
   const [cantidadInputs, setCantidadInputs] = useState<Record<number, number>>(
     {}
   );
-  const [availableEquipmentData, setAvailableEquipmentData] = useState<{
-    data: GrupoEquiposPorModelo[];
-    total: number;
-    current_page: number;
-    per_page: number;
-  } | null>(null);
-
-  const [showModalGLB, setShowModalGLB] = useState(false);
+  const [availableEquipmentSlides, setAvailableEquipmentSlides] = useState<
+    GrupoEquiposPorModelo[][]
+  >([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [glbUrl, setGlbUrl] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
-
-  const handleOpenModalGLB = (url: string) => {
-    setGlbUrl(url);
-    setShowModalGLB(true);
-  };
 
   const handleImageError = () => {
     toast.error("No se pudo cargar la imagen.");
@@ -77,11 +66,12 @@ export default function EquiposSelect({
     const delayDebounce = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setPage(1);
+      setAvailableEquipmentSlides([]);
     }, 400);
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
 
-  const fetchEquipos = async () => {
+  const fetchEquipos = async (pageToLoad: number) => {
     if (!formData.tipoReserva || !isDateTimeComplete) return;
     try {
       setLoadingEquipments(true);
@@ -91,29 +81,33 @@ export default function EquiposSelect({
           fecha: formData.date,
           startTime: formData.startTime,
           endTime: formData.endTime,
-          page,
-          limit: pageSize,
+          page: pageToLoad,
+          limit: 5,
           search: debouncedSearchTerm,
         },
       });
-      setAvailableEquipmentData(response.data);
+
+      setAvailableEquipmentSlides((prev) => [
+        ...prev,
+        response.data.data || response.data,
+      ]);
+      setTotalPages(response.data.last_page || 1);
     } catch {
       toast.error("Error al cargar equipos disponibles");
-      setAvailableEquipmentData(null);
     } finally {
       setLoadingEquipments(false);
     }
   };
 
   useEffect(() => {
-    fetchEquipos();
+    fetchEquipos(page);
   }, [
     formData.tipoReserva,
     formData.date,
     formData.startTime,
     formData.endTime,
-    page,
     debouncedSearchTerm,
+    page,
   ]);
 
   const handleCantidadChange = (modeloId: number, cantidad: number) => {
@@ -138,7 +132,6 @@ export default function EquiposSelect({
       const actuales: EquipmentSeleccionado[] = [...(prev.equipment || [])];
       idsAsignados.forEach((idEquipo) => {
         const equipoObj = grupo.equipos.find((e) => e.equipo_id === idEquipo);
-        console.log(equipoObj);
         actuales.push({
           modelo_id: grupo.modelo_id,
           nombre_modelo: grupo.nombre_modelo,
@@ -154,7 +147,6 @@ export default function EquiposSelect({
     setCantidadInputs((prev) => ({ ...prev, [grupo.modelo_id]: 0 }));
   };
 
-  const items = availableEquipmentData?.data || [];
   const aulaModelPath: string | null =
     (formData as any)?.aula?.path_modelo || null;
   const equiposConModeloPath =
@@ -163,15 +155,22 @@ export default function EquiposSelect({
     ) || [];
   const puedeVisualizarFull =
     !!aulaModelPath && equiposConModeloPath.length > 0;
-  console.log(formData.aula);
-  console.log(formData.equipment);
+
   const sliderSettings = {
     dots: true,
     infinite: false,
-    speed: 500,
-    slidesToShow: 2,
+    slidesToShow: 1,
     slidesToScroll: 1,
-    responsive: [{ breakpoint: 768, settings: { slidesToShow: 1 } }],
+    arrows: false,
+    afterChange: (currentSlide: number) => {
+      const nextPage = currentSlide + 1;
+      if (
+        nextPage > availableEquipmentSlides.length &&
+        nextPage <= totalPages
+      ) {
+        setPage(nextPage);
+      }
+    },
   };
 
   return (
@@ -238,146 +237,122 @@ export default function EquiposSelect({
         </div>
       )}
 
-      {loadingEquipments ? (
+      {loadingEquipments && (
         <div className="text-center my-4">
           <div className="spinner-border" role="status" />
         </div>
-      ) : !items.length ? (
-        <p className="text-center text-muted">No hay equipos disponibles.</p>
-      ) : (
-        <Slider {...sliderSettings}>
-          {items.map((grupo) => {
-            const equiposNoAgregados = grupo.equipos.filter(
-              (eq) =>
-                !formData.equipment?.some((sel) => sel.id === eq.equipo_id)
-            );
-            if (equiposNoAgregados.length === 0) return null;
-
-            const equipoRef = equiposNoAgregados[0];
-            const max = equiposNoAgregados.length;
-
-            return (
-              <div key={grupo.modelo_id} className="p-2">
-                <div className="card h-100 shadow-sm border-0">
-                  {grupo.imagen_normal ? (
-                    <img
-                      src={APIURL + grupo.imagen_normal}
-                      alt={grupo.nombre_modelo}
-                      className="card-img-top"
-                      style={{
-                        height: "180px",
-                        objectFit: "contain",
-                        backgroundColor: "#f8f9fa",
-                        borderTopLeftRadius: "0.5rem",
-                        borderTopRightRadius: "0.5rem",
-                      }}
-                      onError={handleImageError}
-                    />
-                  ) : grupo.imagen_glb ? (
-                    //@ts-ignore
-                    <model-viewer
-                      src={APIURL + grupo.imagen_glb}
-                      alt="Modelo 3D"
-                      camera-controls
-                      autoplay
-                      style={{
-                        height: "180px",
-                        width: "100%",
-                        backgroundColor: "#f8f9fa",
-                        borderTopLeftRadius: "0.5rem",
-                        borderTopRightRadius: "0.5rem",
-                      }}
-                      shadow-intensity="1"
-                      interaction-prompt="none"
-                      auto-rotate
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        height: "180px",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        backgroundColor: "#f8f9fa",
-                        borderTopLeftRadius: "0.5rem",
-                        borderTopRightRadius: "0.5rem",
-                        fontSize: "1.5rem",
-                        color: "#999",
-                      }}
-                    >
-                      <FaEyeSlash className="me-2" />
-                      Sin imagen
-                    </div>
-                  )}
-
-                  <div className="card-body">
-                    <h5 className="card-title text-capitalize mb-1">
-                      {grupo.nombre_modelo}
-                    </h5>
-                    <p className="mb-1 text-muted">
-                      Marca: {grupo.nombre_marca}
-                    </p>
-                    <p className="mb-2 text-success fw-bold">
-                      {max} disponibles
-                    </p>
-
-                    <div className="d-flex align-items-center">
-                      <input
-                        type="number"
-                        className="form-control form-control-sm me-2"
-                        style={{ width: "80px" }}
-                        min={0}
-                        max={max}
-                        value={cantidadInputs[grupo.modelo_id] || ""}
-                        placeholder="0"
-                        onChange={(e) =>
-                          handleCantidadChange(
-                            grupo.modelo_id,
-                            parseInt(e.target.value) || 0
-                          )
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-success"
-                        onClick={() => agregarEquipo(grupo)}
-                        disabled={max <= 0}
-                      >
-                        Agregar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </Slider>
       )}
 
-      <Modal
-        show={showModalGLB}
-        onHide={() => setShowModalGLB(false)}
-        size="lg"
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Visualización del modelo 3D</Modal.Title>
-        </Modal.Header>
-        <Modal.Body style={{ height: "500px" }}>
-          {glbUrl && (
-            //@ts-ignore
-            <model-viewer
-              src={APIURL + glbUrl}
-              camera-controls
-              autoplay
-              auto-rotate
-              style={{ width: "100%", height: "100%" }}
-              shadow-intensity="1"
-              interaction-prompt="none"
-            />
-          )}
-        </Modal.Body>
-      </Modal>
+      {!loadingEquipments && availableEquipmentSlides.length > 0 && (
+        <Slider {...sliderSettings}>
+          {availableEquipmentSlides.map((grupoPagina, idx) => (
+            <div key={idx}>
+              <div className="row">
+                {grupoPagina.map((grupo) => {
+                  const equiposNoAgregados = grupo.equipos.filter(
+                    (eq) =>
+                      !formData.equipment?.some(
+                        (sel) => sel.id === eq.equipo_id
+                      )
+                  );
+                  if (equiposNoAgregados.length === 0) return null;
+
+                  const max = equiposNoAgregados.length;
+
+                  return (
+                    <div className="col-md-6 mb-3" key={grupo.modelo_id}>
+                      <div className="card h-100 shadow-sm border-0">
+                        {grupo.imagen_normal ? (
+                          <img
+                            src={APIURL + grupo.imagen_normal}
+                            alt={grupo.nombre_modelo}
+                            className="card-img-top"
+                            style={{
+                              height: "180px",
+                              objectFit: "contain",
+                              backgroundColor: "#f8f9fa",
+                            }}
+                            onError={handleImageError}
+                          />
+                        ) : grupo.imagen_glb ? (
+                          //@ts-ignore
+                          <model-viewer
+                            src={APIURL + grupo.imagen_glb}
+                            alt="Modelo 3D"
+                            camera-controls
+                            autoplay
+                            style={{
+                              height: "180px",
+                              width: "100%",
+                              backgroundColor: "#f8f9fa",
+                            }}
+                            shadow-intensity="1"
+                            interaction-prompt="none"
+                            auto-rotate
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              height: "180px",
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              backgroundColor: "#f8f9fa",
+                              fontSize: "1.5rem",
+                              color: "#999",
+                            }}
+                          >
+                            <FaEyeSlash className="me-2" />
+                            Sin imagen
+                          </div>
+                        )}
+
+                        <div className="card-body">
+                          <h5 className="card-title text-capitalize mb-1">
+                            {grupo.nombre_modelo}
+                          </h5>
+                          <p className="mb-1 text-muted">
+                            Marca: {grupo.nombre_marca}
+                          </p>
+                          <p className="mb-2 text-success fw-bold">
+                            {max} disponibles
+                          </p>
+
+                          <div className="d-flex align-items-center">
+                            <input
+                              type="number"
+                              className="form-control form-control-sm me-2"
+                              style={{ width: "80px" }}
+                              min={0}
+                              max={max}
+                              value={cantidadInputs[grupo.modelo_id] || ""}
+                              placeholder="0"
+                              onChange={(e) =>
+                                handleCantidadChange(
+                                  grupo.modelo_id,
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-success"
+                              onClick={() => agregarEquipo(grupo)}
+                              disabled={max <= 0}
+                            >
+                              Agregar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </Slider>
+      )}
 
       <Modal
         show={showFullView}

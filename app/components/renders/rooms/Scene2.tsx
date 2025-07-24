@@ -58,6 +58,7 @@ interface UIControlsProps {
   onModeChange: (mode: "translate" | "rotate") => void;
   onExport: (type: "glb" | "gltf") => void;
 }
+
 function UIControls({
   equipos,
   transformMode,
@@ -69,43 +70,124 @@ function UIControls({
     <div
       style={{
         position: "absolute",
-        top: 10,
-        left: 10,
+        left: 20,
+        top: "50%",
+        transform: "translateY(-50%)",
         zIndex: 2,
-        backgroundColor: "rgba(255,255,255,0.9)",
-        padding: 10,
-        borderRadius: 6,
+        backgroundColor: "#1e293b",
+        padding: "20px 16px",
+        borderRadius: "16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "14px",
+        minWidth: "200px",
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        userSelect: "none",
+        color: "#e0e0e0",
       }}
     >
-      {equipos.map((model) => (
-        <div key={model.nombre_modelo} style={{ marginBottom: 6 }}>
-          <button onClick={() => onAdd(model.nombre_modelo, model.modelo_path)}>
-            Agregar {model.nombre_modelo}
-          </button>
-        </div>
-      ))}
+      <label
+        style={{ marginBottom: "8px", fontSize: "1.1rem", fontWeight: "bold" }}
+      >
+        Equipos 3D
+      </label>
+      <div style={{ position: "relative" }}>
+        <select
+          onChange={(e) => {
+            const selectedPath = e.target.value;
+            const model = equipos.find((m) => m.modelo_path === selectedPath);
+            if (model) onAdd(model.nombre_modelo, model.modelo_path);
+            e.target.value = "";
+          }}
+          defaultValue=""
+          style={{
+            width: "100%",
+            padding: "10px 14px",
+            borderRadius: "12px",
+            backgroundColor: "#0f172a",
+            color: "white",
+            border: "1px solid #334155",
+            fontSize: "14px",
+            appearance: "none",
+            cursor: "pointer",
+          }}
+        >
+          <option value="" disabled>
+            ➕ Selecciona un equipo
+          </option>
+          {equipos.map((model) => (
+            <option key={model.numero_serie} value={model.modelo_path}>
+              {model.nombre_modelo}
+            </option>
+          ))}
+        </select>
+        <span
+          style={{
+            position: "absolute",
+            right: 12,
+            top: "50%",
+            transform: "translateY(-50%)",
+            pointerEvents: "none",
+            fontSize: "16px",
+            color: "#cbd5e1",
+          }}
+        >
+          ▼
+        </span>
+      </div>
+
       <button
         onClick={() => onModeChange("translate")}
         disabled={transformMode === "translate"}
+        style={{
+          padding: "10px 14px",
+          backgroundColor:
+            transformMode === "translate" ? "#d1d5db" : "#10b981",
+          color: "white",
+          border: "none",
+          borderRadius: "10px",
+          fontWeight: "bold",
+          cursor: "pointer",
+          fontSize: "15px",
+        }}
       >
         Mover
       </button>
       <button
         onClick={() => onModeChange("rotate")}
         disabled={transformMode === "rotate"}
-        style={{ marginLeft: 8 }}
+        style={{
+          padding: "10px 14px",
+          backgroundColor: transformMode === "rotate" ? "#d1d5db" : "#f59e0b",
+          color: "white",
+          border: "none",
+          borderRadius: "10px",
+          fontWeight: "bold",
+          cursor: "pointer",
+          fontSize: "15px",
+        }}
       >
         Rotar
       </button>
-      <div style={{ marginTop: 10 }}>
-        <button onClick={() => onExport("glb")}>Exportar GLB</button>
-        <button onClick={() => onExport("gltf")} style={{ marginLeft: 8 }}>
-          Exportar GLTF
-        </button>
-      </div>
+      <button
+        onClick={() => onExport("glb")}
+        style={{
+          padding: "10px 14px",
+          borderRadius: "10px",
+          backgroundColor: "#2563eb",
+          color: "white",
+          border: "none",
+          fontWeight: "bold",
+          fontSize: "15px",
+          cursor: "pointer",
+        }}
+      >
+        Exportar GLB
+      </button>
     </div>
   );
 }
+
 const MemoizedRoom = React.memo(RoomModel);
 
 interface ModelItemProps {
@@ -214,12 +296,6 @@ export default function InteractiveScene({
     equipos.forEach((model) => useGLTF.preload(APIURL + model.modelo_path));
   }, [path_room, equipos]);
 
-  const scales: Record<ItemType, number> = {
-    desk: 0.8,
-    projector: 0.01,
-    plant: 1,
-  };
-
   const handleAdd = useCallback(
     (nombre: string, path: string) => {
       const id = addItem(nombre, APIURL + path);
@@ -240,10 +316,10 @@ export default function InteractiveScene({
         onRotationChange={(rot) => updateRotation(item.id, rot)}
         mode={transformMode}
       >
-        <ModelItem path={item.path} scale={scales[item.type] ?? 0.5} />
+        <ModelItem path={item.path} scale={0.5} />
       </MoveableItem>
     ),
-    [selectedId, transformMode, updatePosition, updateRotation, scales]
+    [selectedId, transformMode, updatePosition, updateRotation]
   );
 
   const itemMeshes = useMemo(() => items.map(renderItem), [items, renderItem]);
@@ -308,15 +384,11 @@ export default function InteractiveScene({
         onExport={handleExport}
       />
       <Canvas
-        style={{ width: "100%", height: "100%" }}
-        camera={{ position: [0, 1.7, 3], fov: 60 }}
+        style={{ width: "95%", height: "95%" }}
+        camera={{ position: [0, 2, 5], fov: 50 }}
       >
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 5, 5]} />
         <Environment preset="sunset" />
-        <OrbitControls makeDefault target={[0, 2.2, 0]} />
-        <gridHelper args={[10, 10]} />
-        <axesHelper args={[2]} />
+        <OrbitControls makeDefault target={[0, 2, 0]} />
         <Suspense fallback={null}>
           <group ref={exportGroupRef}>
             <MemoizedRoom

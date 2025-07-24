@@ -46,20 +46,38 @@ export default function ItemCreatePage() {
     loadData();
   }, []);
 
-  const handleSubmit = async (data: any) => {
-    try {
-      const tipoEquipo = tiposEquipo.find(t => t.id === data.tipo_equipo_id);
-      const tipo = tipoEquipo?.categoria_id === 2 ? "insumo" : "equipo";
-
-      await createItem(data, tipo);
-      toast.success(`${tipo === "equipo" ? "Equipo" : "Insumo"} creado exitosamente`);
-      navigate("/inventario");
-    } catch (error: any) {
-      console.error("Error creando ítem:", error);
-      const errorMsg = error.response?.data?.message || "Error al crear el ítem";
-      toast.error(errorMsg);
+  const handleSubmit = async (formData: FormData) => {
+  try {
+    setLoading(true);
+    
+    // Determinar tipo de equipo
+    const tipoEquipoId = formData.get('tipo_equipo_id');
+    const tipoEquipo = tiposEquipo.find(t => t.id === Number(tipoEquipoId));
+    
+    if (!tipoEquipo) {
+      throw new Error("Tipo de equipo no encontrado");
     }
-  };
+
+    const tipo = tipoEquipo.categoria_id === 2 ? "insumo" : "equipo";
+
+    // Validación adicional de cantidad para insumos
+    if (tipo === "insumo") {
+      const cantidad = formData.get('cantidad');
+      if (!cantidad || Number(cantidad) <= 0) {
+        throw new Error("La cantidad debe ser mayor a cero");
+      }
+    }
+
+    await createItem(formData, tipo);
+    toast.success(`${tipo === "equipo" ? "Equipo" : "Insumo"} creado exitosamente`);
+    navigate("/inventario");
+  } catch (error: any) {
+    console.error("Error en handleSubmit:", error);
+    toast.error(error.message || "Error al crear el ítem");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="container mt-4">

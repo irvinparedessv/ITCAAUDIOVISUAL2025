@@ -74,34 +74,30 @@ export const getItemById = async (id: number, tipo: 'equipo' | 'insumo'): Promis
   return res.data;
 };
 
-export const createItem = async (data: EquipoCreateDTO | InsumoCreateDTO, tipo: 'equipo' | 'insumo') => {
-  const formData = new FormData();
-
-  // Comunes
-  formData.append("tipo", tipo);
-  formData.append("tipo_equipo_id", data.tipo_equipo_id.toString());
-  formData.append("modelo_id", data.modelo_id.toString());
-  formData.append("estado_id", data.estado_id.toString());
-  if (data.tipo_reserva_id) formData.append("tipo_reserva_id", data.tipo_reserva_id.toString());
-  if (data.fecha_adquisicion) formData.append("fecha_adquisicion", data.fecha_adquisicion);
-  if (data.detalles) formData.append("detalles", data.detalles);
-  if ((data as any).imagen) formData.append("imagen", (data as any).imagen);
-
-  // Específicos
-  if (tipo === 'equipo') {
-    formData.append("numero_serie", (data as EquipoCreateDTO).numero_serie);
-    if ((data as EquipoCreateDTO).vida_util) {
-      formData.append("vida_util", (data as EquipoCreateDTO).vida_util!.toString());
+export const createItem = async (formData: FormData, tipo: 'equipo' | 'insumo') => {
+  try {
+    // Debug: Log FormData contents
+    console.log('FormData contents:');
+    for (const [key, value] of formData.entries()) {
+      console.log(key, value);
     }
-  } else {
-    formData.append("cantidad", (data as InsumoCreateDTO).cantidad.toString());
+
+    const response = await api.post("/equipos", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      params: { tipo } // Send type as query parameter if needed
+    });
+    
+    return response.data;
+  } catch (error: any) {
+    console.error("Detailed error:", error);
+    if (error.response) {
+      console.error("Backend response:", error.response.data);
+      throw new Error(error.response.data.message || "Error al crear el ítem");
+    }
+    throw new Error(error.message || "Error de conexión");
   }
-
-  const res = await api.post("/equipos", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-
-  return res.data;
 };
 
 export const updateItem = async (
@@ -109,23 +105,34 @@ export const updateItem = async (
   formData: FormData,
   tipo: 'equipo' | 'insumo'
 ) => {
+  // Agrega tipo y método PUT (si tu backend usa form method spoofing)
   formData.append("tipo", tipo);
   formData.append("_method", "PUT");
 
-  // Depurar el contenido de FormData
-  console.log("Contenido de formData antes de enviar:");
-  for (const pair of formData.entries()) {
-    console.log(pair[0], ":", pair[1]);
+  // Debug: Imprimir contenido de FormData
+  console.log("Contenido de formData en updateItem:");
+  for (const [key, value] of formData.entries()) {
+    console.log(key, value);
   }
 
   try {
     const res = await api.post(`/equipos/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
     return res.data;
-  } catch (error) {
-    console.error("Error en updateItem:", error);
-    throw error; // re-lanzar para manejarlo afuera si quieres
+
+  } catch (error: any) {
+    console.error("Error detallado en updateItem:", error);
+
+    // Captura el mensaje del backend si está disponible
+    if (error.response) {
+      console.error("Respuesta del backend:", error.response.data);
+      throw new Error(error.response.data.message || "Error al actualizar el ítem");
+    }
+
+    throw new Error(error.message || "Error de conexión al actualizar");
   }
 };
 

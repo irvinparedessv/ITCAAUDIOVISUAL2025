@@ -59,151 +59,154 @@ export default function TipoEquipoForm({
           getCategorias(),
           getCaracteristicas(),
         ]);
-        
+
+        console.log("Características desde backend:", caracJson); // <--- Agrega aquí
+
         const caracLocales = cargarCaracteristicasLocales();
-        
-        // Combinar características de la base de datos con las locales
+
         setCaracteristicas([
           ...caracJson,
-          ...caracLocales.map((c: any) => ({ ...c, esNueva: true }))
+          ...caracLocales.map((c: any) => ({ ...c, esNueva: true })),
         ]);
         setCategorias(catJson);
       } catch (error) {
         toast.error("Error al cargar datos");
       }
     }
+
     fetchData();
   }, []);
 
   useEffect(() => {
     if (tipoEditado) {
+      console.log("Características del tipo editado:", tipoEditado.caracteristicas);
       setNombre(tipoEditado.nombre);
       setCategoriaId(tipoEditado.categoria_id ?? null);
       if (tipoEditado.caracteristicas) {
         setCaracSeleccionadas(tipoEditado.caracteristicas.map(c => c.id));
       }
-    } else {
-      setNombre("");
-      setCategoriaId(null);
-      setCaracSeleccionadas([]);
     }
   }, [tipoEditado]);
 
+  useEffect(() => {
+    console.log("Características seleccionadas (ids):", caracSeleccionadas);
+  }, [caracSeleccionadas]);
+
   const handleSubmit = async () => {
-  if (!nombre.trim() || !categoriaId) {
-    toast.error("Nombre y categoría son obligatorios");
-    return;
-  }
-
-  try {
-    // Preparar payload
-    const payload = {
-      nombre,
-      categoria_id: categoriaId,
-      caracteristicas: caracteristicas
-        .filter(c => caracSeleccionadas.includes(c.id))
-        .map(c => ({
-          id: c.esNueva ? undefined : c.id, // No enviar ID si es nueva
-          nombre: c.esNueva ? c.nombre : undefined, // Solo enviar nombre si es nueva
-          tipo_dato: c.esNueva ? c.tipo_dato : undefined // Solo enviar tipo_dato si es nueva
-        }))
-    };
-
-    // Limpiar localStorage si hay características nuevas
-    const tieneNuevas = caracteristicas.some(c => 
-      c.esNueva && caracSeleccionadas.includes(c.id)
-    );
-    
-    if (tieneNuevas) {
-      localStorage.removeItem('caracteristicasLocales');
+    if (!nombre.trim() || !categoriaId) {
+      toast.error("Nombre y categoría son obligatorios");
+      return;
     }
 
-    // Enviar datos al servidor
-    if (tipoEditado) {
-      await updateTipoEquipo(tipoEditado.id, payload);
-      toast.success("Tipo de equipo actualizado");
-    } else {
-      await createTipoEquipo(payload);
-      toast.success("Tipo de equipo creado");
+    try {
+      // Preparar payload
+      const payload = {
+        nombre,
+        categoria_id: categoriaId,
+        caracteristicas: caracteristicas
+          .filter(c => caracSeleccionadas.includes(c.id))
+          .map(c => ({
+            id: c.esNueva ? undefined : c.id, // No enviar ID si es nueva
+            nombre: c.esNueva ? c.nombre : undefined, // Solo enviar nombre si es nueva
+            tipo_dato: c.esNueva ? c.tipo_dato : undefined // Solo enviar tipo_dato si es nueva
+          }))
+      };
+
+      // Limpiar localStorage si hay características nuevas
+      const tieneNuevas = caracteristicas.some(c =>
+        c.esNueva && caracSeleccionadas.includes(c.id)
+      );
+
+      if (tieneNuevas) {
+        localStorage.removeItem('caracteristicasLocales');
+      }
+
+      // Enviar datos al servidor
+      if (tipoEditado) {
+        await updateTipoEquipo(tipoEditado.id, payload);
+        toast.success("Tipo de equipo actualizado");
+      } else {
+        await createTipoEquipo(payload);
+        toast.success("Tipo de equipo creado");
+      }
+
+      // Resetear formulario
+      setNombre("");
+      setCategoriaId(null);
+      setCaracSeleccionadas([]);
+      onSuccess?.();
+
+    } catch (error) {
+      console.error("Error al guardar el tipo de equipo:", error);
+      toast.error("Error al guardar el tipo de equipo");
     }
-
-    // Resetear formulario
-    setNombre("");
-    setCategoriaId(null);
-    setCaracSeleccionadas([]);
-    onSuccess?.();
-
-  } catch (error) {
-    console.error("Error al guardar el tipo de equipo:", error);
-    toast.error("Error al guardar el tipo de equipo");
-  }
-};
-
-  const handleBack = () => navigate("/equipolist");
-
-  const agregarNuevaCaracteristica = () => {
-  if (!nuevaCarac.trim()) {
-    toast.error("El nombre no puede estar vacío");
-    return;
-  }
-
-  // Buscar si ya existe (en base de datos o en localStorage)
-  const caracteristicaExistente = caracteristicas.find(
-    c => c.nombre.toLowerCase() === nuevaCarac.trim().toLowerCase()
-  );
-
-  if (caracteristicaExistente) {
-    // Si ya existe, seleccionarla en lugar de mostrar error
-    if (!caracSeleccionadas.includes(caracteristicaExistente.id)) {
-      setCaracSeleccionadas(prev => [...prev, caracteristicaExistente.id]);
-      toast.success(`Característica "${caracteristicaExistente.nombre}" seleccionada`);
-    } else {
-      toast(`La característica "${caracteristicaExistente.nombre}" ya está seleccionada`, {
-        icon: "ℹ️"
-      });
-    }
-    setNuevaCarac("");
-    setMostrarAgregarCarac(false);
-    return;
-  }
-
-  // Generar un ID temporal negativo para identificar las nuevas
-  const nuevoId = -Math.floor(Math.random() * 1000000);
-  const nuevaCaracObj = {
-    id: nuevoId,
-    nombre: nuevaCarac.trim(),
-    tipo_dato: tipoDato,
-    esNueva: true
   };
 
-  // Agregar a la lista de características
-  setCaracteristicas(prev => [...prev, nuevaCaracObj]);
-  
-  // Agregar a las seleccionadas
-  setCaracSeleccionadas(prev => [...prev, nuevoId]);
-  
-  // Guardar en localStorage
-  const caracLocales = JSON.parse(localStorage.getItem('caracteristicasLocales') || '[]');
-  caracLocales.push(nuevaCaracObj);
-  localStorage.setItem('caracteristicasLocales', JSON.stringify(caracLocales));
+  const handleBack = () => navigate("/tipoEquipo");
 
-  setNuevaCarac("");
-  setMostrarAgregarCarac(false);
-  toast.success("Característica agregada temporalmente");
-};
+  const agregarNuevaCaracteristica = () => {
+    if (!nuevaCarac.trim()) {
+      toast.error("El nombre no puede estar vacío");
+      return;
+    }
+
+    // Buscar si ya existe (en base de datos o en localStorage)
+    const caracteristicaExistente = caracteristicas.find(
+      c => c.nombre.toLowerCase() === nuevaCarac.trim().toLowerCase()
+    );
+
+    if (caracteristicaExistente) {
+      // Si ya existe, seleccionarla en lugar de mostrar error
+      if (!caracSeleccionadas.includes(caracteristicaExistente.id)) {
+        setCaracSeleccionadas(prev => [...prev, caracteristicaExistente.id]);
+        toast.success(`Característica "${caracteristicaExistente.nombre}" seleccionada`);
+      } else {
+        toast(`La característica "${caracteristicaExistente.nombre}" ya está seleccionada`, {
+          icon: "ℹ️"
+        });
+      }
+      setNuevaCarac("");
+      setMostrarAgregarCarac(false);
+      return;
+    }
+
+    // Generar un ID temporal negativo para identificar las nuevas
+    const nuevoId = -Math.floor(Math.random() * 1000000);
+    const nuevaCaracObj = {
+      id: nuevoId,
+      nombre: nuevaCarac.trim(),
+      tipo_dato: tipoDato,
+      esNueva: true
+    };
+
+    // Agregar a la lista de características
+    setCaracteristicas(prev => [...prev, nuevaCaracObj]);
+
+    // Agregar a las seleccionadas
+    setCaracSeleccionadas(prev => [...prev, nuevoId]);
+
+    // Guardar en localStorage
+    const caracLocales = JSON.parse(localStorage.getItem('caracteristicasLocales') || '[]');
+    caracLocales.push(nuevaCaracObj);
+    localStorage.setItem('caracteristicasLocales', JSON.stringify(caracLocales));
+
+    setNuevaCarac("");
+    setMostrarAgregarCarac(false);
+    toast.success("Característica agregada temporalmente");
+  };
 
   const eliminarCaracteristicaLocal = (id: number) => {
     // Eliminar de la lista general
     setCaracteristicas(prev => prev.filter(c => c.id !== id));
-    
+
     // Eliminar de las seleccionadas si está ahí
     setCaracSeleccionadas(prev => prev.filter(cId => cId !== id));
-    
+
     // Actualizar localStorage
     const caracLocales = JSON.parse(localStorage.getItem('caracteristicasLocales') || '[]')
       .filter((c: any) => c.id !== id);
     localStorage.setItem('caracteristicasLocales', JSON.stringify(caracLocales));
-    
+
     toast.success("Característica temporal eliminada");
   };
 

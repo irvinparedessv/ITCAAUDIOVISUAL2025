@@ -108,7 +108,16 @@ export default function ItemEditPage() {
 };
 
 
-  if (!item) return <p>Cargando datos del ítem...</p>;
+  if (!item) {
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center my-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+        <p className="mt-3 text-muted">Cargando datos del ítem...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-4">

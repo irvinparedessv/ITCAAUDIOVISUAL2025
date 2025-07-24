@@ -6,7 +6,7 @@ import type { TipoEquipo } from "app/types/tipoEquipo";
 import TipoEquipoList from "../components/tipoEquipo/TipoEquipoList";
 import { Toaster } from "react-hot-toast";
 
-export default function TipoEquiposPage() {
+export default function TipoEquipoListPage() {
   const [tipoEditado, setTipoEditado] = useState<TipoEquipo | undefined>();
 
   const handleDelete = async (id: number) => {

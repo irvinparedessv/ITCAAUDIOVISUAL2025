@@ -3,7 +3,10 @@ export interface TipoEquipo {
   nombre: string;
   is_deleted: boolean;
   categoria_id: number;
-   caracteristicas?: CaracteristicaTipoEquipo[]; 
+  caracteristicas?: CaracteristicaTipoEquipo[];
+  categoria?: Categoria; // ✅ importante para mostrar nombre de categoría
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Categoria {

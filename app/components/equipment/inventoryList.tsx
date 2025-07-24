@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Spinner, Table, Badge, Button, Form, InputGroup } from "react-bootstrap";
 import api from "../../api/axios";
-import { FaEye, FaBoxes, FaLongArrowAltLeft, FaFilter, FaTimes, FaSearch } from "react-icons/fa";
+import { FaEye, FaBoxes, FaLongArrowAltLeft, FaFilter, FaTimes, FaSearch, FaTools } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
 
@@ -109,6 +109,17 @@ export default function InventoryList() {
             Inventario
           </h2>
         </div>
+
+        <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
+          <Button
+            variant="primary"
+            className="d-flex align-items-center gap-2"
+            onClick={() => navigate('/tipoEquipo')}
+          >
+            <FaTools />
+            Tipo de Equipo
+          </Button>
+        </div>
       </div>
 
       {/* Barra de búsqueda y filtros */}
@@ -158,9 +169,6 @@ export default function InventoryList() {
                   <option value="">Todas las categorías</option>
                   <option value="Equipo">Equipo</option>
                   <option value="Insumo">Insumo</option>
-                  <option value="Accesorio">Accesorio</option>
-                  <option value="Repuesto">Repuesto</option>
-                  <option value="Consumible">Consumible</option>
                 </Form.Select>
               </Form.Group>
             </div>
@@ -211,7 +219,7 @@ export default function InventoryList() {
       ) : (
         <>
           <div className="table-responsive">
-            <Table bordered hover className="text-center align-middle" style={{ borderColor: '#dee2e6' }}>
+            <table className="table table-hover align-middle text-center">
               <thead className="table-dark">
                 <tr>
                   <th style={{ borderTopLeftRadius: '10px', borderColor: '#dee2e6' }}>Categoría</th>
@@ -262,16 +270,15 @@ export default function InventoryList() {
                       </td>
                       <td style={{ borderColor: '#dee2e6' }}>
                         <div className="d-flex justify-content-center gap-2">
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
+
+                          <button
+                            className="btn btn-outline-primary rounded-circle"
                             title="Ver equipos"
                             onClick={() => handleViewEquipment(item.modelo_id)}
                             style={{
                               width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out",
-                              borderColor: '#dee2e6'
                             }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
@@ -280,8 +287,8 @@ export default function InventoryList() {
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                           >
-                            <FaEye />
-                          </Button>
+                            <FaEye className="fs-5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -294,7 +301,7 @@ export default function InventoryList() {
                   </tr>
                 )}
               </tbody>
-            </Table>
+            </table>
           </div>
 
           <PaginationComponent

@@ -36,6 +36,12 @@ const RoomModel = React.memo(function RoomModel({
     onReady?.(clonedScene);
   }, [clonedScene, onReady]);
 
-  return <primitive object={clonedScene} scale={[scale, scale, scale]} />;
+  return (
+    <primitive
+      object={clonedScene}
+      pointerEvents="none"
+      scale={[scale, scale, scale]}
+    />
+  );
 });
 export default RoomModel;

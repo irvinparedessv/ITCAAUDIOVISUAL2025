@@ -162,10 +162,6 @@ const router = createBrowserRouter([
             element: <SceneCanvas reserveId={1} />,
           },
           {
-            path: "visualizacion2",
-            element: <SceneCanvas2 />,
-          },
-          {
             path: "demo",
             element: <ViewScene reserveId={1} />,
           },
@@ -207,7 +203,7 @@ const router = createBrowserRouter([
           },
           {
             path: "modelo/:id/accesorios",
-            element: <ModeloAccesoriosForm />
+            element: <ModeloAccesoriosForm />,
           },
           {
             path: "/equipos/editar/:id",

@@ -95,14 +95,14 @@ export default function EquipmentReservationForm() {
           loadingAulas={loading.aulas}
           isDateTimeComplete={isDateTimeComplete}
         />
-        {formData.aula && (
+        <div style={{ display: formData.aula ? "block" : "none" }}>
           <EquiposSelect
             formData={formData}
             setFormData={setFormData}
             checkingAvailability={checkingAvailability}
             isDateTimeComplete={isDateTimeComplete}
           />
-        )}
+        </div>
         <FormActions
           handleClear={handleClear}
           loadingSubmit={loading.submit}

@@ -1,15 +1,15 @@
-import React, { useEffect, useState, Suspense } from "react";
-import { FaBoxes, FaEye } from "react-icons/fa";
+// src/components/reservas/EquiposSelect.tsx
+import React, { useEffect, useState } from "react";
+import { FaBoxes, FaEye, FaEyeSlash } from "react-icons/fa";
 import type { FormDataType } from "./types/FormDataType";
 import api from "~/api/axios";
 import toast from "react-hot-toast";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, useGLTF } from "@react-three/drei";
 import { APIURL } from "./../../constants/constant";
 import InteractiveScene from "../renders/rooms/Scene2";
 import type { EquipmentSeleccionado } from "./types/Equipos";
+import Slider from "react-slick";
 
 interface Props {
   formData: FormDataType;
@@ -23,9 +23,10 @@ interface EquipoIndividual {
   modelo_id: number;
   tipo_equipo: string;
   estado: string;
-  imagen_gbl: string | null; // <- si tu campo real es modelo_path cámbialo
+  imagen_glb: string | null;
   imagen_normal: string | null;
-  modelo_path?: string | null; // opcional si lo tienes aparte
+  numero_serie: string;
+  modelo_path?: string | null;
 }
 
 interface GrupoEquiposPorModelo {
@@ -33,33 +34,8 @@ interface GrupoEquiposPorModelo {
   nombre_modelo: string;
   nombre_marca: string;
   equipos: EquipoIndividual[];
-}
-
-/** --- Componente para mostrar GLB --- */
-function ModeloGLB({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
-  return <primitive object={scene} />;
-}
-
-/** --- ErrorBoundary simple para Canvas/GLB --- */
-class CanvasErrorBoundary extends React.Component<
-  { onError: () => void; children: React.ReactNode },
-  { hasError: boolean }
-> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch() {
-    this.props.onError();
-  }
-  render() {
-    if (this.state.hasError) return null;
-    return this.props.children;
-  }
+  imagen_glb: string | null;
+  imagen_normal: string | null;
 }
 
 export default function EquiposSelect({
@@ -71,7 +47,6 @@ export default function EquiposSelect({
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [showDetails, setShowDetails] = useState(false);
   const pageSize = 5;
   const [loadingEquipments, setLoadingEquipments] = useState(false);
   const [cantidadInputs, setCantidadInputs] = useState<Record<number, number>>(
@@ -84,13 +59,10 @@ export default function EquiposSelect({
     per_page: number;
   } | null>(null);
 
-  // Modal GLB individual
   const [showModalGLB, setShowModalGLB] = useState(false);
   const [glbUrl, setGlbUrl] = useState<string | null>(null);
-
-  // Modal Fullscreen (aula + lista equipos 3D)
+  const [showDetails, setShowDetails] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
-  const [equipoActivoUrl, setEquipoActivoUrl] = useState<string | null>(null);
 
   const handleOpenModalGLB = (url: string) => {
     setGlbUrl(url);
@@ -135,7 +107,6 @@ export default function EquiposSelect({
 
   useEffect(() => {
     fetchEquipos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     formData.tipoReserva,
     formData.date,
@@ -150,34 +121,31 @@ export default function EquiposSelect({
   };
 
   const agregarEquipo = (grupo: GrupoEquiposPorModelo) => {
-    const idsDisponibles = grupo.equipos.map((e) => e.equipo_id);
-    const yaAgregado =
-      formData.equipment?.filter((e: any) => e.modelo_id === grupo.modelo_id)
-        .length || 0;
-    const restante = idsDisponibles.length - yaAgregado;
+    const idsDisponibles = grupo.equipos
+      .filter((e) => !formData.equipment?.some((sel) => sel.id === e.equipo_id))
+      .map((e) => e.equipo_id);
+
     const cantidad = cantidadInputs[grupo.modelo_id] || 0;
 
-    if (cantidad < 1 || cantidad > restante) {
-      toast.error(`Cantidad inválida. Máximo: ${restante}`);
+    if (cantidad < 1 || cantidad > idsDisponibles.length) {
+      toast.error(`Cantidad inválida. Máximo: ${idsDisponibles.length}`);
       return;
     }
 
-    const idsAsignados = idsDisponibles.slice(
-      yaAgregado,
-      yaAgregado + cantidad
-    );
+    const idsAsignados = idsDisponibles.slice(0, cantidad);
 
     setFormData((prev) => {
       const actuales: EquipmentSeleccionado[] = [...(prev.equipment || [])];
       idsAsignados.forEach((idEquipo) => {
-        // buscamos el equipo para sacar su modelo_path / imagen_gbl
         const equipoObj = grupo.equipos.find((e) => e.equipo_id === idEquipo);
+        console.log(equipoObj);
         actuales.push({
           modelo_id: grupo.modelo_id,
           nombre_modelo: grupo.nombre_modelo,
           id: idEquipo,
           cantidad: 1,
-          modelo_path: equipoObj?.modelo_path ?? equipoObj?.imagen_gbl ?? "",
+          modelo_path: equipoObj?.modelo_path ?? equipoObj?.imagen_glb ?? "",
+          numero_serie: equipoObj?.numero_serie,
         });
       });
       return { ...prev, equipment: actuales };
@@ -186,22 +154,26 @@ export default function EquiposSelect({
     setCantidadInputs((prev) => ({ ...prev, [grupo.modelo_id]: 0 }));
   };
 
-  const totalPages = Math.ceil((availableEquipmentData?.total || 0) / pageSize);
   const items = availableEquipmentData?.data || [];
-
-  // ---- Condiciones para botón Visualizar full
   const aulaModelPath: string | null =
     (formData as any)?.aula?.path_modelo || null;
-
   const equiposConModeloPath =
     formData.equipment?.filter(
       (eq) => eq.modelo_path && eq.modelo_path !== null
     ) || [];
-
   const puedeVisualizarFull =
     !!aulaModelPath && equiposConModeloPath.length > 0;
-
+  console.log(formData.aula);
   console.log(formData.equipment);
+  const sliderSettings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 2,
+    slidesToScroll: 1,
+    responsive: [{ breakpoint: 768, settings: { slidesToShow: 1 } }],
+  };
+
   return (
     <div className="mb-4">
       <label className="form-label d-flex align-items-center justify-content-between">
@@ -227,7 +199,6 @@ export default function EquiposSelect({
         </button>
       </label>
 
-      {/* Siempre visible */}
       <input
         type="text"
         className="form-control mb-3"
@@ -240,23 +211,17 @@ export default function EquiposSelect({
         <div className="mb-4 border rounded p-3 bg-light">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="mb-0">Equipos seleccionados:</h5>
-
             {puedeVisualizarFull && (
               //@ts-ignore
               <Button
                 variant="dark"
                 size="sm"
-                onClick={() => {
-                  setEquipoActivoUrl(null);
-                  setShowFullView(true);
-                }}
+                onClick={() => setShowFullView(true)}
               >
                 Visualizar full
               </Button>
             )}
           </div>
-
-          {/* Lista normal */}
           <ul className="list-group mb-3">
             {(formData.equipment as any[]).map((eq) => (
               <li
@@ -265,7 +230,7 @@ export default function EquiposSelect({
               >
                 Modelo: {eq.nombre_modelo}
                 <span className="badge bg-primary rounded-pill">
-                  Cantidad: {eq.cantidad}
+                  Serie: {eq.numero_serie}
                 </span>
               </li>
             ))}
@@ -280,137 +245,115 @@ export default function EquiposSelect({
       ) : !items.length ? (
         <p className="text-center text-muted">No hay equipos disponibles.</p>
       ) : (
-        <>
-          <div className="row">
-            {items.map((grupo) => {
-              const yaAgregado =
-                (formData.equipment as any[])?.filter(
-                  (e) => e.modelo_id === grupo.modelo_id
-                ).length || 0;
-              const max = grupo.equipos.length - yaAgregado;
-              const equipoRef = grupo.equipos[0];
+        <Slider {...sliderSettings}>
+          {items.map((grupo) => {
+            const equiposNoAgregados = grupo.equipos.filter(
+              (eq) =>
+                !formData.equipment?.some((sel) => sel.id === eq.equipo_id)
+            );
+            if (equiposNoAgregados.length === 0) return null;
 
-              return (
-                <div className="col-md-6 mb-3" key={grupo.modelo_id}>
-                  <div className="card h-100">
-                    <div className="card-body">
-                      <h5 className="card-title text-capitalize">
-                        {grupo.nombre_modelo}{" "}
-                        <span className="text-muted">
-                          ({grupo.equipos.length})
-                        </span>
-                        <br />
-                        <small className="text-muted">
-                          Marca: {grupo.nombre_marca}
-                        </small>
-                      </h5>
+            const equipoRef = equiposNoAgregados[0];
+            const max = equiposNoAgregados.length;
 
-                      {/* Imagen o botón GLB */}
-                      {equipoRef.imagen_normal ? (
-                        <img
-                          src={APIURL + equipoRef.imagen_normal}
-                          alt={grupo.nombre_modelo}
-                          className="img-fluid mb-2 rounded"
-                          style={{
-                            maxHeight: "150px",
-                            objectFit: "contain",
-                            width: "100%",
-                          }}
-                          onError={handleImageError}
-                        />
-                      ) : equipoRef.imagen_gbl ? (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-secondary mb-2"
-                          onClick={() =>
-                            handleOpenModalGLB(APIURL + equipoRef.imagen_gbl!)
-                          }
-                        >
-                          Visualizar
-                        </button>
-                      ) : null}
+            return (
+              <div key={grupo.modelo_id} className="p-2">
+                <div className="card h-100 shadow-sm border-0">
+                  {grupo.imagen_normal ? (
+                    <img
+                      src={APIURL + grupo.imagen_normal}
+                      alt={grupo.nombre_modelo}
+                      className="card-img-top"
+                      style={{
+                        height: "180px",
+                        objectFit: "contain",
+                        backgroundColor: "#f8f9fa",
+                        borderTopLeftRadius: "0.5rem",
+                        borderTopRightRadius: "0.5rem",
+                      }}
+                      onError={handleImageError}
+                    />
+                  ) : grupo.imagen_glb ? (
+                    //@ts-ignore
+                    <model-viewer
+                      src={APIURL + grupo.imagen_glb}
+                      alt="Modelo 3D"
+                      camera-controls
+                      autoplay
+                      style={{
+                        height: "180px",
+                        width: "100%",
+                        backgroundColor: "#f8f9fa",
+                        borderTopLeftRadius: "0.5rem",
+                        borderTopRightRadius: "0.5rem",
+                      }}
+                      shadow-intensity="1"
+                      interaction-prompt="none"
+                      auto-rotate
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        height: "180px",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        backgroundColor: "#f8f9fa",
+                        borderTopLeftRadius: "0.5rem",
+                        borderTopRightRadius: "0.5rem",
+                        fontSize: "1.5rem",
+                        color: "#999",
+                      }}
+                    >
+                      <FaEyeSlash className="me-2" />
+                      Sin imagen
+                    </div>
+                  )}
 
-                      {/* Seriales */}
-                      <div className="mb-2 d-flex flex-wrap gap-1">
-                        {grupo.equipos.map((e) => (
-                          <span
-                            key={e.equipo_id}
-                            className="badge bg-secondary"
-                          >
-                            #{e.equipo_id}
-                          </span>
-                        ))}
-                      </div>
+                  <div className="card-body">
+                    <h5 className="card-title text-capitalize mb-1">
+                      {grupo.nombre_modelo}
+                    </h5>
+                    <p className="mb-1 text-muted">
+                      Marca: {grupo.nombre_marca}
+                    </p>
+                    <p className="mb-2 text-success fw-bold">
+                      {max} disponibles
+                    </p>
 
-                      <div className="d-flex align-items-center mb-2">
-                        <input
-                          type="number"
-                          className="form-control form-control-sm me-2"
-                          style={{ width: "80px" }}
-                          min={0}
-                          max={max}
-                          value={cantidadInputs[grupo.modelo_id] || ""}
-                          placeholder="0"
-                          onChange={(e) =>
-                            handleCantidadChange(
-                              grupo.modelo_id,
-                              parseInt(e.target.value) || 0
-                            )
-                          }
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-success"
-                          onClick={() => agregarEquipo(grupo)}
-                          disabled={max <= 0}
-                        >
-                          Agregar
-                        </button>
-                      </div>
+                    <div className="d-flex align-items-center">
+                      <input
+                        type="number"
+                        className="form-control form-control-sm me-2"
+                        style={{ width: "80px" }}
+                        min={0}
+                        max={max}
+                        value={cantidadInputs[grupo.modelo_id] || ""}
+                        placeholder="0"
+                        onChange={(e) =>
+                          handleCantidadChange(
+                            grupo.modelo_id,
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-success"
+                        onClick={() => agregarEquipo(grupo)}
+                        disabled={max <= 0}
+                      >
+                        Agregar
+                      </button>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {totalPages > 1 && (
-            <nav>
-              <ul className="pagination justify-content-center">
-                <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
-                  <button
-                    type="button"
-                    className="page-link"
-                    onClick={() => setPage(page - 1)}
-                  >
-                    Anterior
-                  </button>
-                </li>
-                <li className="page-item disabled">
-                  <span className="page-link">
-                    {page} / {totalPages}
-                  </span>
-                </li>
-                <li
-                  className={`page-item ${
-                    page === totalPages ? "disabled" : ""
-                  }`}
-                >
-                  <button
-                    type="button"
-                    className="page-link"
-                    onClick={() => setPage(page + 1)}
-                  >
-                    Siguiente
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          )}
-        </>
+              </div>
+            );
+          })}
+        </Slider>
       )}
 
-      {/* Modal visor GLB individual */}
       <Modal
         show={showModalGLB}
         onHide={() => setShowModalGLB(false)}
@@ -422,24 +365,20 @@ export default function EquiposSelect({
         </Modal.Header>
         <Modal.Body style={{ height: "500px" }}>
           {glbUrl && (
-            <CanvasErrorBoundary
-              onError={() => {
-                toast.error("No se pudo cargar el modelo 3D.");
-              }}
-            >
-              <Canvas camera={{ position: [0, 0, 5] }}>
-                <ambientLight />
-                <OrbitControls />
-                <Suspense fallback={null}>
-                  <ModeloGLB url={glbUrl} />
-                </Suspense>
-              </Canvas>
-            </CanvasErrorBoundary>
+            //@ts-ignore
+            <model-viewer
+              src={APIURL + glbUrl}
+              camera-controls
+              autoplay
+              auto-rotate
+              style={{ width: "100%", height: "100%" }}
+              shadow-intensity="1"
+              interaction-prompt="none"
+            />
           )}
         </Modal.Body>
       </Modal>
 
-      {/* Modal Fullscreen Aula + lista de equipos 3D */}
       <Modal
         show={showFullView}
         onHide={() => setShowFullView(false)}
@@ -449,17 +388,11 @@ export default function EquiposSelect({
           <Modal.Title>Visualización completa</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-0">
-          <div className="row g-0" style={{ height: "100%" }}>
-            <div className="col-12 col-md-12" style={{ height: "100%" }}>
-              <div style={{ height: "100%", minHeight: "500px" }}>
-                <InteractiveScene
-                  path_room={formData.aula?.path_modelo ?? ""}
-                  equipos={equiposConModeloPath}
-                  setFormData={setFormData}
-                />
-              </div>
-            </div>
-          </div>
+          <InteractiveScene
+            path_room={formData.aula?.path_modelo ?? ""}
+            equipos={equiposConModeloPath}
+            setFormData={setFormData}
+          />
         </Modal.Body>
       </Modal>
     </div>

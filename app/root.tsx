@@ -4,6 +4,8 @@ import { Toaster } from "react-hot-toast";
 import { useAuth } from "./hooks/AuthContext";
 import NavbarMenu from "./components/menu/menu";
 import { Spinner } from "react-bootstrap";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import { ThemeProvider, useTheme } from "./hooks/ThemeContext"; // Ajusta la ruta
 
 function AppContent() {

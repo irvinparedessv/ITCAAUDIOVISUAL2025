@@ -8,7 +8,7 @@ import type { TipoEquipo } from "~/types/tipoEquipo";
 import type { TipoReserva } from "~/types/tipoReserva";
 import api from "../../api/axios";
 import MarcaModal from "./MarcaModal";
-import ModeloModal from "./ModeloModal";
+import ModeloModal from "./Modelo/ModeloModal";
 
 interface CaracteristicaForm {
   id: number;

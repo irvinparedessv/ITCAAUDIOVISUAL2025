@@ -1,3 +1,4 @@
+import React, { useMemo, useEffect } from "react";
 import { useGLTF } from "@react-three/drei";
 import type { Vector3 } from "@react-three/fiber";
 import * as THREE from "three";
@@ -13,16 +14,34 @@ export default function ModelItem({
   position,
   scale = 1,
 }: ModelItemProps) {
-  const { scene } = useGLTF(path);
+  console.log("[ModelItem] render", { path, position, scale });
+  const { scene: raw } = useGLTF(path);
 
-  // Clonamos el scene para tener una instancia independiente
-  const clonedScene = scene.clone(true);
+  const scene = useMemo(() => {
+    console.log("[ModelItem] useMemo before clone");
+    const cloned = raw.clone(true);
+    const box = new THREE.Box3().setFromObject(cloned);
+    console.log("[ModelItem] bounding box", {
+      min: box.min.toArray(),
+      max: box.max.toArray(),
+    });
+    const center = box.getCenter(new THREE.Vector3());
+    console.log("[ModelItem] center", center.toArray());
+    cloned.position.sub(center);
+    console.log("[ModelItem] cloned.position", cloned.position.toArray());
+    return cloned;
+  }, [raw]);
+
+  useEffect(() => {
+    console.log("[ModelItem] applied position prop", position);
+  }, [position]);
 
   return (
     <primitive
-      object={clonedScene}
+      object={scene}
       position={position}
       scale={[scale, scale, scale]}
+      dispose={null}
     />
   );
 }

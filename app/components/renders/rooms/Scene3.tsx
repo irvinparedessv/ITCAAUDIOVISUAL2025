@@ -1,5 +1,13 @@
-import React, { useRef, useEffect, useState, useMemo, Suspense } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  Suspense,
+} from "react";
 import { Canvas } from "@react-three/fiber";
+import RoomModel from "../items/RoomModel";
 import {
   Environment,
   OrbitControls,
@@ -7,26 +15,123 @@ import {
   useGLTF,
 } from "@react-three/drei";
 import * as THREE from "three";
-import useSceneItems from "../hooks/useSceneItems";
-import { availableModels } from "../types/data";
+import useSceneItems from "../hooks/useSceneItems2";
 import type { ItemType } from "../types/Item";
-
-// @ts-ignore
+import type { EquipmentSeleccionado } from "~/components/reserveE/types/Equipos";
+//@ts-ignore
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
+import toast from "react-hot-toast";
+import { APIURL } from "../../../constants/constant";
+
+interface InteractiveSceneProps {
+  path_room: string;
+  equipos: EquipmentSeleccionado[];
+}
+
+function LoadingOverlay() {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "rgba(0,0,0,0.5)",
+        color: "white",
+        fontSize: "24px",
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      Procesando exportación...
+    </div>
+  );
+}
+
+interface UIControlsProps {
+  equipos: EquipmentSeleccionado[];
+  transformMode: "translate" | "rotate";
+  onAdd: (nombre: string, path: string) => void;
+  onModeChange: (mode: "translate" | "rotate") => void;
+  onExport: (type: "glb" | "gltf") => void;
+}
+function UIControls({
+  equipos,
+  transformMode,
+  onAdd,
+  onModeChange,
+  onExport,
+}: UIControlsProps) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 10,
+        left: 10,
+        zIndex: 2,
+        backgroundColor: "rgba(255,255,255,0.9)",
+        padding: 10,
+        borderRadius: 6,
+      }}
+    >
+      {equipos.map((model) => (
+        <div key={model.nombre_modelo} style={{ marginBottom: 6 }}>
+          <button onClick={() => onAdd(model.nombre_modelo, model.modelo_path)}>
+            Agregar {model.nombre_modelo}
+          </button>
+        </div>
+      ))}
+      <button
+        onClick={() => onModeChange("translate")}
+        disabled={transformMode === "translate"}
+      >
+        Mover
+      </button>
+      <button
+        onClick={() => onModeChange("rotate")}
+        disabled={transformMode === "rotate"}
+        style={{ marginLeft: 8 }}
+      >
+        Rotar
+      </button>
+      <div style={{ marginTop: 10 }}>
+        <button onClick={() => onExport("glb")}>Exportar GLB</button>
+        <button onClick={() => onExport("gltf")} style={{ marginLeft: 8 }}>
+          Exportar GLTF
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const MemoizedRoom = React.memo(RoomModel);
 
 interface ModelItemProps {
   path: string;
   scale?: number;
 }
-
-function ModelItem({ path, scale = 1 }: ModelItemProps) {
+const ModelItem = React.memo(function ModelItem({
+  path,
+  scale = 1,
+}: ModelItemProps) {
   const { scene: raw } = useGLTF(path);
   const scene = useMemo(() => raw.clone(true), [raw]);
   return (
     <primitive object={scene} scale={[scale, scale, scale]} dispose={null} />
   );
-}
+});
 
+interface MoveableItemProps {
+  children: React.ReactNode;
+  position: [number, number, number];
+  selected: boolean;
+  onSelect: () => void;
+  onPositionChange?: (newPos: [number, number, number]) => void;
+  mode?: "translate" | "rotate";
+}
 function MoveableItem({
   children,
   position,
@@ -34,22 +139,21 @@ function MoveableItem({
   onSelect,
   onPositionChange,
   mode = "translate",
-}: {
-  children: React.ReactNode;
-  position: [number, number, number];
-  selected: boolean;
-  onSelect: () => void;
-  onPositionChange?: (newPos: [number, number, number]) => void;
-  mode?: "translate" | "rotate";
-}) {
+}: MoveableItemProps) {
   const groupRef = useRef<THREE.Group>(null!);
+  const controlRef = useRef<any>(null);
 
   useEffect(() => {
-    if (groupRef.current) {
-      groupRef.current.position.set(...position);
-      groupRef.current.userData.addedByUser = true; // Marca como agregado por el usuario
-    }
+    groupRef.current.position.set(...position);
+    groupRef.current.userData.addedByUser = true;
   }, [position]);
+
+  useEffect(() => {
+    if (controlRef.current && selected) {
+      controlRef.current.attach(groupRef.current);
+    }
+    return () => controlRef.current?.detach();
+  }, [selected]);
 
   return (
     <>
@@ -64,7 +168,7 @@ function MoveableItem({
       </group>
       {selected && (
         <TransformControls
-          object={groupRef.current}
+          ref={controlRef}
           mode={mode}
           showY
           onObjectChange={() => {
@@ -77,17 +181,27 @@ function MoveableItem({
   );
 }
 
-export default function InteractiveScene() {
-  const exportGroupRef = useRef<THREE.Group>(null);
+export default function InteractiveScene({
+  path_room,
+  equipos,
+}: InteractiveSceneProps) {
+  const exportGroupRef = useRef<THREE.Group>(null!);
   const { items, addItem, updatePosition } = useSceneItems();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [transformMode, setTransformMode] = useState<"translate" | "rotate">(
     "translate"
   );
+  const [loading, setLoading] = useState(false);
+
+  const handleRoomReady = useCallback((obj: THREE.Object3D) => {
+    obj.userData.addedByUser = true;
+    console.log("🏠 Habitación cargada:", obj);
+  }, []);
 
   useEffect(() => {
-    availableModels.forEach((model) => useGLTF.preload(model.path));
-  }, []);
+    useGLTF.preload(APIURL + path_room);
+    equipos.forEach((model) => useGLTF.preload(APIURL + model.modelo_path));
+  }, [path_room, equipos]);
 
   const scales: Record<ItemType, number> = {
     desk: 0.8,
@@ -95,191 +209,127 @@ export default function InteractiveScene() {
     plant: 1,
   };
 
-  const handleAddItem = (type: ItemType, path: string) => {
-    const id = addItem(type, path);
-    setSelectedId(id);
-  };
-
-  function RoomModel({ path, scale = 1, onReady }) {
-    //@ts-ignore
-    const { scene } = useGLTF(path);
-    const clonedScene = useMemo(() => scene.clone(true), [scene]);
-
-    useEffect(() => {
-      const box = new THREE.Box3().setFromObject(clonedScene);
-      const size = new THREE.Vector3();
-      const center = new THREE.Vector3();
-      box.getSize(size);
-      box.getCenter(center);
-
-      console.log("📏 Tamaño habitación (size):", size);
-      console.log("🎯 Centro original:", center);
-
-      // ✅ Centramos la habitación en X, Z y la bajamos en Y (para que repose en el suelo)
-      clonedScene.position.x = clonedScene.position.x - center.x;
-      clonedScene.position.y = clonedScene.position.y - center.y + size.y / 2;
-      clonedScene.position.z = clonedScene.position.z - center.z;
-
-      onReady?.(clonedScene);
-    }, [clonedScene, onReady]);
-
-    return <primitive object={clonedScene} scale={[scale, scale, scale]} />;
-  }
-
-  const renderItem = (item: any) => (
-    <MoveableItem
-      key={item.id}
-      position={item.position}
-      selected={item.id === selectedId}
-      onSelect={() => setSelectedId(item.id)}
-      onPositionChange={(newPos) => updatePosition(item.id, newPos)}
-      mode={transformMode}
-    >
-      <ModelItem path={item.path} scale={scales[item.type] ?? 0.5} />
-    </MoveableItem>
+  const handleAdd = useCallback(
+    (nombre: string, path: string) => {
+      const id = addItem(nombre, APIURL + path);
+      setSelectedId(id);
+    },
+    [addItem]
   );
 
-  const handleExport = (type: "glb" | "gltf") => {
+  const renderItem = useCallback(
+    (item) => (
+      <MoveableItem
+        key={item.id}
+        position={item.position}
+        selected={item.id === selectedId}
+        onSelect={() => setSelectedId(item.id)}
+        onPositionChange={(pos) => updatePosition(item.id, pos)}
+        mode={transformMode}
+      >
+        <ModelItem path={item.path} scale={scales[item.type] ?? 0.5} />
+      </MoveableItem>
+    ),
+    [selectedId, transformMode, updatePosition, scales]
+  );
+
+  const itemMeshes = useMemo(() => items.map(renderItem), [items, renderItem]);
+
+  const handleExport = useCallback((type: "glb" | "gltf") => {
     const root = exportGroupRef.current;
-    if (!root) {
-      console.warn("❌ No hay root definido");
-      return;
-    }
-
-    console.log("✅ Exportando desde root:", root);
-
+    if (!root) return;
     const exportGroup = new THREE.Group();
-
+    // include room and items
     root.traverse((obj) => {
-      // Solo exportar objetos explícitamente marcados por el usuario
       if (!obj.userData?.addedByUser) return;
-
-      if (obj instanceof THREE.Mesh) {
-        const mesh = obj.clone();
+      if ((obj as THREE.Mesh).isMesh) {
+        const mesh = (obj as THREE.Mesh).clone();
         mesh.material = new THREE.MeshStandardMaterial({
           color: (mesh.material as any)?.color || new THREE.Color("white"),
           map: (mesh.material as any)?.map || null,
         });
         exportGroup.add(mesh);
-        console.log("✅ Mesh exportado:", mesh.name || mesh.uuid);
-      } else if (
-        obj instanceof THREE.Group ||
-        (obj instanceof THREE.Object3D && obj.type !== "Scene")
-      ) {
-        const clone = obj.clone(true);
-        exportGroup.add(clone);
-        console.log("✅ Grupo exportado:", clone.name || clone.uuid);
+      } else if (obj.type !== "Scene") {
+        exportGroup.add(obj.clone(true));
       }
     });
+    // also add room root
+    const roomObj = new THREE.Group();
+    const sceneGroup = exportGroupRef.current.parent as THREE.Group;
+    sceneGroup.traverse((obj) => {
+      if (obj.userData?.addedByUser === true && !(obj as THREE.Mesh).isMesh) {
+        roomObj.add(obj.clone(true));
+      }
+    });
+    exportGroup.add(roomObj);
 
-    try {
-      exportGroup.updateMatrixWorld(true);
-      console.log("✅ updateMatrixWorld() ejecutado correctamente");
-    } catch (err) {
-      console.error("💥 Error en updateMatrixWorld:", err);
-      console.log("🧱 exportGroup.children:", exportGroup.children);
-      return;
-    }
+    // camera for export
+    const camera = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
+    camera.position.set(0, 0, 2);
+    camera.lookAt(new THREE.Vector3(0, 1.8, 0));
+    camera.name = "MainCamera";
+    exportGroup.add(camera);
 
-    const exporter = new GLTFExporter();
-    exporter.parse(
+    exportGroup.updateMatrixWorld(true);
+    setLoading(true);
+    new GLTFExporter().parse(
       exportGroup,
       (result) => {
         if (type === "glb" && result instanceof ArrayBuffer) {
           const blob = new Blob([result], { type: "model/gltf-binary" });
           const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "escena.glb";
-          a.click();
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "scene.glb";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
           URL.revokeObjectURL(url);
-        } else if (type === "gltf" && typeof result === "object") {
-          const json = JSON.stringify(result, null, 2);
-          const blob = new Blob([json], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "escena.gltf";
-          a.click();
-          URL.revokeObjectURL(url);
+          toast.success("Archivo GLB descargado");
         }
+        setLoading(false);
       },
-      (err) => console.error("❌ Error durante exportación:", err),
+      (err) => {
+        console.error("❌ Error durante exportación:", err);
+        setLoading(false);
+      },
       { binary: type === "glb", embedImages: false }
     );
-  };
+  }, []);
 
   return (
     <>
-      <div
-        style={{
-          position: "absolute",
-          top: 10,
-          left: 10,
-          zIndex: 2,
-          backgroundColor: "rgba(255,255,255,0.9)",
-          padding: 10,
-          borderRadius: 6,
-        }}
+      {loading && <LoadingOverlay />}
+      <UIControls
+        equipos={equipos}
+        transformMode={transformMode}
+        onAdd={handleAdd}
+        onModeChange={setTransformMode}
+        onExport={handleExport}
+      />
+      <Canvas
+        style={{ width: "100%", height: "100%" }}
+        camera={{ position: [0, 1.7, 3], fov: 60 }}
       >
-        {availableModels.map((model) => (
-          <div key={model.name} style={{ marginBottom: 6 }}>
-            <button onClick={() => handleAddItem(model.name, model.path)}>
-              Agregar {model.name}
-            </button>
-          </div>
-        ))}
-        <button
-          onClick={() => setTransformMode("translate")}
-          disabled={transformMode === "translate"}
-        >
-          Mover
-        </button>
-        <button
-          onClick={() => setTransformMode("rotate")}
-          disabled={transformMode === "rotate"}
-          style={{ marginLeft: 8 }}
-        >
-          Rotar
-        </button>
-        <div style={{ marginTop: 10 }}>
-          <button onClick={() => handleExport("glb")}>Exportar GLB</button>
-          <button
-            onClick={() => handleExport("gltf")}
-            style={{ marginLeft: 8 }}
-          >
-            Exportar GLTF
-          </button>
-        </div>
-      </div>
-
-      <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
-        <Canvas
-          style={{ width: "100%", height: "100%", display: "block" }}
-          camera={{ position: [0, 3.5, 3], fov: 60 }}
-        >
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 5, 5]} />
-          <Suspense fallback={null}>
-            <Environment preset="sunset" />
-            <OrbitControls makeDefault target={[0, 2.2, 0]} />
-            <gridHelper args={[10, 10]} position={[0, 0, 0]} />
-            <axesHelper args={[2]} />
-
-            <group ref={exportGroupRef}>
-              <RoomModel
-                path="/models/room.glb" // ⚠️ Ajustá esta ruta si es diferente
-                scale={1}
-                onReady={(obj) => {
-                  obj.userData.addedByUser = true;
-                  console.log("🏠 Habitación cargada:", obj);
-                }}
-              />
-              {items.map(renderItem)}
-            </group>
-          </Suspense>
-        </Canvas>
-      </div>
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 5, 5]} />
+        <Environment preset="sunset" />
+        <OrbitControls makeDefault target={[0, 2.2, 0]} />
+        <gridHelper args={[10, 10]} />
+        <axesHelper args={[2]} />
+        <Suspense fallback={null}>
+          <group ref={exportGroupRef}>
+            {/* Room */}
+            <MemoizedRoom
+              path={APIURL + path_room}
+              scale={0.01}
+              onReady={handleRoomReady}
+            />
+            {/* Items */}
+            {itemMeshes}
+          </group>
+        </Suspense>
+      </Canvas>
     </>
   );
 }

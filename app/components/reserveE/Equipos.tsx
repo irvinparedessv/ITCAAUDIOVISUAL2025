@@ -453,8 +453,9 @@ export default function EquiposSelect({
             <div className="col-12 col-md-12" style={{ height: "100%" }}>
               <div style={{ height: "100%", minHeight: "500px" }}>
                 <InteractiveScene
-                  path_room={formData.aula.path_modelo}
+                  path_room={formData.aula?.path_modelo ?? ""}
                   equipos={equiposConModeloPath}
+                  setFormData={setFormData}
                 />
               </div>
             </div>

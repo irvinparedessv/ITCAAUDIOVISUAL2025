@@ -7,7 +7,8 @@ export interface FormDataType {
   endTime: string;
   tipoReserva: OptionType | null;
   equipment: EquipmentSeleccionado[];
-  aula: Aula;
+  aula: Aula | null;
+  modelFile?: File | null;
 }
 
 export interface Aula {

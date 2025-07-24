@@ -9,10 +9,6 @@ interface TipoEquipoResponse {
   per_page: number;
 }
 
-
-
-
-
 export const getCategorias = async (): Promise<Categoria[]> => {
   const res = await api.get("/categorias");
   return Array.isArray(res.data) ? res.data : res.data.data; // por si acaso
@@ -34,6 +30,11 @@ export const getTipoEquipo = async (page = 1): Promise<TipoEquipoResponse> => {
   }
 };
 
+export async function getTipoEquipoById(id: string): Promise<TipoEquipo> {
+  const res = await api.get(`/tipoEquipos/${id}`);
+  return res.data;
+}
+
 export const getTipoEquipos = async (): Promise<TipoEquipo[]> => {
   try {
     const res = await api.get("/tipoEquipos");
@@ -43,7 +44,6 @@ export const getTipoEquipos = async (): Promise<TipoEquipo[]> => {
     throw error;
   }
 };
-
 
 
 export const createTipoEquipo = async (data: {
@@ -71,11 +71,6 @@ export const updateTipoEquipo = async (id: number, data: {
   const response = await api.put(`/tipoEquipos/${id}`, data);
   return response.data;
 };
-
-
-
-
-
 
 export const deleteTipoEquipo = async (
   id: number

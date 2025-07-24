@@ -15,7 +15,7 @@ import ReservationList from "./routes/reservationList";
 import ReservationDetail from "./routes/reservationDetail";
 import { CreateSpaceForm } from "./components/rooms/FormCreacionEspacio";
 
-import TipoEquipos from "./routes/tipoEquipos";
+import TipoEquipos from "./routes/tipoEquipolist";
 import Equipos from "./routes/equipment/equipments";
 import FormUsuario from "./routes/formUsuario";
 import EditUsuario from "./routes/editUsuario";
@@ -61,6 +61,7 @@ import TipoEquipoForm from "./components/tipoEquipo/TipoEquipoForm";
 import { APIURL, APPLARAVEL } from "./constants/constant";
 import ItemEditPage from "./routes/equipment/ItemEditPage";
 import InventoryList from "./components/equipment/inventoryList";
+import TipoEquipoPage from "./routes/tipoEquipoPage";
 
 const router = createBrowserRouter([
   {
@@ -174,6 +175,10 @@ const router = createBrowserRouter([
           {
             path: "tipoEquipo",
             element: <TipoEquipos />,
+          },
+          {
+            path: "tipoEquipo/:id",
+            element: <TipoEquipoPage />,
           },
           {
             path: "formTipoEquipo",

@@ -21,6 +21,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import "animate.css";
 import { formatTimeRangeTo12h } from "~/utils/time";
 import { FaCheck } from "react-icons/fa6";
+import VisualizarModal from "./VisualizarModal";
 
 const RoomReservationList = () => {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -29,6 +30,9 @@ const RoomReservationList = () => {
   });
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("todos");
+  const [showVisualizar, setShowVisualizar] = useState(false);
+  const [reservaParaVisualizar, setReservaParaVisualizar] =
+    useState<string>("");
 
   const [reservations, setReservations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -67,6 +71,10 @@ const RoomReservationList = () => {
   }, [search]);
   const handleBack = () => {
     navigate("/");
+  };
+  const handleVisualizarClick = (reserva: any) => {
+    setReservaParaVisualizar(reserva.path_model);
+    setShowVisualizar(true);
   };
 
   const handleEditClick = (reserva: any) => {
@@ -417,6 +425,7 @@ const RoomReservationList = () => {
             md={6}
             className="d-flex justify-content-end mt-3 mt-md-0"
           >
+            {/* @ts-ignore */}
             <Button
               onClick={() => navigate("/qrScan")}
               className="btn btn-outline-success d-flex align-items-center gap-2 px-3 py-2 me-3"
@@ -493,12 +502,14 @@ const RoomReservationList = () => {
                   <tr>
                     <th>#</th>
                     <th>Espacio</th>
-                    <th>Recurrente</th>
+
                     <th>Fecha</th>
                     <th>Fecha Finalizacion</th>
                     <th>Horario</th>
                     <th>Reservado por</th>
                     <th>Estado</th>
+                    <th>Recurrente</th>
+                    <th>Visualizacion</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -517,13 +528,7 @@ const RoomReservationList = () => {
                       >
                         <td>{res.id}</td>
                         <td>{res.aula?.name || "Aula Desconocida"}</td>
-                        <td className="text-center">
-                          {res.tipo === "clase_recurrente" ? (
-                            <FaCheck color="green" />
-                          ) : (
-                            <FaTimes color="red" />
-                          )}
-                        </td>
+
                         <td>{formatDate(res.fecha)}</td>
                         <td>{formatDate(res.fecha_fin || res.fecha)}</td>
                         <td>{formatTimeRangeTo12h(res.horario)}</td>
@@ -532,6 +537,26 @@ const RoomReservationList = () => {
                           <Badge bg={getEstadoVariant(res.estado)}>
                             {res.estado}
                           </Badge>
+                        </td>
+                        <td className="text-center">
+                          {res.tipo === "clase_recurrente" ? (
+                            <FaCheck color="green" />
+                          ) : (
+                            <FaTimes color="red" />
+                          )}
+                        </td>
+                        <td className="text-center">
+                          <td className="text-center">
+                            {res.path_model ? (
+                              <Button
+                                onClick={() => handleVisualizarClick(res)}
+                              >
+                                Visualizar
+                              </Button>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
                         </td>
                         <td>
                           <div className="d-flex justify-content-center gap-2">
@@ -659,6 +684,11 @@ const RoomReservationList = () => {
             onSuccess={handleEstadoSuccess}
           />
         )}
+        <VisualizarModal
+          show={showVisualizar}
+          onHide={() => setShowVisualizar(false)}
+          path={reservaParaVisualizar}
+        />
       </div>
     </div>
   );

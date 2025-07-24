@@ -10,6 +10,7 @@ export interface ReservationRoom {
   created_at?: string;
   updated_at?: string;
   comentario: string;
+  path_model: string | null;
   codigo_qr: CodigoQR;
   titulo: string;
 }

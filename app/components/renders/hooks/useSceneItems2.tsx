@@ -32,5 +32,9 @@ export default function useSceneItems() {
     );
   };
 
-  return { items, addItem, updatePosition, updateRotation };
+  const removeItem = (id: number) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  return { items, addItem, updatePosition, updateRotation, removeItem };
 }

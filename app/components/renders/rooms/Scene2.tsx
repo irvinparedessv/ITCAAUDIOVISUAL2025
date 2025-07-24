@@ -16,13 +16,12 @@ import {
 } from "@react-three/drei";
 import * as THREE from "three";
 import useSceneItems from "../hooks/useSceneItems2";
-import type { ItemType } from "../types/Item";
 import type { EquipmentSeleccionado } from "~/components/reserveE/types/Equipos";
+import toast from "react-hot-toast";
 //@ts-ignore
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
-import toast from "react-hot-toast";
 import { APIURL } from "../../../constants/constant";
-
+import "../style/scene.css";
 interface InteractiveSceneProps {
   path_room: string;
   equipos: EquipmentSeleccionado[];
@@ -51,12 +50,15 @@ function LoadingOverlay() {
     </div>
   );
 }
+
 interface UIControlsProps {
   equipos: EquipmentSeleccionado[];
   transformMode: "translate" | "rotate";
   onAdd: (nombre: string, path: string) => void;
   onModeChange: (mode: "translate" | "rotate") => void;
   onExport: (type: "glb" | "gltf") => void;
+  onDeleteSelected: () => void;
+  canDelete: boolean;
 }
 
 function UIControls({
@@ -65,27 +67,11 @@ function UIControls({
   onAdd,
   onModeChange,
   onExport,
+  onDeleteSelected,
+  canDelete,
 }: UIControlsProps) {
   return (
-    <div
-      style={{
-        position: "absolute",
-        left: 20,
-        top: "50%",
-        transform: "translateY(-50%)",
-        zIndex: 2,
-        backgroundColor: "#1e293b",
-        padding: "20px 16px",
-        borderRadius: "16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "14px",
-        minWidth: "200px",
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        userSelect: "none",
-        color: "#e0e0e0",
-      }}
-    >
+    <div className="menuscene">
       <label
         style={{ marginBottom: "8px", fontSize: "1.1rem", fontWeight: "bold" }}
       >
@@ -100,20 +86,10 @@ function UIControls({
             e.target.value = "";
           }}
           defaultValue=""
-          style={{
-            width: "100%",
-            padding: "10px 14px",
-            borderRadius: "12px",
-            backgroundColor: "#0f172a",
-            color: "white",
-            border: "1px solid #334155",
-            fontSize: "14px",
-            appearance: "none",
-            cursor: "pointer",
-          }}
+          className="btn primary-btn slbtn"
         >
           <option value="" disabled>
-            ➕ Selecciona un equipo
+            Selecciona un equipo
           </option>
           {equipos.map((model) => (
             <option key={model.numero_serie} value={model.modelo_path}>
@@ -121,68 +97,44 @@ function UIControls({
             </option>
           ))}
         </select>
-        <span
-          style={{
-            position: "absolute",
-            right: 12,
-            top: "50%",
-            transform: "translateY(-50%)",
-            pointerEvents: "none",
-            fontSize: "16px",
-            color: "#cbd5e1",
-          }}
-        >
-          ▼
-        </span>
       </div>
-
+      <button
+        onClick={onDeleteSelected}
+        className="btn primary-btn"
+        disabled={!canDelete}
+        style={{
+          cursor: canDelete ? "pointer" : "not-allowed",
+        }}
+      >
+        Eliminar seleccionado
+      </button>
       <button
         onClick={() => onModeChange("translate")}
-        disabled={transformMode === "translate"}
-        style={{
-          padding: "10px 14px",
-          backgroundColor:
-            transformMode === "translate" ? "#d1d5db" : "#10b981",
-          color: "white",
-          border: "none",
-          borderRadius: "10px",
-          fontWeight: "bold",
-          cursor: "pointer",
-          fontSize: "15px",
-        }}
+        disabled={transformMode === "translate" || !canDelete}
+        className={`btn primary-btn ${
+          transformMode === "translate" ? "isselected" : ""
+        }`}
       >
         Mover
       </button>
       <button
+        className={`btn primary-btn ${
+          transformMode === "rotate" ? "isselected" : ""
+        }`}
         onClick={() => onModeChange("rotate")}
-        disabled={transformMode === "rotate"}
-        style={{
-          padding: "10px 14px",
-          backgroundColor: transformMode === "rotate" ? "#d1d5db" : "#f59e0b",
-          color: "white",
-          border: "none",
-          borderRadius: "10px",
-          fontWeight: "bold",
-          cursor: "pointer",
-          fontSize: "15px",
-        }}
+        disabled={transformMode === "rotate" || !canDelete}
       >
         Rotar
       </button>
       <button
-        onClick={() => onExport("glb")}
+        className="btn primary-btn"
+        onClick={onExport.bind(null, "glb")}
         style={{
           padding: "10px 14px",
-          borderRadius: "10px",
-          backgroundColor: "#2563eb",
-          color: "white",
-          border: "none",
-          fontWeight: "bold",
-          fontSize: "15px",
           cursor: "pointer",
         }}
       >
-        Exportar GLB
+        ADJUNTAR AL FORMULARIO
       </button>
     </div>
   );
@@ -190,14 +142,13 @@ function UIControls({
 
 const MemoizedRoom = React.memo(RoomModel);
 
-interface ModelItemProps {
-  path: string;
-  scale?: number;
-}
 const ModelItem = React.memo(function ModelItem({
   path,
   scale = 1,
-}: ModelItemProps) {
+}: {
+  path: string;
+  scale?: number;
+}) {
   const { scene: raw } = useGLTF(path);
   const scene = useMemo(() => raw.clone(true), [raw]);
   return (
@@ -205,16 +156,6 @@ const ModelItem = React.memo(function ModelItem({
   );
 });
 
-interface MoveableItemProps {
-  children: React.ReactNode;
-  position: [number, number, number];
-  rotation?: [number, number, number];
-  selected: boolean;
-  onSelect: () => void;
-  onPositionChange?: (newPos: [number, number, number]) => void;
-  onRotationChange?: (newRot: [number, number, number]) => void;
-  mode?: "translate" | "rotate";
-}
 function MoveableItem({
   children,
   position,
@@ -224,7 +165,16 @@ function MoveableItem({
   onPositionChange,
   onRotationChange,
   mode = "translate",
-}: MoveableItemProps) {
+}: {
+  children: React.ReactNode;
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  selected: boolean;
+  onSelect: () => void;
+  onPositionChange?: (newPos: [number, number, number]) => void;
+  onRotationChange?: (newRot: [number, number, number]) => void;
+  mode?: "translate" | "rotate";
+}) {
   const groupRef = useRef<THREE.Group>(null!);
   const controlRef = useRef<any>(null);
 
@@ -280,28 +230,55 @@ export default function InteractiveScene({
   setFormData,
 }: InteractiveSceneProps) {
   const exportGroupRef = useRef<THREE.Group>(null!);
-  const { items, addItem, updatePosition, updateRotation } = useSceneItems();
+  const { items, addItem, updatePosition, updateRotation, removeItem } =
+    useSceneItems();
+  const [equiposDisponibles, setEquiposDisponibles] =
+    useState<EquipmentSeleccionado[]>(equipos);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [transformMode, setTransformMode] = useState<"translate" | "rotate">(
     "translate"
   );
   const [loading, setLoading] = useState(false);
 
-  const handleRoomReady = useCallback((obj: THREE.Object3D) => {
-    obj.userData.addedByUser = true;
-  }, []);
+  useEffect(() => {
+    setEquiposDisponibles(equipos);
+  }, [equipos]);
 
   useEffect(() => {
     useGLTF.preload(APIURL + path_room);
     equipos.forEach((model) => useGLTF.preload(APIURL + model.modelo_path));
   }, [path_room, equipos]);
 
+  const handleRoomReady = useCallback((obj: THREE.Object3D) => {
+    obj.userData.addedByUser = true;
+  }, []);
+
   const handleAdd = useCallback(
     (nombre: string, path: string) => {
-      const id = addItem(nombre, APIURL + path);
+      const fullPath = APIURL + path;
+      const id = addItem(nombre, fullPath);
       setSelectedId(id);
+      setEquiposDisponibles((prev) =>
+        prev.filter((e) => e.modelo_path !== path)
+      );
     },
     [addItem]
+  );
+
+  const handleRemoveItem = useCallback(
+    (id: number) => {
+      const item = items.find((i) => i.id === id);
+      if (!item) return;
+      removeItem(id);
+      setSelectedId(null);
+
+      const originalPath = item.path.replace(APIURL, "");
+      const equipo = equipos.find((e) => e.modelo_path === originalPath);
+      if (equipo) {
+        setEquiposDisponibles((prev) => [...prev, equipo]);
+      }
+    },
+    [items, removeItem, equipos]
   );
 
   const renderItem = useCallback(
@@ -322,66 +299,72 @@ export default function InteractiveScene({
     [selectedId, transformMode, updatePosition, updateRotation]
   );
 
-  const itemMeshes = useMemo(() => items.map(renderItem), [items, renderItem]);
-
-  const handleExport = useCallback((type: "glb" | "gltf") => {
-    const root = exportGroupRef.current;
-    if (!root) return;
-    const exportGroup = new THREE.Group();
-    root.traverse((obj) => {
-      if (!obj.userData?.addedByUser) return;
-      if ((obj as THREE.Mesh).isMesh) {
-        const mesh = (obj as THREE.Mesh).clone();
-        mesh.material = new THREE.MeshStandardMaterial({
-          color: (mesh.material as any)?.color || new THREE.Color("white"),
-          map: (mesh.material as any)?.map || null,
-        });
-        exportGroup.add(mesh);
-      } else if (obj.type !== "Scene") {
-        exportGroup.add(obj.clone(true));
-      }
-    });
-    const camera = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
-    camera.position.set(0, 0, 2);
-    camera.lookAt(new THREE.Vector3(0, 1.8, 0));
-    camera.name = "MainCamera";
-    exportGroup.add(camera);
-
-    exportGroup.updateMatrixWorld(true);
-    setLoading(true);
-    new GLTFExporter().parse(
-      exportGroup,
-      (result) => {
-        if (type === "glb" && result instanceof ArrayBuffer) {
-          const blob = new Blob([result], { type: "model/gltf-binary" });
-          const file = new File([blob], "escena.glb", {
-            type: "model/gltf-binary",
+  const handleExport = useCallback(
+    (type: "glb" | "gltf") => {
+      const root = exportGroupRef.current;
+      if (!root) return;
+      const exportGroup = new THREE.Group();
+      root.traverse((obj) => {
+        if (!obj.userData?.addedByUser) return;
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = (obj as THREE.Mesh).clone();
+          mesh.material = new THREE.MeshStandardMaterial({
+            color: (mesh.material as any)?.color || new THREE.Color("white"),
+            map: (mesh.material as any)?.map || null,
           });
-          setFormData((prev) => ({
-            ...prev,
-            modelFile: file,
-          }));
-          toast.success("Modelo adjuntado al formulario");
+          exportGroup.add(mesh);
+        } else if (obj.type !== "Scene") {
+          exportGroup.add(obj.clone(true));
         }
-        setLoading(false);
-      },
-      (err) => {
-        console.error("❌ Error durante exportación:", err);
-        setLoading(false);
-      },
-      { binary: type === "glb", embedImages: false }
-    );
-  }, []);
+      });
+
+      const camera = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
+      camera.position.set(0, 0, 2);
+      camera.lookAt(new THREE.Vector3(0, 1.8, 0));
+      camera.name = "MainCamera";
+      exportGroup.add(camera);
+
+      exportGroup.updateMatrixWorld(true);
+      setLoading(true);
+      new GLTFExporter().parse(
+        exportGroup,
+        (result) => {
+          if (type === "glb" && result instanceof ArrayBuffer) {
+            const blob = new Blob([result], { type: "model/gltf-binary" });
+            const file = new File([blob], "escena.glb", {
+              type: "model/gltf-binary",
+            });
+            setFormData((prev) => ({
+              ...prev,
+              modelFile: file,
+            }));
+            toast.success("Modelo adjuntado al formulario");
+          }
+          setLoading(false);
+        },
+        (err) => {
+          console.error("❌ Error durante exportación:", err);
+          setLoading(false);
+        },
+        { binary: type === "glb", embedImages: false }
+      );
+    },
+    [setFormData]
+  );
 
   return (
     <>
       {loading && <LoadingOverlay />}
       <UIControls
-        equipos={equipos}
+        equipos={equiposDisponibles}
         transformMode={transformMode}
         onAdd={handleAdd}
         onModeChange={setTransformMode}
         onExport={handleExport}
+        onDeleteSelected={() =>
+          selectedId !== null && handleRemoveItem(selectedId)
+        }
+        canDelete={selectedId !== null}
       />
       <Canvas
         style={{ width: "95%", height: "95%" }}
@@ -396,7 +379,7 @@ export default function InteractiveScene({
               scale={0.01}
               onReady={handleRoomReady}
             />
-            {itemMeshes}
+            {items.map(renderItem)}
           </group>
         </Suspense>
       </Canvas>

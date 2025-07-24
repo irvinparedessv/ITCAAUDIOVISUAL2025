@@ -12,11 +12,13 @@ import {
     FaLongArrowAltLeft,
     FaPlus,
     FaBoxes,
-    FaLink
+    FaLink,
+    FaEye
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
 import type { TipoEquipo } from "~/types/tipoEquipo";
+import ItemDetail from "./itemDetail";
 
 
 
@@ -60,6 +62,15 @@ export default function ItemList({
     const [insumoSeleccionadoId, setInsumoSeleccionadoId] = useState<number | null>(null);
     const [loadingInsumos, setLoadingInsumos] = useState(false);
     const [asignando, setAsignando] = useState(false);
+// Estados para el modal de detalle
+const [showDetailModal, setShowDetailModal] = useState(false);
+const [selectedEquipoDetail, setSelectedEquipoDetail] = useState<string | null>(null);
+
+// Función para mostrar el detalle
+const handleShowDetail = (equipoId: number) => {
+  setSelectedEquipoDetail(equipoId.toString());
+  setShowDetailModal(true);
+};
 
     function isEquipo(item: Item): item is Equipo {
         return (item as Equipo).numero_serie !== undefined && (item as Equipo).numero_serie !== null;
@@ -222,6 +233,23 @@ export default function ItemList({
 
     return (
         <div className="table-responsive rounded shadow p-3 mt-4">
+
+<Modal
+  show={showDetailModal}
+  onHide={() => setShowDetailModal(false)}
+  size="lg"
+  fullscreen="lg-down"
+>
+  <Modal.Header closeButton>
+    <Modal.Title>Detalle del Equipo</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {selectedEquipoDetail && (
+      <ItemDetail id={selectedEquipoDetail} />
+    )}
+  </Modal.Body>
+</Modal>
+
             {/* Modal imagen */}
             <Modal
                 show={showImageModal}
@@ -481,6 +509,22 @@ export default function ItemList({
                                                 </td>
                                                 <td>
                                                     <div className="d-flex justify-content-center gap-2">
+
+                                                        {/* Botón para ver detalles */}
+   <Button
+  variant="outline-info"
+  className="rounded-circle"
+  title="Ver detalles"
+  style={{
+    width: "44px",
+    height: "44px",
+    transition: "transform 0.2s ease-in-out"
+  }}
+  onClick={() => handleShowDetail(item.id)}
+>
+  <FaEye />
+</Button>
+
                                                         <Button
                                                             variant="outline-primary"
                                                             className="rounded-circle"

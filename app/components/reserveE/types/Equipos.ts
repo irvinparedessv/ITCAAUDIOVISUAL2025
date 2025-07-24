@@ -15,4 +15,5 @@ export interface EquipmentSeleccionado {
   id: number; // <- id del equipo real
   cantidad: number; // siempre 1 por cada item
   modelo_path: string;
+  numero_serie: string | undefined;
 }

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Spinner, Badge, Button, Form, InputGroup } from "react-bootstrap";
 import api from "../../api/axios";
-import { FaEye, FaBoxes, FaLongArrowAltLeft, FaFilter, FaTimes, FaSearch, FaTools, FaToolbox } from "react-icons/fa";
+import { FaEye, FaBoxes, FaLongArrowAltLeft, FaFilter, FaTimes, FaSearch, FaTools, FaToolbox, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
+import toast from "react-hot-toast";
 
 interface ResumenItem {
   modelo_id: number;
@@ -29,10 +30,10 @@ const getCategoryColor = (category: string) => {
 export default function InventoryList() {
   const [datos, setDatos] = useState<ResumenItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
 
   // Filtros
   const [filters, setFilters] = useState({
@@ -51,10 +52,10 @@ export default function InventoryList() {
         params: filters
       });
       setDatos(res.data.data);
-      setPage(res.data.current_page);
       setLastPage(res.data.last_page);
     } catch (error) {
       console.error("Error cargando resumen:", error);
+      toast.error("Error al cargar el inventario");
     } finally {
       setLoading(false);
     }
@@ -63,6 +64,15 @@ export default function InventoryList() {
   useEffect(() => {
     fetchDatos();
   }, [filters]);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (searchInput !== filters.search) {
+        handleFilterChange("search", searchInput);
+      }
+    }, 500);
+    return () => clearTimeout(delayDebounce);
+  }, [searchInput]);
 
   const handlePageChange = (newPage: number) => {
     setFilters(prev => ({ ...prev, page: newPage }));
@@ -89,12 +99,13 @@ export default function InventoryList() {
       page: 1,
       perPage: 10
     });
+    setSearchInput("");
   };
 
   return (
-    <div className="rounded shadow p-3 mt-4">
+    <div className="table-responsive rounded shadow p-3 mt-4">
       {/* Encabezado */}
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+      <div className="mb-4">
         <div className="d-flex align-items-center gap-3">
           <FaLongArrowAltLeft
             onClick={handleBack}
@@ -104,41 +115,50 @@ export default function InventoryList() {
               fontSize: '2rem',
             }}
           />
-          <h2 className="fw-bold m-0">
+          <h2 className="fw-bold m-0 flex-grow-1">
             <FaBoxes className="me-2" />
             Inventario
           </h2>
         </div>
 
-        <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
+        <div className="text-end mt-3">
           <Button
             variant="primary"
-            className="d-flex align-items-center gap-2"
             onClick={() => navigate('/tipoEquipo')}
+            className="d-inline-flex align-items-center gap-2 me-2"
           >
             <FaTools />
             Tipo de Equipo
+          </Button>
+          <Button
+            variant="success"
+            onClick={() => navigate('/crearItem')}
+            className="d-inline-flex align-items-center gap-2"
+            style={{ padding: '12px' }}
+          >
+            <FaPlus />
+            Agregar Equipo
           </Button>
         </div>
       </div>
 
       {/* Barra de búsqueda y filtros */}
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
-        <div className="d-flex flex-grow-1">
-          <InputGroup className="flex-grow-1">
+        <div className="flex-grow-1">
+          <InputGroup>
             <InputGroup.Text>
               <FaSearch />
             </InputGroup.Text>
             <Form.Control
               type="text"
               placeholder="Buscar por modelo, marca, tipo..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange("search", e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
-            {filters.search && (
+            {searchInput && (
               <Button
                 variant="outline-secondary"
-                onClick={() => handleFilterChange("search", "")}
+                onClick={() => setSearchInput("")}
               >
                 <FaTimes />
               </Button>
@@ -157,7 +177,7 @@ export default function InventoryList() {
 
       {/* Filtros avanzados */}
       {showFilters && (
-        <div className="p-3 rounded mb-4 border border-secondary">
+        <div className="p-3 rounded mb-4 bg-light">
           <div className="row g-3">
             <div className="col-md-4">
               <Form.Group>
@@ -201,9 +221,9 @@ export default function InventoryList() {
               <Button
                 variant="outline-danger"
                 onClick={resetFilters}
-                className="w-100"
+                className="w-100 d-flex align-items-center justify-content-center gap-2"
               >
-                <FaTimes className="me-2" />
+                <FaTimes />
                 Limpiar filtros
               </Button>
             </div>
@@ -222,23 +242,23 @@ export default function InventoryList() {
             <table className="table table-hover align-middle text-center">
               <thead className="table-dark">
                 <tr>
-                  <th style={{ borderTopLeftRadius: '10px', borderColor: '#dee2e6' }}>Categoría</th>
-                  <th style={{ borderColor: '#dee2e6' }}>Tipo Equipo</th>
-                  <th style={{ borderColor: '#dee2e6' }}>Marca</th>
-                  <th style={{ borderColor: '#dee2e6' }}>Modelo</th>
-                  <th style={{ borderColor: '#dee2e6' }}>Total</th>
-                  <th style={{ borderColor: '#dee2e6' }}>Disponibles</th>
-                  <th style={{ borderColor: '#dee2e6' }}>Mantenimiento</th>
-                  <th style={{ borderColor: '#dee2e6' }}>Dañados</th>
-                  <th style={{ borderColor: '#dee2e6' }}>COMBO</th>
-                  <th style={{ borderTopRightRadius: '10px', borderColor: '#dee2e6' }}>Acciones</th>
+                  <th className="rounded-top-start">Categoría</th>
+                  <th>Tipo Equipo</th>
+                  <th>Marca</th>
+                  <th>Modelo</th>
+                  <th>Total</th>
+                  <th>Disponibles</th>
+                  <th>Mantenimiento</th>
+                  <th>Dañados</th>
+                  <th>Accesorios</th>
+                  <th className="rounded-top-end">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {datos.length > 0 ? (
                   datos.map((item) => (
-                    <tr key={item.modelo_id}>
-                      <td style={{ borderColor: '#dee2e6' }}>
+                    <tr key={`${item.modelo_id}-${item.nombre_categoria}`}>
+                      <td>
                         <Badge
                           bg={getCategoryColor(item.nombre_categoria)}
                           className="text-capitalize"
@@ -248,37 +268,37 @@ export default function InventoryList() {
                           {item.nombre_categoria}
                         </Badge>
                       </td>
-                      <td style={{ borderColor: '#dee2e6' }}><em>{item.nombre_tipo_equipo}</em></td>
-                      <td style={{ borderColor: '#dee2e6' }}>{item.nombre_marca}</td>
-                      <td style={{ borderColor: '#dee2e6' }}>{item.nombre_modelo}</td>
-                      <td style={{ borderColor: '#dee2e6' }}>
+                      <td><em>{item.nombre_tipo_equipo}</em></td>
+                      <td>{item.nombre_marca}</td>
+                      <td>{item.nombre_modelo}</td>
+                      <td>
                         <Badge bg="secondary" pill>
                           {item.cantidad_total}
                         </Badge>
                       </td>
-                      <td style={{ borderColor: '#dee2e6' }}>
+                      <td>
                         <Badge bg="success" pill>
                           {item.cantidad_disponible}
                         </Badge>
                       </td>
-                      <td style={{ borderColor: '#dee2e6' }}>
+                      <td>
                         <Badge bg="warning" pill>
                           {item.cantidad_mantenimiento}
                         </Badge>
                       </td>
-                      <td style={{ borderColor: '#dee2e6' }}>
+                      <td>
                         <Badge bg="danger" pill>
                           {item.cantidad_eliminada}
                         </Badge>
                       </td>
-                      <td style={{ fontSize: "0.9rem", textAlign: "left", borderColor: '#dee2e6' }}>
+                      <td style={{ fontSize: "0.9rem", textAlign: "left" }}>
                         {item.accesorios_completos || "-"}
                       </td>
-                      <td style={{ borderColor: '#dee2e6' }}>
+                      <td>
                         <div className="d-flex justify-content-center gap-2">
-
-                          <button
-                            className="btn btn-outline-primary rounded-circle"
+                          <Button
+                            variant="outline-primary"
+                            className="rounded-circle"
                             title="Ver equipos"
                             onClick={() => handleViewEquipment(item.modelo_id)}
                             style={{
@@ -293,10 +313,11 @@ export default function InventoryList() {
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                           >
-                            <FaEye className="fs-5" />
-                          </button>
-                          <button
-                            className="btn btn-outline-secondary rounded-circle"
+                            <FaEye />
+                          </Button>
+                          <Button
+                            variant="outline-secondary"
+                            className="rounded-circle"
                             title="Asociar accesorios"
                             onClick={() => navigate(`/modelo/${item.modelo_id}/accesorios`)}
                             style={{
@@ -311,15 +332,15 @@ export default function InventoryList() {
                               (e.currentTarget.style.transform = "scale(1)")
                             }
                           >
-                            <FaToolbox className="fs-5" />
-                          </button>
+                            <FaToolbox />
+                          </Button>
                         </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="text-muted text-center" style={{ borderColor: '#dee2e6' }}>
+                    <td colSpan={10} className="text-muted">
                       No se encontraron registros con los filtros aplicados.
                     </td>
                   </tr>
@@ -329,7 +350,7 @@ export default function InventoryList() {
           </div>
 
           <PaginationComponent
-            page={page}
+            page={filters.page}
             totalPages={lastPage}
             onPageChange={handlePageChange}
           />

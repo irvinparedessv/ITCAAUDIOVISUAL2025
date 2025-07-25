@@ -1,3 +1,4 @@
+import type { TipoEquipo } from "~/types/tipoEquipo";
 import api from "../api/axios";
 import type {
   Item,
@@ -31,11 +32,6 @@ export const getMarcas = async (): Promise<Marca[]> => {
 
 export const getModelos = async (): Promise<Modelo[]> => {
   const res = await api.get("/modelos");
-  return res.data;
-};
-
-export const getModelosByMarca = async (marcaId: number): Promise<Modelo[]> => {
-  const res = await api.get(`/modelos/marca/${marcaId}`);
   return res.data;
 };
 
@@ -202,4 +198,49 @@ export async function eliminarAsignacion(insumoId: number, equipoId: number) {
     return response.data;
 }
 
+export const getModelosByMarca = async (marcaId: number, search?: string): Promise<Modelo[]> => {
+  const res = await api.get(`/modelos/por-marca/${marcaId}`, {
+    params: { search }
+  });
+  return res.data;
+};
 
+// Agrega esta nueva función a tus exports
+export const searchMarcas = async (
+  searchTerm?: string, 
+  limit?: number
+): Promise<Marca[]> => {
+  try {
+    const res = await api.get("/marcas", {
+      params: { 
+        search: searchTerm || undefined,
+        limit: limit || undefined
+      }
+    });
+    
+    if (!Array.isArray(res.data)) {
+      throw new Error("Formato de respuesta inesperado");
+    }
+    
+    return res.data;
+  } catch (error) {
+    console.error("Error en searchMarcas:", error);
+    throw error; // Deja que el componente maneje el toast
+  }
+};
+
+// Agrega esta función a tu archivo de servicios (itemService.ts)
+export const searchTipoEquipo = async (inputValue: string): Promise<TipoEquipo[]> => {
+  try {
+    const res = await api.get("/tipoEquipos", {
+      params: { 
+        search: inputValue || undefined,
+        limit: 5
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error en searchTipoEquipo:", error);
+    throw error;
+  }
+};

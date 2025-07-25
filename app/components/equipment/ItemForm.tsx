@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 import { FaSave, FaTimes, FaBroom, FaUpload, FaTrash, FaLongArrowAltLeft, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,10 @@ import type { TipoReserva } from "~/types/tipoReserva";
 import api from "../../api/axios";
 import MarcaModal from "./MarcaModal";
 import ModeloModal from "./Modelo/ModeloModal";
+import AsyncSelect from "react-select/async";
+import Select from "react-select";
+import { useTheme } from "~/hooks/ThemeContext";
+import { getModelosByMarca, searchMarcas, searchTipoEquipo } from "~/services/itemService";
 
 interface CaracteristicaForm {
   id: number;
@@ -163,6 +167,54 @@ export default function ItemForm({
     multiple: false,
   });
 
+  const { darkMode } = useTheme();
+
+  // Estilos para los selects con dark mode
+  // Reemplaza la definición de customSelectStyles con esto:
+const customSelectStyles = useMemo(() => ({
+  control: (base: any) => ({
+    ...base,
+    backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+    borderColor: darkMode ? "#444" : "#ccc",
+    color: darkMode ? "#f8f9fa" : "#212529",
+    minHeight: '48px',
+    height: '48px',
+  }),
+  menu: (base: any) => ({
+    ...base,
+    backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+    color: darkMode ? "#f8f9fa" : "#212529",
+  }),
+  input: (base: any) => ({
+    ...base,
+    color: darkMode ? "#f8f9fa" : "#212529",
+    margin: '0px',
+  }),
+  placeholder: (base: any) => ({
+    ...base,
+    color: darkMode ? "#bbb" : "#666",
+  }),
+  singleValue: (base: any) => ({
+    ...base,
+    color: darkMode ? "#f8f9fa" : "#212529",
+  }),
+  option: (base: any, { isFocused, isSelected }: any) => ({
+    ...base,
+    backgroundColor: isSelected
+      ? (darkMode ? "#555" : "#d3d3d3")
+      : isFocused
+        ? (darkMode ? "#444" : "#e6e6e6")
+        : "transparent",
+    color: darkMode ? "#f8f9fa" : "#212529",
+    cursor: "pointer",
+  }),
+  valueContainer: (provided: any) => ({
+    ...provided,
+    height: '48px',
+    padding: '0 8px',
+  }),
+}), [darkMode]);
+
   // Handlers
   const removeImage = () => {
     setForm((prev) => ({ ...prev, imagen: null }));
@@ -301,110 +353,146 @@ export default function ItemForm({
     }
   };
 
-  // Submit handler
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  toast.dismiss();
-
-  // Validaciones básicas
-  if (!form.tipo_equipo_id) return toast.error("Seleccione un tipo de equipo");
-  if (!form.modelo_id) return toast.error("Seleccione un modelo");
-  if (!form.estado_id) return toast.error("Seleccione un estado");
-  if (!form.detalles?.trim()) return toast.error("Ingrese los detalles");
-
-  // Validaciones específicas por tipo
-  if (esInsumo) {
-    if (!isEditing && (!form.cantidad || Number(form.cantidad) <= 0)) {
-      return toast.error("La cantidad debe ser mayor a cero");
-    }
-  } else {
-    if (!form.numero_serie?.trim()) {
-      return toast.error("Ingrese el número de serie");
-    }
-  }
-
-  // Validación de características
-  const caracteristicasInvalidas = caracteristicas.filter(
-    c => !c.valor || c.valor.trim() === ""
-  );
-
-  if (caracteristicasInvalidas.length > 0) {
-    return toast.error(
-      `Complete las características: ${caracteristicasInvalidas.map(c => c.nombre).join(", ")}`
-    );
-  }
-
+  // Función para cargar opciones de modelos
+const loadModelos = async (inputValue: string) => {
   try {
-    const formData = new FormData();
+    if (!form.marca_id) return [];
     
-    // Campos básicos
-    formData.append("tipo", esInsumo ? "insumo" : "equipo");
-    if (isEditing) formData.append("_method", "PUT");
+    const modelos = await getModelosByMarca(Number(form.marca_id), inputValue);
     
-    formData.append("tipo_equipo_id", form.tipo_equipo_id);
-    formData.append("modelo_id", form.modelo_id);
-    formData.append("estado_id", form.estado_id);
-    formData.append("detalles", form.detalles);
+    return modelos.map(modelo => ({
+      value: modelo.id,
+      label: modelo.nombre
+    }));
 
-    // Campos opcionales
-    if (form.tipo_reserva_id) {
-      formData.append("tipo_reserva_id", form.tipo_reserva_id);
-    }
-    if (form.fecha_adquisicion) {
-      formData.append("fecha_adquisicion", form.fecha_adquisicion);
-    }
-
-    // Campos específicos por tipo
-    if (esInsumo) {
-      if (!isEditing || form.cantidad) {
-        formData.append("cantidad", form.cantidad);
-      }
-    } else {
-      formData.append("numero_serie", form.numero_serie);
-      if (form.vida_util) {
-        formData.append("vida_util", form.vida_util);
-      }
-    }
-
-    // Convertir características a JSON string
-    if (caracteristicas.length > 0) {
-      const caracteristicasJSON = JSON.stringify(
-        caracteristicas.map(c => ({
-          caracteristica_id: c.id,
-          valor: c.valor
-        }))
-      );
-      formData.append("caracteristicas", caracteristicasJSON);
-    }
-
-    // Manejo de imágenes
-    if (form.imagen) {
-      formData.append("imagen", form.imagen);
-    } else if (isEditing && !imagePreview && initialValues?.imagen_url) {
-      formData.append("remove_image", "true");
-    }
-
-    // Depuración (opcional)
-    console.log("Datos a enviar:");
-    for (const [key, value] of formData.entries()) {
-      console.log(key, value === formData.get("caracteristicas") ? JSON.parse(value as string) : value);
-    }
-
-    await onSubmit(formData);
-    toast.success(`Ítem ${isEditing ? 'actualizado' : 'creado'} correctamente`);
-    
-    if (!isEditing) handleClear();
-    
-  } catch (error) {
-    console.error("Error al guardar:", error);
-    toast.error(
-      `Error al ${isEditing ? 'actualizar' : 'crear'} el ítem: ${
-        error instanceof Error ? error.message : 'Error desconocido'
-      }`
-    );
+  } catch (error: any) {
+    console.error("Error cargando modelos:", {
+      error,
+      response: error.response?.data
+    });
+    toast.error("Error al cargar los modelos");
+    return [];
   }
 };
 
+  // Función simplificada en tu componente
+const loadMarcas = async (inputValue: string) => {
+  try {
+    const marcas = await searchMarcas(inputValue, inputValue ? 10 : 5);
+    
+    return marcas.map(marca => ({
+      value: marca.id,
+      label: marca.nombre
+    }));
+  } catch (error) {
+    console.error("Error cargando marcas:", error);
+    toast.error("Error al cargar las marcas");
+    return [];
+  }
+};
+  // Submit handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    toast.dismiss();
+
+    // Validaciones básicas
+    if (!form.tipo_equipo_id) return toast.error("Seleccione un tipo de equipo");
+    if (!form.modelo_id) return toast.error("Seleccione un modelo");
+    if (!form.estado_id) return toast.error("Seleccione un estado");
+    if (!form.detalles?.trim()) return toast.error("Ingrese los detalles");
+
+    // Validaciones específicas por tipo
+    if (esInsumo) {
+      if (!isEditing && (!form.cantidad || Number(form.cantidad) <= 0)) {
+        return toast.error("La cantidad debe ser mayor a cero");
+      }
+    } else {
+      if (!form.numero_serie?.trim()) {
+        return toast.error("Ingrese el número de serie");
+      }
+    }
+
+    // Validación de características
+    const caracteristicasInvalidas = caracteristicas.filter(
+      c => !c.valor || c.valor.trim() === ""
+    );
+
+    if (caracteristicasInvalidas.length > 0) {
+      return toast.error(
+        `Complete las características: ${caracteristicasInvalidas.map(c => c.nombre).join(", ")}`
+      );
+    }
+
+    try {
+      const formData = new FormData();
+      
+      // Campos básicos
+      formData.append("tipo", esInsumo ? "insumo" : "equipo");
+      if (isEditing) formData.append("_method", "PUT");
+      
+      formData.append("tipo_equipo_id", form.tipo_equipo_id);
+      formData.append("modelo_id", form.modelo_id);
+      formData.append("estado_id", form.estado_id);
+      formData.append("detalles", form.detalles);
+
+      // Campos opcionales
+      if (form.tipo_reserva_id) {
+        formData.append("tipo_reserva_id", form.tipo_reserva_id);
+      }
+      if (form.fecha_adquisicion) {
+        formData.append("fecha_adquisicion", form.fecha_adquisicion);
+      }
+
+      // Campos específicos por tipo
+      if (esInsumo) {
+        if (!isEditing || form.cantidad) {
+          formData.append("cantidad", form.cantidad);
+        }
+      } else {
+        formData.append("numero_serie", form.numero_serie);
+        if (form.vida_util) {
+          formData.append("vida_util", form.vida_util);
+        }
+      }
+
+      // Convertir características a JSON string
+      if (caracteristicas.length > 0) {
+        const caracteristicasJSON = JSON.stringify(
+          caracteristicas.map(c => ({
+            caracteristica_id: c.id,
+            valor: c.valor
+          }))
+        );
+        formData.append("caracteristicas", caracteristicasJSON);
+      }
+
+      // Manejo de imágenes
+      if (form.imagen) {
+        formData.append("imagen", form.imagen);
+      } else if (isEditing && !imagePreview && initialValues?.imagen_url) {
+        formData.append("remove_image", "true");
+      }
+
+      // Depuración (opcional)
+      console.log("Datos a enviar:");
+      for (const [key, value] of formData.entries()) {
+        console.log(key, value === formData.get("caracteristicas") ? JSON.parse(value as string) : value);
+      }
+
+      await onSubmit(formData);
+      toast.success(`Ítem ${isEditing ? 'actualizado' : 'creado'} correctamente`);
+      
+      if (!isEditing) handleClear();
+      
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      toast.error(
+        `Error al ${isEditing ? 'actualizar' : 'crear'} el ítem: ${
+          error instanceof Error ? error.message : 'Error desconocido'
+        }`
+      );
+    }
+  };
 
   return (
     <div className="form-container position-relative">
@@ -419,40 +507,56 @@ const handleSubmit = async (e: React.FormEvent) => {
             <label htmlFor="tipo_equipo" className="form-label">
               Tipo de Equipo
             </label>
-            <select
-              id="tipo_equipo"
-              value={form.tipo_equipo_id}
-              onChange={(e) => setForm({ ...form, tipo_equipo_id: e.target.value })}
-              className="form-select"
-              disabled={loading || isEditing}
-            >
-              <option value="">Seleccione un tipo</option>
-              {tiposEquipo.map((tipo) => (
-                <option key={tipo.id} value={tipo.id}>
-                  {tipo.nombre}
-                </option>
-              ))}
-            </select>
+          
+<AsyncSelect
+  id="tipo_equipo"
+  cacheOptions
+  defaultOptions
+  loadOptions={async (inputValue) => {
+    try {
+      const tipos = await searchTipoEquipo(inputValue);
+      return tipos.map(t => ({ value: t.id, label: t.nombre }));
+    } catch (error) {
+      console.error("Error cargando tipos de equipo:", error);
+      toast.error("Error al cargar tipos de equipo");
+      return [];
+    }
+  }}
+  value={form.tipo_equipo_id ? 
+    { value: Number(form.tipo_equipo_id), label: tiposEquipo.find(t => t.id === Number(form.tipo_equipo_id))?.nombre || '' }
+    : null}
+  onChange={(selected) => {
+    const newTipoId = selected ? String(selected.value) : '';
+    setForm(prev => ({
+      ...prev,
+      tipo_equipo_id: newTipoId,
+      // Limpiar características cuando cambia el tipo
+      ...(newTipoId !== prev.tipo_equipo_id && { caracteristicas: [] })
+    }));
+  }}
+  placeholder="Buscar tipo de equipo..."
+  isDisabled={loading || isEditing}
+  styles={customSelectStyles}
+  menuPortalTarget={document.body}
+/>
           </div>
 
           <div className="col-md-6">
             <label htmlFor="tipo_reserva" className="form-label">
               Tipo de Reserva
             </label>
-            <select
+            <Select
               id="tipo_reserva"
-              value={form.tipo_reserva_id}
-              onChange={(e) => setForm({ ...form, tipo_reserva_id: e.target.value })}
-              className="form-select"
-              disabled={loading}
-            >
-              <option value="">Seleccione un tipo</option>
-              {tipoReservas.map((tipo) => (
-                <option key={tipo.id} value={tipo.id}>
-                  {tipo.nombre}
-                </option>
-              ))}
-            </select>
+              options={tipoReservas.map(t => ({ value: t.id, label: t.nombre }))}
+              value={tipoReservas.find(t => t.id === Number(form.tipo_reserva_id)) ? 
+                { value: Number(form.tipo_reserva_id), label: tipoReservas.find(t => t.id === Number(form.tipo_reserva_id))?.nombre || '' }
+                : null}
+              onChange={(selected) => setForm({ ...form, tipo_reserva_id: selected ? String(selected.value) : '' })}
+              placeholder="Buscar tipo de reserva..."
+              isDisabled={loading}
+              styles={customSelectStyles}
+              menuPortalTarget={document.body}
+            />
           </div>
         </div>
 
@@ -462,25 +566,27 @@ const handleSubmit = async (e: React.FormEvent) => {
               Marca
             </label>
             <div className="d-flex gap-2">
-              <select
+              <AsyncSelect
                 id="marca"
-                value={form.marca_id}
-                onChange={(e) => setForm({ ...form, marca_id: e.target.value })}
-                className="form-select"
-                disabled={loading || isEditing}
-              >
-                <option value="">Seleccione una marca</option>
-                {marcas.map((marca) => (
-                  <option key={marca.id} value={marca.id}>
-                    {marca.nombre}
-                  </option>
-                ))}
-              </select>
+                cacheOptions
+                defaultOptions
+                loadOptions={loadMarcas}
+                value={marcas.find(m => m.id === Number(form.marca_id)) ? 
+                  { value: Number(form.marca_id), label: marcas.find(m => m.id === Number(form.marca_id))?.nombre || '' }
+                  : null}
+                onChange={(selected) => setForm({ ...form, marca_id: selected ? String(selected.value) : '', modelo_id: '' })}
+                placeholder="Buscar marca..."
+                isDisabled={loading || isEditing}
+                styles={customSelectStyles}
+                menuPortalTarget={document.body}
+                className="flex-grow-1"
+              />
               {!isEditing && (
                 <button
                   type="button"
                   className="btn btn-outline-secondary"
                   onClick={() => setShowMarcaModal(true)}
+                  style={{ height: '48px', width: '48px' }}
                 >
                   <FaPlus />
                 </button>
@@ -493,26 +599,28 @@ const handleSubmit = async (e: React.FormEvent) => {
               Modelo
             </label>
             <div className="d-flex gap-2">
-              <select
+              <AsyncSelect
                 id="modelo"
-                value={form.modelo_id}
-                onChange={(e) => setForm({ ...form, modelo_id: e.target.value })}
-                className="form-select"
-                disabled={loading || !form.marca_id || isEditing}
-              >
-                <option value="">Seleccione un modelo</option>
-                {filteredModelos.map((modelo) => (
-                  <option key={modelo.id} value={modelo.id}>
-                    {modelo.nombre}
-                  </option>
-                ))}
-              </select>
+                cacheOptions
+                defaultOptions
+                loadOptions={loadModelos}
+                value={filteredModelos.find(m => m.id === Number(form.modelo_id)) ? 
+                  { value: Number(form.modelo_id), label: filteredModelos.find(m => m.id === Number(form.modelo_id))?.nombre || '' }
+                  : null}
+                onChange={(selected) => setForm({ ...form, modelo_id: selected ? String(selected.value) : '' })}
+                placeholder="Buscar modelo..."
+                isDisabled={loading || !form.marca_id || isEditing}
+                styles={customSelectStyles}
+                menuPortalTarget={document.body}
+                className="flex-grow-1"
+              />
               {!isEditing && (
                 <button
                   type="button"
                   className="btn btn-outline-secondary"
                   onClick={() => setShowModeloModal(true)}
                   disabled={!form.marca_id}
+                  style={{ height: '48px', width: '48px' }}
                 >
                   <FaPlus />
                 </button>
@@ -524,20 +632,18 @@ const handleSubmit = async (e: React.FormEvent) => {
             <label htmlFor="estado" className="form-label">
               Estado
             </label>
-            <select
+            <Select
               id="estado"
-              value={form.estado_id}
-              onChange={(e) => setForm({ ...form, estado_id: e.target.value })}
-              className="form-select"
-              disabled={loading}
-            >
-              <option value="">Seleccione un estado</option>
-              {estados.map((estado) => (
-                <option key={estado.id} value={estado.id}>
-                  {estado.nombre}
-                </option>
-              ))}
-            </select>
+              options={estados.map(e => ({ value: e.id, label: e.nombre }))}
+              value={estados.find(e => e.id === Number(form.estado_id)) ? 
+                { value: Number(form.estado_id), label: estados.find(e => e.id === Number(form.estado_id))?.nombre || '' }
+                : null}
+              onChange={(selected) => setForm({ ...form, estado_id: selected ? String(selected.value) : '' })}
+              placeholder="Buscar estado..."
+              isDisabled={loading}
+              styles={customSelectStyles}
+              menuPortalTarget={document.body}
+            />
           </div>
         </div>
 

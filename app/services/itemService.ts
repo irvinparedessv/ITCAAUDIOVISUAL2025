@@ -194,8 +194,8 @@ export const getInsumosNoAsignados = async (equipoId: number): Promise<Insumo[]>
   return res.data;
 };
 
-export const asignarInsumoAEquipo = async (equipoId: number, insumoId: number) => {
-  await api.post(`/equipos/${equipoId}/insumos`, { insumo_id: insumoId });
+export const asignarInsumoAEquipo = async (equipoId: number, modeloId: number) => {
+  await api.post(`/equipos/${equipoId}/insumos`, { modelo_id: modeloId });
 };
 
 export const getValoresCaracteristicasPorEquipo = async (equipoId: number) => {

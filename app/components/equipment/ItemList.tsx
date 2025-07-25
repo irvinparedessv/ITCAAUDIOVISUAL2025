@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Equipo, Insumo, ItemTipo } from "../../types/item";
-import { Button, Form, InputGroup, Spinner, Modal, Badge } from "react-bootstrap";
+import { Button, Form, InputGroup, Spinner, Modal, Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { getItems, type ItemFilters, deleteItem, getInsumosNoAsignados, asignarInsumoAEquipo } from "../../services/itemService";
 import toast from "react-hot-toast";
 import {
@@ -11,16 +11,15 @@ import {
     FaSearch,
     FaLongArrowAltLeft,
     FaPlus,
-    FaBoxes,
     FaLink,
-    FaEye
+    FaEye,
 } from "react-icons/fa";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faList } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
 import type { TipoEquipo } from "~/types/tipoEquipo";
 import ItemDetail from "./itemDetail";
-
-
 
 type Item = Equipo | Insumo;
 
@@ -62,9 +61,14 @@ export default function ItemList({
     const [insumoSeleccionadoId, setInsumoSeleccionadoId] = useState<number | null>(null);
     const [loadingInsumos, setLoadingInsumos] = useState(false);
     const [asignando, setAsignando] = useState(false);
+
     // Estados para el modal de detalle
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedEquipoDetail, setSelectedEquipoDetail] = useState<string | null>(null);
+
+    // Estados para el modal de asignaciones
+    const [showAsignacionesModal, setShowAsignacionesModal] = useState(false);
+    const [currentAsignaciones, setCurrentAsignaciones] = useState<any[]>([]);
 
     // Función para mostrar el detalle
     const handleShowDetail = (equipoId: number) => {
@@ -76,12 +80,16 @@ export default function ItemList({
         return (item as Equipo).numero_serie !== undefined && (item as Equipo).numero_serie !== null;
     }
 
+    useEffect(() => {
+        fetchItems();
+    }, [filters, modeloId]);
+
     const fetchItems = async () => {
         if (modeloId === undefined) {
             setItems([]);
             setTotal(0);
             setLastPage(1);
-            return; // Evita llamar sin modeloId
+            return;
         }
         try {
             const res = await getItems({
@@ -93,14 +101,10 @@ export default function ItemList({
             setTotal(res.total);
             setLastPage(res.last_page);
         } catch (error) {
-            toast.error("Error al cargar los items");
             console.error("Error fetching items:", error);
+            toast.error("Error al cargar los items");
         }
     };
-
-    useEffect(() => {
-        fetchItems();
-    }, [filters, modeloId]);
 
     const getTipoNombre = (id: number) => {
         const tipo = tipos.find((t) => t.id === id);
@@ -195,7 +199,6 @@ export default function ItemList({
         );
     };
 
-    // Función para abrir modal asignar insumo
     const abrirModalAsignar = async (equipo: Equipo) => {
         setSelectedEquipo(equipo);
         setShowAccesorioModal(true);
@@ -212,7 +215,6 @@ export default function ItemList({
         }
     };
 
-    // Función para asignar insumo seleccionado
     const asignarInsumo = async () => {
         if (!selectedEquipo || !insumoSeleccionadoId) {
             toast.error("Selecciona un insumo");
@@ -234,35 +236,23 @@ export default function ItemList({
     return (
         <div className="table-responsive rounded shadow p-3 mt-4">
 
+            {/* Modal Detalle */}
             <Modal
                 show={showDetailModal}
                 onHide={() => setShowDetailModal(false)}
                 size="lg"
                 fullscreen="lg-down"
             >
-                <Modal.Header
-                    className="text-white py-3"
-                    style={{
-                        backgroundColor: "#b1291d",
-                        borderRadius: "0.5rem 0.5rem 0 0",
-                        padding: "1.25rem",
-                    }} closeButton>
-                    <Modal.Title >Detalle del Equipo</Modal.Title>
+                <Modal.Header className="text-white py-3" style={{ backgroundColor: "#b1291d" }} closeButton>
+                    <Modal.Title>Detalle del Equipo</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    {selectedEquipoDetail && (
-                        <ItemDetail id={selectedEquipoDetail} />
-                    )}
+                    {selectedEquipoDetail && <ItemDetail id={selectedEquipoDetail} />}
                 </Modal.Body>
             </Modal>
 
-            {/* Modal imagen */}
-            <Modal
-                show={showImageModal}
-                onHide={() => setShowImageModal(false)}
-                centered
-                size="lg"
-            >
+            {/* Modal Imagen */}
+            <Modal show={showImageModal} onHide={() => setShowImageModal(false)} centered size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>{selectedItemImage?.name || 'Imagen del item'}</Modal.Title>
                 </Modal.Header>
@@ -280,14 +270,12 @@ export default function ItemList({
                 </Modal.Body>
             </Modal>
 
-            {/* Modal asignar insumo */}
-            <Modal
-                show={showAccesorioModal}
-                onHide={() => setShowAccesorioModal(false)}
-                centered
-            >
+            {/* Modal Asignar Insumo */}
+            <Modal show={showAccesorioModal} onHide={() => setShowAccesorioModal(false)} size="lg">
                 <Modal.Header closeButton>
-                    <Modal.Title>Asignar insumo a {selectedEquipo?.detalles || 'Equipo'}</Modal.Title>
+                    <Modal.Title>
+                        Asignar insumo a {selectedEquipo?.modelo?.nombre ?? 'Equipo'} ({selectedEquipo?.numero_serie ?? 'N/A'})
+                    </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {loadingInsumos ? (
@@ -295,17 +283,36 @@ export default function ItemList({
                             <Spinner animation="border" />
                         </div>
                     ) : (
-                        <Form.Select
-                            value={insumoSeleccionadoId ?? ''}
-                            onChange={e => setInsumoSeleccionadoId(Number(e.target.value))}
-                        >
-                            <option value="">Selecciona un insumo</option>
-                            {insumosDisponibles.map(insumo => (
-                                <option key={insumo.id} value={insumo.id}>
-                                    {insumo.detalles || `Insumo #${insumo.id}`}
-                                </option>
-                            ))}
-                        </Form.Select>
+                        <>
+                            <h5>Insumos asignados actualmente:</h5>
+                            {selectedEquipo && selectedEquipo.asignaciones && selectedEquipo.asignaciones.length > 0 ? (
+                                <ul className="list-group mb-3">
+                                    {selectedEquipo.asignaciones.map((insumo) => (
+                                        <li key={insumo.id} className="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{insumo.modelo ?? 'N/A'}</strong> ({insumo.marca ?? 'N/A'})
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-muted">No tiene insumos asignados</p>
+                            )}
+
+                            <h5>Asignar nuevo insumo:</h5>
+
+                            <Form.Select
+                                value={insumoSeleccionadoId ?? ''}
+                                onChange={e => setInsumoSeleccionadoId(Number(e.target.value))}
+                            >
+                                <option value="">Selecciona un insumo</option>
+                                {insumosDisponibles.map(insumoAgrupado => (
+                                    <option key={insumoAgrupado.modelo_id} value={insumoAgrupado.modelo_id}>
+                                        {insumoAgrupado.modelo?.nombre || `Insumo #${insumoAgrupado.modelo_id}`} ({insumoAgrupado.cantidad} disponibles)
+                                    </option>
+                                ))}
+                            </Form.Select>
+                        </>
                     )}
                 </Modal.Body>
                 <Modal.Footer>
@@ -322,28 +329,65 @@ export default function ItemList({
                 </Modal.Footer>
             </Modal>
 
+            {/* Modal Asignaciones */}
+            <Modal show={showAsignacionesModal} onHide={() => setShowAsignacionesModal(false)} size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>Detalles de asignaciones</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className="table-responsive">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Marca</th>
+                                    <th>Modelo</th>
+                                    <th>N° Serie</th>
+                                    <th>Serie Asociada</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {currentAsignaciones.map((asignacion) => (
+                                    <tr key={asignacion.id}>
+                                        <td>
+                                            <Badge bg={asignacion.tipo === 'equipo' ? 'primary' : 'info'}>
+                                                {asignacion.tipo}
+                                            </Badge>
+                                        </td>
+                                        <td>{asignacion.marca || 'N/A'}</td>
+                                        <td>{asignacion.modelo || 'N/A'}</td>
+                                        <td>{asignacion.numero_serie || '-'}</td>
+                                        <td>{asignacion.serie_asociada || '-'}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowAsignacionesModal(false)}>
+                        Cerrar
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
             {/* Encabezado */}
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
                 <div className="d-flex align-items-center gap-3">
                     <FaLongArrowAltLeft
                         onClick={handleBack}
                         title="Regresar"
-                        style={{
-                            cursor: 'pointer',
-                            fontSize: '2rem',
-                        }}
+                        style={{ cursor: 'pointer', fontSize: '2rem' }}
                     />
                     <h2 className="fw-bold m-0">Inventario Individual</h2>
                 </div>
-
                 <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
                     <Button
                         variant="primary"
                         className="d-flex align-items-center gap-2"
                         onClick={() => navigate('/crearItem')}
                     >
-                        <FaPlus />
-                        Crear Nuevo Item
+                        <FaPlus /> Crear Nuevo Item
                     </Button>
                 </div>
             </div>
@@ -352,9 +396,7 @@ export default function ItemList({
             <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
                 <div className="d-flex flex-grow-1">
                     <InputGroup className="flex-grow-1">
-                        <InputGroup.Text>
-                            <FaSearch />
-                        </InputGroup.Text>
+                        <InputGroup.Text><FaSearch /></InputGroup.Text>
                         <Form.Control
                             type="text"
                             placeholder="Buscar por detalles, número de serie, etc."
@@ -362,21 +404,16 @@ export default function ItemList({
                             onChange={(e) => handleFilterUpdate("search", e.target.value)}
                         />
                         {filters.search && (
-                            <Button
-                                variant="outline-secondary"
-                                onClick={() => handleFilterUpdate("search", "")}
-                            >
+                            <Button variant="outline-secondary" onClick={() => handleFilterUpdate("search", "")}>
                                 <FaTimes />
                             </Button>
                         )}
                     </InputGroup>
                 </div>
-
                 <Button
                     variant="outline-secondary"
                     onClick={() => setShowFilters(!showFilters)}
-                    className="d-flex align-items-center gap-2 flex-shrink-0 text-nowrap align-self-end align-self-md-center w-auto"
-                    style={{ whiteSpace: 'nowrap' }}
+                    className="d-flex align-items-center gap-2"
                 >
                     <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
                 </Button>
@@ -397,34 +434,21 @@ export default function ItemList({
                                 <Form.Label>Tipo de equipo</Form.Label>
                                 <Form.Select
                                     value={filters.tipoEquipoId || ""}
-                                    onChange={(e) =>
-                                        handleFilterUpdate(
-                                            "tipoEquipoId",
-                                            e.target.value ? Number(e.target.value) : undefined
-                                        )
-                                    }
+                                    onChange={(e) => handleFilterUpdate("tipoEquipoId", e.target.value ? Number(e.target.value) : undefined)}
                                 >
                                     <option value="">Todos</option>
                                     {tipos.map((tipo) => (
-                                        <option key={tipo.id} value={tipo.id}>
-                                            {tipo.nombre}
-                                        </option>
+                                        <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
                                     ))}
                                 </Form.Select>
                             </Form.Group>
                         </div>
-
                         <div className="col-md-6">
                             <Form.Group>
                                 <Form.Label>Estado</Form.Label>
                                 <Form.Select
                                     value={filters.estadoId || ""}
-                                    onChange={(e) =>
-                                        handleFilterUpdate(
-                                            "estadoId",
-                                            e.target.value ? Number(e.target.value) : undefined
-                                        )
-                                    }
+                                    onChange={(e) => handleFilterUpdate("estadoId", e.target.value ? Number(e.target.value) : undefined)}
                                 >
                                     <option value="">Todos</option>
                                     <option value="1">Disponible</option>
@@ -433,15 +457,9 @@ export default function ItemList({
                                 </Form.Select>
                             </Form.Group>
                         </div>
-
                         <div className="col-12">
-                            <Button
-                                variant="outline-danger"
-                                onClick={resetFilters}
-                                className="w-100"
-                            >
-                                <FaTimes className="me-2" />
-                                Limpiar filtros
+                            <Button variant="outline-danger" onClick={resetFilters} className="w-100">
+                                <FaTimes className="me-2" /> Limpiar filtros
                             </Button>
                         </div>
                     </div>
@@ -464,6 +482,7 @@ export default function ItemList({
                                     <th>Cantidad</th>
                                     <th>Detalles</th>
                                     <th>Imagen</th>
+                                    <th>Asignaciones</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -472,6 +491,7 @@ export default function ItemList({
                                     items.map((item) => {
                                         const isEquipoItem = isEquipo(item);
                                         const modeloNombre = item.modelo?.nombre || 'N/A';
+                                        const asignaciones = (item as any).asignaciones || [];
 
                                         return (
                                             <tr key={item.id}>
@@ -488,7 +508,11 @@ export default function ItemList({
                                                             item.estado_id === 2 ? 'Mantenimiento' : 'Dañado'}
                                                     </Badge>
                                                 </td>
-                                                <td>{isEquipoItem ? item.numero_serie : '-'}</td>
+                                                <td>
+                                                    {isEquipoItem
+                                                        ? item.numero_serie
+                                                        : (item as Insumo).serie_asociada || '-'}
+                                                </td>
                                                 <td>{item.cantidad}</td>
                                                 <td>{item.detalles || 'N/A'}</td>
                                                 <td>
@@ -503,20 +527,59 @@ export default function ItemList({
                                                                 borderRadius: "8px",
                                                                 cursor: "pointer"
                                                             }}
-                                                            onClick={() => {
-                                                                if (item.imagen_url) {
-                                                                    handleImageClick(item.imagen_url, item.detalles || 'Item');
-                                                                }
-                                                            }}
+                                                            onClick={() => item.imagen_url && handleImageClick(item.imagen_url, item.detalles || 'Item')}
                                                         />
                                                     ) : (
                                                         <span className="text-muted">Sin imagen</span>
                                                     )}
                                                 </td>
                                                 <td>
+                                                    {asignaciones.length > 0 ? (
+                                                        <OverlayTrigger
+                                                            placement="left"
+                                                            overlay={
+                                                                <Tooltip id={`tooltip-${item.id}`}>
+                                                                    <strong>Asignaciones:</strong>
+                                                                    <ul className="mb-0 ps-3">
+                                                                        {asignaciones.slice(0, 3).map((asignacion: any) => (
+                                                                            <li key={asignacion.id}>
+                                                                                {asignacion.marca} {asignacion.modelo}
+                                                                            </li>
+                                                                        ))}
+                                                                        {asignaciones.length > 3 && (
+                                                                            <li>...y {asignaciones.length - 3} más</li>
+                                                                        )}
+                                                                    </ul>
+                                                                </Tooltip>
+                                                            }
+                                                        >
+                                                            <button
+                                                                className="btn btn-outline-secondary rounded-circle"
+                                                                onClick={() => {
+                                                                    setCurrentAsignaciones(asignaciones);
+                                                                    setShowAsignacionesModal(true);
+                                                                }}
+                                                                style={{
+                                                                    width: "44px",
+                                                                    height: "44px",
+                                                                    transition: "transform 0.2s ease-in-out",
+                                                                }}
+                                                                onMouseEnter={(e) =>
+                                                                    (e.currentTarget.style.transform = "scale(1.15)")
+                                                                }
+                                                                onMouseLeave={(e) =>
+                                                                    (e.currentTarget.style.transform = "scale(1)")
+                                                                }
+                                                            >
+                                                                <FontAwesomeIcon icon={faList} />
+                                                            </button>
+                                                        </OverlayTrigger>
+                                                    ) : (
+                                                        <span className="text-muted">Ninguna</span>
+                                                    )}
+                                                </td>
+                                                <td>
                                                     <div className="d-flex justify-content-center gap-2">
-
-                                                        {/* Botón para ver detalles */}
                                                         <Button
                                                             variant="outline-info"
                                                             className="rounded-circle"
@@ -524,13 +587,18 @@ export default function ItemList({
                                                             style={{
                                                                 width: "44px",
                                                                 height: "44px",
-                                                                transition: "transform 0.2s ease-in-out"
+                                                                transition: "transform 0.2s ease-in-out",
                                                             }}
+                                                            onMouseEnter={(e) =>
+                                                                (e.currentTarget.style.transform = "scale(1.15)")
+                                                            }
+                                                            onMouseLeave={(e) =>
+                                                                (e.currentTarget.style.transform = "scale(1)")
+                                                            }
                                                             onClick={() => handleShowDetail(item.id)}
                                                         >
                                                             <FaEye />
                                                         </Button>
-
                                                         <Button
                                                             variant="outline-primary"
                                                             className="rounded-circle"
@@ -538,7 +606,7 @@ export default function ItemList({
                                                             style={{
                                                                 width: "44px",
                                                                 height: "44px",
-                                                                transition: "transform 0.2s ease-in-out"
+                                                                transition: "transform 0.2s ease-in-out",
                                                             }}
                                                             onMouseEnter={(e) =>
                                                                 (e.currentTarget.style.transform = "scale(1.15)")
@@ -550,7 +618,6 @@ export default function ItemList({
                                                         >
                                                             <FaEdit />
                                                         </Button>
-
                                                         {isEquipoItem && (
                                                             <Button
                                                                 variant="outline-success"
@@ -559,14 +626,19 @@ export default function ItemList({
                                                                 style={{
                                                                     width: "44px",
                                                                     height: "44px",
-                                                                    transition: "transform 0.2s ease-in-out"
+                                                                    transition: "transform 0.2s ease-in-out",
                                                                 }}
+                                                                onMouseEnter={(e) =>
+                                                                    (e.currentTarget.style.transform = "scale(1.15)")
+                                                                }
+                                                                onMouseLeave={(e) =>
+                                                                    (e.currentTarget.style.transform = "scale(1)")
+                                                                }
                                                                 onClick={() => abrirModalAsignar(item)}
                                                             >
                                                                 <FaLink />
                                                             </Button>
                                                         )}
-
                                                         <Button
                                                             variant="outline-danger"
                                                             className="rounded-circle"
@@ -574,7 +646,7 @@ export default function ItemList({
                                                             style={{
                                                                 width: "44px",
                                                                 height: "44px",
-                                                                transition: "transform 0.2s ease-in-out"
+                                                                transition: "transform 0.2s ease-in-out",
                                                             }}
                                                             onMouseEnter={(e) =>
                                                                 (e.currentTarget.style.transform = "scale(1.15)")
@@ -597,7 +669,7 @@ export default function ItemList({
                                     })
                                 ) : (
                                     <tr>
-                                        <td colSpan={10} className="text-muted text-center">
+                                        <td colSpan={11} className="text-muted text-center">
                                             No se encontraron items.
                                         </td>
                                     </tr>
@@ -605,7 +677,6 @@ export default function ItemList({
                             </tbody>
                         </table>
                     </div>
-
                     <PaginationComponent
                         page={filters.page || 1}
                         totalPages={lastPage}

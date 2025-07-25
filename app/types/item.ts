@@ -45,9 +45,15 @@ export interface ItemBase {
   created_at?: string;
   updated_at?: string;
   tipo: ItemTipo;
-
-  // Relaciones opcionales
   modelo?: Modelo;
+  asignaciones?: Array<{
+    id: number;
+    tipo: 'equipo' | 'insumo';
+    modelo: string;
+    marca: string;
+    numero_serie?: string;
+    serie_asociada?: string;
+  }>;
 }
 
 // En tus tipos de item (donde defines Marca, Modelo, etc.)
@@ -64,6 +70,7 @@ export interface Equipo extends ItemBase {
 
 // Insumo
 export interface Insumo extends ItemBase {
+  serie_asociada?: string | null;
   cantidad: number;
 }
 

@@ -65,8 +65,6 @@ export const getItems = async (
   return res.data;
 };
 
-
-
 export const getItemById = async (id: number, tipo: 'equipo' | 'insumo'): Promise<Item> => {
   const res = await api.get(`/equipos/${id}`, {
     params: { tipo },
@@ -136,8 +134,6 @@ export const updateItem = async (
   }
 };
 
-
-
 export const actualizarValoresCaracteristicasPorEquipo = async (
   equipoId: number,
   caracteristicas: any[]
@@ -167,8 +163,6 @@ export const actualizarValoresCaracteristicasPorEquipo = async (
 
   return res.data;
 };
-
-
 
 export const deleteItem = async (id: number, tipo: 'equipo' | 'insumo') => {
   const res = await api.delete(`/equipos/${id}`, {
@@ -202,5 +196,10 @@ export const getValoresCaracteristicasPorEquipo = async (equipoId: number) => {
   const res = await api.get(`/valores-caracteristica/equipo/${equipoId}`);
   return res.data; // [{ id, valor, caracteristica: { id, nombre, tipo_dato } }]
 };
+
+export async function eliminarAsignacion(insumoId: number, equipoId: number) {
+    const response = await api.delete(`/equipos/${equipoId}/asignaciones/${insumoId}`);
+    return response.data;
+}
 
 

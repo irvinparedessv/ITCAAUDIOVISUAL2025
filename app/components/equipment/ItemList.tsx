@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { Equipo, Insumo, ItemTipo } from "../../types/item";
+import api from "~/api/axios";
 import { Button, Form, InputGroup, Spinner, Modal, Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
-import { getItems, type ItemFilters, deleteItem, getInsumosNoAsignados, asignarInsumoAEquipo } from "../../services/itemService";
+import { getItems, type ItemFilters, deleteItem, getInsumosNoAsignados, asignarInsumoAEquipo, eliminarAsignacion } from "../../services/itemService";
 import toast from "react-hot-toast";
 import {
     FaEdit,
@@ -233,6 +234,44 @@ export default function ItemList({
         }
     };
 
+
+    const cargarInsumosDisponibles = async () => {
+        if (!selectedEquipo) return;
+
+        setLoadingInsumos(true);
+        try {
+            const insumos = await getInsumosNoAsignados(selectedEquipo.id);
+            setInsumosDisponibles(insumos);
+        } catch (error) {
+            console.error("Error al cargar insumos disponibles", error);
+            toast.error("Error al recargar los insumos disponibles");
+        } finally {
+            setLoadingInsumos(false);
+        }
+    };
+
+    const handleEliminarAsignacion = async (insumoId: number) => {
+        if (!selectedEquipo) return;
+
+        try {
+            await eliminarAsignacion(insumoId, selectedEquipo.id);
+            toast.success("Asignación eliminada");
+
+            // Recargar los datos del equipo con insumos actualizados
+            const res = await api.get(`/equipos/${selectedEquipo.id}`);
+            const equipoActualizado = res.data;
+
+            await cargarInsumosDisponibles();
+
+            // Actualizar el estado
+            setSelectedEquipo(equipoActualizado);
+        } catch (error) {
+            console.error("Error eliminando asignación", error);
+            toast.error("Error al eliminar la asignación");
+        }
+    };
+
+
     return (
         <div className="table-responsive rounded shadow p-3 mt-4">
 
@@ -292,6 +331,14 @@ export default function ItemList({
                                             <div>
                                                 <strong>{insumo.modelo ?? 'N/A'}</strong> ({insumo.marca ?? 'N/A'})
                                             </div>
+                                            <Button
+                                                variant="outline-danger"
+                                                size="sm"
+                                                title="Eliminar asignación"
+                                                onClick={() => handleEliminarAsignacion(insumo.id)}
+                                            >
+                                                <FaTrash />
+                                            </Button>
                                         </li>
                                     ))}
                                 </ul>

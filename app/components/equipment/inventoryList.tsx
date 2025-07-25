@@ -105,23 +105,16 @@ export default function InventoryList() {
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
       {/* Encabezado */}
-      <div className="mb-4">
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
         <div className="d-flex align-items-center gap-3">
           <FaLongArrowAltLeft
             onClick={handleBack}
             title="Regresar"
-            style={{
-              cursor: 'pointer',
-              fontSize: '2rem',
-            }}
+            style={{ cursor: 'pointer', fontSize: '2rem' }}
           />
-          <h2 className="fw-bold m-0 flex-grow-1">
-            <FaBoxes className="me-2" />
-            Inventario
-          </h2>
+          <h2 className="fw-bold m-0"> <FaBoxes className="me-2" />Inventario</h2>
         </div>
-
-        <div className="text-end mt-3">
+        <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
           <Button
             variant="primary"
             onClick={() => navigate('/tipoEquipo')}
@@ -331,6 +324,7 @@ export default function InventoryList() {
                             onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
+                            disabled={item.nombre_categoria === "Insumo"} 
                           >
                             <FaToolbox />
                           </Button>

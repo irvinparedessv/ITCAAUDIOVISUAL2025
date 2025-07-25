@@ -53,11 +53,6 @@ export default function ModeloAccesoriosForm() {
     }, [id]);
 
     const handleSave = async () => {
-        if (!selected.length) {
-            toast.error("Debes seleccionar al menos un insumo");
-            return;
-        }
-
         try {
             setSaving(true);
 

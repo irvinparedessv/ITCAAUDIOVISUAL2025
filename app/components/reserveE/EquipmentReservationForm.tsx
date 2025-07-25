@@ -1,5 +1,5 @@
 // src/components/reservas/EquipmentReservationForm.tsx
-import React from "react";
+import React, { useState } from "react";
 import { FaLongArrowAltLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import FechaReservaInput from "./Fechas";
@@ -18,9 +18,11 @@ import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useEffect } from "react";
 import api from "../../api/axios";
+import { Spinner } from "react-bootstrap";
 export default function EquipmentReservationForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [loadingReserva, setLoadingReserva] = useState(false);
   const { id } = useParams(); // `id` será undefined si es creación
   const isEditing = !!id;
   const {
@@ -49,10 +51,11 @@ export default function EquipmentReservationForm() {
   useEffect(() => {
     const fetchReserva = async () => {
       if (!id) return;
+      setLoadingReserva(true); // Inicia loading
 
       try {
         const { data } = await api.get(`/detail/${id}`);
-        // Asegúrate de mapear correctamente los datos al formato de `FormDataType`
+        console.log(data);
         setFormData({
           date: data.fecha_reserva,
           startTime: data.start_time,
@@ -78,11 +81,24 @@ export default function EquipmentReservationForm() {
         });
       } catch {
         toast.error("Error al cargar los datos de la reserva");
+      } finally {
+        setLoadingReserva(false); // Inicia loading
       }
     };
 
     fetchReserva();
   }, [id]);
+  if (loadingReserva) {
+    return (
+      <div
+        className="d-flex flex-column justify-content-center align-items-center"
+        style={{ height: "60vh" }}
+      >
+        <Spinner animation="border" role="status" variant="primary" />
+        <span className="mt-3">Obteniendo datos de la reserva...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="form-container position-relative mb-3 mb-md-0">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { FaBoxes, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaBoxes, FaExchangeAlt, FaEye, FaEyeSlash } from "react-icons/fa";
 import type { FormDataType } from "./types/FormDataType";
 import api from "~/api/axios";
 import toast from "react-hot-toast";
@@ -8,6 +8,8 @@ import Button from "react-bootstrap/Button";
 import { APIURL } from "./../../constants/constant";
 import InteractiveScene from "../renders/rooms/Scene2";
 import type { EquipmentSeleccionado } from "./types/Equipos";
+import { FaFileAlt, FaTrash } from "react-icons/fa";
+
 import Slider from "react-slick";
 
 interface Props {
@@ -58,7 +60,12 @@ export default function EquiposSelect({
   const [loadingNextPage, setLoadingNextPage] = useState(false);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const pagesLoaded = useRef<Set<number>>(new Set());
-
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [equipoAEditar, setEquipoAEditar] =
+    useState<EquipmentSeleccionado | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [equiposDisponiblesMismoModelo, setEquiposDisponiblesMismoModelo] =
+    useState<EquipoIndividual[]>([]);
   const handleImageError = () => {
     toast.error("No se pudo cargar la imagen.");
   };
@@ -80,7 +87,7 @@ export default function EquiposSelect({
     if (pagesLoaded.current.has(pageToLoad)) return;
 
     try {
-      // Solo mostrar loadingSearch en la primera carga tras búsqueda.
+      console.log("📦 Cargando página:", pageToLoad);
       if (pageToLoad !== 1) setLoadingNextPage(true);
 
       const response = await api.get("/equiposDisponiblesPorTipoYFecha", {
@@ -90,16 +97,29 @@ export default function EquiposSelect({
           startTime: formData.startTime,
           endTime: formData.endTime,
           page: pageToLoad,
-          limit: 5,
+          limit: 10,
           search: debouncedSearchTerm,
         },
       });
 
       const rows: GrupoEquiposPorModelo[] = response.data.data || [];
-      setAvailableEquipmentSlides((prev) => [...prev, ...rows]);
+
+      setAvailableEquipmentSlides((prev) => {
+        const nuevos = rows.filter(
+          (nuevo) =>
+            !prev.some((existente) => existente.modelo_id === nuevo.modelo_id)
+        );
+        console.log(
+          "🆕 Nuevos modelos agregados:",
+          nuevos.map((n) => n.modelo_id)
+        );
+        return [...prev, ...nuevos];
+      });
+      setTotalItems(response.data.total);
       setTotalPages(response.data.last_page || 1);
       pagesLoaded.current.add(pageToLoad);
-    } catch {
+    } catch (error) {
+      console.error("❌ Error al cargar equipos:", error);
       toast.error("Error al cargar equipos disponibles");
     } finally {
       if (pageToLoad === 1) setLoadingSearch(false);
@@ -165,6 +185,7 @@ export default function EquiposSelect({
   const puedeVisualizarFull =
     !!aulaModelPath && equiposConModeloPath.length > 0;
 
+  // Reemplaza el bloque sliderSettings existente por este:
   const sliderSettings = {
     dots: true,
     infinite: false,
@@ -173,7 +194,7 @@ export default function EquiposSelect({
     slidesToScroll: 1,
     arrows: true,
     afterChange: (currentSlide: number) => {
-      const threshold = availableEquipmentSlides.length - 4; // precarga anticipada
+      const threshold = availableEquipmentSlides.length - 4;
       if (
         currentSlide >= threshold &&
         page < totalPages &&
@@ -181,6 +202,47 @@ export default function EquiposSelect({
       ) {
         setPage((prev) => prev + 1);
       }
+    },
+    customPaging: (i: number) => (
+      <button
+        style={{
+          width: "10px",
+          height: "10px",
+          borderRadius: "50%",
+          background: "#ccc",
+          border: "none",
+        }}
+      />
+    ),
+    appendDots: (dots: React.ReactNode) => {
+      const dotsArray = Array.isArray(dots) ? dots : [];
+
+      return (
+        <div
+          style={{
+            marginTop: "10px",
+            display: "flex",
+            justifyContent: "center",
+            gap: "8px",
+          }}
+        >
+          {Array.from({ length: totalItems - 1 }, (_, i) => (
+            <span key={i}>
+              {dotsArray[i] || (
+                <button
+                  style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: "#eee",
+                    border: "none",
+                  }}
+                />
+              )}
+            </span>
+          ))}
+        </div>
+      );
     },
     responsive: [
       {
@@ -191,6 +253,18 @@ export default function EquiposSelect({
       },
     ],
   };
+
+  useEffect(() => {
+    if (
+      availableEquipmentSlides.length >= 10 &&
+      page < totalPages &&
+      !pagesLoaded.current.has(page + 1)
+    ) {
+      const siguiente = page + 1;
+      fetchEquipos(siguiente);
+      setPage(siguiente);
+    }
+  }, [availableEquipmentSlides]);
 
   const noResults =
     !loadingSearch &&
@@ -222,7 +296,6 @@ export default function EquiposSelect({
           {showDetails ? "Ocultar detalles" : "Ver disponibilidad"}
         </button>
       </label>
-
       <input
         type="text"
         className="form-control mb-3"
@@ -230,7 +303,6 @@ export default function EquiposSelect({
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-
       {/* Loader sólo cuando se hace búsqueda */}
       {loadingSearch && (
         <div className="text-center my-4">
@@ -238,7 +310,6 @@ export default function EquiposSelect({
           <div className="mt-2">Buscando equipos...</div>
         </div>
       )}
-
       {/* Sin resultados */}
       {noResults && (
         <div className="alert alert-warning text-center my-4" role="alert">
@@ -250,7 +321,8 @@ export default function EquiposSelect({
         <div className="mb-4 border rounded p-3">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="mb-0">Equipos seleccionados:</h5>
-            {puedeVisualizarFull && (
+
+            {Boolean(!formData.modelFile && puedeVisualizarFull) ? (
               //@ts-ignore
               <Button
                 variant="dark"
@@ -258,26 +330,135 @@ export default function EquiposSelect({
                 className="bgpri"
                 onClick={() => setShowFullView(true)}
               >
-                Visualizar full
+                Visualizar En Espacio
               </Button>
-            )}
+            ) : formData.modelFile ? (
+              <div className="d-flex align-items-center gap-2">
+                <FaFileAlt style={{ fontSize: "1.5rem", color: "#0d6efd" }} />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    const url = URL.createObjectURL(formData.modelFile!);
+                    window.open(url, "_blank");
+                  }}
+                >
+                  Visualizar
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, modelFile: null }))
+                  }
+                >
+                  Eliminar modelo
+                </Button>
+              </div>
+            ) : null}
           </div>
+
           <ul className="list-group mb-3">
             {formData.equipment.map((eq) => (
               <li
                 key={eq.id}
                 className="list-group-item d-flex justify-content-between align-items-center"
               >
-                Modelo: {eq.nombre_modelo}
-                <span className="badge bg-primary rounded-pill">
-                  Serie: {eq.numero_serie}
-                </span>
+                <div>
+                  Modelo: {eq.nombre_modelo}{" "}
+                  <span className="badge bg-primary ms-2">
+                    Serie: {eq.numero_serie}
+                  </span>
+                </div>
+                <div className="d-flex gap-2">
+                  {/* ts-ignore */}
+                  <Button
+                    variant="outline-warning"
+                    size="sm"
+                    title="Cambiar equipo (pendiente)"
+                    //@ts-ignore
+                    onClick={() => {
+                      const grupo = availableEquipmentSlides.find(
+                        (g) => g.modelo_id === eq.modelo_id
+                      );
+                      if (!grupo)
+                        return toast.error(
+                          "No se encontraron equipos disponibles de ese modelo."
+                        );
+
+                      const disponibles = grupo.equipos.filter(
+                        (e) =>
+                          !formData.equipment.some((f) => f.id === e.equipo_id)
+                      );
+                      if (disponibles.length === 0)
+                        return toast(
+                          "No hay equipos disponibles para reemplazar."
+                        );
+
+                      setEquipoAEditar(eq);
+                      setEquiposDisponiblesMismoModelo(disponibles);
+                      setShowEditModal(true);
+                    }}
+                  >
+                    <FaExchangeAlt className="fs-5" />
+                  </Button>
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    title="Eliminar equipo"
+                    onClick={() => {
+                      // 1. Eliminar del formData
+                      const equipoEliminado = formData.equipment.find(
+                        (item) => item.id === eq.id
+                      );
+                      if (!equipoEliminado) return;
+
+                      setFormData((prev) => ({
+                        ...prev,
+                        equipment: prev.equipment.filter(
+                          (item) => item.id !== eq.id
+                        ),
+                      }));
+
+                      // 2. Devolver a disponibles
+                      setAvailableEquipmentSlides((prev) => {
+                        return prev.map((grupo) => {
+                          if (grupo.modelo_id !== equipoEliminado.modelo_id)
+                            return grupo;
+
+                          // Solo si no estaba ya
+                          const yaExiste = grupo.equipos.some(
+                            (e) => e.equipo_id === equipoEliminado.id
+                          );
+                          if (yaExiste) return grupo;
+
+                          const nuevoEquipo: EquipoIndividual = {
+                            equipo_id: equipoEliminado.id,
+                            modelo_id: equipoEliminado.modelo_id,
+                            numero_serie: equipoEliminado.numero_serie!,
+                            estado: "Disponible",
+                            tipo_equipo: "", // puedes poblar si tienes info
+                            imagen_glb: null,
+                            imagen_normal: null,
+                            modelo_path: equipoEliminado.modelo_path ?? null,
+                          };
+
+                          return {
+                            ...grupo,
+                            equipos: [...grupo.equipos, nuevoEquipo],
+                          };
+                        });
+                      });
+                    }}
+                  >
+                    <FaTrash />
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
         </div>
       )}
-
       {!loadingSearch && availableEquipmentSlides.length > 0 && (
         <Slider {...sliderSettings}>
           {availableEquipmentSlides.map((grupo, index) => {
@@ -394,21 +575,84 @@ export default function EquiposSelect({
           )}
         </Slider>
       )}
-
       <Modal
         show={showFullView}
         onHide={() => setShowFullView(false)}
         fullscreen
       >
-        <Modal.Header closeButton>
-          <Modal.Title>Visualización completa</Modal.Title>
-        </Modal.Header>
         <Modal.Body className="p-0">
           <InteractiveScene
             path_room={formData.aula?.path_modelo ?? ""}
             equipos={equiposConModeloPath}
             setFormData={setFormData}
           />
+        </Modal.Body>
+      </Modal>
+
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Cambio de equipo por mismo modelo</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {equiposDisponiblesMismoModelo.map((e) => (
+            <div
+              key={e.equipo_id}
+              className="border p-2 d-flex justify-content-between align-items-center mb-2"
+            >
+              <div>
+                <strong>Serie:</strong> {e.numero_serie}
+              </div>
+              <Button
+                variant="success"
+                size="sm"
+                //@ts-ignore
+                onClick={() => {
+                  if (!equipoAEditar) return;
+                  setFormData((prev) => {
+                    const actualizados = prev.equipment.map((item) =>
+                      item.id === equipoAEditar.id
+                        ? {
+                            ...item,
+                            id: e.equipo_id,
+                            numero_serie: e.numero_serie,
+                            modelo_path: e.modelo_path ?? e.imagen_glb ?? "",
+                          }
+                        : item
+                    );
+                    return { ...prev, equipment: actualizados };
+                  });
+                  setAvailableEquipmentSlides((prev) =>
+                    prev.map((grupo) => {
+                      if (grupo.modelo_id !== equipoAEditar.modelo_id)
+                        return grupo;
+                      const nuevaLista = grupo.equipos
+                        .filter((eq) => eq.equipo_id !== e.equipo_id)
+                        .concat({
+                          equipo_id: equipoAEditar.id,
+                          modelo_id: equipoAEditar.modelo_id,
+                          numero_serie: equipoAEditar.numero_serie!,
+                          estado: "Disponible",
+                          tipo_equipo: "",
+                          imagen_glb: null,
+                          imagen_normal: null,
+                          modelo_path: equipoAEditar.modelo_path ?? null,
+                        });
+                      return { ...grupo, equipos: nuevaLista };
+                    })
+                  );
+                  setShowEditModal(false);
+                  setEquipoAEditar(null);
+                }}
+              >
+                Cambiar
+              </Button>
+            </div>
+          ))}
+          {equiposDisponiblesMismoModelo.length === 0 && (
+            <div className="text-muted text-center">
+              No hay equipos disponibles
+            </div>
+          )}
         </Modal.Body>
       </Modal>
     </div>

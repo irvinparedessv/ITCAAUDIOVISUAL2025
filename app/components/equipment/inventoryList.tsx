@@ -124,10 +124,9 @@ export default function InventoryList() {
             Tipo de Equipo
           </Button>
           <Button
-            variant="success"
+            variant="primary"
             onClick={() => navigate('/crearItem')}
             className="d-inline-flex align-items-center gap-2"
-            style={{ padding: '12px' }}
           >
             <FaPlus />
             Agregar Equipo

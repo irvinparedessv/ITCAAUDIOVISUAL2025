@@ -271,7 +271,7 @@ export default function useReservationFormLogic(reservaId?: string | null) {
       setLoading((prev) => ({ ...prev, submit: true }));
 
       if (reservaId) {
-        await api.put(`/reservas-equipo/${reservaId}`, formPayload, {
+        await api.post(`/reservas-equipo/${reservaId}`, formPayload, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         toast.success("¡Reserva actualizada exitosamente!", {

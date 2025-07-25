@@ -121,19 +121,19 @@ export default function ItemEditPage() {
 
   return (
     <div className="container mt-4">
-      <h2>Editar Ítem</h2>
-      <ItemEditForm
-        item={item}
-        tiposEquipo={tiposEquipo}
-        tipoReservas={tipoReservas}
-        marcas={marcas}
-        modelos={modelos}
-        estados={estados}
-        caracteristicas={caracteristicas}
-        loading={loading}
-        onSubmit={handleUpdate}
-      />
-    </div>
+  <ItemEditForm
+    item={item}
+    tiposEquipo={tiposEquipo}
+    tipoReservas={tipoReservas}
+    marcas={marcas}
+    modelos={modelos}
+    estados={estados}
+    caracteristicas={caracteristicas}
+    loading={loading}
+    onSubmit={handleUpdate}
+    isEditing={true}
+  />
+</div>
   );
 }
 

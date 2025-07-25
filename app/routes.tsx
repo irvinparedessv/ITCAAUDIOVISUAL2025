@@ -63,6 +63,7 @@ import ItemEditPage from "./routes/equipment/ItemEditPage";
 import InventoryList from "./components/equipment/inventoryList";
 import TipoEquipoPage from "./routes/tipoEquipoPage";
 import ModeloAccesoriosForm from "./components/equipment/Modelo/ModeloAccesoriosForm";
+import EquipmentReservationForm from "./components/reserveE/EquipmentReservationForm";
 
 const router = createBrowserRouter([
   {
@@ -131,7 +132,7 @@ const router = createBrowserRouter([
           },
           {
             path: "/equipmentreservation/edit/:id",
-            element: <EditEquipmentReservationForm />,
+            element: <EquipmentReservationForm />,
           },
           {
             path: "/aulas/editar/:id",
@@ -156,14 +157,6 @@ const router = createBrowserRouter([
           {
             path: "reservations-room",
             element: <EspacioListWrapper />,
-          },
-          {
-            path: "visualizacion",
-            element: <SceneCanvas reserveId={1} />,
-          },
-          {
-            path: "demo",
-            element: <ViewScene reserveId={1} />,
           },
           {
             path: "aulas/encargados/:aulaId",

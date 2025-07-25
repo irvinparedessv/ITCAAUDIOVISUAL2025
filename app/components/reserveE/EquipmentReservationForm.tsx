@@ -14,11 +14,15 @@ import { Role } from "~/types/roles";
 import useReservationFormLogic from "./hooks/useReservationFormLogic";
 import { useAuth } from "~/hooks/AuthContext";
 import "./style/reserva.css";
-
+import { useParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useEffect } from "react";
+import api from "../../api/axios";
 export default function EquipmentReservationForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
-
+  const { id } = useParams(); // `id` será undefined si es creación
+  const isEditing = !!id;
   const {
     formData,
     setFormData,
@@ -39,9 +43,46 @@ export default function EquipmentReservationForm() {
     loading,
     isDateTimeComplete,
     checkingAvailability,
-  } = useReservationFormLogic();
+  } = useReservationFormLogic(id);
 
   const handleBack = () => navigate("/reservations");
+  useEffect(() => {
+    const fetchReserva = async () => {
+      if (!id) return;
+
+      try {
+        const { data } = await api.get(`/detail/${id}`);
+        // Asegúrate de mapear correctamente los datos al formato de `FormDataType`
+        setFormData({
+          date: data.fecha_reserva,
+          startTime: data.start_time,
+          endTime: data.end_time,
+          tipoReserva: {
+            label: data.tipo_reserva.nombre,
+            value: data.tipo_reserva.id.toString(),
+          },
+          aula: {
+            label: data.aula.name,
+            value: data.aula.id.toString(),
+            path_modelo: data.aula.path_modelo,
+          },
+          equipment: data.equipos.map((eq: any) => ({
+            id: eq.id,
+            modelo_id: eq.modelo_id,
+            nombre_modelo: eq.nombre_modelo,
+            cantidad: 1,
+            modelo_path: eq.modelo_path ?? eq.imagen_gbl ?? "",
+            numero_serie: eq.numero_serie,
+          })),
+          modelFile: null, // opcional
+        });
+      } catch {
+        toast.error("Error al cargar los datos de la reserva");
+      }
+    };
+
+    fetchReserva();
+  }, [id]);
 
   return (
     <div className="form-container position-relative mb-3 mb-md-0">

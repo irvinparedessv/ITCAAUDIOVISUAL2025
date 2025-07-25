@@ -21,7 +21,7 @@ interface LoadingState {
   submit: boolean;
 }
 
-export default function useReservationFormLogic() {
+export default function useReservationFormLogic(reservaId?: string | null) {
   const [formData, setFormData] = useState<FormDataType>({
     date: "",
     startTime: "",
@@ -269,18 +269,29 @@ export default function useReservationFormLogic() {
 
     try {
       setLoading((prev) => ({ ...prev, submit: true }));
-      await api.post("/reservas", formPayload, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      toast.success("¡Reserva creada exitosamente!", {
-        id: "reservation-submit",
-      });
+
+      if (reservaId) {
+        await api.put(`/reservas-equipo/${reservaId}`, formPayload, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        toast.success("¡Reserva actualizada exitosamente!", {
+          id: "reservation-submit",
+        });
+      } else {
+        await api.post("/reservas", formPayload, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        toast.success("¡Reserva creada exitosamente!", {
+          id: "reservation-submit",
+        });
+      }
+
       setTimeout(() => navigate("/reservations"), 2000);
       handleClear();
     } catch (error: any) {
       const message =
         error.response?.data?.message ||
-        "Error al crear la reserva. Intenta nuevamente.";
+        `Error al ${reservaId ? "actualizar" : "crear"} la reserva.`;
       toast.error(message, { id: "reservation-submit" });
     } finally {
       setLoading((prev) => ({ ...prev, submit: false }));

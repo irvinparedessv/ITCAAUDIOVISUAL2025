@@ -62,73 +62,38 @@ export const getItems = async (
 };
 
 export const getItemById = async (id: number, tipo: 'equipo' | 'insumo'): Promise<Item> => {
-  const res = await api.get(`/equipos/${id}`, {
+  const res = await api.get(`/equipoInsumo/${id}`, {
     params: { tipo },
   });
   return res.data;
 };
 
+// Versión limpia
 export const createItem = async (formData: FormData, tipo: 'equipo' | 'insumo') => {
-  try {
-    // Debug: Log FormData contents
-    console.log('FormData contents:');
-    for (const [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
-
-    const response = await api.post("/equipos", formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      params: { tipo } // Send type as query parameter if needed
-    });
-
-    return response.data;
-  } catch (error: any) {
-    console.error("Detailed error:", error);
-    if (error.response) {
-      console.error("Backend response:", error.response.data);
-      throw new Error(error.response.data.message || "Error al crear el ítem");
-    }
-    throw new Error(error.message || "Error de conexión");
-  }
+  return await api.post("/equipos", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    params: { tipo }
+  });
 };
+
 
 export const updateItem = async (
   id: number,
   formData: FormData,
   tipo: 'equipo' | 'insumo'
 ) => {
-  // Agrega tipo y método PUT (si tu backend usa form method spoofing)
   formData.append("tipo", tipo);
   formData.append("_method", "PUT");
 
-  // Debug: Imprimir contenido de FormData
-  console.log("Contenido de formData en updateItem:");
-  for (const [key, value] of formData.entries()) {
-    console.log(key, value);
-  }
-
-  try {
-    const res = await api.post(`/equipos/${id}`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return res.data;
-
-  } catch (error: any) {
-    console.error("Error detallado en updateItem:", error);
-
-    // Captura el mensaje del backend si está disponible
-    if (error.response) {
-      console.error("Respuesta del backend:", error.response.data);
-      throw new Error(error.response.data.message || "Error al actualizar el ítem");
-    }
-
-    throw new Error(error.message || "Error de conexión al actualizar");
-  }
+  return await api.post(`/equipos/${id}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 };
+
 
 export const actualizarValoresCaracteristicasPorEquipo = async (
   equipoId: number,

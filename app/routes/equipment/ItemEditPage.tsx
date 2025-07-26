@@ -81,27 +81,25 @@ export default function ItemEditPage() {
     fetchItem();
   }, [id]);
 
-  const handleUpdate = async (formData: any) => {
+  const handleUpdate = async (formData: FormData) => {
   try {
     setLoading(true);
     const tipo: "equipo" | "insumo" = item?.tipo || "equipo";
-    // Actualizar datos básicos del item
+    
+    // 1. Actualizar datos básicos del item
     const response = await updateItem(Number(id), formData, tipo);
 
-    // Actualizar características si es equipo y vienen en formData
-    if (tipo === "equipo" && formData.caracteristicas) {
-      await actualizarValoresCaracteristicasPorEquipo(Number(id), formData.caracteristicas);
+    // 2. Actualizar características si es equipo y vienen en formData
+    if (tipo === "equipo" && formData.get('caracteristicas')) {
+      await actualizarValoresCaracteristicasPorEquipo(Number(id), JSON.parse(formData.get('caracteristicas') as string));
     }
 
-    // Actualizar localmente el estado (opcional)
-    const valoresActualizados = await getValoresCaracteristicasPorEquipo(Number(id));
-    setCaracteristicas(valoresActualizados);
- console.log('Respuesta del servidor:', response);
-    toast.success("Ítem actualizado correctamente");
-    navigate("/inventario"); // Si quieres navegar después
+    // 3. Retornar la respuesta para que ItemForm maneje el feedback al usuario
+    return response;
+
   } catch (error: any) {
     console.error('Error en la actualización:', error.response?.data);
-    toast.error("Error al actualizar el ítem.");
+    throw error; // Relanzar el error para que ItemForm lo maneje
   } finally {
     setLoading(false);
   }

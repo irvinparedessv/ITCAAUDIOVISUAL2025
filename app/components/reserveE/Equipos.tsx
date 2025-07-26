@@ -11,6 +11,8 @@ import type { EquipmentSeleccionado } from "./types/Equipos";
 import { FaFileAlt, FaTrash } from "react-icons/fa";
 
 import Slider from "react-slick";
+import { useAuth } from "~/hooks/AuthContext";
+import { Role } from "~/types/roles";
 
 interface Props {
   formData: FormDataType;
@@ -54,6 +56,7 @@ export default function EquiposSelect({
     GrupoEquiposPorModelo[]
   >([]);
   const [page, setPage] = useState(1);
+  const { user } = useAuth();
   const [totalPages, setTotalPages] = useState(1);
   const [showDetails, setShowDetails] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
@@ -371,37 +374,42 @@ export default function EquiposSelect({
                   </span>
                 </div>
                 <div className="d-flex gap-2">
-                  {/* ts-ignore */}
-                  <Button
-                    variant="outline-warning"
-                    size="sm"
-                    title="Cambiar equipo (pendiente)"
+                  {(user?.role === Role.Administrador ||
+                    user?.role === Role.Encargado) && (
                     //@ts-ignore
-                    onClick={() => {
-                      const grupo = availableEquipmentSlides.find(
-                        (g) => g.modelo_id === eq.modelo_id
-                      );
-                      if (!grupo)
-                        return toast.error(
-                          "No se encontraron equipos disponibles de ese modelo."
-                        );
 
-                      const disponibles = grupo.equipos.filter(
-                        (e) =>
-                          !formData.equipment.some((f) => f.id === e.equipo_id)
-                      );
-                      if (disponibles.length === 0)
-                        return toast(
-                          "No hay equipos disponibles para reemplazar."
+                    <Button
+                      variant="outline-warning"
+                      size="sm"
+                      title="Cambiar equipo (pendiente)"
+                      onClick={() => {
+                        const grupo = availableEquipmentSlides.find(
+                          (g) => g.modelo_id === eq.modelo_id
                         );
+                        if (!grupo)
+                          return toast.error(
+                            "No se encontraron equipos disponibles de ese modelo."
+                          );
 
-                      setEquipoAEditar(eq);
-                      setEquiposDisponiblesMismoModelo(disponibles);
-                      setShowEditModal(true);
-                    }}
-                  >
-                    <FaExchangeAlt className="fs-5" />
-                  </Button>
+                        const disponibles = grupo.equipos.filter(
+                          (e) =>
+                            !formData.equipment.some(
+                              (f) => f.id === e.equipo_id
+                            )
+                        );
+                        if (disponibles.length === 0)
+                          return toast(
+                            "No hay equipos disponibles para reemplazar."
+                          );
+
+                        setEquipoAEditar(eq);
+                        setEquiposDisponiblesMismoModelo(disponibles);
+                        setShowEditModal(true);
+                      }}
+                    >
+                      <FaExchangeAlt className="fs-5" />
+                    </Button>
+                  )}
                   <Button
                     variant="outline-danger"
                     size="sm"

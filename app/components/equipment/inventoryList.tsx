@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Spinner, Badge, Button, Form, InputGroup } from "react-bootstrap";
 import api from "../../api/axios";
 import { FaEye, FaBoxes, FaLongArrowAltLeft, FaFilter, FaTimes, FaSearch, FaTools, FaToolbox, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
 import toast from "react-hot-toast";
+import AsyncSelect from "react-select/async";
+import { useTheme } from "~/hooks/ThemeContext";
 
 interface ResumenItem {
   modelo_id: number;
@@ -19,12 +21,64 @@ interface ResumenItem {
   accesorios_completos: string | null;
 }
 
+interface SelectOption {
+  value: string;
+  label: string;
+  originalId: number; // Cambiado de opcional a obligatorio
+}
+
 const getCategoryColor = (category: string) => {
   const colors: Record<string, string> = {
     'Equipo': 'primary',
     'Insumo': 'info',
   };
   return colors[category] || 'light';
+};
+
+const searchMarcasForFilter = async (
+  inputValue: string
+): Promise<Array<{ value: string; label: string; originalId: number }>> => {
+  try {
+    const response = await api.get('/marcas', {
+      params: { 
+        search: inputValue, 
+        limit: 10,
+        fields: 'id,nombre'
+      }
+    });
+    return response.data.data.map((marca: any) => ({
+      value: marca.nombre,
+      label: marca.nombre,
+      originalId: marca.id
+    }));
+  } catch (error) {
+    console.error("Error buscando marcas:", error);
+    toast.error("Error al cargar marcas");
+    return [];
+  }
+};
+
+const searchTiposEquipoForFilter = async (
+  inputValue: string
+): Promise<Array<{ value: string; label: string; originalId: number }>> => {
+  try {
+    const response = await api.get('/tipoEquipos', {
+      params: { 
+        search: inputValue, 
+        limit: 10,
+        fields: 'id,nombre,categoria_id'
+      }
+    });
+    return response.data.data.map((tipo: any) => ({
+      value: tipo.nombre,
+      label: `${tipo.nombre} (${tipo.categoria_id === 1 ? 'Equipo' : 'Insumo'})`,
+      originalId: tipo.id
+    }));
+  } catch (error) {
+    console.error("Error buscando tipos de equipo:", error);
+    toast.error("Error al cargar tipos de equipo");
+    return [];
+  }
 };
 
 export default function InventoryList() {
@@ -34,23 +88,95 @@ export default function InventoryList() {
   const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(false);
   const [searchInput, setSearchInput] = useState("");
+  const { darkMode } = useTheme();
 
-  // Filtros
   const [filters, setFilters] = useState({
     search: "",
     categoria: "",
     tipo_equipo: "",
     marca: "",
     page: 1,
-    perPage: 10
+    perPage: 10,
+    marca_id: "",
+    tipo_equipo_id: ""
   });
+
+  const customSelectStyles = useMemo(() => ({
+    control: (base: any, { isDisabled }: any) => ({
+      ...base,
+      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+      borderColor: darkMode ? "#444" : "#ccc",
+      color: darkMode ? "#f8f9fa" : "#212529",
+      minHeight: '38px',
+      opacity: isDisabled ? 0.7 : 1,
+      cursor: isDisabled ? 'not-allowed' : 'default',
+      boxShadow: 'none',
+      ':hover': {
+        borderColor: darkMode ? "#666" : "#adb5bd"
+      }
+    }),
+    menu: (base: any) => ({
+      ...base,
+      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+      color: darkMode ? "#f8f9fa" : "#212529",
+      zIndex: 9999,
+      marginTop: '2px'
+    }),
+    input: (base: any) => ({
+      ...base,
+      color: darkMode ? "#f8f9fa" : "#212529",
+    }),
+    singleValue: (base: any) => ({
+      ...base,
+      color: darkMode ? "#f8f9fa" : "#212529",
+    }),
+    placeholder: (base: any) => ({
+      ...base,
+      color: darkMode ? "#bbb" : "#6c757d",
+    }),
+    option: (base: any, { isFocused, isSelected }: any) => ({
+      ...base,
+      backgroundColor: isSelected
+        ? (darkMode ? "#555" : "#d3d3d3")
+        : isFocused
+          ? (darkMode ? "#444" : "#e6e6e6")
+          : "transparent",
+      color: darkMode ? "#f8f9fa" : "#212529",
+      cursor: "pointer",
+      ':active': {
+        backgroundColor: darkMode ? "#666" : "#e9ecef"
+      }
+    }),
+    indicatorsContainer: (base: any) => ({
+      ...base,
+      padding: '0 8px'
+    }),
+    clearIndicator: (base: any) => ({
+      ...base,
+      color: darkMode ? "#aaa" : "#666",
+      ':hover': {
+        color: darkMode ? "#fff" : "#333"
+      }
+    }),
+    dropdownIndicator: (base: any) => ({
+      ...base,
+      color: darkMode ? "#aaa" : "#666",
+      ':hover': {
+        color: darkMode ? "#fff" : "#333"
+      }
+    })
+  }), [darkMode]);
 
   const fetchDatos = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/resumen-inventario", {
-        params: filters
-      });
+      const params = {
+        ...Object.fromEntries(
+          Object.entries(filters).filter(([_, v]) => v !== "" && v !== null)
+        )
+      };
+
+      const res = await api.get("/resumen-inventario", { params });
       setDatos(res.data.data);
       setLastPage(res.data.last_page);
     } catch (error) {
@@ -66,12 +192,13 @@ export default function InventoryList() {
   }, [filters]);
 
   useEffect(() => {
-    const delayDebounce = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (searchInput !== filters.search) {
         handleFilterChange("search", searchInput);
       }
     }, 500);
-    return () => clearTimeout(delayDebounce);
+
+    return () => clearTimeout(timer);
   }, [searchInput]);
 
   const handlePageChange = (newPage: number) => {
@@ -83,11 +210,27 @@ export default function InventoryList() {
   };
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/equipos");
   };
 
   const handleFilterChange = (key: keyof typeof filters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+  };
+
+  const handleMarcaChange = (selected: SelectOption | null) => {
+    handleFilterChange("marca", selected?.value || "");
+    handleFilterChange("marca_id", selected?.originalId ? String(selected.originalId) : "");
+  };
+
+  const handleTipoEquipoChange = (selected: SelectOption | null) => {
+    handleFilterChange("tipo_equipo", selected?.value || "");
+    handleFilterChange("tipo_equipo_id", selected?.originalId ? String(selected.originalId) : "");
+
+    if (selected?.label?.includes("Equipo")) {
+      handleFilterChange("categoria", "Equipo");
+    } else if (selected?.label?.includes("Insumo")) {
+      handleFilterChange("categoria", "Insumo");
+    }
   };
 
   const resetFilters = () => {
@@ -97,14 +240,15 @@ export default function InventoryList() {
       tipo_equipo: "",
       marca: "",
       page: 1,
-      perPage: 10
+      perPage: 10,
+      marca_id: "",
+      tipo_equipo_id: ""
     });
     setSearchInput("");
   };
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
-      {/* Encabezado */}
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
         <div className="d-flex align-items-center gap-3">
           <FaLongArrowAltLeft
@@ -117,14 +261,6 @@ export default function InventoryList() {
         <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
           <Button
             variant="primary"
-            onClick={() => navigate('/tipoEquipo')}
-            className="d-inline-flex align-items-center gap-2 me-2"
-          >
-            <FaTools />
-            Tipo de Equipo
-          </Button>
-          <Button
-            variant="primary"
             onClick={() => navigate('/crearItem')}
             className="d-inline-flex align-items-center gap-2"
           >
@@ -134,7 +270,6 @@ export default function InventoryList() {
         </div>
       </div>
 
-      {/* Barra de búsqueda y filtros */}
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
         <div className="flex-grow-1">
           <InputGroup>
@@ -167,7 +302,6 @@ export default function InventoryList() {
         </Button>
       </div>
 
-      {/* Filtros avanzados */}
       {showFilters && (
         <div className="p-3 rounded mb-4 bg-light">
           <div className="row g-3">
@@ -187,12 +321,29 @@ export default function InventoryList() {
 
             <div className="col-md-4">
               <Form.Group>
-                <Form.Label>Tipo de equipo</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Filtrar por tipo"
-                  value={filters.tipo_equipo}
-                  onChange={(e) => handleFilterChange("tipo_equipo", e.target.value)}
+                <Form.Label>Tipo de Equipo</Form.Label>
+                <AsyncSelect
+                  cacheOptions
+                  defaultOptions
+                  loadOptions={searchTiposEquipoForFilter}
+                  value={
+                    filters.tipo_equipo
+                      ? { 
+                          value: filters.tipo_equipo, 
+                          label: filters.tipo_equipo,
+                          originalId: Number(filters.tipo_equipo_id)
+                        }
+                      : null
+                  }
+                  onChange={handleTipoEquipoChange}
+                  placeholder="Buscar tipo de equipo..."
+                  noOptionsMessage={({ inputValue }) =>
+                    inputValue ? "No se encontraron tipos" : "Escribe para buscar..."
+                  }
+                  loadingMessage={() => "Buscando tipos..."}
+                  styles={customSelectStyles}
+                  menuPortalTarget={document.body}
+                  isClearable
                 />
               </Form.Group>
             </div>
@@ -200,11 +351,28 @@ export default function InventoryList() {
             <div className="col-md-4">
               <Form.Group>
                 <Form.Label>Marca</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Filtrar por marca"
-                  value={filters.marca}
-                  onChange={(e) => handleFilterChange("marca", e.target.value)}
+                <AsyncSelect
+                  cacheOptions
+                  defaultOptions
+                  loadOptions={searchMarcasForFilter}
+                  value={
+                    filters.marca
+                      ? { 
+                          value: filters.marca, 
+                          label: filters.marca,
+                          originalId: Number(filters.marca_id)
+                        }
+                      : null
+                  }
+                  onChange={handleMarcaChange}
+                  placeholder="Buscar marca..."
+                  noOptionsMessage={({ inputValue }) =>
+                    inputValue ? "No se encontraron marcas" : "Escribe para buscar..."
+                  }
+                  loadingMessage={() => "Buscando marcas..."}
+                  styles={customSelectStyles}
+                  menuPortalTarget={document.body}
+                  isClearable
                 />
               </Form.Group>
             </div>
@@ -216,7 +384,7 @@ export default function InventoryList() {
                 className="w-100 d-flex align-items-center justify-content-center gap-2"
               >
                 <FaTimes />
-                Limpiar filtros
+                Limpiar todos los filtros
               </Button>
             </div>
           </div>

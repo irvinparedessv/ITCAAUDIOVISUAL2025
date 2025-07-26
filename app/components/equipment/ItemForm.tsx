@@ -401,7 +401,18 @@ export default function ItemForm({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  interface BackendValidationError {
+  message?: string;
+  errors?: Record<string, string[]>;
+}
+
+interface BackendError extends Error {
+  response?: {
+    data?: BackendValidationError;
+  };
+}
+
+const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   toast.dismiss();
 
@@ -414,7 +425,7 @@ export default function ItemForm({
   if (!form.detalles?.trim()) return toast.error("Ingrese los detalles");
   if (!form.fecha_adquisicion) return toast.error("Ingrese la fecha de adquisición");
   
-  
+  // Validaciones específicas por tipo
   if (esInsumo) {
     if (!isEditing && (!form.cantidad || Number(form.cantidad) <= 0)) {
       return toast.error("La cantidad debe ser mayor a cero");
@@ -428,6 +439,7 @@ export default function ItemForm({
     }
   }
 
+  // Validación de características
   const caracteristicasInvalidas = caracteristicas.filter(
     c => !c.valor || c.valor.trim() === ""
   );
@@ -438,11 +450,10 @@ export default function ItemForm({
     );
   }
 
-  // Toast de confirmación solo para edición
+  // Confirmación para edición
   if (isEditing) {
     const toastId = `update-confirmation-${initialValues?.id || ''}`;
     
-    // Cerrar toasts activos antes de mostrar el nuevo
     toast.dismiss();
     
     const confirmation = await new Promise((resolve) => {
@@ -473,72 +484,105 @@ export default function ItemForm({
           </div>
         ),
         {
-          duration: 5000, 
+          duration: 5000,
           id: toastId,
         }
       );
     });
 
-    // Si el usuario cancela, no continuar
     if (!confirmation) return;
   }
 
   try {
-    const formData = new FormData();
+  const formData = new FormData();
 
-    formData.append("tipo", esInsumo ? "insumo" : "equipo");
-    if (isEditing) formData.append("_method", "PUT");
+  // Configuración básica
+  formData.append("tipo", esInsumo ? "insumo" : "equipo");
+  if (isEditing) formData.append("_method", "PUT");
 
-    // Datos básicos
-    formData.append("tipo_equipo_id", form.tipo_equipo_id);
-    formData.append("modelo_id", form.modelo_id);
-    formData.append("estado_id", form.estado_id);
-    formData.append("detalles", form.detalles);
-    formData.append("fecha_adquisicion", form.fecha_adquisicion);
-    formData.append("tipo_reserva_id", form.tipo_reserva_id); // Aseguramos que siempre se envíe
+  // Datos principales
+  formData.append("tipo_equipo_id", form.tipo_equipo_id);
+  formData.append("modelo_id", form.modelo_id);
+  formData.append("estado_id", form.estado_id);
+  formData.append("detalles", form.detalles);
+  formData.append("fecha_adquisicion", form.fecha_adquisicion);
+  formData.append("tipo_reserva_id", form.tipo_reserva_id);
 
-    if (esInsumo) {
-      if (!isEditing || form.cantidad) {
-        formData.append("cantidad", form.cantidad);
-      }
-    } else {
-      formData.append("numero_serie", form.numero_serie);
-      if (form.vida_util) {
-        formData.append("vida_util", form.vida_util);
-      }
+  // Datos específicos por tipo
+  if (esInsumo) {
+    if (!isEditing || form.cantidad) {
+      formData.append("cantidad", form.cantidad);
     }
+  } else {
+    formData.append("numero_serie", form.numero_serie);
+    if (form.vida_util) {
+      formData.append("vida_util", form.vida_util);
+    }
+  }
 
-    // Características
-    if (caracteristicas.length > 0) {
-      const caracteristicasJSON = JSON.stringify(
+  // Características
+  if (caracteristicas.length > 0) {
+    formData.append(
+      "caracteristicas",
+      JSON.stringify(
         caracteristicas.map(c => ({
           caracteristica_id: c.id,
           valor: c.valor
         }))
-      );
-      formData.append("caracteristicas", caracteristicasJSON);
-    }
-
-    // Imagen
-    if (form.imagen) {
-      formData.append("imagen", form.imagen);
-    } else if (isEditing && !imagePreview && initialValues?.imagen_url) {
-      formData.append("remove_image", "true");
-    }
-
-    await onSubmit(formData);
-    toast.success(`Ítem ${isEditing ? 'actualizado' : 'creado'} correctamente`);
-
-    if (!isEditing) handleClear();
-
-  } catch (error) {
-    console.error("Error al guardar:", error);
-    toast.error(
-      `Error al ${isEditing ? 'actualizar' : 'crear'} el ítem: ${
-        error instanceof Error ? error.message : 'Error desconocido'
-      }`
+      )
     );
   }
+
+  // Imagen
+  if (form.imagen) {
+    formData.append("imagen", form.imagen);
+  } else if (isEditing && !imagePreview && initialValues?.imagen_url) {
+    formData.append("remove_image", "true");
+  }
+
+  // Enviar datos
+  await onSubmit(formData);
+
+  // Feedback al usuario
+  toast.success(`Ítem ${isEditing ? 'actualizado' : 'creado'} correctamente`);
+
+  // Reset solo para creación exitosa
+  if (!isEditing) handleClear();
+
+  // 👉 Navegación después del éxito
+  navigate('/inventario');
+
+} catch (error) {
+  console.error("Error en handleSubmit:", error);
+
+  const backendError = error as BackendError;
+  const responseData = backendError.response?.data;
+
+  // 🔍 MOSTRAR EN CONSOLA PARA DEPURAR
+  console.log("Respuesta del backend:", responseData);
+
+  // 🟡 Si hay errores específicos del backend (por campo)
+  if (responseData?.errors) {
+    const errors = responseData.errors;
+
+    // ✅ Mostrar todos los errores del backend como toasts
+    Object.values(errors).forEach((messages) => {
+      messages.forEach((msg: string) => toast.error(msg));
+    });
+
+    // 🛑 DETENER ejecución aquí para evitar mostrar mensaje general
+    return;
+  }
+
+  // 🔴 Si no hay errores de validación, mostramos el mensaje general del backend
+  const errorMessage =
+    responseData?.message ||
+    (error instanceof Error ? error.message : "Error desconocido");
+
+  toast.error(`Error al ${isEditing ? "actualizar" : "crear"}: ${errorMessage}`);
+}
+
+
 };
 
   const getLocalDateString = () => {
@@ -942,15 +986,18 @@ export default function ItemForm({
             <FaSave className="me-2" />
             {isEditing ? 'Actualizar' : 'Guardar'}
           </button>
-          <button
-            type="button"
-            className="btn secondary-btn"
-            onClick={handleClear}
-            disabled={loading}
-          >
-            <FaBroom className="me-2" />
-            Limpiar
-          </button>
+          {/* Mostrar botón Limpiar solo cuando no esté en modo edición */}
+  {!isEditing && (
+    <button
+      type="button"
+      className="btn secondary-btn"
+      onClick={handleClear}
+      disabled={loading}
+    >
+      <FaBroom className="me-2" />
+      Limpiar
+    </button>
+  )}
           <button
             type="button"
             className="btn btn-secondary"

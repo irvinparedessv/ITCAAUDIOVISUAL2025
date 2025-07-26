@@ -50,7 +50,6 @@ export default function ItemCreatePage() {
   try {
     setLoading(true);
     
-    // Determinar tipo de equipo
     const tipoEquipoId = formData.get('tipo_equipo_id');
     const tipoEquipo = tiposEquipo.find(t => t.id === Number(tipoEquipoId));
     
@@ -60,7 +59,6 @@ export default function ItemCreatePage() {
 
     const tipo = tipoEquipo.categoria_id === 2 ? "insumo" : "equipo";
 
-    // Validación adicional de cantidad para insumos
     if (tipo === "insumo") {
       const cantidad = formData.get('cantidad');
       if (!cantidad || Number(cantidad) <= 0) {
@@ -68,16 +66,17 @@ export default function ItemCreatePage() {
       }
     }
 
-    await createItem(formData, tipo);
-    toast.success(`${tipo === "equipo" ? "Equipo" : "Insumo"} creado exitosamente`);
-    navigate("/inventario");
+    // Solo manejar la respuesta aquí, no mostrar toast de éxito
+    const response = await createItem(formData, tipo);
+    return response; // Devolver la respuesta para que ItemForm la maneje
   } catch (error: any) {
     console.error("Error en handleSubmit:", error);
-    toast.error(error.message || "Error al crear el ítem");
+    throw error; // Relanzar el error para que ItemForm lo maneje
   } finally {
     setLoading(false);
   }
 };
+
 
   return (
     <div className="container mt-4">

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Row, Col, Spinner, Table, Badge, Button } from "react-bootstrap";
 import api from "../../api/axios";
 import AulaReservacionEstadoModal from "./RoomReservationStateModal";
-import { QRURL } from "~/constants/constant";
+import { APIURL, QRURL } from "~/constants/constant";
 import type { Bitacora } from "~/types/bitacora";
 import RoomDetailsModal from "../applicant/RoomDetailsModal";
 import toast from "react-hot-toast";
@@ -687,7 +687,7 @@ const RoomReservationList = () => {
         <VisualizarModal
           show={showVisualizar}
           onHide={() => setShowVisualizar(false)}
-          path={reservaParaVisualizar}
+          path={APIURL + reservaParaVisualizar}
         />
       </div>
     </div>

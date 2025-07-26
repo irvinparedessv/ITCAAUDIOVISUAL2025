@@ -22,11 +22,7 @@ export default function FechaReservaInput({
           setFormData((prev: any) => ({
             ...prev,
             date: e.target.value,
-            startTime: "",
-            endTime: "",
-            tipoReserva: null,
             equipment: [],
-            aula: null,
           }))
         }
         className="form-control"

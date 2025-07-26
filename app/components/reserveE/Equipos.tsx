@@ -129,7 +129,19 @@ export default function EquiposSelect({
       setLoadingNextPage(false);
     }
   };
+  useEffect(() => {
+    setLoadingSearch(true);
 
+    // Reset de equipos disponibles cuando cambia fecha, hora o tipo de reserva
+    setAvailableEquipmentSlides([]);
+    pagesLoaded.current.clear();
+    setPage(1);
+  }, [
+    formData.tipoReserva,
+    formData.date,
+    formData.startTime,
+    formData.endTime,
+  ]);
   // Dispara fetch al cambiar página o filtros base
   useEffect(() => {
     fetchEquipos(page);

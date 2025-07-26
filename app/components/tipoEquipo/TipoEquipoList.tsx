@@ -56,7 +56,7 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
   };
 
   const handleBack = () => {
-    navigate("/inventario");
+    navigate("/equipos");
   };
 
   const handleFilterUpdate = (key: string, value: any) => {

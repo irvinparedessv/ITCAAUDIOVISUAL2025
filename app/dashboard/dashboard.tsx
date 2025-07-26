@@ -60,7 +60,7 @@ export default function Dashboard() {
             <DashboardCard
               title="Gestión de Equipos"
               icon={<FaTools size={24} />}
-              link="/inventario"
+              link="/equipos"
               description="Administrar inventario de equipos"
             />
             <DashboardCard

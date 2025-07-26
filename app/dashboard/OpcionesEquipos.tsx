@@ -51,13 +51,6 @@ const opciones = [
     icono: <FaComputer size={24} />,
     roles: [Role.Administrador, Role.Encargado, Role.EspacioEncargado],
   },
-  {
-    nombre: "Imagenes Equipos",
-    descripcion: "Administacion de Imagenes para equipos",
-    ruta: "/imagenes",
-    icono: <FaImage size={24} />,
-    roles: [Role.Administrador],
-  },
 ];
 
 const OpcionesEquipos = () => {

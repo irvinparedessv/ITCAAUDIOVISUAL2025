@@ -66,6 +66,8 @@ import ModeloAccesoriosForm from "./components/equipment/Modelo/ModeloAccesorios
 import EquipmentReservationForm from "./components/reserveE/EquipmentReservationForm";
 import OpcionesEquipos from "./dashboard/OpcionesEquipos";
 import ModeloManager from "./components/modelo/modeloManager";
+import ModelUploader from "./components/renders/components/CreationUpload";
+import GestorModelos from "./components/renders/components/CreationUpload";
 
 const router = createBrowserRouter([
   {
@@ -252,6 +254,11 @@ const router = createBrowserRouter([
             path: "prediccionPorEquipoPage",
             element: <PrediccionPorEquipoPage />,
           },
+          {
+            path: "modelos/gestionar/:id",
+            element: <GestorModelos />,
+          },
+
           {
             path: "administracion",
             element: <OpcionesPanel />,

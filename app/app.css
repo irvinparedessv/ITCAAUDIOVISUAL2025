@@ -5,49 +5,58 @@
 
 :root {
   --font-poppins: "Poppins", sans-serif;
-  --text-base-size: 14px; /* Tamaño base reducido desde 16px */
+  --text-base-size: 14px;
+  /* Tamaño base reducido desde 16px */
 }
 
 body {
   font-family: var(--font-poppins);
   font-size: var(--text-base-size);
-  font-weight: 300; /* Peso mejorado para legibilidad */
+  font-weight: 300;
+  /* Peso mejorado para legibilidad */
 }
 
 /* Encabezados con tamaños reducidos */
 h1 {
-  font-size: 1.8rem; /* ~25.2px (en lugar de ~2.5rem/35px) */
-  font-weight: 300; /* Cambiado de 100 a 300 para mejor legibilidad */
+  font-size: 1.8rem;
+  /* ~25.2px (en lugar de ~2.5rem/35px) */
+  font-weight: 300;
+  /* Cambiado de 100 a 300 para mejor legibilidad */
   line-height: 1.2;
   margin-bottom: 0.75rem;
 }
 
 h2 {
-  font-size: 1.6rem; /* ~22.4px */
+  font-size: 1.6rem;
+  /* ~22.4px */
   font-weight: 300;
   margin-bottom: 0.7rem;
 }
 
 h3 {
-  font-size: 1.4rem; /* ~19.6px */
+  font-size: 1.4rem;
+  /* ~19.6px */
   font-weight: 300;
   margin-bottom: 0.65rem;
 }
 
 h4 {
-  font-size: 1.2rem; /* ~16.8px */
+  font-size: 1.2rem;
+  /* ~16.8px */
   font-weight: 300;
   margin-bottom: 0.6rem;
 }
 
 h5 {
-  font-size: 1.1rem; /* ~15.4px */
+  font-size: 1.1rem;
+  /* ~15.4px */
   font-weight: 300;
   margin-bottom: 0.55rem;
 }
 
 h6 {
-  font-size: 1rem; /* ~14px (igual al tamaño base) */
+  font-size: 1rem;
+  /* ~14px (igual al tamaño base) */
   font-weight: 300;
   margin-bottom: 0.5rem;
 }
@@ -55,8 +64,10 @@ h6 {
 /* Botones con estilo mejorado */
 .btn {
   font-family: var(--font-poppins);
-  font-weight: 400; /* Cambiado de 100 a 400 para mejor visibilidad */
-  font-size: 0.9rem; /* ~12.6px (ligeramente más pequeño que el texto base) */
+  font-weight: 400;
+  /* Cambiado de 100 a 400 para mejor visibilidad */
+  font-size: 0.9rem;
+  /* ~12.6px (ligeramente más pequeño que el texto base) */
   letter-spacing: 0.3px;
   padding: 0.375rem 0.75rem;
 }
@@ -64,11 +75,13 @@ h6 {
 /* Media query para móviles */
 @media (max-width: 768px) {
   :root {
-    --text-base-size: 13px; /* Tamaño aún más pequeño en móviles */
+    --text-base-size: 13px;
+    /* Tamaño aún más pequeño en móviles */
   }
 
   h1 {
-    font-size: 1.6rem; /* Reducción adicional para móviles */
+    font-size: 1.6rem;
+    /* Reducción adicional para móviles */
   }
 
   .btn {
@@ -87,13 +100,18 @@ h6 {
   --navbar-text: #000000;
 
   /* Hovers del navbar */
-  --navbar-hover-bg-light: rgba(255, 255, 255, 0.3); /* Modo claro */
-  --navbar-hover-bg-dark: rgba(0, 0, 0, 0.2); /* Modo oscuro */
+  --navbar-hover-bg-light: rgba(255, 255, 255, 0.3);
+  /* Modo claro */
+  --navbar-hover-bg-dark: rgba(0, 0, 0, 0.2);
+  /* Modo oscuro */
   --dropdown-hover-bg: rgba(0, 0, 0, 0.1);
 }
+
 input[type="time"] {
-  -webkit-appearance: none; /* En algunos navegadores como Safari */
-  appearance: none; /* Elimina el estilo nativo */
+  -webkit-appearance: none;
+  /* En algunos navegadores como Safari */
+  appearance: none;
+  /* Elimina el estilo nativo */
   width: 100%;
   padding: 5px;
   font-size: 1rem;
@@ -112,13 +130,17 @@ input[type="time"] {
   color: var(--navbar-text) !important;
   transition: background-color 0.2s ease;
 }
+
 .spinner-border.text-primary {
-  color: #a52a2a !important; /* Cambia el color */
+  color: #a52a2a !important;
+  /* Cambia el color */
 }
+
 .timeForm {
   height: 60% !important;
   text-align: center;
 }
+
 /* Hovers (dependiendo del modo) */
 .navbar-nav .nav-link:hover,
 .nav-dropdown-toggle:hover,
@@ -156,24 +178,25 @@ input[type="time"] {
 }
 
 .btn-notification-link {
-  color: #000000 !important; /* Ocre oscuro */
+  color: #000000 !important;
+  /* Ocre oscuro */
   font-weight: bold !important;
 }
 
 .btn-notification-link:hover {
-  color: #5c3202 !important; /* Ocre aún más oscuro */
+  color: #5c3202 !important;
+  /* Ocre aún más oscuro */
   text-decoration: none;
 }
 
 /* CODIGO DE PERSONALIZACION DEL Dropdown.Toggle DE MENU */
 .custom-user-toggle {
   all: unset;
+
   &:hover,
   &:focus {
-    background: linear-gradient(
-      rgb(245, 195, 92),
-      rgb(206, 145, 20)
-    ) !important;
+    background: linear-gradient(rgb(245, 195, 92),
+        rgb(206, 145, 20)) !important;
     color: #000 !important;
     text-decoration: none;
   }
@@ -209,6 +232,7 @@ input[type="time"] {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
 /* Nombre del usuario con texto cortado si es muy largo MOBILE */
 .user-name-ellipsis {
   max-width: 120px;
@@ -217,7 +241,8 @@ input[type="time"] {
   text-overflow: ellipsis;
   display: inline-block;
   vertical-align: middle;
-  margin-left: 8px; /* Espacio entre icono y texto */
+  margin-left: 8px;
+  /* Espacio entre icono y texto */
 }
 
 /* FIN DE CODIGO DE PERSONALIZACION DEL Dropdown.Toggle DE MENU */
@@ -301,19 +326,16 @@ input[type="time"] {
 
 .btn-primary:hover,
 .btn-primary:focus {
-  background-color: color-mix(
-    in srgb,
-    var(--bs-primary-bg),
-    black 15%
-  ) !important;
+  background-color: color-mix(in srgb,
+      var(--bs-primary-bg),
+      black 15%) !important;
   border-color: color-mix(in srgb, var(--bs-primary-bg), black 15%) !important;
 }
 
 /* INICIO DE Estilos base para los enlaces de paginación */
 .page-link {
-  color: var(
-    --bs-body-color
-  ) !important; /* Usará el color de texto principal del tema */
+  color: var(--bs-body-color) !important;
+  /* Usará el color de texto principal del tema */
   background-color: transparent;
   border-color: var(--bs-border-color);
   transition: all 0.2s ease;
@@ -329,7 +351,8 @@ input[type="time"] {
 .page-item.active .page-link {
   background-color: var(--bs-primary-bg) !important;
   border-color: var(--bs-primary-bg) !important;
-  color: var(--bs-primary-text) !important; /* Texto blanco */
+  color: var(--bs-primary-text) !important;
+  /* Texto blanco */
 }
 
 /* Elementos deshabilitados */
@@ -337,6 +360,7 @@ input[type="time"] {
   color: var(--bs-secondary-color) !important;
   opacity: 0.6;
 }
+
 /* FIN DE Estilo base para los enlaces de paginación */
 
 .btn.secondary-btn {
@@ -415,9 +439,11 @@ input[type="time"] {
 .dropdown-item:focus,
 .dropdown-item:active,
 .dropdown-item.active {
-  background-color: #f5c35c !important; /* Mostaza */
+  background-color: #f5c35c !important;
+  /* Mostaza */
   text-decoration: none;
 }
+
 /* FIN DE CAMBIANDO COLOR DEL HOVER */
 
 /* FIN DE DISENIO DE TOOGLE EN SIEMPRE OSCURO */
@@ -434,8 +460,10 @@ input[type="time"] {
 
 /* Botón flotante del chatbot - AHORA DORADO */
 .chatbot-button {
-  background-color: #f5c35c; /* Cambiado a dorado */
-  color: #8b0000; /* Color del icono - rojo oscuro */
+  background-color: #f5c35c;
+  /* Cambiado a dorado */
+  color: #8b0000;
+  /* Color del icono - rojo oscuro */
   border: none;
   border-radius: 50%;
   width: 60px;
@@ -447,29 +475,35 @@ input[type="time"] {
   justify-content: center;
   transition: all 0.3s ease;
 }
+
 .chat-options,
 .equipo-botones {
   display: contents;
 }
 
 .chatbot-button:hover {
-  background-color: #f5c35c; /* Mantiene dorado al hacer hover */
+  background-color: #f5c35c;
+  /* Mantiene dorado al hacer hover */
   transform: scale(1.1);
 }
 
 /* Versión modo oscuro del botón */
 .chatbot-button.dark-mode {
-  background-color: #f5c35c; /* Sigue dorado en modo oscuro */
-  color: #6b0000; /* Rojo más oscuro para modo oscuro */
+  background-color: #f5c35c;
+  /* Sigue dorado en modo oscuro */
+  color: #6b0000;
+  /* Rojo más oscuro para modo oscuro */
 }
 
 .chatbot-button.dark-mode:hover {
-  background-color: #f5c35c; /* Mantiene dorado */
+  background-color: #f5c35c;
+  /* Mantiene dorado */
 }
 
 /* Estilos para el SVG (icono de burbuja) */
 .chatbot-button svg {
-  stroke: currentColor; /* Hereda el color rojo definido arriba */
+  stroke: currentColor;
+  /* Hereda el color rojo definido arriba */
   width: 24px;
   height: 24px;
 }
@@ -694,6 +728,7 @@ input[type="time"] {
     opacity: 0;
     transform: translateY(10px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -753,7 +788,8 @@ body.light {
   --select-bg: #2d2d2d;
   --select-border: #4a5568;
   --select-text: #f8f9fa;
-  --select-multi-bg: #444; /* fondo más oscuro para etiquetas */
+  --select-multi-bg: #444;
+  /* fondo más oscuro para etiquetas */
   --select-focused-bg: #3c3c3c;
   --select-remove-color: #f8f9fa;
 }
@@ -793,7 +829,8 @@ body.light {
 
 .react-select__multi-value__remove:hover {
   background-color: transparent !important;
-  color: #dc3545 !important; /* rojo para hover eliminar */
+  color: #dc3545 !important;
+  /* rojo para hover eliminar */
 }
 
 .react-select__menu {
@@ -919,20 +956,25 @@ input.form-control.border-color-login {
 
 /* Cambiar el color de fondo a gris oscuro cuando está deshabilitado o cargando */
 .primary-btn[disabled] {
-  background-color: #555 !important; /* Gris oscuro */
+  background-color: #555 !important;
+  /* Gris oscuro */
   border-color: #555 !important;
-  cursor: not-allowed; /* Cambiar el cursor para indicar que está deshabilitado */
+  cursor: not-allowed;
+  /* Cambiar el cursor para indicar que está deshabilitado */
 }
 
 /* Cambiar color de fondo cuando el botón tiene el estado de 'loading' */
 .primary-btn.loading {
-  background-color: #555 !important; /* Gris oscuro */
+  background-color: #555 !important;
+  /* Gris oscuro */
   border-color: #555 !important;
 }
 
 .primary-btn:active {
-  background-color: #555 !important; /* Gris oscuro */
-  border-color: #555 !important; /* Cambia también el borde, si es necesario */
+  background-color: #555 !important;
+  /* Gris oscuro */
+  border-color: #555 !important;
+  /* Cambia también el borde, si es necesario */
 }
 
 /* DISENIO DE ALERTAS DE MODAL */
@@ -1112,6 +1154,7 @@ input.form-control.border-color-login {
   border-color: #6b0000;
   color: #fff;
 }
+
 .notifications-wrapper {
   --bs-list-group-active-bg: rgba(107, 0, 0, 0.1);
   --bs-list-group-active-border-color: #6b0000;
@@ -1145,7 +1188,8 @@ input.form-control.border-color-login {
   align-items: center;
   gap: 0.5rem;
   width: 100%;
-  color: #212529 !important; /* Color de texto oscuro */
+  color: #212529 !important;
+  /* Color de texto oscuro */
   transition: background-color 0.2s;
 }
 
@@ -1160,7 +1204,8 @@ input.form-control.border-color-login {
   width: 100%;
   background: transparent !important;
   border: none !important;
-  padding-left: 1rem !important; /* Sangría para subitems */
+  padding-left: 1rem !important;
+  /* Sangría para subitems */
   margin: 0 !important;
 }
 
@@ -1174,29 +1219,36 @@ input.form-control.border-color-login {
 /* Flechas de dropdown (chevron) */
 .offcanvas-dropdown .dropdown-toggle::after {
   display: inline-block;
-  margin-left: auto; /* Alinea a la derecha */
-  border: none !important; /* Elimina el icono por defecto */
+  margin-left: auto;
+  /* Alinea a la derecha */
+  border: none !important;
+  /* Elimina el icono por defecto */
   font-family: "Font Awesome 6 Free";
   font-weight: 900;
-  content: "\f078"; /* Icono de FontAwesome (chevron-down) */
+  content: "\f078";
+  /* Icono de FontAwesome (chevron-down) */
   font-size: 0.75rem;
 }
 
 .offcanvas-dropdown.show .dropdown-toggle::after {
-  content: "\f077"; /* Icono cuando está abierto (chevron-up) */
+  content: "\f077";
+  /* Icono cuando está abierto (chevron-up) */
 }
 
 /* HACE QUE EL CORREO EN DETALLE DE RESERVA NO SE SOBREPONGA AL CODIGO QR */
 .word-break {
-  word-break: break-word; /* o break-all para mayor agresividad */
+  word-break: break-word;
+  /* o break-all para mayor agresividad */
   overflow-wrap: break-word;
   word-wrap: break-word;
   hyphens: auto;
 }
+
 /* FIN DE HACE QUE EL CORREO EN DETALLE DE RESERVA NO SE SOBREPONGA AL CODIGO QR */
 
 .card-header-dark-red {
-  background-color: #8b0000 !important; /* Rojo oscuro */
+  background-color: #8b0000 !important;
+  /* Rojo oscuro */
   color: white !important;
   border-bottom: none !important;
 }
@@ -1231,7 +1283,8 @@ input.form-control.border-color-login {
 
 .bg-warning {
   background-color: rgb(195, 144, 0) !important;
-  color: #fff !important; /* Texto blanco para mejor contraste */
+  color: #fff !important;
+  /* Texto blanco para mejor contraste */
 }
 
 /* Dashboard.module.css */
@@ -1257,9 +1310,11 @@ input.form-control.border-color-login {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -1306,9 +1361,11 @@ input.form-control.border-color-login {
   0% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-10px);
   }
+
   100% {
     transform: translateY(0px);
   }
@@ -1322,12 +1379,14 @@ input.form-control.border-color-login {
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
-  background: #8b0000; /* Fondo rojo SIEMPRE */
+  background: #8b0000;
+  /* Fondo rojo SIEMPRE */
   box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
 }
 
 .iconWrapper svg {
-  color: #ffffff !important; /* Ícono blanco SIEMPRE */
+  color: #ffffff !important;
+  /* Ícono blanco SIEMPRE */
 }
 
 .cardTitle {
@@ -1480,4 +1539,10 @@ input.form-control.border-color-login {
   color: var(--bs-body-color);
   margin: 1rem;
   width: 90%;
+}
+
+/* alerta bugeada en tipoEquipo Cambiando El color como el root.tsx */
+.go2072408551 {
+  background: #363636 !important;
+  color: #ffffff !important;
 }

@@ -43,8 +43,14 @@ export default function TipoEquipoForm({
   const [mostrarAgregarCarac, setMostrarAgregarCarac] = useState(false);
   const [nuevaCarac, setNuevaCarac] = useState("");
   const [tipoDato, setTipoDato] = useState("string");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    toast.dismiss(); // limpia cualquier confirmación colgada
+  }, []);
 
   // Cargar características del localStorage al iniciar
   useEffect(() => {
@@ -55,12 +61,11 @@ export default function TipoEquipoForm({
 
     async function fetchData() {
       try {
+        setIsLoading(true);
         const [catJson, caracJson] = await Promise.all([
           getCategorias(),
           getCaracteristicas(),
         ]);
-
-        console.log("Características desde backend:", caracJson); // <--- Agrega aquí
 
         const caracLocales = cargarCaracteristicasLocales();
 
@@ -71,6 +76,8 @@ export default function TipoEquipoForm({
         setCategorias(catJson);
       } catch (error) {
         toast.error("Error al cargar datos");
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -79,7 +86,6 @@ export default function TipoEquipoForm({
 
   useEffect(() => {
     if (tipoEditado) {
-      console.log("Características del tipo editado:", tipoEditado.caracteristicas);
       setNombre(tipoEditado.nombre);
       setCategoriaId(tipoEditado.categoria_id ?? null);
       if (tipoEditado.caracteristicas) {
@@ -88,16 +94,67 @@ export default function TipoEquipoForm({
     }
   }, [tipoEditado]);
 
-  useEffect(() => {
-    console.log("Características seleccionadas (ids):", caracSeleccionadas);
-  }, [caracSeleccionadas]);
-
-  const handleSubmit = async () => {
-    if (!nombre.trim() || !categoriaId) {
-      toast.error("Nombre y categoría son obligatorios");
-      return;
+  const validateForm = () => {
+    if (!nombre.trim()) {
+      toast.error("El nombre es obligatorio");
+      return false;
     }
 
+    if (!categoriaId) {
+      toast.error("Debe seleccionar una categoría");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    // Mostrar confirmación
+    toast.dismiss('confirm-update');
+
+    toast(
+      (t) => (
+        <div className="text-center">
+          <p>¿Está seguro que desea {tipoEditado ? "actualizar" : "crear"} este tipo de equipo?</p>
+          <div className="d-flex justify-content-center gap-3 mt-3">
+            <button
+              className="btn btn-sm btn-success"
+              onClick={async () => {
+                await submitForm();
+                toast.dismiss(t.id);
+              }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <span
+                  className="spinner-border spinner-border-sm me-1"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+              ) : null}
+              Sí, {tipoEditado ? "actualizar" : "crear"}
+            </button>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 5000,
+        id: 'confirm-update',
+      }
+    );
+  };
+
+  const submitForm = async () => {
+    setIsSubmitting(true);
     try {
       // Preparar payload
       const payload = {
@@ -106,9 +163,9 @@ export default function TipoEquipoForm({
         caracteristicas: caracteristicas
           .filter(c => caracSeleccionadas.includes(c.id))
           .map(c => ({
-            id: c.esNueva ? undefined : c.id, // No enviar ID si es nueva
-            nombre: c.esNueva ? c.nombre : undefined, // Solo enviar nombre si es nueva
-            tipo_dato: c.esNueva ? c.tipo_dato : undefined // Solo enviar tipo_dato si es nueva
+            id: c.esNueva ? undefined : c.id,
+            nombre: c.esNueva ? c.nombre : undefined,
+            tipo_dato: c.esNueva ? c.tipo_dato : undefined
           }))
       };
 
@@ -139,10 +196,22 @@ export default function TipoEquipoForm({
     } catch (error) {
       console.error("Error al guardar el tipo de equipo:", error);
       toast.error("Error al guardar el tipo de equipo");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleBack = () => navigate("/tipoEquipo");
+  const handleBack = () => {
+    if (!isSubmitting) {
+      navigate("/tipoEquipo");
+    }
+  };
+
+  const handleCancel = () => {
+    if (!isSubmitting) {
+      onCancel?.();
+    }
+  };
 
   const agregarNuevaCaracteristica = () => {
     if (!nuevaCarac.trim()) {
@@ -150,13 +219,11 @@ export default function TipoEquipoForm({
       return;
     }
 
-    // Buscar si ya existe (en base de datos o en localStorage)
     const caracteristicaExistente = caracteristicas.find(
       c => c.nombre.toLowerCase() === nuevaCarac.trim().toLowerCase()
     );
 
     if (caracteristicaExistente) {
-      // Si ya existe, seleccionarla en lugar de mostrar error
       if (!caracSeleccionadas.includes(caracteristicaExistente.id)) {
         setCaracSeleccionadas(prev => [...prev, caracteristicaExistente.id]);
         toast.success(`Característica "${caracteristicaExistente.nombre}" seleccionada`);
@@ -170,7 +237,6 @@ export default function TipoEquipoForm({
       return;
     }
 
-    // Generar un ID temporal negativo para identificar las nuevas
     const nuevoId = -Math.floor(Math.random() * 1000000);
     const nuevaCaracObj = {
       id: nuevoId,
@@ -179,13 +245,9 @@ export default function TipoEquipoForm({
       esNueva: true
     };
 
-    // Agregar a la lista de características
     setCaracteristicas(prev => [...prev, nuevaCaracObj]);
-
-    // Agregar a las seleccionadas
     setCaracSeleccionadas(prev => [...prev, nuevoId]);
 
-    // Guardar en localStorage
     const caracLocales = JSON.parse(localStorage.getItem('caracteristicasLocales') || '[]');
     caracLocales.push(nuevaCaracObj);
     localStorage.setItem('caracteristicasLocales', JSON.stringify(caracLocales));
@@ -196,13 +258,9 @@ export default function TipoEquipoForm({
   };
 
   const eliminarCaracteristicaLocal = (id: number) => {
-    // Eliminar de la lista general
     setCaracteristicas(prev => prev.filter(c => c.id !== id));
-
-    // Eliminar de las seleccionadas si está ahí
     setCaracSeleccionadas(prev => prev.filter(cId => cId !== id));
 
-    // Actualizar localStorage
     const caracLocales = JSON.parse(localStorage.getItem('caracteristicasLocales') || '[]')
       .filter((c: any) => c.id !== id);
     localStorage.setItem('caracteristicasLocales', JSON.stringify(caracLocales));
@@ -231,6 +289,7 @@ export default function TipoEquipoForm({
             className="form-select"
             value={categoriaId ?? ""}
             onChange={(e) => setCategoriaId(Number(e.target.value))}
+            disabled={isLoading || isSubmitting}
           >
             <option value="">Seleccione una categoría</option>
             {categorias.map((cat) => (
@@ -250,6 +309,7 @@ export default function TipoEquipoForm({
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             placeholder="Ej. Laptop, Proyector..."
+            disabled={isLoading || isSubmitting}
           />
         </div>
 
@@ -275,10 +335,11 @@ export default function TipoEquipoForm({
               const nuevasIds = selectedOptions.map(opt => opt.value);
               setCaracSeleccionadas(nuevasIds);
             }}
-            placeholder="Selecciona características..."
+            placeholder={isLoading ? "Cargando características..." : "Selecciona características..."}
             className="react-select-container"
             classNamePrefix="react-select"
             noOptionsMessage={() => "No hay características disponibles"}
+            isDisabled={isLoading || isSubmitting}
           />
 
           {/* Link para mostrar el formulario para agregar característica */}
@@ -287,6 +348,7 @@ export default function TipoEquipoForm({
               type="button"
               className="btn btn-link p-0"
               onClick={() => setMostrarAgregarCarac(!mostrarAgregarCarac)}
+              disabled={isLoading || isSubmitting}
             >
               {mostrarAgregarCarac ? "Cancelar" : "+ Agregar nueva característica"}
             </button>
@@ -301,12 +363,14 @@ export default function TipoEquipoForm({
                 placeholder="Nombre de la característica"
                 value={nuevaCarac}
                 onChange={(e) => setNuevaCarac(e.target.value)}
+                disabled={isSubmitting}
               />
               <select
                 className="form-select"
                 style={{ maxWidth: "150px" }}
                 value={tipoDato}
                 onChange={(e) => setTipoDato(e.target.value)}
+                disabled={isSubmitting}
               >
                 <option value="string">Texto</option>
                 <option value="integer">Entero</option>
@@ -317,6 +381,7 @@ export default function TipoEquipoForm({
                 type="button"
                 className="btn btn-success"
                 onClick={agregarNuevaCaracteristica}
+                disabled={isSubmitting}
               >
                 Agregar
               </button>
@@ -347,6 +412,7 @@ export default function TipoEquipoForm({
                           setCaracSeleccionadas(prev => prev.filter(id => id !== carac.id));
                         }
                       }}
+                      disabled={isSubmitting}
                     >
                       Quitar
                     </button>
@@ -358,11 +424,34 @@ export default function TipoEquipoForm({
 
         {/* Botones */}
         <div className="form-actions d-flex gap-2 mt-4">
-          <button type="button" className="btn btn-primary" onClick={handleSubmit}>
-            <FaSave className="me-2" />
-            {tipoEditado ? "Actualizar" : "Crear"}
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSubmit}
+            disabled={isLoading || isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-1"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                {tipoEditado ? "Actualizando..." : "Creando..."}
+              </>
+            ) : (
+              <>
+                <FaSave className="me-2" />
+                {tipoEditado ? "Actualizar" : "Crear"}
+              </>
+            )}
           </button>
-          <button type="button" className="btn btn-secondary" onClick={onCancel}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleCancel}
+            disabled={isLoading || isSubmitting}
+          >
             <FaTimes className="me-2" />
             Cancelar
           </button>

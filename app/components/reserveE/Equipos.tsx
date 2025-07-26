@@ -512,7 +512,7 @@ export default function EquiposSelect({
                 <div className="card h-100 shadow-sm border-0">
                   {grupo.imagen_normal ? (
                     <img
-                      src={APIURL + grupo.imagen_normal}
+                      src={APIURL + "/" + grupo.imagen_normal}
                       alt={grupo.nombre_modelo}
                       className="card-img-top"
                       style={{
@@ -525,7 +525,7 @@ export default function EquiposSelect({
                   ) : grupo.imagen_glb ? (
                     //@ts-ignore
                     <model-viewer
-                      src={APIURL + grupo.imagen_glb}
+                      src={APIURL + "/" + grupo.imagen_glb}
                       alt="Modelo 3D"
                       camera-controls
                       autoplay

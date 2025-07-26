@@ -2,7 +2,16 @@ import { useEffect, useState } from "react";
 import type { Equipo, EquipoFilters, TipoEquipo } from "app/types/equipo";
 import { Button, Form, InputGroup, Spinner, Modal } from "react-bootstrap";
 import toast from "react-hot-toast";
-import { FaEdit, FaFilter, FaTrash, FaTimes, FaSearch, FaLongArrowAltLeft, FaPlus, FaTools } from "react-icons/fa";
+import {
+  FaEdit,
+  FaFilter,
+  FaTrash,
+  FaTimes,
+  FaSearch,
+  FaLongArrowAltLeft,
+  FaPlus,
+  FaTools,
+} from "react-icons/fa";
 import { getEquipos } from "../../services/equipoService";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
@@ -58,7 +67,7 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
   const handleImageClick = (imageUrl: string, equipmentName: string) => {
     setSelectedEquipment({
       imageUrl,
-      name: equipmentName
+      name: equipmentName,
     });
     setShowImageModal(true);
   };
@@ -72,7 +81,9 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
     toast(
       (t) => (
         <div>
-          <p>¿Seguro que deseas eliminar el equipo <strong>{nombre}</strong>?</p>
+          <p>
+            ¿Seguro que deseas eliminar el equipo <strong>{nombre}</strong>?
+          </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button
               className="btn btn-sm btn-danger"
@@ -100,9 +111,6 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
       }
     );
   };
-
-
-
 
   const handleFilterUpdate = <K extends keyof EquipoFilters>(
     key: K,
@@ -146,17 +154,19 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
         size="lg"
       >
         <Modal.Header closeButton>
-          <Modal.Title>{selectedEquipment?.name || 'Imagen del equipo'}</Modal.Title>
+          <Modal.Title>
+            {selectedEquipment?.name || "Imagen del equipo"}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center">
           <img
             src={selectedEquipment?.imageUrl}
-            alt={selectedEquipment?.name || 'Imagen ampliada'}
+            alt={selectedEquipment?.name || "Imagen ampliada"}
             style={{
-              maxWidth: '100%',
-              maxHeight: '70vh',
-              borderRadius: '8px',
-              objectFit: 'contain'
+              maxWidth: "100%",
+              maxHeight: "70vh",
+              borderRadius: "8px",
+              objectFit: "contain",
             }}
           />
         </Modal.Body>
@@ -168,8 +178,8 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
             onClick={handleBack}
             title="Regresar"
             style={{
-              cursor: 'pointer',
-              fontSize: '2rem',
+              cursor: "pointer",
+              fontSize: "2rem",
             }}
           />
           <h2 className="fw-bold m-0">Listado de Equipos</h2>
@@ -179,22 +189,12 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
           <Button
             variant="primary"
             className="d-flex align-items-center gap-2"
-            onClick={() => navigate('/tipoEquipo')}
-          >
-            <FaTools />
-            Tipo de Equipo
-          </Button>
-
-          <Button
-            variant="primary"
-            className="d-flex align-items-center gap-2"
-            onClick={() => navigate('/equipo')}
+            onClick={() => navigate("/equipo")}
           >
             <FaPlus />
             Crear Nuevo Equipo
           </Button>
         </div>
-
       </div>
       {/* Buscador + botón de filtros */}
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
@@ -226,7 +226,7 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
           variant="outline-secondary"
           onClick={() => setShowFilters(!showFilters)}
           className="d-flex align-items-center gap-2 flex-shrink-0 text-nowrap align-self-end align-self-md-center w-auto"
-          style={{ whiteSpace: 'nowrap' }}
+          style={{ whiteSpace: "nowrap" }}
         >
           <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
         </Button>
@@ -272,8 +272,8 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
                     filters.estado === undefined
                       ? ""
                       : filters.estado
-                        ? "true"
-                        : "false"
+                      ? "true"
+                      : "false"
                   }
                   onChange={(e) =>
                     handleFilterUpdate(
@@ -328,8 +328,9 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
                       <td>{equipo.descripcion}</td>
                       <td>
                         <span
-                          className={`badge ${equipo.estado ? "bg-success" : "bg-danger"
-                            }`}
+                          className={`badge ${
+                            equipo.estado ? "bg-success" : "bg-danger"
+                          }`}
                         >
                           {equipo.estado ? "Disponible" : "No disponible"}
                         </span>
@@ -348,11 +349,14 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
                               height: "60px",
                               objectFit: "cover",
                               borderRadius: "8px",
-                              cursor: "pointer"
+                              cursor: "pointer",
                             }}
                             onClick={() => {
                               if (equipo.imagen_url) {
-                                handleImageClick(equipo.imagen_url, equipo.nombre);
+                                handleImageClick(
+                                  equipo.imagen_url,
+                                  equipo.nombre
+                                );
                               }
                             }}
                           />
@@ -369,7 +373,7 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
                             style={{
                               width: "44px",
                               height: "44px",
-                              transition: "transform 0.2s ease-in-out"
+                              transition: "transform 0.2s ease-in-out",
                             }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
@@ -388,7 +392,7 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
                             style={{
                               width: "44px",
                               height: "44px",
-                              transition: "transform 0.2s ease-in-out"
+                              transition: "transform 0.2s ease-in-out",
                             }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
@@ -396,7 +400,9 @@ export default function EquipmentList({ tipos, onEdit, onDelete }: Props) {
                             onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
-                            onClick={() => confirmarEliminacion(equipo.id, equipo.nombre)}
+                            onClick={() =>
+                              confirmarEliminacion(equipo.id, equipo.nombre)
+                            }
                           >
                             <FaTrash />
                           </Button>

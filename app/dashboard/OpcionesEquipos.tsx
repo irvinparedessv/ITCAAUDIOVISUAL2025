@@ -31,13 +31,19 @@ const opciones = [
     roles: [Role.Administrador, Role.Encargado, Role.EspacioEncargado],
   },
   {
+    nombre: "Tipo Equipos",
+    descripcion: "Administracion de tipo de equipos",
+    ruta: "/tipoEquipo",
+    icono: <FaComputer size={24} />,
+    roles: [Role.Administrador, Role.Encargado, Role.EspacioEncargado],
+  },
+  {
     nombre: "Equipos",
     descripcion: "Administracion de equipos",
     ruta: "/inventario",
     icono: <FaComputer size={24} />,
     roles: [Role.Administrador, Role.Encargado, Role.EspacioEncargado],
   },
-
   {
     nombre: "Imagenes Equipos",
     descripcion: "Administacion de Imagenes para equipos",

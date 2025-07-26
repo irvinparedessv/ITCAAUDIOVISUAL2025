@@ -12,7 +12,7 @@ import ModeloModal from "./Modelo/ModeloModal";
 import AsyncSelect from "react-select/async";
 import Select from "react-select";
 import { useTheme } from "~/hooks/ThemeContext";
-import { getModelosByMarca, searchMarcas, searchTipoEquipo } from "~/services/itemService";
+import { getModelosByMarca, getModelosByMarcaYTipo, searchMarcas, searchTipoEquipo } from "~/services/itemService";
 
 interface CaracteristicaForm {
   id: number;
@@ -93,6 +93,13 @@ export default function ItemForm({
         );
       }
     }
+    else if (!isEditing) {
+    // Establecer estado "Disponible" por defecto en creación
+    setForm(prev => ({
+      ...prev,
+      estado_id: "1" // ID del estado "Disponible"
+    }));
+  }
   }, [initialValues, isEditing]);
 
   // Filtrado de modelos por marca
@@ -140,6 +147,19 @@ export default function ItemForm({
     fetchCaracteristicas();
   }, [form.tipo_equipo_id, isEditing]);
 
+  const [modelosIniciales, setModelosIniciales] = useState<{ value: number, label: string }[]>([]);
+
+  useEffect(() => {
+    if (form.marca_id && form.tipo_equipo_id) {
+      getModelosByMarcaYTipo(Number(form.marca_id), Number(form.tipo_equipo_id), undefined, true)
+        .then(setModelosIniciales);
+    } else {
+      setModelosIniciales([]);
+    }
+  }, [form.marca_id, form.tipo_equipo_id]);
+
+
+
   // Dropzone para imágenes
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -169,51 +189,49 @@ export default function ItemForm({
 
   const { darkMode } = useTheme();
 
-  // Estilos para los selects con dark mode
-  // Reemplaza la definición de customSelectStyles con esto:
-const customSelectStyles = useMemo(() => ({
-  control: (base: any) => ({
-    ...base,
-    backgroundColor: darkMode ? "#2d2d2d" : "#fff",
-    borderColor: darkMode ? "#444" : "#ccc",
-    color: darkMode ? "#f8f9fa" : "#212529",
-    minHeight: '48px',
-    height: '48px',
-  }),
-  menu: (base: any) => ({
-    ...base,
-    backgroundColor: darkMode ? "#2d2d2d" : "#fff",
-    color: darkMode ? "#f8f9fa" : "#212529",
-  }),
-  input: (base: any) => ({
-    ...base,
-    color: darkMode ? "#f8f9fa" : "#212529",
-    margin: '0px',
-  }),
-  placeholder: (base: any) => ({
-    ...base,
-    color: darkMode ? "#bbb" : "#666",
-  }),
-  singleValue: (base: any) => ({
-    ...base,
-    color: darkMode ? "#f8f9fa" : "#212529",
-  }),
-  option: (base: any, { isFocused, isSelected }: any) => ({
-    ...base,
-    backgroundColor: isSelected
-      ? (darkMode ? "#555" : "#d3d3d3")
-      : isFocused
-        ? (darkMode ? "#444" : "#e6e6e6")
-        : "transparent",
-    color: darkMode ? "#f8f9fa" : "#212529",
-    cursor: "pointer",
-  }),
-  valueContainer: (provided: any) => ({
-    ...provided,
-    height: '48px',
-    padding: '0 8px',
-  }),
-}), [darkMode]);
+  const customSelectStyles = useMemo(() => ({
+    control: (base: any) => ({
+      ...base,
+      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+      borderColor: darkMode ? "#444" : "#ccc",
+      color: darkMode ? "#f8f9fa" : "#212529",
+      minHeight: '48px',
+      height: '48px',
+    }),
+    menu: (base: any) => ({
+      ...base,
+      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+      color: darkMode ? "#f8f9fa" : "#212529",
+    }),
+    input: (base: any) => ({
+      ...base,
+      color: darkMode ? "#f8f9fa" : "#212529",
+      margin: '0px',
+    }),
+    placeholder: (base: any) => ({
+      ...base,
+      color: darkMode ? "#bbb" : "#666",
+    }),
+    singleValue: (base: any) => ({
+      ...base,
+      color: darkMode ? "#f8f9fa" : "#212529",
+    }),
+    option: (base: any, { isFocused, isSelected }: any) => ({
+      ...base,
+      backgroundColor: isSelected
+        ? (darkMode ? "#555" : "#d3d3d3")
+        : isFocused
+          ? (darkMode ? "#444" : "#e6e6e6")
+          : "transparent",
+      color: darkMode ? "#f8f9fa" : "#212529",
+      cursor: "pointer",
+    }),
+    valueContainer: (provided: any) => ({
+      ...provided,
+      height: '48px',
+      padding: '0 8px',
+    }),
+  }), [darkMode]);
 
   // Handlers
   const removeImage = () => {
@@ -243,7 +261,7 @@ const customSelectStyles = useMemo(() => ({
 
   const handleCaracteristicaChange = (id: number, valor: string) => {
     console.log("Cambiando característica", id, "a valor", valor);
-    setCaracteristicas(prev => 
+    setCaracteristicas(prev =>
       prev.map(c => c.id === id ? { ...c, valor } : c)
     );
   };
@@ -353,145 +371,190 @@ const customSelectStyles = useMemo(() => ({
     }
   };
 
-  // Función para cargar opciones de modelos
-const loadModelos = async (inputValue: string) => {
-  try {
-    if (!form.marca_id) return [];
-    
-    const modelos = await getModelosByMarca(Number(form.marca_id), inputValue);
-    
-    return modelos.map(modelo => ({
-      value: modelo.id,
-      label: modelo.nombre
-    }));
 
-  } catch (error: any) {
-    console.error("Error cargando modelos:", {
-      error,
-      response: error.response?.data
-    });
-    toast.error("Error al cargar los modelos");
-    return [];
-  }
-};
+  const loadMarcas = async (inputValue: string): Promise<Array<{ value: number; label: string }>> => {
+    try {
+      // 1. Obtener marcas con búsqueda
+      const marcas = await searchMarcas(inputValue, inputValue ? 10 : 5);
 
-  // Función simplificada en tu componente
-const loadMarcas = async (inputValue: string) => {
-  try {
-    const marcas = await searchMarcas(inputValue, inputValue ? 10 : 5);
-    
-    return marcas.map(marca => ({
-      value: marca.id,
-      label: marca.nombre
-    }));
-  } catch (error) {
-    console.error("Error cargando marcas:", error);
-    toast.error("Error al cargar las marcas");
-    return [];
-  }
-};
-  // Submit handler
+      // 2. Validar y mapear la respuesta
+      if (!Array.isArray(marcas)) {
+        console.error("La respuesta no es un array:", marcas);
+        throw new Error("Formato de respuesta inválido");
+      }
+
+      // 3. Mapear a formato para AsyncSelect
+      return marcas.map((marca: Marca) => ({
+        value: marca.id,
+        label: marca.nombre
+      }));
+
+    } catch (error: any) {
+      console.error("Error en loadMarcas:", {
+        error,
+        inputValue,
+        backendError: error.response?.data
+      });
+
+      toast.error(error.response?.data?.message || "Error al cargar marcas");
+      return []; // Retorna array vacío para que el select no falle
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+  toast.dismiss();
+
+  // Validación de campos requeridos
+  if (!form.tipo_equipo_id) return toast.error("Seleccione un tipo de equipo");
+  if (!form.tipo_reserva_id) return toast.error("Seleccione un tipo de reserva"); 
+  if (!form.marca_id) return toast.error("Seleccione una marca");
+  if (!form.modelo_id) return toast.error("Seleccione un modelo");
+  if (!form.estado_id) return toast.error("Seleccione un estado");
+  if (!form.detalles?.trim()) return toast.error("Ingrese los detalles");
+  if (!form.fecha_adquisicion) return toast.error("Ingrese la fecha de adquisición");
+  
+  
+  if (esInsumo) {
+    if (!isEditing && (!form.cantidad || Number(form.cantidad) <= 0)) {
+      return toast.error("La cantidad debe ser mayor a cero");
+    }
+  } else {
+    if (!form.numero_serie?.trim()) {
+      return toast.error("Ingrese el número de serie");
+    }
+    if (!form.vida_util || Number(form.vida_util) <= 0) {
+      return toast.error("Ingrese una vida útil válida (mayor a 0 horas)");
+    }
+  }
+
+  const caracteristicasInvalidas = caracteristicas.filter(
+    c => !c.valor || c.valor.trim() === ""
+  );
+
+  if (caracteristicasInvalidas.length > 0) {
+    return toast.error(
+      `Complete las características: ${caracteristicasInvalidas.map(c => c.nombre).join(", ")}`
+    );
+  }
+
+  // Toast de confirmación solo para edición
+  if (isEditing) {
+    const toastId = `update-confirmation-${initialValues?.id || ''}`;
+    
+    // Cerrar toasts activos antes de mostrar el nuevo
     toast.dismiss();
+    
+    const confirmation = await new Promise((resolve) => {
+      toast(
+        (t) => (
+          <div>
+            <p>¿Seguro que deseas actualizar este ítem?</p>
+            <div className="d-flex justify-content-end gap-2 mt-2">
+              <button
+                className="btn btn-sm btn-success"
+                onClick={() => {
+                  resolve(true);
+                  toast.dismiss(t.id);
+                }}
+              >
+                Sí, actualizar
+              </button>
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => {
+                  resolve(false);
+                  toast.dismiss(t.id);
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          duration: 5000, 
+          id: toastId,
+        }
+      );
+    });
 
-    // Validaciones básicas
-    if (!form.tipo_equipo_id) return toast.error("Seleccione un tipo de equipo");
-    if (!form.modelo_id) return toast.error("Seleccione un modelo");
-    if (!form.estado_id) return toast.error("Seleccione un estado");
-    if (!form.detalles?.trim()) return toast.error("Ingrese los detalles");
+    // Si el usuario cancela, no continuar
+    if (!confirmation) return;
+  }
 
-    // Validaciones específicas por tipo
+  try {
+    const formData = new FormData();
+
+    formData.append("tipo", esInsumo ? "insumo" : "equipo");
+    if (isEditing) formData.append("_method", "PUT");
+
+    // Datos básicos
+    formData.append("tipo_equipo_id", form.tipo_equipo_id);
+    formData.append("modelo_id", form.modelo_id);
+    formData.append("estado_id", form.estado_id);
+    formData.append("detalles", form.detalles);
+    formData.append("fecha_adquisicion", form.fecha_adquisicion);
+    formData.append("tipo_reserva_id", form.tipo_reserva_id); // Aseguramos que siempre se envíe
+
     if (esInsumo) {
-      if (!isEditing && (!form.cantidad || Number(form.cantidad) <= 0)) {
-        return toast.error("La cantidad debe ser mayor a cero");
+      if (!isEditing || form.cantidad) {
+        formData.append("cantidad", form.cantidad);
       }
     } else {
-      if (!form.numero_serie?.trim()) {
-        return toast.error("Ingrese el número de serie");
+      formData.append("numero_serie", form.numero_serie);
+      if (form.vida_util) {
+        formData.append("vida_util", form.vida_util);
       }
     }
 
-    // Validación de características
-    const caracteristicasInvalidas = caracteristicas.filter(
-      c => !c.valor || c.valor.trim() === ""
+    // Características
+    if (caracteristicas.length > 0) {
+      const caracteristicasJSON = JSON.stringify(
+        caracteristicas.map(c => ({
+          caracteristica_id: c.id,
+          valor: c.valor
+        }))
+      );
+      formData.append("caracteristicas", caracteristicasJSON);
+    }
+
+    // Imagen
+    if (form.imagen) {
+      formData.append("imagen", form.imagen);
+    } else if (isEditing && !imagePreview && initialValues?.imagen_url) {
+      formData.append("remove_image", "true");
+    }
+
+    await onSubmit(formData);
+    toast.success(`Ítem ${isEditing ? 'actualizado' : 'creado'} correctamente`);
+
+    if (!isEditing) handleClear();
+
+  } catch (error) {
+    console.error("Error al guardar:", error);
+    toast.error(
+      `Error al ${isEditing ? 'actualizar' : 'crear'} el ítem: ${
+        error instanceof Error ? error.message : 'Error desconocido'
+      }`
     );
+  }
+};
 
-    if (caracteristicasInvalidas.length > 0) {
-      return toast.error(
-        `Complete las características: ${caracteristicasInvalidas.map(c => c.nombre).join(", ")}`
-      );
+  const getLocalDateString = () => {
+  const now = new Date();
+  // Ajustamos a la fecha local correcta
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+  // Función para renderizar el mensaje "No editable" en modo edición
+  const renderNotEditableMessage = () => {
+    if (isEditing) {
+      return <small className="text-muted d-block mt-1">Este campo no se puede editar</small>;
     }
-
-    try {
-      const formData = new FormData();
-      
-      // Campos básicos
-      formData.append("tipo", esInsumo ? "insumo" : "equipo");
-      if (isEditing) formData.append("_method", "PUT");
-      
-      formData.append("tipo_equipo_id", form.tipo_equipo_id);
-      formData.append("modelo_id", form.modelo_id);
-      formData.append("estado_id", form.estado_id);
-      formData.append("detalles", form.detalles);
-
-      // Campos opcionales
-      if (form.tipo_reserva_id) {
-        formData.append("tipo_reserva_id", form.tipo_reserva_id);
-      }
-      if (form.fecha_adquisicion) {
-        formData.append("fecha_adquisicion", form.fecha_adquisicion);
-      }
-
-      // Campos específicos por tipo
-      if (esInsumo) {
-        if (!isEditing || form.cantidad) {
-          formData.append("cantidad", form.cantidad);
-        }
-      } else {
-        formData.append("numero_serie", form.numero_serie);
-        if (form.vida_util) {
-          formData.append("vida_util", form.vida_util);
-        }
-      }
-
-      // Convertir características a JSON string
-      if (caracteristicas.length > 0) {
-        const caracteristicasJSON = JSON.stringify(
-          caracteristicas.map(c => ({
-            caracteristica_id: c.id,
-            valor: c.valor
-          }))
-        );
-        formData.append("caracteristicas", caracteristicasJSON);
-      }
-
-      // Manejo de imágenes
-      if (form.imagen) {
-        formData.append("imagen", form.imagen);
-      } else if (isEditing && !imagePreview && initialValues?.imagen_url) {
-        formData.append("remove_image", "true");
-      }
-
-      // Depuración (opcional)
-      console.log("Datos a enviar:");
-      for (const [key, value] of formData.entries()) {
-        console.log(key, value === formData.get("caracteristicas") ? JSON.parse(value as string) : value);
-      }
-
-      await onSubmit(formData);
-      toast.success(`Ítem ${isEditing ? 'actualizado' : 'creado'} correctamente`);
-      
-      if (!isEditing) handleClear();
-      
-    } catch (error) {
-      console.error("Error al guardar:", error);
-      toast.error(
-        `Error al ${isEditing ? 'actualizar' : 'crear'} el ítem: ${
-          error instanceof Error ? error.message : 'Error desconocido'
-        }`
-      );
-    }
+    return null;
   };
 
   return (
@@ -507,38 +570,30 @@ const loadMarcas = async (inputValue: string) => {
             <label htmlFor="tipo_equipo" className="form-label">
               Tipo de Equipo
             </label>
-          
-<AsyncSelect
-  id="tipo_equipo"
-  cacheOptions
-  defaultOptions
-  loadOptions={async (inputValue) => {
-    try {
-      const tipos = await searchTipoEquipo(inputValue);
-      return tipos.map(t => ({ value: t.id, label: t.nombre }));
-    } catch (error) {
-      console.error("Error cargando tipos de equipo:", error);
-      toast.error("Error al cargar tipos de equipo");
-      return [];
-    }
-  }}
-  value={form.tipo_equipo_id ? 
-    { value: Number(form.tipo_equipo_id), label: tiposEquipo.find(t => t.id === Number(form.tipo_equipo_id))?.nombre || '' }
-    : null}
-  onChange={(selected) => {
-    const newTipoId = selected ? String(selected.value) : '';
-    setForm(prev => ({
-      ...prev,
-      tipo_equipo_id: newTipoId,
-      // Limpiar características cuando cambia el tipo
-      ...(newTipoId !== prev.tipo_equipo_id && { caracteristicas: [] })
-    }));
-  }}
-  placeholder="Buscar tipo de equipo..."
-  isDisabled={loading || isEditing}
-  styles={customSelectStyles}
-  menuPortalTarget={document.body}
-/>
+            <AsyncSelect
+              id="tipo_equipo"
+              loadOptions={searchTipoEquipo}
+              defaultOptions
+              cacheOptions
+              placeholder="Buscar tipo..."
+              noOptionsMessage={({ inputValue }) =>
+                inputValue ? "No se encontraron resultados" : "Escribe para buscar"
+              }
+              loadingMessage={() => "Buscando..."}
+              value={form.tipo_equipo_id ? {
+                value: Number(form.tipo_equipo_id),
+                label: tiposEquipo.find(t => t.id === Number(form.tipo_equipo_id))?.nombre || ''
+              } : null}
+              onChange={(selected) => setForm({
+                ...form,
+                tipo_equipo_id: selected ? String(selected.value) : ''
+              })}
+              isDisabled={loading || isEditing}
+              styles={customSelectStyles}
+              menuPortalTarget={document.body}
+            />
+
+            {isEditing && renderNotEditableMessage()}
           </div>
 
           <div className="col-md-6">
@@ -548,7 +603,7 @@ const loadMarcas = async (inputValue: string) => {
             <Select
               id="tipo_reserva"
               options={tipoReservas.map(t => ({ value: t.id, label: t.nombre }))}
-              value={tipoReservas.find(t => t.id === Number(form.tipo_reserva_id)) ? 
+              value={tipoReservas.find(t => t.id === Number(form.tipo_reserva_id)) ?
                 { value: Number(form.tipo_reserva_id), label: tipoReservas.find(t => t.id === Number(form.tipo_reserva_id))?.nombre || '' }
                 : null}
               onChange={(selected) => setForm({ ...form, tipo_reserva_id: selected ? String(selected.value) : '' })}
@@ -571,15 +626,34 @@ const loadMarcas = async (inputValue: string) => {
                 cacheOptions
                 defaultOptions
                 loadOptions={loadMarcas}
-                value={marcas.find(m => m.id === Number(form.marca_id)) ? 
-                  { value: Number(form.marca_id), label: marcas.find(m => m.id === Number(form.marca_id))?.nombre || '' }
-                  : null}
-                onChange={(selected) => setForm({ ...form, marca_id: selected ? String(selected.value) : '', modelo_id: '' })}
+                value={
+                  form.marca_id
+                    ? {
+                      value: Number(form.marca_id),
+                      label:
+                        marcas.find((m) => m.id === Number(form.marca_id))?.nombre || '',
+                    }
+                    : null
+                }
+                onChange={(selected) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    marca_id: selected ? String(selected.value) : '',
+                    modelo_id: '', // Reset modelo al cambiar marca
+                  }));
+                }}
                 placeholder="Buscar marca..."
                 isDisabled={loading || isEditing}
                 styles={customSelectStyles}
                 menuPortalTarget={document.body}
                 className="flex-grow-1"
+                noOptionsMessage={({ inputValue }) =>
+                  inputValue ? 'No se encontraron marcas' : 'Escribe para buscar...'
+                }
+                loadingMessage={() => 'Buscando marcas...'}
+                components={{
+                  IndicatorSeparator: null, // Elimina el separador si no lo necesitas
+                }}
               />
               {!isEditing && (
                 <button
@@ -592,6 +666,7 @@ const loadMarcas = async (inputValue: string) => {
                 </button>
               )}
             </div>
+            {isEditing && renderNotEditableMessage()}
           </div>
 
           <div className="col-md-4 mb-3 mb-md-0">
@@ -602,19 +677,43 @@ const loadMarcas = async (inputValue: string) => {
               <AsyncSelect
                 id="modelo"
                 cacheOptions
-                defaultOptions
-                loadOptions={loadModelos}
-                value={filteredModelos.find(m => m.id === Number(form.modelo_id)) ? 
-                  { value: Number(form.modelo_id), label: filteredModelos.find(m => m.id === Number(form.modelo_id))?.nombre || '' }
-                  : null}
+                defaultOptions={modelosIniciales}
+                loadOptions={async (inputValue) => {
+                  if (!form.marca_id || !form.tipo_equipo_id) return [];
+                  return await getModelosByMarcaYTipo(
+                    Number(form.marca_id),
+                    Number(form.tipo_equipo_id),
+                    inputValue,
+                    !inputValue // loadInitial=true cuando no hay inputValue
+                  );
+                }}
+                value={form.modelo_id ? {
+                  value: Number(form.modelo_id),
+                  label: filteredModelos.find(m => m.id === Number(form.modelo_id))?.nombre || ''
+                } : null}
                 onChange={(selected) => setForm({ ...form, modelo_id: selected ? String(selected.value) : '' })}
-                placeholder="Buscar modelo..."
-                isDisabled={loading || !form.marca_id || isEditing}
-                styles={customSelectStyles}
-                menuPortalTarget={document.body}
-                className="flex-grow-1"
-              />
-              {!isEditing && (
+                placeholder={
+                  !form.marca_id ? "Selecciona una marca primero" :
+                    !form.tipo_equipo_id ? "Selecciona un tipo de equipo primero" :
+                      "Buscar modelo..."
+                }
+                isDisabled={!form.marca_id || !form.tipo_equipo_id || isEditing}
+                noOptionsMessage={({ inputValue }) =>
+                  inputValue ? "No se encontraron modelos" : "Escribe para más opciones"
+                }
+                styles={{
+                  ...customSelectStyles,
+                  container: (provided) => ({
+                    ...provided,
+                    minWidth: '250px',
+                    width: '100%'
+                  }),
+                  menu: (provided) => ({
+                    ...provided,
+                    minWidth: '300px'
+                  })
+                }}
+              />       {!isEditing && (
                 <button
                   type="button"
                   className="btn btn-outline-secondary"
@@ -626,25 +725,29 @@ const loadMarcas = async (inputValue: string) => {
                 </button>
               )}
             </div>
+            {isEditing && renderNotEditableMessage()}
           </div>
 
           <div className="col-md-4">
-            <label htmlFor="estado" className="form-label">
-              Estado
-            </label>
-            <Select
-              id="estado"
-              options={estados.map(e => ({ value: e.id, label: e.nombre }))}
-              value={estados.find(e => e.id === Number(form.estado_id)) ? 
-                { value: Number(form.estado_id), label: estados.find(e => e.id === Number(form.estado_id))?.nombre || '' }
-                : null}
-              onChange={(selected) => setForm({ ...form, estado_id: selected ? String(selected.value) : '' })}
-              placeholder="Buscar estado..."
-              isDisabled={loading}
-              styles={customSelectStyles}
-              menuPortalTarget={document.body}
-            />
-          </div>
+  <label htmlFor="estado" className="form-label">
+    Estado
+  </label>
+  <Select
+    id="estado"
+    options={estados.map(e => ({ value: e.id, label: e.nombre }))}
+    value={estados.find(e => e.id === Number(form.estado_id)) ?
+      { value: Number(form.estado_id), label: estados.find(e => e.id === Number(form.estado_id))?.nombre || '' }
+      : isEditing ? null : { value: 1, label: 'Disponible' }} // Valor por defecto en creación
+    onChange={(selected) => setForm({ ...form, estado_id: selected ? String(selected.value) : '' })}
+    placeholder={isEditing ? "Seleccionar estado..." : "Disponible"}
+    isDisabled={loading || !isEditing} // Deshabilitado en creación
+    styles={customSelectStyles}
+    menuPortalTarget={document.body}
+  />
+  {!isEditing && (
+    <small className="text-muted d-block mt-1">Este campo no se puede modificar</small>
+  )}
+</div>
         </div>
 
         <div className="mb-4">
@@ -662,18 +765,27 @@ const loadMarcas = async (inputValue: string) => {
         </div>
 
         <div className="row mb-4">
-          <div className="col-md-6 mb-3 mb-md-0">
-            <label htmlFor="fecha_adquisicion" className="form-label">
-              Fecha de Adquisición
-            </label>
-            <input
-              id="fecha_adquisicion"
-              type="date"
-              className="form-control"
-              value={form.fecha_adquisicion}
-              onChange={(e) => setForm({ ...form, fecha_adquisicion: e.target.value })}
-            />
-          </div>
+<div className="col-md-6 mb-3 mb-md-0">
+  <label htmlFor="fecha_adquisicion" className="form-label">
+    Fecha de Adquisición
+  </label>
+  <input
+    id="fecha_adquisicion"
+    type="date"
+    className="form-control"
+    value={form.fecha_adquisicion}
+    onChange={(e) => {
+      const selectedDate = e.target.value;
+      const today = getLocalDateString(); // Usamos nuestra función helper
+      if (selectedDate <= today) {
+        setForm({ ...form, fecha_adquisicion: selectedDate });
+      } else {
+        toast.error("No se pueden seleccionar fechas futuras");
+      }
+    }}
+    max={getLocalDateString()} // Fecha máxima basada en hora local
+  />
+</div>
 
           {form.tipo_equipo_id && (
             esInsumo ? (
@@ -691,6 +803,7 @@ const loadMarcas = async (inputValue: string) => {
                     onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
                     placeholder="Cantidad disponible"
                   />
+                  {isEditing && renderNotEditableMessage()}
                 </div>
               )
             ) : (
@@ -706,11 +819,13 @@ const loadMarcas = async (inputValue: string) => {
                     value={form.numero_serie}
                     onChange={(e) => setForm({ ...form, numero_serie: e.target.value })}
                     placeholder="Número de serie"
+                    readOnly={isEditing}
                   />
+                  {isEditing && renderNotEditableMessage()}
                 </div>
                 <div className="col-md-3">
                   <label htmlFor="vida_util" className="form-label">
-                    Vida Útil (años)
+                    Vida Útil (Horas)
                   </label>
                   <input
                     id="vida_util"
@@ -719,7 +834,7 @@ const loadMarcas = async (inputValue: string) => {
                     className="form-control"
                     value={form.vida_util}
                     onChange={(e) => setForm({ ...form, vida_util: e.target.value })}
-                    placeholder="Años de vida útil"
+                    placeholder="horas de vida útil"
                   />
                 </div>
               </>
@@ -739,13 +854,14 @@ const loadMarcas = async (inputValue: string) => {
                       {caracteristica.tipo_dato}
                     </span>
                   </label>
-                  
+
                   {caracteristica.tipo_dato === "boolean" ? (
                     <select
                       id={`caracteristica-${caracteristica.id}`}
                       className="form-select"
                       value={caracteristica.valor}
                       onChange={(e) => handleCaracteristicaChange(caracteristica.id, e.target.value)}
+                      disabled={isEditing}
                     >
                       <option value="">Seleccione...</option>
                       <option value="true">Sí</option>
@@ -768,6 +884,7 @@ const loadMarcas = async (inputValue: string) => {
                       placeholder={`Valor para ${caracteristica.nombre.toLowerCase()}`}
                     />
                   )}
+
                 </div>
               ))}
             </div>
@@ -788,6 +905,7 @@ const loadMarcas = async (inputValue: string) => {
                 type="button"
                 onClick={removeImage}
                 className="btn btn-outline-danger btn-sm"
+                disabled={isEditing}
               >
                 <FaTrash className="me-1" />
                 Eliminar imagen
@@ -796,9 +914,8 @@ const loadMarcas = async (inputValue: string) => {
           ) : (
             <div
               {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${
-                isDragActive ? "border-primary bg-light" : ""
-              }`}
+              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : ""
+                }`}
             >
               <input {...getInputProps()} />
               <div className="d-flex flex-column align-items-center justify-content-center">

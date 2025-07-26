@@ -82,7 +82,7 @@ export const createItem = async (formData: FormData, tipo: 'equipo' | 'insumo') 
       },
       params: { tipo } // Send type as query parameter if needed
     });
-    
+
     return response.data;
   } catch (error: any) {
     console.error("Detailed error:", error);
@@ -194,8 +194,8 @@ export const getValoresCaracteristicasPorEquipo = async (equipoId: number) => {
 };
 
 export async function eliminarAsignacion(insumoId: number, equipoId: number) {
-    const response = await api.delete(`/equipos/${equipoId}/asignaciones/${insumoId}`);
-    return response.data;
+  const response = await api.delete(`/equipos/${equipoId}/asignaciones/${insumoId}`);
+  return response.data;
 }
 
 export const getModelosByMarca = async (marcaId: number, search?: string): Promise<Modelo[]> => {
@@ -207,40 +207,95 @@ export const getModelosByMarca = async (marcaId: number, search?: string): Promi
 
 // Agrega esta nueva función a tus exports
 export const searchMarcas = async (
-  searchTerm?: string, 
+  searchTerm?: string,
   limit?: number
 ): Promise<Marca[]> => {
   try {
     const res = await api.get("/marcas", {
-      params: { 
+      params: {
         search: searchTerm || undefined,
         limit: limit || undefined
       }
     });
-    
-    if (!Array.isArray(res.data)) {
-      throw new Error("Formato de respuesta inesperado");
+
+    // Maneja respuesta paginada (Laravel) o array directo
+    const marcas = res.data.data || res.data;
+
+    if (!Array.isArray(marcas)) {
+      console.error("Formato de respuesta inválido:", res.data);
+      throw new Error("La respuesta no contiene un array de marcas");
     }
-    
-    return res.data;
+
+    return marcas;
+
   } catch (error) {
-    console.error("Error en searchMarcas:", error);
-    throw error; // Deja que el componente maneje el toast
+    console.error("Error en searchMarcas:", {
+      searchTerm,
+      limit,
+      error: error instanceof Error ? error.message : error
+    });
+    throw error;
   }
 };
 
 // Agrega esta función a tu archivo de servicios (itemService.ts)
-export const searchTipoEquipo = async (inputValue: string): Promise<TipoEquipo[]> => {
+export const searchTipoEquipo = async (inputValue: string): Promise<{ value: number, label: string }[]> => {
   try {
     const res = await api.get("/tipoEquipos", {
-      params: { 
+      params: {
         search: inputValue || undefined,
         limit: 5
       }
     });
-    return res.data;
+
+    // Opción 1: Si la respuesta es un array directo
+    if (Array.isArray(res.data)) {
+      return res.data.map((tipo: TipoEquipo) => ({
+        value: tipo.id,
+        label: tipo.nombre
+      }));
+    }
+
+    // Opción 2: Si la respuesta está paginada (Laravel)
+    if (res.data.data && Array.isArray(res.data.data)) {
+      return res.data.data.map((tipo: TipoEquipo) => ({
+        value: tipo.id,
+        label: tipo.nombre
+      }));
+    }
+
+    // Opción 3: Si la respuesta es un objeto con otra estructura
+    throw new Error("Formato de respuesta no soportado");
+
   } catch (error) {
-    console.error("Error en searchTipoEquipo:", error);
-    throw error;
+    console.error("Error buscando tipos de equipo:", error);
+    return []; // Retorna array vacío para que el select no falle
+  }
+};
+
+export const getModelosByMarcaYTipo = async (
+  marcaId: number,
+  tipoEquipoId?: number,
+  search?: string,
+  loadInitial?: boolean // Nuevo parámetro para cargar inicial
+): Promise<{ value: number, label: string }[]> => {
+  try {
+    const res = await api.get(`/modelos/por-marca-tipo/${marcaId}`, {
+      params: {
+        tipoEquipoId: tipoEquipoId || undefined,
+        search: search || undefined,
+        limit: loadInitial ? 5 : undefined // Envía límite solo para carga inicial
+      }
+    });
+
+    const modelos = res.data.data || res.data;
+    return modelos.map((modelo: Modelo) => ({
+      value: modelo.id,
+      label: modelo.nombre
+    }));
+
+  } catch (error) {
+    console.error("Error cargando modelos:", error);
+    return [];
   }
 };

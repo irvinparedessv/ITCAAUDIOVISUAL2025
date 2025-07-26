@@ -94,12 +94,12 @@ export default function ItemForm({
       }
     }
     else if (!isEditing) {
-    // Establecer estado "Disponible" por defecto en creación
-    setForm(prev => ({
-      ...prev,
-      estado_id: "1" // ID del estado "Disponible"
-    }));
-  }
+      // Establecer estado "Disponible" por defecto en creación
+      setForm(prev => ({
+        ...prev,
+        estado_id: "1" // ID del estado "Disponible"
+      }));
+    }
   }, [initialValues, isEditing]);
 
   // Filtrado de modelos por marca
@@ -402,197 +402,202 @@ export default function ItemForm({
   };
 
   interface BackendValidationError {
-  message?: string;
-  errors?: Record<string, string[]>;
-}
-
-interface BackendError extends Error {
-  response?: {
-    data?: BackendValidationError;
-  };
-}
-
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  toast.dismiss();
-
-  // Validación de campos requeridos
-  if (!form.tipo_equipo_id) return toast.error("Seleccione un tipo de equipo");
-  if (!form.tipo_reserva_id) return toast.error("Seleccione un tipo de reserva"); 
-  if (!form.marca_id) return toast.error("Seleccione una marca");
-  if (!form.modelo_id) return toast.error("Seleccione un modelo");
-  if (!form.estado_id) return toast.error("Seleccione un estado");
-  if (!form.detalles?.trim()) return toast.error("Ingrese los detalles");
-  if (!form.fecha_adquisicion) return toast.error("Ingrese la fecha de adquisición");
-  
-  // Validaciones específicas por tipo
-  if (esInsumo) {
-    if (!isEditing && (!form.cantidad || Number(form.cantidad) <= 0)) {
-      return toast.error("La cantidad debe ser mayor a cero");
-    }
-  } else {
-    if (!form.numero_serie?.trim()) {
-      return toast.error("Ingrese el número de serie");
-    }
-    if (!form.vida_util || Number(form.vida_util) <= 0) {
-      return toast.error("Ingrese una vida útil válida (mayor a 0 horas)");
-    }
+    message?: string;
+    errors?: Record<string, string[]>;
   }
 
-  // Validación de características
-  const caracteristicasInvalidas = caracteristicas.filter(
-    c => !c.valor || c.valor.trim() === ""
-  );
-
-  if (caracteristicasInvalidas.length > 0) {
-    return toast.error(
-      `Complete las características: ${caracteristicasInvalidas.map(c => c.nombre).join(", ")}`
-    );
+  interface BackendError extends Error {
+    response?: {
+      data?: BackendValidationError;
+    };
   }
 
-  // Confirmación para edición
-  if (isEditing) {
-    const toastId = `update-confirmation-${initialValues?.id || ''}`;
-    
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     toast.dismiss();
-    
-    const confirmation = await new Promise((resolve) => {
-      toast(
-        (t) => (
-          <div>
-            <p>¿Seguro que deseas actualizar este ítem?</p>
-            <div className="d-flex justify-content-end gap-2 mt-2">
-              <button
-                className="btn btn-sm btn-success"
-                onClick={() => {
-                  resolve(true);
-                  toast.dismiss(t.id);
-                }}
-              >
-                Sí, actualizar
-              </button>
-              <button
-                className="btn btn-sm btn-secondary"
-                onClick={() => {
-                  resolve(false);
-                  toast.dismiss(t.id);
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        ),
-        {
-          duration: 5000,
-          id: toastId,
+
+    // Validación de campos requeridos
+    if (!form.tipo_equipo_id) return toast.error("Seleccione un tipo de equipo");
+    if (!form.tipo_reserva_id) return toast.error("Seleccione un tipo de reserva");
+    if (!form.marca_id) return toast.error("Seleccione una marca");
+    if (!form.modelo_id) return toast.error("Seleccione un modelo");
+    if (!form.estado_id) return toast.error("Seleccione un estado");
+    if (!form.detalles?.trim()) return toast.error("Ingrese los detalles");
+    if (!form.fecha_adquisicion) return toast.error("Ingrese la fecha de adquisición");
+
+    // Validaciones específicas por tipo
+    if (esInsumo) {
+      if (!isEditing) {
+        if (!form.cantidad || Number(form.cantidad) <= 0) {
+          return toast.error("La cantidad debe ser mayor a cero");
         }
-      );
-    });
-
-    if (!confirmation) return;
-  }
-
-  try {
-  const formData = new FormData();
-
-  // Configuración básica
-  formData.append("tipo", esInsumo ? "insumo" : "equipo");
-  if (isEditing) formData.append("_method", "PUT");
-
-  // Datos principales
-  formData.append("tipo_equipo_id", form.tipo_equipo_id);
-  formData.append("modelo_id", form.modelo_id);
-  formData.append("estado_id", form.estado_id);
-  formData.append("detalles", form.detalles);
-  formData.append("fecha_adquisicion", form.fecha_adquisicion);
-  formData.append("tipo_reserva_id", form.tipo_reserva_id);
-
-  // Datos específicos por tipo
-  if (esInsumo) {
-    if (!isEditing || form.cantidad) {
-      formData.append("cantidad", form.cantidad);
+        if (Number(form.cantidad) > 100) {
+          return toast.error("La cantidad no puede ser mayor a 100");
+        }
+      }
+    } else {
+      if (!form.numero_serie?.trim()) {
+        return toast.error("Ingrese el número de serie");
+      }
+      if (!form.vida_util || Number(form.vida_util) <= 0) {
+        return toast.error("Ingrese una vida útil válida (mayor a 0 horas)");
+      }
     }
-  } else {
-    formData.append("numero_serie", form.numero_serie);
-    if (form.vida_util) {
-      formData.append("vida_util", form.vida_util);
-    }
-  }
 
-  // Características
-  if (caracteristicas.length > 0) {
-    formData.append(
-      "caracteristicas",
-      JSON.stringify(
-        caracteristicas.map(c => ({
-          caracteristica_id: c.id,
-          valor: c.valor
-        }))
-      )
+    // Validación de características
+    const caracteristicasInvalidas = caracteristicas.filter(
+      c => !c.valor || c.valor.trim() === ""
     );
-  }
 
-  // Imagen
-  if (form.imagen) {
-    formData.append("imagen", form.imagen);
-  } else if (isEditing && !imagePreview && initialValues?.imagen_url) {
-    formData.append("remove_image", "true");
-  }
+    if (caracteristicasInvalidas.length > 0) {
+      return toast.error(
+        `Complete las características: ${caracteristicasInvalidas.map(c => c.nombre).join(", ")}`
+      );
+    }
 
-  // Enviar datos
-  await onSubmit(formData);
+    // Confirmación para edición
+    if (isEditing) {
+      const toastId = `update-confirmation-${initialValues?.id || ''}`;
 
-  // Feedback al usuario
-  toast.success(`Ítem ${isEditing ? 'actualizado' : 'creado'} correctamente`);
+      toast.dismiss();
 
-  // Reset solo para creación exitosa
-  if (!isEditing) handleClear();
+      const confirmation = await new Promise((resolve) => {
+        toast(
+          (t) => (
+            <div>
+              <p>¿Seguro que deseas actualizar este ítem?</p>
+              <div className="d-flex justify-content-end gap-2 mt-2">
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => {
+                    resolve(true);
+                    toast.dismiss(t.id);
+                  }}
+                >
+                  Sí, actualizar
+                </button>
+                <button
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => {
+                    resolve(false);
+                    toast.dismiss(t.id);
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ),
+          {
+            duration: 5000,
+            id: toastId,
+          }
+        );
+      });
 
-  // 👉 Navegación después del éxito
-  navigate('/inventario');
+      if (!confirmation) return;
+    }
 
-} catch (error) {
-  console.error("Error en handleSubmit:", error);
+    try {
+      const formData = new FormData();
 
-  const backendError = error as BackendError;
-  const responseData = backendError.response?.data;
+      // Configuración básica
+      formData.append("tipo", esInsumo ? "insumo" : "equipo");
+      if (isEditing) formData.append("_method", "PUT");
 
-  // 🔍 MOSTRAR EN CONSOLA PARA DEPURAR
-  console.log("Respuesta del backend:", responseData);
+      // Datos principales
+      formData.append("tipo_equipo_id", form.tipo_equipo_id);
+      formData.append("modelo_id", form.modelo_id);
+      formData.append("estado_id", form.estado_id);
+      formData.append("detalles", form.detalles);
+      formData.append("fecha_adquisicion", form.fecha_adquisicion);
+      formData.append("tipo_reserva_id", form.tipo_reserva_id);
 
-  // 🟡 Si hay errores específicos del backend (por campo)
-  if (responseData?.errors) {
-    const errors = responseData.errors;
+      // Datos específicos por tipo
+      if (esInsumo) {
+        if (!isEditing || form.cantidad) {
+          formData.append("cantidad", form.cantidad);
+        }
+      } else {
+        formData.append("numero_serie", form.numero_serie);
+        if (form.vida_util) {
+          formData.append("vida_util", form.vida_util);
+        }
+      }
 
-    // ✅ Mostrar todos los errores del backend como toasts
-    Object.values(errors).forEach((messages) => {
-      messages.forEach((msg: string) => toast.error(msg));
-    });
+      // Características
+      if (caracteristicas.length > 0) {
+        formData.append(
+          "caracteristicas",
+          JSON.stringify(
+            caracteristicas.map(c => ({
+              caracteristica_id: c.id,
+              valor: c.valor
+            }))
+          )
+        );
+      }
 
-    // 🛑 DETENER ejecución aquí para evitar mostrar mensaje general
-    return;
-  }
+      // Imagen
+      if (form.imagen) {
+        formData.append("imagen", form.imagen);
+      } else if (isEditing && !imagePreview && initialValues?.imagen_url) {
+        formData.append("remove_image", "true");
+      }
 
-  // 🔴 Si no hay errores de validación, mostramos el mensaje general del backend
-  const errorMessage =
-    responseData?.message ||
-    (error instanceof Error ? error.message : "Error desconocido");
+      // Enviar datos
+      await onSubmit(formData);
 
-  toast.error(`Error al ${isEditing ? "actualizar" : "crear"}: ${errorMessage}`);
-}
+      // Feedback al usuario
+      toast.success(`Ítem ${isEditing ? 'actualizado' : 'creado'} correctamente`);
+
+      // Reset solo para creación exitosa
+      if (!isEditing) handleClear();
+
+      // 👉 Navegación después del éxito
+      navigate('/inventario');
+
+    } catch (error) {
+      console.error("Error en handleSubmit:", error);
+
+      const backendError = error as BackendError;
+      const responseData = backendError.response?.data;
+
+      // 🔍 MOSTRAR EN CONSOLA PARA DEPURAR
+      console.log("Respuesta del backend:", responseData);
+
+      // 🟡 Si hay errores específicos del backend (por campo)
+      if (responseData?.errors) {
+        const errors = responseData.errors;
+
+        // ✅ Mostrar todos los errores del backend como toasts
+        Object.values(errors).forEach((messages) => {
+          messages.forEach((msg: string) => toast.error(msg));
+        });
+
+        // 🛑 DETENER ejecución aquí para evitar mostrar mensaje general
+        return;
+      }
+
+      // 🔴 Si no hay errores de validación, mostramos el mensaje general del backend
+      const errorMessage =
+        responseData?.message ||
+        (error instanceof Error ? error.message : "Error desconocido");
+
+      toast.error(`Error al ${isEditing ? "actualizar" : "crear"}: ${errorMessage}`);
+    }
 
 
-};
+  };
 
   const getLocalDateString = () => {
-  const now = new Date();
-  // Ajustamos a la fecha local correcta
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+    const now = new Date();
+    // Ajustamos a la fecha local correcta
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   // Función para renderizar el mensaje "No editable" en modo edición
   const renderNotEditableMessage = () => {
     if (isEditing) {
@@ -773,25 +778,25 @@ const handleSubmit = async (e: React.FormEvent) => {
           </div>
 
           <div className="col-md-4">
-  <label htmlFor="estado" className="form-label">
-    Estado
-  </label>
-  <Select
-    id="estado"
-    options={estados.map(e => ({ value: e.id, label: e.nombre }))}
-    value={estados.find(e => e.id === Number(form.estado_id)) ?
-      { value: Number(form.estado_id), label: estados.find(e => e.id === Number(form.estado_id))?.nombre || '' }
-      : isEditing ? null : { value: 1, label: 'Disponible' }} // Valor por defecto en creación
-    onChange={(selected) => setForm({ ...form, estado_id: selected ? String(selected.value) : '' })}
-    placeholder={isEditing ? "Seleccionar estado..." : "Disponible"}
-    isDisabled={loading || !isEditing} // Deshabilitado en creación
-    styles={customSelectStyles}
-    menuPortalTarget={document.body}
-  />
-  {!isEditing && (
-    <small className="text-muted d-block mt-1">Este campo no se puede modificar</small>
-  )}
-</div>
+            <label htmlFor="estado" className="form-label">
+              Estado
+            </label>
+            <Select
+              id="estado"
+              options={estados.map(e => ({ value: e.id, label: e.nombre }))}
+              value={estados.find(e => e.id === Number(form.estado_id)) ?
+                { value: Number(form.estado_id), label: estados.find(e => e.id === Number(form.estado_id))?.nombre || '' }
+                : isEditing ? null : { value: 1, label: 'Disponible' }} // Valor por defecto en creación
+              onChange={(selected) => setForm({ ...form, estado_id: selected ? String(selected.value) : '' })}
+              placeholder={isEditing ? "Seleccionar estado..." : "Disponible"}
+              isDisabled={loading || !isEditing} // Deshabilitado en creación
+              styles={customSelectStyles}
+              menuPortalTarget={document.body}
+            />
+            {!isEditing && (
+              <small className="text-muted d-block mt-1">Este campo no se puede modificar</small>
+            )}
+          </div>
         </div>
 
         <div className="mb-4">
@@ -809,27 +814,27 @@ const handleSubmit = async (e: React.FormEvent) => {
         </div>
 
         <div className="row mb-4">
-<div className="col-md-6 mb-3 mb-md-0">
-  <label htmlFor="fecha_adquisicion" className="form-label">
-    Fecha de Adquisición
-  </label>
-  <input
-    id="fecha_adquisicion"
-    type="date"
-    className="form-control"
-    value={form.fecha_adquisicion}
-    onChange={(e) => {
-      const selectedDate = e.target.value;
-      const today = getLocalDateString(); // Usamos nuestra función helper
-      if (selectedDate <= today) {
-        setForm({ ...form, fecha_adquisicion: selectedDate });
-      } else {
-        toast.error("No se pueden seleccionar fechas futuras");
-      }
-    }}
-    max={getLocalDateString()} // Fecha máxima basada en hora local
-  />
-</div>
+          <div className="col-md-6 mb-3 mb-md-0">
+            <label htmlFor="fecha_adquisicion" className="form-label">
+              Fecha de Adquisición
+            </label>
+            <input
+              id="fecha_adquisicion"
+              type="date"
+              className="form-control"
+              value={form.fecha_adquisicion}
+              onChange={(e) => {
+                const selectedDate = e.target.value;
+                const today = getLocalDateString(); // Usamos nuestra función helper
+                if (selectedDate <= today) {
+                  setForm({ ...form, fecha_adquisicion: selectedDate });
+                } else {
+                  toast.error("No se pueden seleccionar fechas futuras");
+                }
+              }}
+              max={getLocalDateString()} // Fecha máxima basada en hora local
+            />
+          </div>
 
           {form.tipo_equipo_id && (
             esInsumo ? (
@@ -842,9 +847,16 @@ const handleSubmit = async (e: React.FormEvent) => {
                     id="cantidad"
                     type="number"
                     min={1}
+                    max={10} // Máximo 100
                     className="form-control"
                     value={form.cantidad}
-                    onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Validar que no sea mayor a 100
+                      if (value === "" || (Number(value) >= 1 && Number(value) <= 10)) {
+                        setForm({ ...form, cantidad: value });
+                      }
+                    }}
                     placeholder="Cantidad disponible"
                   />
                   {isEditing && renderNotEditableMessage()}
@@ -861,7 +873,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                     type="text"
                     className="form-control"
                     value={form.numero_serie}
-                    onChange={(e) => setForm({ ...form, numero_serie: e.target.value })}
+                    onChange={(e) => {
+                      // Eliminar espacios del valor ingresado
+                      const value = e.target.value.replace(/\s/g, '');
+                      setForm({ ...form, numero_serie: value });
+                    }}
                     placeholder="Número de serie"
                     readOnly={isEditing}
                   />
@@ -935,51 +951,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           </div>
         )}
 
-        <div className="mb-4">
-          <label className="form-label">Imagen</label>
-          {imagePreview ? (
-            <div className="d-flex flex-column align-items-center">
-              <img
-                src={imagePreview}
-                alt="Vista previa"
-                className="img-fluid rounded border mb-2"
-                style={{ maxWidth: "220px" }}
-              />
-              <button
-                type="button"
-                onClick={removeImage}
-                className="btn btn-outline-danger btn-sm"
-                disabled={isEditing}
-              >
-                <FaTrash className="me-1" />
-                Eliminar imagen
-              </button>
-            </div>
-          ) : (
-            <div
-              {...getRootProps()}
-              className={`border border-secondary-subtle rounded p-4 text-center cursor-pointer ${isDragActive ? "border-primary bg-light" : ""
-                }`}
-            >
-              <input {...getInputProps()} />
-              <div className="d-flex flex-column align-items-center justify-content-center">
-                <FaUpload className="text-muted mb-2" size={24} />
-                {isDragActive ? (
-                  <p className="text-primary mb-0">Suelta la imagen aquí...</p>
-                ) : (
-                  <>
-                    <p className="mb-1">
-                      Arrastra y suelta una imagen aquí, o haz clic para seleccionar
-                    </p>
-                    <p className="text-muted small mb-0">
-                      Formatos: JPEG, PNG, GIF (Máx. 5MB)
-                    </p>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+
 
         <div className="form-actions">
           <button type="submit" className="btn primary-btn" disabled={loading}>
@@ -987,17 +959,17 @@ const handleSubmit = async (e: React.FormEvent) => {
             {isEditing ? 'Actualizar' : 'Guardar'}
           </button>
           {/* Mostrar botón Limpiar solo cuando no esté en modo edición */}
-  {!isEditing && (
-    <button
-      type="button"
-      className="btn secondary-btn"
-      onClick={handleClear}
-      disabled={loading}
-    >
-      <FaBroom className="me-2" />
-      Limpiar
-    </button>
-  )}
+          {!isEditing && (
+            <button
+              type="button"
+              className="btn secondary-btn"
+              onClick={handleClear}
+              disabled={loading}
+            >
+              <FaBroom className="me-2" />
+              Limpiar
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-secondary"

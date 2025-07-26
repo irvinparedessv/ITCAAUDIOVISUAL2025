@@ -247,8 +247,10 @@ export default function InteractiveScene({
   }, [equipos]);
 
   useEffect(() => {
-    useGLTF.preload(APIURL + path_room);
-    equipos.forEach((model) => useGLTF.preload(APIURL + model.modelo_path));
+    useGLTF.preload(APIURL + "/" + path_room);
+    equipos.forEach((model) =>
+      useGLTF.preload(APIURL + "/" + model.modelo_path)
+    );
   }, [path_room, equipos]);
 
   const handleRoomReady = useCallback((obj: THREE.Object3D) => {
@@ -257,7 +259,7 @@ export default function InteractiveScene({
 
   const handleAdd = useCallback(
     (nombre: string, path: string, serie: string) => {
-      const fullPath = APIURL + path;
+      const fullPath = APIURL + "/" + path;
       const id = addItem(nombre, fullPath);
       setSelectedId(id);
 
@@ -276,7 +278,7 @@ export default function InteractiveScene({
       removeItem(id);
       setSelectedId(null);
 
-      const originalPath = item.path.replace(APIURL, "");
+      const originalPath = item.path.replace(APIURL + "/", "");
       const equipo = equipos.find(
         (e) => e.modelo_path === originalPath && !equiposDisponibles.includes(e)
       );
@@ -383,7 +385,7 @@ export default function InteractiveScene({
         <Suspense fallback={null}>
           <group ref={exportGroupRef}>
             <MemoizedRoom
-              path={APIURL + path_room}
+              path={APIURL + "/" + path_room}
               scale={0.01}
               onReady={handleRoomReady}
             />

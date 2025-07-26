@@ -13,6 +13,7 @@ import { FaFileAlt, FaTrash } from "react-icons/fa";
 import Slider from "react-slick";
 import { useAuth } from "~/hooks/AuthContext";
 import { Role } from "~/types/roles";
+import VisualizarModal from "../attendantadmin/VisualizarModal";
 
 interface Props {
   formData: FormDataType;
@@ -72,7 +73,19 @@ export default function EquiposSelect({
   const handleImageError = () => {
     toast.error("No se pudo cargar la imagen.");
   };
+  const [tempModelUrl, setTempModelUrl] = useState<string | null>(null);
+  const [showVisualizar, setShowVisualizar] = useState(false);
+  useEffect(() => {
+    if (formData.modelFile) {
+      const tempUrl = URL.createObjectURL(formData.modelFile);
+      setTempModelUrl(tempUrl);
 
+      return () => {
+        URL.revokeObjectURL(tempUrl);
+        setTempModelUrl(null);
+      };
+    }
+  }, [formData.modelFile]);
   // Debounce de búsqueda
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -354,8 +367,8 @@ export default function EquiposSelect({
                   variant="secondary"
                   size="sm"
                   onClick={() => {
-                    const url = URL.createObjectURL(formData.modelFile!);
-                    window.open(url, "_blank");
+                    if (tempModelUrl) setShowVisualizar(true);
+                    else toast.error("No se pudo generar la vista previa");
                   }}
                 >
                   Visualizar
@@ -600,11 +613,15 @@ export default function EquiposSelect({
         onHide={() => setShowFullView(false)}
         fullscreen
       >
+        <Modal.Header closeButton onHide={() => setShowFullView(false)}>
+          <Modal.Title>VISUALIZACIÓN</Modal.Title>
+        </Modal.Header>{" "}
         <Modal.Body className="p-0">
           <InteractiveScene
             path_room={formData.aula?.path_modelo ?? ""}
             equipos={equiposConModeloPath}
             setFormData={setFormData}
+            onClose={() => setShowFullView(false)}
           />
         </Modal.Body>
       </Modal>
@@ -675,6 +692,11 @@ export default function EquiposSelect({
           )}
         </Modal.Body>
       </Modal>
+      <VisualizarModal
+        show={showVisualizar}
+        onHide={() => setShowVisualizar(false)}
+        path={tempModelUrl}
+      />
     </div>
   );
 }

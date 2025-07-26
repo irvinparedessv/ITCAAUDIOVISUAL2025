@@ -26,6 +26,7 @@ interface InteractiveSceneProps {
   path_room: string;
   equipos: EquipmentSeleccionado[];
   setFormData;
+  onClose: () => void;
 }
 
 function LoadingOverlay() {
@@ -54,7 +55,7 @@ function LoadingOverlay() {
 interface UIControlsProps {
   equipos: EquipmentSeleccionado[];
   transformMode: "translate" | "rotate";
-  onAdd: (nombre: string, path: string) => void;
+  onAdd: (nombre: string, path: string, serie: string) => void;
   onModeChange: (mode: "translate" | "rotate") => void;
   onExport: (type: "glb" | "gltf") => void;
   onDeleteSelected: () => void;
@@ -80,9 +81,9 @@ function UIControls({
       <div style={{ position: "relative" }}>
         <select
           onChange={(e) => {
-            const selectedPath = e.target.value;
-            const model = equipos.find((m) => m.modelo_path === selectedPath);
-            if (model) onAdd(model.nombre_modelo, model.modelo_path);
+            const serie = e.target.value;
+            const equipo = equipos.find((m) => m.numero_serie === serie);
+            if (equipo) onAdd(equipo.nombre_modelo, equipo.modelo_path, serie);
             e.target.value = "";
           }}
           defaultValue=""
@@ -92,7 +93,7 @@ function UIControls({
             Selecciona un equipo
           </option>
           {equipos.map((model) => (
-            <option key={model.numero_serie} value={model.modelo_path}>
+            <option key={model.numero_serie} value={model.numero_serie}>
               {model.nombre_modelo}
             </option>
           ))}
@@ -228,6 +229,7 @@ export default function InteractiveScene({
   path_room,
   equipos,
   setFormData,
+  onClose,
 }: InteractiveSceneProps) {
   const exportGroupRef = useRef<THREE.Group>(null!);
   const { items, addItem, updatePosition, updateRotation, removeItem } =
@@ -254,12 +256,13 @@ export default function InteractiveScene({
   }, []);
 
   const handleAdd = useCallback(
-    (nombre: string, path: string) => {
+    (nombre: string, path: string, serie: string) => {
       const fullPath = APIURL + path;
       const id = addItem(nombre, fullPath);
       setSelectedId(id);
+
       setEquiposDisponibles((prev) =>
-        prev.filter((e) => e.modelo_path !== path)
+        prev.filter((e) => e.numero_serie !== serie)
       );
     },
     [addItem]
@@ -269,16 +272,20 @@ export default function InteractiveScene({
     (id: number) => {
       const item = items.find((i) => i.id === id);
       if (!item) return;
+
       removeItem(id);
       setSelectedId(null);
 
       const originalPath = item.path.replace(APIURL, "");
-      const equipo = equipos.find((e) => e.modelo_path === originalPath);
+      const equipo = equipos.find(
+        (e) => e.modelo_path === originalPath && !equiposDisponibles.includes(e)
+      );
+
       if (equipo) {
         setEquiposDisponibles((prev) => [...prev, equipo]);
       }
     },
-    [items, removeItem, equipos]
+    [items, removeItem, equipos, equiposDisponibles]
   );
 
   const renderItem = useCallback(
@@ -339,6 +346,7 @@ export default function InteractiveScene({
               modelFile: file,
             }));
             toast.success("Modelo adjuntado al formulario");
+            onClose();
           }
           setLoading(false);
         },
@@ -367,7 +375,7 @@ export default function InteractiveScene({
         canDelete={selectedId !== null}
       />
       <Canvas
-        style={{ width: "95%", height: "95%" }}
+        style={{ width: "100%", height: "100%", padding: "1rem" }}
         camera={{ position: [0, 2, 5], fov: 50 }}
       >
         <Environment preset="sunset" />

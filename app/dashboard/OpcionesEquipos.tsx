@@ -45,6 +45,13 @@ const opciones = [
     roles: [Role.Administrador, Role.Encargado, Role.EspacioEncargado],
   },
   {
+    nombre: "Mantenimientos",
+    descripcion: "Administracion de mantenimientos",
+    ruta: "/mantenimiento",
+    icono: <FaComputer size={24} />,
+    roles: [Role.Administrador, Role.Encargado, Role.EspacioEncargado],
+  },
+  {
     nombre: "Imagenes Equipos",
     descripcion: "Administacion de Imagenes para equipos",
     ruta: "/imagenes",

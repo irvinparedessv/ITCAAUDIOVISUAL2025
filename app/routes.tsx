@@ -65,6 +65,7 @@ import TipoEquipoPage from "./routes/tipoEquipoPage";
 import ModeloAccesoriosForm from "./components/equipment/Modelo/ModeloAccesoriosForm";
 import EquipmentReservationForm from "./components/reserveE/EquipmentReservationForm";
 import OpcionesEquipos from "./dashboard/OpcionesEquipos";
+import ModeloManager from "./components/modelo/modeloManager";
 
 const router = createBrowserRouter([
   {
@@ -258,6 +259,10 @@ const router = createBrowserRouter([
           {
             path: "equipos",
             element: <OpcionesEquipos />,
+          },
+          {
+            path: "modelos",
+            element: <ModeloManager />,
           },
           {
             path: "opcionesReportes",

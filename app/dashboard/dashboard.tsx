@@ -11,6 +11,7 @@ import {
   FaDoorOpen,
   FaRegFileAlt,
   FaUsers,
+  FaImage,
 } from "react-icons/fa";
 import { FaComputer, FaBookmark, FaMapLocation } from "react-icons/fa6";
 import { Card, Container, Row, Col } from "react-bootstrap";
@@ -92,6 +93,12 @@ export default function Dashboard() {
               icon={<FaUserShield size={24} />}
               link="/administracion"
               description="Configuración del sistema"
+            />
+            <DashboardCard
+              title="Gestion de Imagenes"
+              icon={<FaImage size={24} />}
+              link="/imagenes"
+              description="Administracion de Imagenes"
             />
           </Row>
         </div>

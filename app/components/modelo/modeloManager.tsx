@@ -170,6 +170,7 @@ export default function ModeloManager() {
           value={search}
           onChange={handleSearchChange}
         />
+        {/* @ts-ignore */}
         <Button onClick={() => handleShow()}>Agregar</Button>
       </InputGroup>
 

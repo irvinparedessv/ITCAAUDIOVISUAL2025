@@ -75,11 +75,15 @@ export default function ItemForm({
   // Inicialización del formulario
   useEffect(() => {
     if (initialValues) {
+       console.log('Initial values received:', initialValues);
       setForm(prev => ({
         ...prev,
         ...initialValues,
         imagen: null,
-        cantidad: isEditing ? "" : initialValues.cantidad || ""
+        cantidad: isEditing ? "" : initialValues.cantidad || "",
+
+         numero_serie: initialValues.numero_serie || "",
+      vida_util: initialValues.vida_util ? String(initialValues.vida_util) : ""
       }));
 
       if (initialValues.caracteristicas) {

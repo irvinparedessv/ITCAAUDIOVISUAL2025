@@ -91,13 +91,13 @@ export default function ModeloAccesoriosModal({
 
     return (
         <Modal show={show} onHide={onHide} centered>
-            <Modal.Header closeButton>
+            <Modal.Header className="text-white py-3" style={{ backgroundColor: "#b1291d" }}  closeButton>
                 <Modal.Title>Asociar Insumos al Equipo</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 {loading ? (
                     <div className="d-flex flex-column align-items-center my-3">
-                        <Spinner animation="border" role="status" />
+                        <Spinner animation="border" role="status" variant="primary" />
                         <p className="mt-3 text-muted">Cargando datos...</p>
                     </div>
                 ) : (

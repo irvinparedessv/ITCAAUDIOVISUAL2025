@@ -325,7 +325,7 @@ export default function ItemList({
 
             {/* Modal Asignar Insumo */}
             <Modal show={showAccesorioModal} onHide={() => setShowAccesorioModal(false)} size="lg">
-                <Modal.Header closeButton>
+                <Modal.Header className="text-white py-3" style={{ backgroundColor: "#b1291d" }} closeButton>
                     <Modal.Title>
                         Asignar insumo a {selectedEquipo?.modelo?.nombre ?? 'Equipo'} ({selectedEquipo?.numero_serie ?? 'N/A'})
                     </Modal.Title>

@@ -159,7 +159,7 @@ export default function MarcaModal({
 
           {loading && (
             <div className="d-flex justify-content-center my-4">
-              <Spinner animation="border" role="status" />
+              <Spinner animation="border" role="status" variant="primary" />
             </div>
           )}
 

@@ -75,7 +75,7 @@ export default function ItemDetail({ id: propId }: ItemDetailProps) {
   if (loading) {
     return (
       <Container className="d-flex flex-column align-items-center justify-content-center my-5 py-5">
-        <Spinner animation="grow" variant="primary" />
+        <Spinner animation="grow" variant="primary" className="text-white py-3" style={{ backgroundColor: "#b1291d" }}  />
         <p className="mt-3 text-muted fs-5">Cargando detalles del equipo...</p>
       </Container>
     );
@@ -220,7 +220,7 @@ export default function ItemDetail({ id: propId }: ItemDetailProps) {
                   <Row>
                     {equipo.caracteristicas.map((carac, i) => (
                       <Col md={6} key={i} className="mb-3">
-                        <div className="bg-light p-3 rounded">
+                        <div className=" p-3 rounded">
                           <strong>{carac.nombre}:</strong>
                           <div className="mt-1">{carac.valor}</div>
                         </div>

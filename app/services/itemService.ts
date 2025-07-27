@@ -43,7 +43,15 @@ export const getEstados = async (): Promise<Estado[]> => {
 export const getItems = async (
   filters: ItemFilters = {}
 ): Promise<PaginatedItems> => {
-  const { modeloId, page = 1, perPage = 10 } = filters;
+  const {
+    modeloId,
+    page = 1,
+    perPage = 10,
+    search,
+    tipoEquipoId,
+    estadoId,
+    // Agrega aquí otros filtros que necesites
+  } = filters;
 
   if (!modeloId) {
     throw new Error("modeloId es requerido");
@@ -51,10 +59,17 @@ export const getItems = async (
 
   const url = `/inventario/modelo/${modeloId}`;
 
-  const params = {
+  // Construye los parámetros de consulta
+  const params: Record<string, any> = {
     page,
     perPage,
   };
+
+  // Agrega los filtros solo si tienen valor
+  if (search) params.search = search;
+  if (tipoEquipoId) params.tipo_equipo_id = tipoEquipoId;
+  if (estadoId) params.estado_id = estadoId;
+  // Agrega aquí otros filtros de la misma manera
 
   const res = await api.get(url, { params });
 

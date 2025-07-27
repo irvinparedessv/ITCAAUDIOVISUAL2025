@@ -61,6 +61,7 @@ const Chatbot = () => {
 
   // Busca los datos completos de aula según sugerencia
   const getAulaCompleta = (sugerencia: any) => {
+    console.log(aulasDisponibles);
     return (
       aulasDisponibles?.find((a) => a.id === sugerencia.id) || sugerencia // fallback por si acaso
     );
@@ -99,10 +100,10 @@ const Chatbot = () => {
                       <div key={aula.id} className="col-12">
                         <div className="card shadow-sm d-flex flex-row align-items-center p-2">
                           <div style={{ width: 120, height: 100 }}>
-                            {aula.imagen_glb ? (
+                            {aula.path_modelo ? (
                               //@ts-ignore
                               <model-viewer
-                                src={APIURL + "/" + aula.imagen_glb}
+                                src={APIURL + "/" + aula.path_modelo}
                                 alt={aula.nombre}
                                 camera-controls
                                 style={{
@@ -188,7 +189,7 @@ const Chatbot = () => {
           )}
 
           {/* ---- Historial de mensajes ---- */}
-          <div className="chat-window" style={{ maxHeight: 420 }}>
+          <div className="chat-window" style={{ maxHeight: 820 }}>
             <div className="chat-messages">
               {messages.map((msg, idx) => (
                 <div

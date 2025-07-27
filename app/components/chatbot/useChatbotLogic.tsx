@@ -408,13 +408,6 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
       ) {
         setEspaciosParaSeleccionar(recomendaciones.data);
         setShowFullScreen(true);
-        setMessages((prev) =>
-          prev.concat({
-            id: prev.length + 1,
-            text: "Selecciona un espacio sugerido de la lista para continuar.",
-            sender: "bot",
-          })
-        );
       }
 
       setFormData((prev: any) => ({
@@ -515,7 +508,7 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
     if (formData.reserva === "espacio") {
       setLoadingReserva(true);
       setReservaConfirmada(null);
-
+      console.log("user=>", user);
       const body: any = {
         aula_id: aula.id,
         fecha: formData.fecha,

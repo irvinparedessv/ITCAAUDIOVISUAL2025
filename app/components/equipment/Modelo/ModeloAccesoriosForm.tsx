@@ -111,6 +111,8 @@ export default function ModeloAccesoriosModal({
                                 onChange={(options) => setSelected(options as Option[])}
                                 placeholder="Selecciona insumos..."
                                 noOptionsMessage={() => "No hay más insumos disponibles"}
+                                className="react-select-container"
+                                classNamePrefix="react-select"
                             />
                         </div>
                     </div>

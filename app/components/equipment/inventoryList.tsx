@@ -1,13 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
-import { Spinner, Badge, Button, Form, InputGroup, Modal } from "react-bootstrap";
+import { Spinner, Badge, Button, Form, InputGroup } from "react-bootstrap";
 import api from "../../api/axios";
-import { FaEye, FaBoxes, FaLongArrowAltLeft, FaFilter, FaTimes, FaSearch, FaToolbox, FaPlus } from "react-icons/fa";
+import { FaEye, FaBoxes, FaLongArrowAltLeft, FaFilter, FaTimes, FaSearch, FaTools, FaToolbox, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
 import toast from "react-hot-toast";
 import AsyncSelect from "react-select/async";
 import { useTheme } from "~/hooks/ThemeContext";
-import Select from "react-select";
+import ModeloAccesoriosModal from "./Modelo/ModeloAccesoriosForm"; // Asegúrate de que la ruta sea correcta
 
 interface ResumenItem {
   modelo_id: number;
@@ -26,11 +26,6 @@ interface SelectOption {
   value: string;
   label: string;
   originalId: number;
-}
-
-interface Option {
-  value: number;
-  label: string;
 }
 
 const getCategoryColor = (category: string) => {
@@ -87,129 +82,6 @@ const searchTiposEquipoForFilter = async (
   }
 };
 
-const ModeloAccesoriosModal = ({
-  show,
-  onHide,
-  modeloId,
-  onSuccess,
-}: {
-  show: boolean;
-  onHide: () => void;
-  modeloId: string | undefined;
-  onSuccess?: () => void;
-}) => {
-  const [insumos, setInsumos] = useState<Option[]>([]);
-  const [selected, setSelected] = useState<Option[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!modeloId || !show) return;
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        const [insumosRes, accesoriosRes] = await Promise.all([
-          api.get("/modelos/insumos/listar"),
-          api.get(`/modelos/${modeloId}/accesorios`),
-        ]);
-
-        setInsumos(
-          insumosRes.data.map((insumo: any) => ({
-            value: insumo.id,
-            label: `${insumo.nombre} (${insumo.nombre_marca || "Sin marca"})`,
-          }))
-        );
-
-        setSelected(
-          accesoriosRes.data.map((acc: any) => ({
-            value: acc.id,
-            label: `${acc.nombre} (${acc.nombre_marca || "Sin marca"})`,
-          }))
-        );
-      } catch (error) {
-        toast.error("Error al cargar los datos");
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [modeloId, show]);
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-
-      await api.post("/modelo-accesorios", {
-        modelo_equipo_id: modeloId,
-        modelo_insumo_ids: selected.map((s) => s.value),
-      });
-
-      toast.success("Asociaciones guardadas correctamente");
-
-      if (onSuccess) {
-        onSuccess();
-      }
-
-      onHide();
-    } catch (error: any) {
-      toast.error(
-        error.response?.data?.error || "Error al guardar las asociaciones"
-      );
-      console.error(error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Modal show={show} onHide={onHide} centered>
-      <Modal.Header closeButton>
-        <Modal.Title>Asociar Insumos al Equipo</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {loading ? (
-          <div className="d-flex flex-column align-items-center my-3">
-            <Spinner animation="border" role="status" />
-            <p className="mt-3 text-muted">Cargando datos...</p>
-          </div>
-        ) : (
-          <div>
-            <div className="mb-3">
-              <label className="form-label fw-bold">Insumos disponibles:</label>
-              <Select
-                options={insumos}
-                isMulti
-                value={selected}
-                onChange={(options) => setSelected(options as Option[])}
-                placeholder="Selecciona insumos..."
-                noOptionsMessage={() => "No hay más insumos disponibles"}
-              />
-            </div>
-          </div>
-        )}
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onHide} disabled={saving}>
-          Cancelar
-        </Button>
-        <Button variant="primary" onClick={handleSave} disabled={saving || loading}>
-          {saving ? (
-            <>
-              <Spinner as="span" size="sm" animation="border" /> Guardando...
-            </>
-          ) : (
-            "Guardar asociaciones"
-          )}
-        </Button>
-      </Modal.Footer>
-    </Modal>
-  );
-};
-
 export default function InventoryList() {
   const [datos, setDatos] = useState<ResumenItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -219,7 +91,7 @@ export default function InventoryList() {
   const [searchInput, setSearchInput] = useState("");
   const { darkMode } = useTheme();
   const [showAccesoriosModal, setShowAccesoriosModal] = useState(false);
-  const [selectedModeloId, setSelectedModeloId] = useState<string | undefined>();
+  const [selectedModeloId, setSelectedModeloId] = useState<number | null>(null);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -376,20 +248,6 @@ export default function InventoryList() {
       tipo_equipo_id: ""
     });
     setSearchInput("");
-  };
-
-  const handleOpenAccesoriosModal = (modeloId: number) => {
-    setSelectedModeloId(modeloId.toString());
-    setShowAccesoriosModal(true);
-  };
-
-  const handleCloseAccesoriosModal = () => {
-    setShowAccesoriosModal(false);
-    setSelectedModeloId(undefined);
-  };
-
-  const handleAccesoriosSaveSuccess = () => {
-    fetchDatos(); // Recargar los datos
   };
 
   return (
@@ -624,7 +482,10 @@ export default function InventoryList() {
                             variant="outline-secondary"
                             className="rounded-circle"
                             title="Asociar accesorios"
-                            onClick={() => handleOpenAccesoriosModal(item.modelo_id)}
+                            onClick={() => {
+                              setSelectedModeloId(item.modelo_id);
+                              setShowAccesoriosModal(true);
+                            }}
                             style={{
                               width: "44px",
                               height: "44px",
@@ -663,11 +524,14 @@ export default function InventoryList() {
         </>
       )}
 
+      {/* Modal para asociar accesorios */}
       <ModeloAccesoriosModal
         show={showAccesoriosModal}
-        onHide={handleCloseAccesoriosModal}
-        modeloId={selectedModeloId}
-        onSuccess={handleAccesoriosSaveSuccess}
+        onHide={() => setShowAccesoriosModal(false)}
+        modeloId={selectedModeloId?.toString()}
+        onSuccess={() => {
+          fetchDatos(); // Para refrescar los datos si es necesario
+        }}
       />
     </div>
   );

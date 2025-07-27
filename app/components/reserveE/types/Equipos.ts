@@ -16,4 +16,5 @@ export interface EquipmentSeleccionado {
   cantidad: number; // siempre 1 por cada item
   modelo_path: string;
   numero_serie: string | undefined;
+  escala: number | undefined;
 }

@@ -31,6 +31,7 @@ interface EquipoIndividual {
   imagen_normal: string | null;
   numero_serie: string;
   modelo_path?: string | null;
+  escala: number;
 }
 
 interface GrupoEquiposPorModelo {
@@ -119,7 +120,7 @@ export default function EquiposSelect({
       });
 
       const rows: GrupoEquiposPorModelo[] = response.data.data || [];
-
+      console.log(rows);
       setAvailableEquipmentSlides((prev) => {
         const nuevos = rows.filter(
           (nuevo) =>
@@ -184,11 +185,11 @@ export default function EquiposSelect({
     }
 
     const idsAsignados = idsDisponibles.slice(0, cantidad);
-
     setFormData((prev) => {
       const actuales: EquipmentSeleccionado[] = [...(prev.equipment || [])];
       idsAsignados.forEach((idEquipo) => {
         const equipoObj = grupo.equipos.find((e) => e.equipo_id === idEquipo);
+        console.log(equipoObj);
         actuales.push({
           modelo_id: grupo.modelo_id,
           nombre_modelo: grupo.nombre_modelo,
@@ -196,6 +197,7 @@ export default function EquiposSelect({
           cantidad: 1,
           modelo_path: equipoObj?.modelo_path ?? equipoObj?.imagen_glb ?? "",
           numero_serie: equipoObj?.numero_serie,
+          escala: equipoObj?.escala,
         });
       });
       return { ...prev, equipment: actuales };
@@ -474,6 +476,7 @@ export default function EquiposSelect({
                             imagen_glb: null,
                             imagen_normal: null,
                             modelo_path: equipoEliminado.modelo_path ?? null,
+                            escala: equipoEliminado.escala,
                           };
 
                           return {
@@ -673,6 +676,7 @@ export default function EquiposSelect({
                           imagen_glb: null,
                           imagen_normal: null,
                           modelo_path: equipoAEditar.modelo_path ?? null,
+                          escala: equipoAEditar.escala,
                         });
                       return { ...grupo, equipos: nuevaLista };
                     })

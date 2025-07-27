@@ -36,7 +36,18 @@ type PrediccionRow = {
   detalle?: { regresion_lineal?: number };
 };
 
+type EquipoInfo = {
+  id: string;
+  numero_serie: string;
+  nombre: string;
+  marca?: string;
+  modelo?: string;
+  marca_modelo?: string;
+  total_reservas: number;
+};
+
 type EquipoData = {
+  equipo?: EquipoInfo;
   nombre: string;
   total_reservas: number;
   prediccion: PrediccionRow[];
@@ -110,7 +121,16 @@ export default function PrediccionPorEquipoPage() {
       try {
         const resultadosTop5 = await getTop5PrediccionesPorEquipo();
         setTop5(resultadosTop5.map(item => ({
-          nombre: item.equipo?.nombre ?? "Equipo desconocido",
+          equipo: item.equipo ? {
+            id: item.equipo.id.toString(),
+            numero_serie: item.equipo.numero_serie || "N/A",
+            nombre: item.equipo.marca_modelo || "Equipo desconocido",
+            marca: item.equipo.marca,
+            modelo: item.equipo.modelo,
+            marca_modelo: item.equipo.marca_modelo,
+            total_reservas: item.equipo.total_reservas
+          } : undefined,
+          nombre: item.equipo?.marca_modelo ?? "Equipo desconocido",
           total_reservas: item.equipo?.total_reservas ?? 0,
           prediccion: [
             ...(item.prediccion?.historico ?? []),
@@ -133,7 +153,11 @@ export default function PrediccionPorEquipoPage() {
     if (!q) return [];
     try {
       const teams = await buscarEquipos(q, 10);
-      return teams.map((e: any) => ({ label: e.nombre, value: e.id.toString() }));
+      return teams.map((e: any) => ({
+        label: `${e.marca} ${e.modelo} (${e.numero_serie})`, // Formato: "Marca Modelo (N° Serie)"
+        value: e.id.toString(),
+        originalData: e
+      }));
     } catch (error) {
       console.error(error);
       toast.error("Error al buscar equipos");
@@ -146,7 +170,7 @@ export default function PrediccionPorEquipoPage() {
       toast.error("Por favor selecciona un equipo");
       return;
     }
-    
+
     try {
       const id = parseInt(equipoSeleccionado.value);
       const data = await getPrediccionPorEquipo(id);
@@ -157,7 +181,7 @@ export default function PrediccionPorEquipoPage() {
       setNombreEquipoSeleccionado(equipoSeleccionado.label);
       setPrecisionEquipo(data.precision ?? null);
       setShowRL(true);
-      
+
       toast.success(`Datos cargados para ${equipoSeleccionado.label}`);
     } catch (error) {
       console.error(error);
@@ -210,7 +234,7 @@ export default function PrediccionPorEquipoPage() {
 
     try {
       toast.loading("Generando Excel...", { id: "excel-download-equipo" });
-      
+
       const encabezados = ["Mes", "Cantidad", "Tipo", "Regresión Lineal"];
       const filas = analisisEquipo.map((d) => [
         d.mes,
@@ -225,7 +249,7 @@ export default function PrediccionPorEquipoPage() {
       XLSX.utils.book_append_sheet(wb, ws, "Predicción Equipo");
       const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
       saveAs(new Blob([buffer], { type: "application/octet-stream" }), `Prediccion_${nombreEquipoSeleccionado}.xlsx`);
-      
+
       toast.success("Excel exportado correctamente", { id: "excel-download-equipo" });
     } catch (error) {
       console.error("Error al exportar Excel:", error);
@@ -280,7 +304,7 @@ export default function PrediccionPorEquipoPage() {
       link.download = `prediccion_${nombreEquipoSeleccionado}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
-      
+
       toast.dismiss("imagen-download-equipo");
       toast.success("Imagen exportada correctamente");
     } catch (error) {
@@ -333,7 +357,7 @@ export default function PrediccionPorEquipoPage() {
       link.download = `top5_equipos_mas_prestados.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
-      
+
       toast.dismiss("imagen-download-top5");
       toast.success("Imagen exportada correctamente");
     } catch (error) {
@@ -413,11 +437,11 @@ export default function PrediccionPorEquipoPage() {
                     <Tooltip />
                     <Legend />
                     {top5.map((eq, i) => (
-                      <Line 
-                        key={eq.nombre} 
-                        dataKey={eq.nombre} 
-                        stroke={colores[i % colores.length]} 
-                        dot={false} 
+                      <Line
+                        key={eq.equipo?.id || `line-${i}`}
+                        dataKey={eq.nombre}
+                        stroke={colores[i % colores.length]}
+                        dot={false}
                       />
                     ))}
                     <Brush dataKey="mes" height={30} stroke="#8884d8" />
@@ -426,15 +450,26 @@ export default function PrediccionPorEquipoPage() {
               </div>
 
               <Accordion className="mt-4">
-                {top5.map(eq => (
-                  <Accordion.Item key={eq.nombre} eventKey={eq.nombre}>
+                {top5.map((eq, index) => (
+                  <Accordion.Item
+                    key={eq.equipo?.id || `eq-${index}`}
+                    eventKey={eq.equipo?.id || `eq-${index}`}
+                  >
                     <Accordion.Header onClick={() => toggleEquipo(eq.nombre)}>
-                      {eq.nombre} — {eq.total_reservas} reservas en 6 meses
-                      {eq.precision !== null && (
-                        <Badge bg="success" className="ms-2">
-                          Precisión: {eq.precision.toFixed(2)}%
-                        </Badge>
-                      )}
+                      <div>
+                        <div>{eq.nombre}</div>
+                        {eq.equipo?.numero_serie && (
+                          <small className="text-muted">N° Serie: {eq.equipo.numero_serie}</small>
+                        )}
+                      </div>
+                      <div className="ms-3">
+                        {eq.total_reservas} reservas en 6 meses
+                        {eq.precision !== null && (
+                          <Badge bg="success" className="ms-2">
+                            Precisión: {eq.precision.toFixed(2)}%
+                          </Badge>
+                        )}
+                      </div>
                     </Accordion.Header>
                     <Accordion.Body className="p-0">
                       <Table striped bordered hover responsive className="mb-0">
@@ -448,7 +483,7 @@ export default function PrediccionPorEquipoPage() {
                         </thead>
                         <tbody>
                           {eq.prediccion.map((p, idx) => (
-                            <tr key={idx}>
+                            <tr key={`${eq.equipo?.id || 'eq'}-${idx}`}>
                               <td>{p.mes}</td>
                               <td>
                                 <Badge bg={getTipoBadge(p.tipo)}>
@@ -494,8 +529,8 @@ export default function PrediccionPorEquipoPage() {
               </Form.Group>
             </Col>
             <Col md={4} className="d-flex justify-content-end">
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 onClick={analizarEquipo}
                 disabled={!equipoSeleccionado}
               >

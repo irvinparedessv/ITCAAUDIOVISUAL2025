@@ -278,4 +278,20 @@ export const getModelosByMarcaYTipo = async (
     console.error("Error cargando modelos:", error);
     return [];
   }
+  
 };
+
+
+export async function getModelosByTipo(
+  marcaId: number,
+  tipoEquipoId: number
+): Promise<{ value: number; label: string }[]> {
+  const response = await api.get("/modelos/por-marca-y-tipo", {
+    params: { marca_id: marcaId, tipo_equipo_id: tipoEquipoId },
+  });
+
+  return response.data.map((m: any) => ({
+    value: m.id,
+    label: m.nombre,
+  }));
+}

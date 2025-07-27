@@ -434,47 +434,41 @@ export default function ItemList({
             </div>
 
             {/* Filtros */}
-            <div className="d-flex flex-column flex-md-row align-items-center gap-3 mb-3">
+            {/* Buscador + botón para mostrar filtros adicionales */}
+            <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
                 <div className="d-flex flex-grow-1">
                     <InputGroup className="flex-grow-1">
                         <InputGroup.Text><FaSearch /></InputGroup.Text>
                         <Form.Control
                             type="text"
-                            placeholder="Buscar por detalles, número de serie, etc."
-                            value={filters.search || ""}
+                            placeholder="Buscar por número de serie, descripción, etc."
+                            value={filters.search}
                             onChange={(e) => handleFilterUpdate("search", e.target.value)}
                         />
                         {filters.search && (
-                            <Button variant="outline-secondary" onClick={() => handleFilterUpdate("search", "")}>
+                            <Button
+                                variant="outline-secondary"
+                                onClick={() => handleFilterUpdate("search", "")}
+                                style={{ padding: '0 12px' }}
+                            >
                                 <FaTimes />
                             </Button>
                         )}
                     </InputGroup>
                 </div>
 
-                <div className="d-flex align-items-center gap-2">
-                    <Form.Group className="mb-0">
-                        <Form.Select
-                            value={filters.estadoId || ""}
-                            onChange={(e) => handleFilterUpdate("estadoId", e.target.value ? Number(e.target.value) : undefined)}
-                            style={{ minWidth: '180px' }}
-                        >
-                            <option value="">Todos los estados</option>
-                            <option value="1">Disponible</option>
-                            <option value="2">En mantenimiento</option>
-                            <option value="3">Dañado</option>
-                        </Form.Select>
-                    </Form.Group>
-
-                    <Button
-                        variant="outline-danger"
-                        onClick={resetFilters}
-                        title="Limpiar filtros"
-                    >
-                        <FaTimes />
-                    </Button>
-                </div>
+                <Button
+                    variant={showFilters ? "secondary" : "outline-secondary"}
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="d-flex align-items-center gap-2"
+                >
+                    <FaFilter />
+                    {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+                </Button>
             </div>
+
+
+
 
             {loading && (
                 <div className="text-center my-5">
@@ -486,7 +480,7 @@ export default function ItemList({
             {showFilters && (
                 <div className="p-3 rounded mb-4 border border-secondary">
                     <div className="row g-3">
-                        <div className="col-md-6">
+                        <div className="">
                             <Form.Group>
                                 <Form.Label>Estado</Form.Label>
                                 <Form.Select

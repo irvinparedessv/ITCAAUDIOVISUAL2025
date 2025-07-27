@@ -723,63 +723,69 @@ export default function ItemForm({
           </div>
 
           <div className="col-md-4 mb-3 mb-md-0">
-            <label htmlFor="modelo" className="form-label">
-              Modelo
-            </label>
-            <div className="d-flex gap-2">
-              <AsyncSelect
-                id="modelo"
-                cacheOptions
-                defaultOptions={modelosIniciales}
-                loadOptions={async (inputValue) => {
-                  if (!form.marca_id || !form.tipo_equipo_id) return [];
-                  return await getModelosByMarcaYTipo(
-                    Number(form.marca_id),
-                    Number(form.tipo_equipo_id),
-                    inputValue,
-                    !inputValue // loadInitial=true cuando no hay inputValue
-                  );
-                }}
-                value={form.modelo_id ? {
-                  value: Number(form.modelo_id),
-                  label: filteredModelos.find(m => m.id === Number(form.modelo_id))?.nombre || ''
-                } : null}
-                onChange={(selected) => setForm({ ...form, modelo_id: selected ? String(selected.value) : '' })}
-                placeholder={
-                  !form.marca_id ? "Selecciona una marca primero" :
-                    !form.tipo_equipo_id ? "Selecciona un tipo de equipo primero" :
-                      "Buscar modelo..."
-                }
-                isDisabled={!form.marca_id || !form.tipo_equipo_id || isEditing}
-                noOptionsMessage={({ inputValue }) =>
-                  inputValue ? "No se encontraron modelos" : "Escribe para más opciones"
-                }
-                styles={{
-                  ...customSelectStyles,
-                  container: (provided) => ({
-                    ...provided,
-                    minWidth: '250px',
-                    width: '100%'
-                  }),
-                  menu: (provided) => ({
-                    ...provided,
-                    minWidth: '300px'
-                  })
-                }}
-              />       {!isEditing && (
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={() => setShowModeloModal(true)}
-                  disabled={!form.marca_id}
-                  style={{ height: '48px', width: '48px' }}
-                >
-                  <FaPlus />
-                </button>
-              )}
-            </div>
-            {isEditing && renderNotEditableMessage()}
-          </div>
+  <label htmlFor="modelo" className="form-label">
+    Modelo
+  </label>
+  <div className="d-flex gap-2">
+    <AsyncSelect
+      id="modelo"
+      cacheOptions
+      defaultOptions={modelosIniciales}
+      loadOptions={async (inputValue) => {
+        if (!form.marca_id || !form.tipo_equipo_id) return [];
+        return await getModelosByMarcaYTipo(
+          Number(form.marca_id),
+          Number(form.tipo_equipo_id),
+          inputValue,
+          !inputValue // loadInitial=true cuando no hay inputValue
+        );
+      }}
+      value={
+        form.modelo_id
+          ? {
+              value: Number(form.modelo_id),
+              label:
+                filteredModelos.find((m) => m.id === Number(form.modelo_id))?.nombre || '',
+            }
+          : null
+      }
+      onChange={(selected) =>
+        setForm({ ...form, modelo_id: selected ? String(selected.value) : '' })
+      }
+      placeholder={
+        !form.marca_id
+          ? 'Selecciona una marca primero'
+          : !form.tipo_equipo_id
+          ? 'Selecciona un tipo de equipo primero'
+          : 'Buscar modelo...'
+      }
+      isDisabled={!form.marca_id || !form.tipo_equipo_id || isEditing}
+      styles={customSelectStyles}
+      menuPortalTarget={document.body}
+      className="flex-grow-1"
+      noOptionsMessage={({ inputValue }) =>
+        inputValue ? 'No se encontraron modelos' : 'Escribe para más opciones'
+      }
+      loadingMessage={() => 'Buscando modelos...'}
+      components={{
+        IndicatorSeparator: null,
+      }}
+    />
+    {!isEditing && (
+      <button
+        type="button"
+        className="btn btn-outline-secondary"
+        onClick={() => setShowModeloModal(true)}
+        disabled={!form.marca_id}
+        style={{ height: '48px', width: '48px' }}
+      >
+        <FaPlus />
+      </button>
+    )}
+  </div>
+  {isEditing && renderNotEditableMessage()}
+</div>
+
 
           <div className="col-md-4">
             <label htmlFor="estado" className="form-label">

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Modal, Button, Spinner } from "react-bootstrap";
 import Select from "react-select";
-import { Button, Spinner } from "react-bootstrap";
 import toast from "react-hot-toast";
 import api from "~/api/axios";
 
@@ -10,22 +9,34 @@ interface Option {
     label: string;
 }
 
-export default function ModeloAccesoriosForm() {
-    const { id } = useParams();
+interface ModeloAccesoriosModalProps {
+    show: boolean;
+    onHide: () => void;
+    modeloId: string | undefined;
+    onSuccess?: () => void;
+}
+
+export default function ModeloAccesoriosModal({
+    show,
+    onHide,
+    modeloId,
+    onSuccess,
+}: ModeloAccesoriosModalProps) {
     const [insumos, setInsumos] = useState<Option[]>([]);
     const [selected, setSelected] = useState<Option[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const navigate = useNavigate();
 
     useEffect(() => {
+        if (!modeloId || !show) return;
+
         const fetchData = async () => {
             try {
                 setLoading(true);
 
                 const [insumosRes, accesoriosRes] = await Promise.all([
                     api.get("/modelos/insumos/listar"),
-                    api.get(`/modelos/${id}/accesorios`),
+                    api.get(`/modelos/${modeloId}/accesorios`),
                 ]);
 
                 setInsumos(
@@ -50,22 +61,24 @@ export default function ModeloAccesoriosForm() {
         };
 
         fetchData();
-    }, [id]);
+    }, [modeloId, show]);
 
     const handleSave = async () => {
         try {
             setSaving(true);
 
             await api.post("/modelo-accesorios", {
-                modelo_equipo_id: id,
+                modelo_equipo_id: modeloId,
                 modelo_insumo_ids: selected.map((s) => s.value),
             });
 
             toast.success("Asociaciones guardadas correctamente");
-            // Espera un poco para que el toast se vea antes de redirigir
-            setTimeout(() => {
-                navigate("/inventario");
-            }, 1200);
+
+            if (onSuccess) {
+                onSuccess();
+            }
+
+            onHide();
         } catch (error: any) {
             toast.error(
                 error.response?.data?.error || "Error al guardar las asociaciones"
@@ -76,43 +89,47 @@ export default function ModeloAccesoriosForm() {
         }
     };
 
-    if (loading) {
     return (
-      <div className="d-flex flex-column align-items-center justify-content-center my-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
-        <p className="mt-3 text-muted">Cargando datos...</p>
-      </div>
-    );
-  }
-
-    return (
-        <div className="p-4 shadow rounded" style={{ maxWidth: "600px" }}>
-            <h3 className="mb-4">Asociar Insumos al Equipo</h3>
-
-            <div className="mb-3">
-                <label className="form-label fw-bold">Insumos disponibles:</label>
-                <Select
-                    options={insumos}
-                    isMulti
-                    value={selected}
-                    onChange={(options) => setSelected(options as Option[])}
-                    placeholder="Selecciona insumos..."
-                    noOptionsMessage={() => "No hay más insumos disponibles"}
-                />
-            </div>
-
-            <Button variant="primary" onClick={handleSave} disabled={saving}>
-                {saving ? (
-                    <>
-                        <Spinner as="span" size="sm" animation="border" /> Guardando...
-                    </>
+        <Modal show={show} onHide={onHide} centered>
+            <Modal.Header closeButton>
+                <Modal.Title>Asociar Insumos al Equipo</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                {loading ? (
+                    <div className="d-flex flex-column align-items-center my-3">
+                        <Spinner animation="border" role="status" />
+                        <p className="mt-3 text-muted">Cargando datos...</p>
+                    </div>
                 ) : (
-                    "Guardar asociaciones"
+                    <div>
+                        <div className="mb-3">
+                            <label className="form-label fw-bold">Insumos disponibles:</label>
+                            <Select
+                                options={insumos}
+                                isMulti
+                                value={selected}
+                                onChange={(options) => setSelected(options as Option[])}
+                                placeholder="Selecciona insumos..."
+                                noOptionsMessage={() => "No hay más insumos disponibles"}
+                            />
+                        </div>
+                    </div>
                 )}
-            </Button>
-
-        </div>
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={onHide} disabled={saving}>
+                    Cancelar
+                </Button>
+                <Button variant="primary" onClick={handleSave} disabled={saving || loading}>
+                    {saving ? (
+                        <>
+                            <Spinner as="span" size="sm" animation="border" /> Guardando...
+                        </>
+                    ) : (
+                        "Guardar asociaciones"
+                    )}
+                </Button>
+            </Modal.Footer>
+        </Modal>
     );
 }

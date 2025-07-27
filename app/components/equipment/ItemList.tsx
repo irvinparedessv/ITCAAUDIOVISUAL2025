@@ -430,15 +430,7 @@ export default function ItemList({
                     />
                     <h2 className="fw-bold m-0">Inventario Individual</h2>
                 </div>
-                <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
-                    <Button
-                        variant="primary"
-                        className="d-flex align-items-center gap-2"
-                        onClick={() => navigate('/crearItem')}
-                    >
-                        <FaPlus /> Crear Nuevo Item
-                    </Button>
-                </div>
+
             </div>
 
             {/* Filtros */}

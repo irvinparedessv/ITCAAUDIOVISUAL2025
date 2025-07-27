@@ -1,12 +1,13 @@
 import React, { useState, useEffect, Suspense } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button, Form, Alert, Spinner } from "react-bootstrap";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import toast from "react-hot-toast";
 import api from "../../../api/axios";
-import { APIURL } from "~/constants/constant";
+import { APIURL, APPLARAVEL } from "~/constants/constant";
+import { FaLongArrowAltLeft } from "react-icons/fa";
 
 // ==================== Interfaces ====================
 interface Producto {
@@ -82,6 +83,7 @@ export default function GestorModelos() {
   const [producto, setProducto] = useState<Producto | null>(null);
   const [loading, setLoading] = useState(true);
   const [fileImg, setFileImg] = useState<File | null>(null);
+  const [fileImgUrl, setFileImgUrl] = useState<string | null>(null); // NUEVO
   const [file3D, setFile3D] = useState<File | null>(null);
   const [loadingImg, setLoadingImg] = useState(false);
   const [loading3D, setLoading3D] = useState(false);
@@ -89,6 +91,7 @@ export default function GestorModelos() {
   const [selectedType, setSelectedType] = useState<"normal" | "3d">("normal");
   const [modelSize, setModelSize] = useState<Size | null>(null);
   const [remoteUrl, setRemoteUrl] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!id) return;
@@ -100,6 +103,8 @@ export default function GestorModelos() {
         setSelectedType(prod.imagen_glb ? "3d" : "normal");
         setScale(prod.escala || 0.5);
         if (prod.imagen_glb) setRemoteUrl(`${APIURL}/${prod.imagen_glb}`);
+        if (prod.imagen_normal)
+          setFileImgUrl(`${APPLARAVEL}/storage/${prod.imagen_normal}`);
       })
       .catch(() => toast.error("Error al cargar el modelo"))
       .finally(() => setLoading(false));
@@ -115,6 +120,8 @@ export default function GestorModelos() {
     try {
       await api.post("/mod/modUpload", formData);
       toast.success("Imagen subida correctamente.");
+      // Actualiza la vista para mostrar la imagen recién subida
+      setFileImgUrl(URL.createObjectURL(fileImg));
     } catch {
       toast.error("Error al subir imagen.");
     } finally {
@@ -148,8 +155,18 @@ export default function GestorModelos() {
     }
   };
 
+  // ===== CORREGIDO para el error del input file =====
+  const handleFileImgChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target as HTMLInputElement;
+    const f = input.files?.[0];
+    if (!f) return;
+    setFileImg(f);
+    setFileImgUrl(URL.createObjectURL(f)); // Mostrar previsualización inmediata
+  };
+
   const handleFile3DChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
+    const input = e.target as HTMLInputElement;
+    const f = input.files?.[0];
     if (!f) return;
 
     if (!f.name.endsWith(".glb") && !f.name.endsWith(".gltf")) {
@@ -157,8 +174,8 @@ export default function GestorModelos() {
       return;
     }
 
-    if (f.size > 10 * 1024 * 1024) {
-      toast.error("El archivo no debe superar los 10MB.");
+    if (f.size > 20 * 1024 * 1024) {
+      toast.error("El archivo no debe superar los 20MB.");
       return;
     }
 
@@ -182,10 +199,27 @@ export default function GestorModelos() {
       </div>
     );
   }
-
+  const handleBack = () => {
+    navigate("/modelos"); // Regresa a la página anterior
+  };
   return (
     <div className="p-4">
-      <h3>Gestión de Modelo para: {producto.nombre}</h3>
+      <div
+        className="d-flex align-items-center gap-2 gap-md-3"
+        style={{ marginBottom: "30px" }}
+      >
+        <FaLongArrowAltLeft
+          onClick={handleBack}
+          title="Regresar"
+          style={{
+            cursor: "pointer",
+            fontSize: "2rem",
+          }}
+        />
+        <h2 className="fw-bold m-0">
+          Gestión de Imagenes para: {producto.nombre}
+        </h2>
+      </div>
 
       {(producto.imagen_normal || producto.imagen_glb) && (
         <Alert variant="info" className="mt-3">
@@ -221,14 +255,27 @@ export default function GestorModelos() {
       {selectedType === "normal" && (
         <Form.Group className="mt-4">
           <Form.Label>Subir imagen normal (.jpg, .png)</Form.Label>
+          {fileImgUrl && (
+            <div className="mb-2">
+              <img
+                src={fileImgUrl}
+                alt="Vista previa"
+                style={{
+                  maxWidth: "300px",
+                  maxHeight: "300px",
+                  border: "1px solid #eee",
+                }}
+              />
+            </div>
+          )}
           <Form.Control
             type="file"
             accept=".jpg,.jpeg,.png"
-            onChange={(e) => setFileImg(e.target.files?.[0] || null)}
+            onChange={handleFileImgChange}
           />
           <Button
             className="mt-2"
-            variant="secondary"
+            variant="primary"
             disabled={loadingImg}
             onClick={handleImageUpload}
           >

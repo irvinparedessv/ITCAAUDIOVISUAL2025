@@ -6,7 +6,7 @@ export interface SceneItem {
   path: string;
   position: [number, number, number];
   rotation?: [number, number, number];
-  scale?: [number, number, number];
+  scale?: number;
 }
 export interface Models {
   id: number;

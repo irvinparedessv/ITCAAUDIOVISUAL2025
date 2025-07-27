@@ -22,6 +22,7 @@ import toast from "react-hot-toast";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
 import { APIURL } from "../../../constants/constant";
 import "../style/scene.css";
+import type { SceneItem } from "../types/Item2";
 interface InteractiveSceneProps {
   path_room: string;
   equipos: EquipmentSeleccionado[];
@@ -55,7 +56,7 @@ function LoadingOverlay() {
 interface UIControlsProps {
   equipos: EquipmentSeleccionado[];
   transformMode: "translate" | "rotate";
-  onAdd: (nombre: string, path: string, serie: string) => void;
+  onAdd: (nombre: string, path: string, serie: string, scale: number) => void;
   onModeChange: (mode: "translate" | "rotate") => void;
   onExport: (type: "glb" | "gltf") => void;
   onDeleteSelected: () => void;
@@ -83,7 +84,14 @@ function UIControls({
           onChange={(e) => {
             const serie = e.target.value;
             const equipo = equipos.find((m) => m.numero_serie === serie);
-            if (equipo) onAdd(equipo.nombre_modelo, equipo.modelo_path, serie);
+            console.log(equipos);
+            if (equipo)
+              onAdd(
+                equipo.nombre_modelo,
+                equipo.modelo_path,
+                serie,
+                equipo.escala ?? 1
+              );
             e.target.value = "";
           }}
           defaultValue=""
@@ -258,9 +266,9 @@ export default function InteractiveScene({
   }, []);
 
   const handleAdd = useCallback(
-    (nombre: string, path: string, serie: string) => {
+    (nombre: string, path: string, serie: string, scale: number = 1) => {
       const fullPath = APIURL + "/" + path;
-      const id = addItem(nombre, fullPath);
+      const id = addItem(nombre, fullPath, scale);
       setSelectedId(id);
 
       setEquiposDisponibles((prev) =>
@@ -291,7 +299,7 @@ export default function InteractiveScene({
   );
 
   const renderItem = useCallback(
-    (item) => (
+    (item: SceneItem) => (
       <MoveableItem
         key={item.id}
         position={item.position}
@@ -302,7 +310,7 @@ export default function InteractiveScene({
         onRotationChange={(rot) => updateRotation(item.id, rot)}
         mode={transformMode}
       >
-        <ModelItem path={item.path} scale={0.5} />
+        <ModelItem path={item.path} scale={item.scale} />
       </MoveableItem>
     ),
     [selectedId, transformMode, updatePosition, updateRotation]

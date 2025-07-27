@@ -1,13 +1,11 @@
-// Chatbot.tsx
-import { useAuth } from "../../hooks/AuthContext";
+import { useRef, useEffect } from "react";
+import { FaCommentDots, FaTimes } from "react-icons/fa";
+import { APIURL } from "../../constants/constant";
 import { useChatbotLogic } from "./useChatbotLogic";
-import ChatWindow from "./ChatWindow";
-import "./chatbot.css";
-import { useEffect, useRef } from "react";
-import { FaCommentDots, FaRobot, FaTimes } from "react-icons/fa";
+import EquiposSelect from "../reserveE/Equipos";
+import "./chatbot.css"; // Asegúrate de tener los estilos recomendados
 
 const Chatbot = () => {
-  const { user } = useAuth();
   const {
     isOpen,
     isReady,
@@ -16,27 +14,27 @@ const Chatbot = () => {
     messages,
     handleSendMessage,
     setIsOpen,
-    reservaData,
-    reservaDataRoom,
-
-    step,
-    setStep,
-    setReservaData,
-    setReservaDataRoom,
-    setMessages,
-    addBotMessage,
     toggleChat,
-  } = useChatbotLogic(user);
+    showFullScreen,
+    espaciosParaSeleccionar,
+    handleSeleccionarEspacio,
+    formData,
+    setFormData,
+    aulasDisponibles,
+    mostrarEquipos,
+    setMostrarEquipos,
+    pensando,
+  } = useChatbotLogic();
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll al final del chat cuando hay nuevos mensajes
+  // Scroll automático al fondo del chat
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, showFullScreen, mostrarEquipos]);
 
-  // Cierra el chatbot al hacer clic fuera
+  // Cierra chatbot al click fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -54,15 +52,29 @@ const Chatbot = () => {
     };
   }, [isOpen, setIsOpen]);
 
+  // Enter = enviar mensaje
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && inputMessage.trim() !== "" && !pensando) {
+      handleSendMessage();
+    }
+  };
+
+  // Busca los datos completos de aula según sugerencia
+  const getAulaCompleta = (sugerencia: any) => {
+    return (
+      aulasDisponibles?.find((a) => a.id === sugerencia.id) || sugerencia // fallback por si acaso
+    );
+  };
+
   return (
     <div
-      className={`chatbot-container ${isOpen ? "open" : ""}`}
+      className={`chatbot-container${isOpen ? " open" : ""}`}
       ref={containerRef}
     >
       {isOpen && (
         <>
           <div className="chat-header">
-            <h3 id="chatbot-title">Asistente Virtual</h3>
+            <h3>Asistente Virtual</h3>
             <button
               className="chat-close-button"
               aria-label="Cerrar"
@@ -72,32 +84,157 @@ const Chatbot = () => {
             </button>
           </div>
 
-          <div className="chat-window" role="log" aria-live="polite">
-            <ChatWindow
-              messages={messages}
-              step={step}
-              setReservaData={setReservaData}
-              reservaData={reservaData}
-              reservaDataRoom={reservaDataRoom}
-              setStep={setStep}
-              ref={bottomRef}
-            />
-            <input className="form form-control" />
+          {/* ---- Overlay selección de AULA ---- */}
+          {showFullScreen && (
+            <div className="fullscreen-sugerencias-overlay">
+              <div
+                className="fullscreen-sugerencias"
+                style={{ minHeight: "90vh" }}
+              >
+                <h4 className="mb-3">Selecciona un espacio sugerido</h4>
+                <div className="row g-3">
+                  {espaciosParaSeleccionar.map((sugerencia: any) => {
+                    const aula = getAulaCompleta(sugerencia);
+                    return (
+                      <div key={aula.id} className="col-12">
+                        <div className="card shadow-sm d-flex flex-row align-items-center p-2">
+                          <div style={{ width: 120, height: 100 }}>
+                            {aula.imagen_glb ? (
+                              //@ts-ignore
+                              <model-viewer
+                                src={APIURL + "/" + aula.imagen_glb}
+                                alt={aula.nombre}
+                                camera-controls
+                                style={{
+                                  width: 120,
+                                  height: 100,
+                                  background: "#f4f6fa",
+                                  borderRadius: 12,
+                                }}
+                                auto-rotate
+                                shadow-intensity="1"
+                              />
+                            ) : aula.imagen_normal ? (
+                              <img
+                                src={APIURL + "/" + aula.imagen_normal}
+                                alt={aula.nombre}
+                                style={{
+                                  width: 120,
+                                  height: 100,
+                                  objectFit: "cover",
+                                  borderRadius: 12,
+                                }}
+                              />
+                            ) : (
+                              <div
+                                className="bg-secondary text-white d-flex align-items-center justify-content-center"
+                                style={{
+                                  width: 120,
+                                  height: 100,
+                                  borderRadius: 12,
+                                }}
+                              >
+                                Sin imagen
+                              </div>
+                            )}
+                          </div>
+                          <div className="ms-3 flex-grow-1">
+                            <div className="fw-bold">
+                              {aula.nombre || `Espacio #${aula.id}`}
+                            </div>
+                            <div className="small text-muted mb-1">
+                              {sugerencia.recomendacion}
+                            </div>
+                            <button
+                              className="btn btn-primary btn-sm mt-1"
+                              onClick={() =>
+                                handleSeleccionarEspacio(aula, sugerencia)
+                              }
+                            >
+                              Seleccionar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ---- Overlay selección de EQUIPOS ---- */}
+          {mostrarEquipos && (
+            <div className="fullscreen-sugerencias-overlay">
+              <div
+                className="fullscreen-sugerencias"
+                style={{ minHeight: "90vh" }}
+              >
+                <EquiposSelect
+                  formData={formData}
+                  isDateTimeComplete={true}
+                  checkingAvailability={true}
+                  setFormData={setFormData}
+                  // agrega más props si necesitas
+                />
+                <button
+                  className="btn btn-outline-secondary mt-3"
+                  onClick={() => setMostrarEquipos(false)}
+                >
+                  Volver al chat
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ---- Historial de mensajes ---- */}
+          <div className="chat-window" style={{ maxHeight: 420 }}>
+            <div className="chat-messages">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`message ${
+                    msg.sender === "user" ? "user" : "bot"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+            {/* Input solo si no está bloqueado por overlay */}
+            {!showFullScreen && !mostrarEquipos && (
+              <div className="chat-input-container">
+                <input
+                  type="text"
+                  className="form-control chat-input"
+                  placeholder="Escribe un mensaje..."
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={handleInputKeyDown}
+                  disabled={!isReady || pensando}
+                  aria-label="Escribe un mensaje"
+                />
+                <button
+                  className="chat-send-button"
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim() || !isReady || pensando}
+                  aria-label="Enviar"
+                >
+                  Enviar
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}
 
-      {/* Mostrar botón de burbuja solo si el chatbot está cerrado */}
       {!isOpen && (
         <button
           className="chatbot-button"
-          onClick={() => {
-            if (isReady) {
-              toggleChat();
-            }
-          }}
+          onClick={isReady ? toggleChat : undefined}
           aria-label="Abrir chatbot"
-          disabled={!isReady} // Desactiva clics mientras carga (opcional)
+          disabled={!isReady}
         >
           {isReady ? (
             <FaCommentDots />

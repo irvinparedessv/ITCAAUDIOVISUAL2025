@@ -7,3 +7,5 @@ export const APPLARAVEL = "http://localhost:8000";
 export const STORAGE = "http://localhost:8000/storage";
 
 export const ITEMSPAGE = 10;
+export const ASSISTID = "asst_ld0avQync5BYaQXAzvYVqOo9";
+export const CHATGPT = import.meta.env.VITE_OPENAI_API_KEY!;

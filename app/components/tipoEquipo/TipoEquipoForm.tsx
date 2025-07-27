@@ -112,7 +112,7 @@ export default function TipoEquipoForm({
     if (!validateForm()) return;
 
     // Mostrar confirmación
-    toast.dismiss('confirm-update');
+    toast.dismiss();
 
     toast(
       (t) => (
@@ -254,7 +254,7 @@ export default function TipoEquipoForm({
 
     setNuevaCarac("");
     setMostrarAgregarCarac(false);
-    toast.success("Característica agregada temporalmente");
+    toast.success("Característica agregada");
   };
 
   const eliminarCaracteristicaLocal = (id: number) => {

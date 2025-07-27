@@ -97,6 +97,8 @@ export default function ItemList({
                 ...filters,
                 tipo: 'todos',
                 modeloId,
+                search: filters.search || undefined,
+                estadoId: filters.estadoId || undefined
             });
             setItems(Array.isArray(res.data) ? res.data : []);
             setTotal(res.total);
@@ -106,7 +108,6 @@ export default function ItemList({
             toast.error("Error al cargar los items");
         }
     };
-
     const getTipoNombre = (id: number) => {
         const tipo = tipos.find((t) => t.id === id);
         return tipo ? tipo.nombre : "Desconocido";
@@ -182,6 +183,7 @@ export default function ItemList({
             tipoEquipoId: undefined,
             estadoId: undefined,
             marcaId: undefined,
+
         });
     };
 
@@ -440,7 +442,7 @@ export default function ItemList({
             </div>
 
             {/* Filtros */}
-            <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
+            <div className="d-flex flex-column flex-md-row align-items-center gap-3 mb-3">
                 <div className="d-flex flex-grow-1">
                     <InputGroup className="flex-grow-1">
                         <InputGroup.Text><FaSearch /></InputGroup.Text>
@@ -457,13 +459,29 @@ export default function ItemList({
                         )}
                     </InputGroup>
                 </div>
-                <Button
-                    variant="outline-secondary"
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="d-flex align-items-center gap-2"
-                >
-                    <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-                </Button>
+
+                <div className="d-flex align-items-center gap-2">
+                    <Form.Group className="mb-0">
+                        <Form.Select
+                            value={filters.estadoId || ""}
+                            onChange={(e) => handleFilterUpdate("estadoId", e.target.value ? Number(e.target.value) : undefined)}
+                            style={{ minWidth: '180px' }}
+                        >
+                            <option value="">Todos los estados</option>
+                            <option value="1">Disponible</option>
+                            <option value="2">En mantenimiento</option>
+                            <option value="3">Dañado</option>
+                        </Form.Select>
+                    </Form.Group>
+
+                    <Button
+                        variant="outline-danger"
+                        onClick={resetFilters}
+                        title="Limpiar filtros"
+                    >
+                        <FaTimes />
+                    </Button>
+                </div>
             </div>
 
             {loading && (
@@ -476,20 +494,6 @@ export default function ItemList({
             {showFilters && (
                 <div className="p-3 rounded mb-4 border border-secondary">
                     <div className="row g-3">
-                        <div className="col-md-6">
-                            <Form.Group>
-                                <Form.Label>Tipo de equipo</Form.Label>
-                                <Form.Select
-                                    value={filters.tipoEquipoId || ""}
-                                    onChange={(e) => handleFilterUpdate("tipoEquipoId", e.target.value ? Number(e.target.value) : undefined)}
-                                >
-                                    <option value="">Todos</option>
-                                    {tipos.map((tipo) => (
-                                        <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                        </div>
                         <div className="col-md-6">
                             <Form.Group>
                                 <Form.Label>Estado</Form.Label>

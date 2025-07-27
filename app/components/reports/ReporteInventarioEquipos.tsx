@@ -9,13 +9,32 @@ import autoTable from "jspdf-autotable";
 import PaginationComponent from "~/utils/Pagination";
 import { useNavigate } from "react-router-dom";
 import { FaLongArrowAltLeft, FaFileExcel, FaFilePdf, FaSearch, FaEraser } from "react-icons/fa";
+import { getEstados } from "~/services/itemService";
+
+interface Caracteristica {
+  nombre: string;
+  valor: string;
+}
+
+interface Estado {
+  id: number;
+  nombre: string;
+}
 
 interface Equipo {
   id: number;
-  nombre: string;
+  numero_serie: string;
+  comentario: string;
+  created_at: string;
+  estado_id: number;
+  estado_nombre: string;
+  tipo_equipo_id: number;
   tipo_nombre: string;
-  cantidad: number;
-  estado: number;
+  categoria_nombre: string;
+  modelo_id: number;
+  modelo_nombre: string;
+  marca_nombre: string;
+  caracteristicas: Caracteristica[];
 }
 
 interface TipoEquipo {
@@ -24,21 +43,24 @@ interface TipoEquipo {
 }
 
 const ReporteInventarioEquipos = () => {
-  const [equipos, setEquipos] = useState<Equipo[]>([]);
+ const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [tipos, setTipos] = useState<TipoEquipo[]>([]);
   const [filtroTipo, setFiltroTipo] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
+  const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [perPage] = useState(20);
+  const [estados, setEstados] = useState<Estado[]>([]);
 
   const fetchEquipos = async (
     page = 1,
     tipo_id = filtroTipo,
-    estado = filtroEstado
+    estado = filtroEstado,
+    search = busqueda
   ) => {
     setLoading(true);
     try {
@@ -48,6 +70,7 @@ const ReporteInventarioEquipos = () => {
       };
       if (tipo_id) params.tipo_id = tipo_id;
       if (estado !== "") params.estado = estado;
+      if (search) params.busqueda = search;
 
       const res = await api.get("/reportes/inventario-equipos", { params });
 
@@ -61,7 +84,6 @@ const ReporteInventarioEquipos = () => {
     }
   };
 
-
   const fetchTipos = async () => {
     try {
       const res = await api.get("/tipoEquipos");
@@ -71,8 +93,18 @@ const ReporteInventarioEquipos = () => {
     }
   };
 
+  const fetchEstados = async () => {
+    try {
+      const estadosData = await getEstados();
+      setEstados(estadosData);
+    } catch {
+      toast.error("Error al cargar los estados");
+    }
+  };
+
   useEffect(() => {
     fetchTipos();
+    fetchEstados();
     fetchEquipos(1);
   }, []);
 
@@ -88,6 +120,7 @@ const ReporteInventarioEquipos = () => {
           params: {
             tipo_id: filtroTipo || undefined,
             estado: filtroEstado || undefined,
+            busqueda: busqueda || undefined,
             per_page: 100,
             page: currentPage,
           },
@@ -129,10 +162,15 @@ const ReporteInventarioEquipos = () => {
                   }
 
                   const datos = all.map((e) => ({
-                    Nombre: e.nombre,
+                    "N° Serie": e.numero_serie,
                     "Tipo de Equipo": e.tipo_nombre,
-                    Cantidad: e.cantidad,
-                    Estado: e.estado === 1 ? "Disponible" : "No disponible",
+                    "Categoría": e.categoria_nombre,
+                    "Modelo": e.modelo_nombre,
+                    "Marca": e.marca_nombre,
+                    "Estado": e.estado_nombre,
+                    "Comentario": e.comentario,
+                    "Características": e.caracteristicas.map(c => `${c.nombre}: ${c.valor}`).join(', '),
+                    "Fecha Registro": new Date(e.created_at).toLocaleDateString('es-ES')
                   }));
 
                   const ws = XLSX.utils.json_to_sheet(datos);
@@ -201,21 +239,33 @@ const ReporteInventarioEquipos = () => {
                         hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true
                       });
 
+                        // Obtener nombres para los filtros aplicados
+                      const tipoSeleccionado = tipos.find(t => t.id === parseInt(filtroTipo));
+                      const estadoSeleccionado = estados.find(e => e.id === parseInt(filtroEstado));
+                      
+                      const nombreTipo = tipoSeleccionado ? tipoSeleccionado.nombre : "Todos";
+                      const nombreEstado = estadoSeleccionado ? estadoSeleccionado.nombre : "Todos";
+
+
                       const body = all.map((e, i) => [
                         i + 1,
-                        e.nombre,
+                        e.numero_serie,
                         e.tipo_nombre,
-                        e.cantidad,
-                        e.estado === 1 ? "Disponible" : "No disponible",
+                        e.categoria_nombre,
+                        e.modelo_nombre,
+                        e.marca_nombre,
+                        e.estado_nombre,
+                        e.caracteristicas.map(c => `${c.nombre}: ${c.valor}`).join('\n'),
+                        new Date(e.created_at).toLocaleDateString('es-ES')
                       ]);
 
                       let startY = 45;
 
                       autoTable(doc, {
-                        head: [["#", "Nombre", "Tipo", "Cantidad", "Estado"]],
+                        head: [["#", "N° Serie", "Tipo", "Categoría", "Modelo", "Marca", "Estado", "Características", "Fecha Registro"]],
                         body,
                         startY: startY,
-                        styles: { fontSize: 8, cellPadding: 3 },
+                        styles: { fontSize: 7, cellPadding: 2 },
                         headStyles: { fillColor: [107, 0, 0], textColor: 255, fontStyle: "bold" },
                         margin: { top: 10 },
                         didDrawPage: (data) => {
@@ -224,8 +274,8 @@ const ReporteInventarioEquipos = () => {
                             doc.setFontSize(16).text("Reporte de Inventario de Equipos", 60, 18);
                             doc.setFontSize(10)
                               .text(`Generado: ${fechaStr} - ${horaStr}`, 60, 25)
-                              .text(`Tipo: ${filtroTipo || "Todos"}`, 60, 30)
-                              .text(`Estado: ${filtroEstado ? (filtroEstado === "1" ? "Disponible" : "No disponible") : "Todos"}`, 60, 35);
+                              .text(`Tipo: ${nombreTipo}`, 60, 30) 
+                              .text(`Estado: ${nombreEstado}`, 60, 35);
                           }
 
                           if (data.pageNumber > 1) {
@@ -282,27 +332,35 @@ const ReporteInventarioEquipos = () => {
     });
   };
 
+  
   const handleBuscarClick = () => {
     setCurrentPage(1);
-    fetchEquipos(1, filtroTipo, filtroEstado);
+    fetchEquipos(1, filtroTipo, filtroEstado, busqueda);
   };
-
 
   const limpiarFiltros = () => {
     setFiltroTipo("");
     setFiltroEstado("");
-    setEquipos([]);
+    setBusqueda("");
+    setCurrentPage(1);
+    fetchEquipos(1, "", "");
   };
 
   const handleBack = () => {
     navigate("/opcionesReportes");
   };
 
-  const getEstadoBadge = (estado: number) => {
-    return estado === 1 ? "success" : "danger";
+   const getEstadoBadge = (estadoId: number) => {
+    switch (estadoId) {
+      case 1: return "success";
+      case 2: return "warning";
+      case 4: return "danger";
+      default: return "secondary";
+    }
   };
 
-  return (
+
+ return (
     <Container className="mt-4">
       <div className="d-flex align-items-center gap-3 mb-4">
         <FaLongArrowAltLeft
@@ -321,7 +379,7 @@ const ReporteInventarioEquipos = () => {
       <Card className="shadow-sm mb-4">
         <Card.Body>
           <Row className="g-3 align-items-end">
-            <Col md={4}>
+            <Col md={3}>
               <Form.Group controlId="filtroTipo">
                 <Form.Label className="fw-bold">Tipo de Equipo</Form.Label>
                 <Form.Select
@@ -346,13 +404,29 @@ const ReporteInventarioEquipos = () => {
                   onChange={(e) => setFiltroEstado(e.target.value)}
                 >
                   <option value="">Todos los estados</option>
-                  <option value="1">Disponible</option>
-                  <option value="0">No disponible</option>
+                  {estados.map((estado) => (
+                    <option key={estado.id} value={estado.id}>
+                      {estado.nombre}
+                    </option>
+                  ))}
                 </Form.Select>
               </Form.Group>
             </Col>
 
-            <Col md={5} className="d-flex align-items-end gap-2">
+            <Col md={4}>
+              <Form.Group controlId="busqueda">
+                <Form.Label className="fw-bold">Buscar</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="N° serie, modelo, marca, etc."
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleBuscarClick()}
+                />
+              </Form.Group>
+            </Col>
+
+            <Col md={2} className="d-flex align-items-end gap-2">
               <Button
                 variant="primary"
                 onClick={handleBuscarClick}
@@ -381,7 +455,6 @@ const ReporteInventarioEquipos = () => {
           </Row>
         </Card.Body>
       </Card>
-
       <Card className="shadow-sm mb-4">
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-3">
@@ -413,16 +486,20 @@ const ReporteInventarioEquipos = () => {
               <thead className="table-dark">
                 <tr>
                   <th>#</th>
-                  <th>Nombre</th>
+                  <th>N° Serie</th>
                   <th>Tipo</th>
-                  <th>Cantidad</th>
+                  <th>Categoría</th>
+                  <th>Modelo</th>
+                  <th>Marca</th>
                   <th>Estado</th>
+                  <th>Características</th>
+                  <th>Fecha Registro</th>
                 </tr>
               </thead>
               <tbody>
                 {equipos.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-4">
+                    <td colSpan={9} className="text-center py-4">
                       {loading ? (
                         <Spinner animation="border" variant="primary" />
                       ) : (
@@ -434,14 +511,24 @@ const ReporteInventarioEquipos = () => {
                   equipos.map((e, i) => (
                     <tr key={e.id}>
                       <td>{i + 1}</td>
-                      <td>{e.nombre}</td>
+                      <td>{e.numero_serie}</td>
                       <td>{e.tipo_nombre}</td>
-                      <td>{e.cantidad}</td>
+                      <td>{e.categoria_nombre}</td>
+                      <td>{e.modelo_nombre}</td>
+                      <td>{e.marca_nombre}</td>
                       <td>
-                        <span className={`badge bg-${getEstadoBadge(e.estado)}`}>
-                          {e.estado === 1 ? "Disponible" : "No disponible"}
+                        <span className={`badge bg-${getEstadoBadge(e.estado_id)}`}>
+                          {e.estado_nombre}
                         </span>
                       </td>
+                      <td>
+                        <ul className="list-unstyled mb-0">
+                          {e.caracteristicas.map((c, idx) => (
+                            <li key={idx}><small>{c.nombre}: {c.valor}</small></li>
+                          ))}
+                        </ul>
+                      </td>
+                      <td>{new Date(e.created_at).toLocaleDateString('es-ES')}</td>
                     </tr>
                   ))
                 )}
@@ -456,10 +543,9 @@ const ReporteInventarioEquipos = () => {
                 totalPages={totalPages}
                 onPageChange={(p) => {
                   setCurrentPage(p);
-                  fetchEquipos(p, filtroTipo, filtroEstado); // usa filtros actuales
+                  fetchEquipos(p, filtroTipo, filtroEstado);
                 }}
               />
-
             </div>
           )}
         </Card.Body>

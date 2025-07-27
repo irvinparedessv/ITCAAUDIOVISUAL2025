@@ -162,7 +162,7 @@ export default function ItemForm({
     }
   }, [form.marca_id, form.tipo_equipo_id]);
 
- 
+
 
   // Dropzone para imágenes
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -637,10 +637,14 @@ export default function ItemForm({
                 value: Number(form.tipo_equipo_id),
                 label: tiposEquipo.find(t => t.id === Number(form.tipo_equipo_id))?.nombre || ''
               } : null}
-              onChange={(selected) => setForm({
-                ...form,
-                tipo_equipo_id: selected ? String(selected.value) : ''
-              })}
+              onChange={(selected) => {
+                setForm({
+                  ...form,
+                  tipo_equipo_id: selected ? String(selected.value) : '',
+                  marca_id: '', // Resetear marca al cambiar tipo
+                  modelo_id: '', // Resetear modelo al cambiar tipo
+                });
+              }}
               isDisabled={loading || isEditing}
               styles={customSelectStyles}
               menuPortalTarget={document.body}
@@ -695,8 +699,12 @@ export default function ItemForm({
                     modelo_id: '', // Reset modelo al cambiar marca
                   }));
                 }}
-                placeholder="Buscar marca..."
-                isDisabled={loading || isEditing}
+                placeholder={
+                  !form.tipo_equipo_id
+                    ? 'Selecciona un tipo de equipo primero'
+                    : "Buscar marca..."
+                }
+                isDisabled={loading || isEditing || !form.tipo_equipo_id}
                 styles={customSelectStyles}
                 menuPortalTarget={document.body}
                 className="flex-grow-1"
@@ -714,6 +722,7 @@ export default function ItemForm({
                   className="btn btn-outline-secondary"
                   onClick={() => setShowMarcaModal(true)}
                   style={{ height: '48px', width: '48px' }}
+                  disabled={!form.tipo_equipo_id || isEditing}
                 >
                   <FaPlus />
                 </button>
@@ -753,12 +762,13 @@ export default function ItemForm({
                   setForm({ ...form, modelo_id: selected ? String(selected.value) : '' })
                 }
                 placeholder={
-                  !form.marca_id
-                    ? 'Selecciona una marca primero'
-                    : !form.tipo_equipo_id
-                      ? 'Selecciona un tipo de equipo primero'
+                  !form.tipo_equipo_id
+                    ? 'Selecciona un tipo de equipo primero'
+                    : !form.marca_id
+                      ? 'Selecciona una marca primero'
                       : 'Buscar modelo...'
                 }
+
                 isDisabled={!form.marca_id || !form.tipo_equipo_id || isEditing}
                 styles={customSelectStyles}
                 menuPortalTarget={document.body}
@@ -776,7 +786,8 @@ export default function ItemForm({
                   type="button"
                   className="btn btn-outline-secondary"
                   onClick={() => setShowModeloModal(true)}
-                  disabled={!form.marca_id}
+                  disabled={!form.marca_id || !form.tipo_equipo_id || isEditing}
+
                   style={{ height: '48px', width: '48px' }}
                 >
                   <FaPlus />
@@ -997,26 +1008,24 @@ export default function ItemForm({
           <MarcaModal
             show={showMarcaModal}
             onHide={() => setShowMarcaModal(false)}
-            marcas={marcas}
             onAdd={handleAddMarca}
           />
 
-        <ModeloModal
-  show={showModeloModal}
-  onHide={() => setShowModeloModal(false)}
-  marcaSeleccionada={marcas.find((m) => m.id === Number(form.marca_id))}
-  tipoEquipoSeleccionado={tiposEquipo.find((t) => t.id === Number(form.tipo_equipo_id))} // 👈 nuevo prop
-  onAdd={(nombre) => {
-    const marcaId = Number(form.marca_id);
-    if (marcaId) {
-      return handleAddModelo(nombre, marcaId);
-    } else {
-      return Promise.reject("Marca no seleccionada");
-    }
-  }}
-/>
+          <ModeloModal
+            show={showModeloModal}
+            onHide={() => setShowModeloModal(false)}
+            marcaSeleccionada={marcas.find((m) => m.id === Number(form.marca_id))}
+            tipoEquipoSeleccionado={tiposEquipo.find((t) => t.id === Number(form.tipo_equipo_id))}
+            onAdd={(nombre) => {
+              const marcaId = Number(form.marca_id);
+              if (marcaId) {
+                return handleAddModelo(nombre, marcaId);
+              } else {
+                return Promise.reject("Marca no seleccionada");
+              }
+            }}
 
-
+          />
         </>
       )}
     </div>

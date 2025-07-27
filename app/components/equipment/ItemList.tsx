@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import type { Equipo, Insumo, ItemTipo } from "../../types/item";
+import type { Equipo, Estado, Insumo, ItemTipo } from "../../types/item";
 import api from "~/api/axios";
 import { Button, Form, InputGroup, Spinner, Modal, Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
-import { getItems, type ItemFilters, deleteItem, getInsumosNoAsignados, asignarInsumoAEquipo, eliminarAsignacion } from "../../services/itemService";
+import { getItems, type ItemFilters, deleteItem, getInsumosNoAsignados, asignarInsumoAEquipo, eliminarAsignacion, getEstados } from "../../services/itemService";
 import toast from "react-hot-toast";
 import {
     FaEdit,
@@ -80,6 +80,17 @@ export default function ItemList({
     function isEquipo(item: Item): item is Equipo {
         return (item as Equipo).numero_serie !== undefined && (item as Equipo).numero_serie !== null;
     }
+    const [estados, setEstados] = useState<Estado[]>([]);
+    useEffect(() => {
+        if (showFilters) {
+            getEstados()
+                .then(setEstados)
+                .catch((error) => {
+                    console.error("Error cargando estados:", error);
+                });
+        }
+    }, [showFilters]);
+
 
     useEffect(() => {
         fetchItems();
@@ -156,6 +167,7 @@ export default function ItemList({
             }
         );
     };
+
 
     const handleFilterUpdate = <K extends keyof ItemFilters>(
         key: K,
@@ -488,10 +500,13 @@ export default function ItemList({
                                     onChange={(e) => handleFilterUpdate("estadoId", e.target.value ? Number(e.target.value) : undefined)}
                                 >
                                     <option value="">Todos</option>
-                                    <option value="1">Disponible</option>
-                                    <option value="2">En mantenimiento</option>
-                                    <option value="3">Dañado</option>
+                                    {estados.map((estado) => (
+                                        <option key={estado.id} value={estado.id}>
+                                            {estado.nombre}
+                                        </option>
+                                    ))}
                                 </Form.Select>
+
                             </Form.Group>
                         </div>
                         <div className="col-12">

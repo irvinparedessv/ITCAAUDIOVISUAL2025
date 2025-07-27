@@ -21,6 +21,7 @@ export default function ItemEditForm({ item, caracteristicas, onSubmit, ...rest 
 
   useEffect(() => {
     if (item) {
+      // Preparar datos base comunes a todos los items
       const baseData = {
         tipo_equipo_id: String(item.tipo_equipo_id),
         marca_id: item.modelo?.marca_id ? String(item.modelo.marca_id) : "",
@@ -30,41 +31,54 @@ export default function ItemEditForm({ item, caracteristicas, onSubmit, ...rest 
         detalles: item.detalles || "",
         fecha_adquisicion: item.fecha_adquisicion || "",
         imagen: null,
-      caracteristicas: caracteristicas.map((c) => ({
-  caracteristica_id: c.id,
-  nombre: c.nombre,
-  tipo_dato: c.tipo_dato,
-  valor: c.valor
-}))
-
-
+        // Preparar características en el formato correcto
+        caracteristicas: caracteristicas.map(c => ({
+          id: c.id,
+          nombre: c.nombre,
+          tipo_dato: c.tipo_dato,
+          valor: c.valor.toString() // Asegurar que sea string
+        }))
       };
 
-      if (item.tipo === "equipo") {
+      // Datos específicos para equipos
+      if (item.tipo === "equipo" || 'numero_serie' in item) {
         const equipo = item as Equipo;
         setFormData({
           ...baseData,
           numero_serie: equipo.numero_serie || "",
-          vida_util: equipo.vida_util ? String(equipo.vida_util) : "",
-          cantidad: equipo.cantidad ? String(equipo.cantidad) : ""
+          vida_util: equipo.vida_util !== undefined ? String(equipo.vida_util) : "",
+          cantidad: "" // No usar cantidad para equipos en edición
         });
-      } else {
+      } 
+      // Datos específicos para insumos
+      else {
         const insumo = item as Insumo;
         setFormData({
           ...baseData,
-          cantidad: insumo.cantidad ? String(insumo.cantidad) : ""
+          numero_serie: "", // Vacío para insumos
+          vida_util: "", // Vacío para insumos
+          cantidad: insumo.cantidad ? String(insumo.cantidad) : "1" // Default 1 para insumos
         });
       }
     }
   }, [item, caracteristicas]);
 
-  if (!formData) return <p>Cargando ítem...</p>;
+  if (!formData) {
+    return (
+      <div className="d-flex justify-content-center my-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ItemForm
       {...rest}
       initialValues={formData}
       onSubmit={onSubmit}
+      isEditing={true}
     />
   );
 }

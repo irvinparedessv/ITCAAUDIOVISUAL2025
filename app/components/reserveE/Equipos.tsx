@@ -73,6 +73,11 @@ export default function EquiposSelect({
   const [showEditModal, setShowEditModal] = useState(false);
   const [equiposDisponiblesMismoModelo, setEquiposDisponiblesMismoModelo] =
     useState<EquipoIndividual[]>([]);
+  const [showReposoModal, setShowReposoModal] = useState(false);
+  const [equipoReposoSeleccionado, setEquipoReposoSeleccionado] = useState<{
+    eq: EquipoIndividual;
+    grupo: GrupoEquiposPorModelo;
+  } | null>(null);
   const handleImageError = () => {
     toast.error("No se pudo cargar la imagen.");
   };
@@ -203,6 +208,38 @@ export default function EquiposSelect({
     });
 
     setCantidadInputs((prev) => ({ ...prev, [grupo.modelo_id]: 0 }));
+  };
+
+  // FUNCIONES PARA EQUIPOS EN REPOSO
+  const handleAgregarReposo = (
+    eq: EquipoIndividual,
+    grupo: GrupoEquiposPorModelo
+  ) => {
+    setEquipoReposoSeleccionado({ eq, grupo });
+    setShowReposoModal(true);
+  };
+
+  const confirmarAgregarReposo = () => {
+    if (!equipoReposoSeleccionado) return;
+    setFormData((prev) => {
+      const actuales: EquipmentSeleccionado[] = [...(prev.equipment || [])];
+      actuales.push({
+        modelo_id: equipoReposoSeleccionado.grupo.modelo_id,
+        nombre_modelo: equipoReposoSeleccionado.grupo.nombre_modelo,
+        id: equipoReposoSeleccionado.eq.equipo_id,
+        cantidad: 1,
+        modelo_path:
+          equipoReposoSeleccionado.eq.modelo_path ??
+          equipoReposoSeleccionado.eq.imagen_glb ??
+          "",
+        numero_serie: equipoReposoSeleccionado.eq.numero_serie,
+        escala: equipoReposoSeleccionado.eq.escala,
+        en_reposo: true,
+      });
+      return { ...prev, equipment: actuales };
+    });
+    setShowReposoModal(false);
+    setEquipoReposoSeleccionado(null);
   };
 
   const aulaModelPath: string | null =
@@ -397,6 +434,9 @@ export default function EquiposSelect({
                   <span className="badge bg-primary ms-2">
                     Serie: {eq.numero_serie}
                   </span>
+                  {eq.en_reposo && (
+                    <span className="badge bg-danger ms-2">En reposo</span>
+                  )}
                 </div>
                 <div className="d-flex gap-2">
                   {(user?.role === Role.Administrador ||
@@ -470,11 +510,12 @@ export default function EquiposSelect({
                             modelo_id: equipoEliminado.modelo_id,
                             numero_serie: equipoEliminado.numero_serie!,
                             estado: "Disponible",
-                            tipo_equipo: "", // puedes poblar si tienes info
+                            tipo_equipo: "",
                             imagen_glb: null,
                             imagen_normal: null,
                             modelo_path: equipoEliminado.modelo_path ?? null,
                             escala: equipoEliminado.escala,
+                            en_reposo: equipoEliminado.en_reposo,
                           };
 
                           return {
@@ -496,18 +537,15 @@ export default function EquiposSelect({
       {!loadingSearch && availableEquipmentSlides.length > 0 && (
         <Slider {...sliderSettings}>
           {availableEquipmentSlides.map((grupo, index) => {
-            // Equipos no agregados (incluye en_reposo, pero solo para contar y mostrar)
             const equiposFiltrados = grupo.equipos.filter(
               (eq) =>
                 !formData.equipment?.some((sel) => sel.id === eq.equipo_id)
             );
 
-            // Solo disponibles, NO en reposo, para seleccionar/agregar
             const cantidadDisponibles = equiposFiltrados.filter(
               (eq) => !eq.en_reposo
             ).length;
 
-            // Mostrar aunque no haya disponibles (por si todos están en reposo)
             if (equiposFiltrados.length === 0) return null;
 
             return (
@@ -588,7 +626,7 @@ export default function EquiposSelect({
                       )}
                     </div>
 
-                    <div className="d-flex align-items-center">
+                    <div className="d-flex align-items-center mb-2">
                       <input
                         type="number"
                         className="form-control form-control-sm me-2"
@@ -614,6 +652,33 @@ export default function EquiposSelect({
                         Agregar
                       </button>
                     </div>
+
+                    {/* Mostrar equipos en reposo */}
+                    {grupo.equipos
+                      .filter(
+                        (eq) =>
+                          eq.en_reposo &&
+                          !formData.equipment?.some(
+                            (sel) => sel.id === eq.equipo_id
+                          )
+                      )
+                      .map((eq) => (
+                        <div
+                          key={eq.equipo_id}
+                          className="d-flex align-items-center mt-2"
+                        >
+                          <span className="badge bg-danger me-2">
+                            En reposo
+                          </span>
+                          <span className="me-2">Serie: {eq.numero_serie}</span>
+                          <button
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={() => handleAgregarReposo(eq, grupo)}
+                          >
+                            Agregar en reposo
+                          </button>
+                        </div>
+                      ))}
                   </div>
                 </div>
               </div>
@@ -715,6 +780,34 @@ export default function EquiposSelect({
             </div>
           )}
         </Modal.Body>
+      </Modal>
+      {/* MODAL CONFIRMACIÓN EN REPOSO */}
+      <Modal show={showReposoModal} onHide={() => setShowReposoModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Equipo en reposo</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            <strong>Atención:</strong> Este equipo está en{" "}
+            <span className="text-danger fw-bold">reposo</span>.
+            <br />
+            Si lo agregas, la reserva{" "}
+            <b>solo podrá ser aprobada por un gerente</b> y no por el encargado.
+          </p>
+          <div className="mb-2">
+            <span className="badge bg-danger me-2">En reposo</span>
+            Serie: {equipoReposoSeleccionado?.eq.numero_serie}
+          </div>
+          <div>¿Deseas continuar?</div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowReposoModal(false)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={confirmarAgregarReposo}>
+            Sí, agregar en reposo
+          </Button>
+        </Modal.Footer>
       </Modal>
       <VisualizarModal
         show={showVisualizar}

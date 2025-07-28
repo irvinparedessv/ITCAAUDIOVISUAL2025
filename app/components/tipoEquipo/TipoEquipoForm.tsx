@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import {
+  checkEquiposAsociados,
   createCaracteristica,
   createTipoEquipo,
   getCaracteristicas,
@@ -45,14 +46,15 @@ export default function TipoEquipoForm({
   const [tipoDato, setTipoDato] = useState("string");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tieneEquiposAsociados, setTieneEquiposAsociados] = useState(false);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    toast.dismiss(); // limpia cualquier confirmación colgada
+    toast.dismiss();
   }, []);
 
-  // Cargar características del localStorage al iniciar
+  // Cargar datos iniciales
   useEffect(() => {
     const cargarCaracteristicasLocales = () => {
       const caracLocales = localStorage.getItem('caracteristicasLocales');
@@ -84,6 +86,27 @@ export default function TipoEquipoForm({
     fetchData();
   }, []);
 
+  // Verificar equipos asociados solo cuando se está editando
+  useEffect(() => {
+    const verificarEquiposAsociados = async () => {
+      if (!tipoEditado?.id) {
+        setTieneEquiposAsociados(false);
+        return;
+      }
+      
+      try {
+        const tieneEquipos = await checkEquiposAsociados(tipoEditado.id);
+        setTieneEquiposAsociados(tieneEquipos);
+      } catch (error) {
+        console.error("Error al verificar equipos asociados:", error);
+        setTieneEquiposAsociados(false);
+      }
+    };
+
+    verificarEquiposAsociados();
+  }, [tipoEditado]);
+
+  // Cargar datos del tipo a editar
   useEffect(() => {
     if (tipoEditado) {
       setNombre(tipoEditado.nombre);
@@ -111,7 +134,6 @@ export default function TipoEquipoForm({
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    // Mostrar confirmación
     toast.dismiss();
 
     toast(
@@ -128,11 +150,7 @@ export default function TipoEquipoForm({
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <span
-                  className="spinner-border spinner-border-sm me-1"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
+                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
               ) : null}
               Sí, {tipoEditado ? "actualizar" : "crear"}
             </button>
@@ -146,90 +164,70 @@ export default function TipoEquipoForm({
           </div>
         </div>
       ),
-      {
-        duration: 5000,
-        id: 'confirm-update',
-      }
+      { duration: 5000, id: 'confirm-update' }
     );
   };
 
   const submitForm = async () => {
-    setIsSubmitting(true);
-    try {
-      // Preparar payload
-      const payload = {
-        nombre,
-        categoria_id: categoriaId,
-        caracteristicas: caracteristicas
-          .filter(c => caracSeleccionadas.includes(c.id))
-          .map(c => ({
-            id: c.esNueva ? undefined : c.id,
-            nombre: c.esNueva ? c.nombre : undefined,
-            tipo_dato: c.esNueva ? c.tipo_dato : undefined
-          }))
-      };
+  setIsSubmitting(true);
+  try {
+    const payload = {
+      nombre,
+      categoria_id: categoriaId,
+      caracteristicas: caracteristicas
+        .filter(c => caracSeleccionadas.includes(c.id))
+        .map(c => ({
+          id: c.esNueva ? undefined : c.id,
+          nombre: c.esNueva ? c.nombre : undefined,
+          tipo_dato: c.esNueva ? c.tipo_dato : undefined
+        }))
+    };
 
-      // Limpiar localStorage si hay características nuevas
-      const tieneNuevas = caracteristicas.some(c =>
-        c.esNueva && caracSeleccionadas.includes(c.id)
-      );
+    const tieneNuevas = caracteristicas.some(c => c.esNueva && caracSeleccionadas.includes(c.id));
+    if (tieneNuevas) {
+      localStorage.removeItem('caracteristicasLocales');
+    }
 
-      if (tieneNuevas) {
-        localStorage.removeItem('caracteristicasLocales');
-      }
+    if (tipoEditado) {
+      await updateTipoEquipo(tipoEditado.id, payload);
+      toast.success("Tipo de equipo actualizado");
+      onSuccess?.(); // Esto ejecutará cualquier callback proporcionado
+    } else {
+      await createTipoEquipo(payload);
+      toast.success("Tipo de equipo creado");
+      navigate("/tipoEquipo"); // Redirigir después de crear
+    }
 
-      // Enviar datos al servidor
-      if (tipoEditado) {
-        await updateTipoEquipo(tipoEditado.id, payload);
-        toast.success("Tipo de equipo actualizado");
+    setNombre("");
+    setCategoriaId(null);
+    setCaracSeleccionadas([]);
+
+  } catch (error) {
+    console.error("Error al guardar el tipo de equipo:", error);
+    if (error.response?.status === 422) {
+      const mensaje = error.response.data.message || "Datos inválidos.";
+      if (mensaje.includes("nombre ya existe") || mensaje.includes("nombre")) {
+        toast.error("Ya existe un tipo de equipo con ese nombre.");
       } else {
-        await createTipoEquipo(payload);
-        toast.success("Tipo de equipo creado");
+        toast.error(mensaje);
       }
-
-      // Resetear formulario
-      setNombre("");
-      setCategoriaId(null);
-      setCaracSeleccionadas([]);
-      onSuccess?.();
-
-    } catch (error) {
-  console.error("Error al guardar el tipo de equipo:", error);
-
-  if (error.response?.status === 422) {
-    // Laravel 422 validation error
-    const mensaje = error.response.data.message || "Datos inválidos.";
-
-    if (mensaje.includes("nombre ya existe") || mensaje.includes("nombre")) {
+    } else if (error.response?.data?.error?.includes("Duplicate entry") || 
+               error.response?.data?.message?.includes("Duplicate entry")) {
       toast.error("Ya existe un tipo de equipo con ese nombre.");
     } else {
-      toast.error(mensaje);
+      toast.error("Error al guardar el tipo de equipo.");
     }
-  } else if (
-    error.response?.data?.error?.includes("Duplicate entry") ||
-    error.response?.data?.message?.includes("Duplicate entry")
-  ) {
-    // Fallback si falla por error SQL
-    toast.error("Ya existe un tipo de equipo con ese nombre.");
-  } else {
-    toast.error("Error al guardar el tipo de equipo.");
+  } finally {
+    setIsSubmitting(false);
   }
-}
-finally {
-      setIsSubmitting(false);
-    }
-  };
+};
 
   const handleBack = () => {
-    if (!isSubmitting) {
-      navigate("/tipoEquipo");
-    }
+    if (!isSubmitting) navigate("/tipoEquipo");
   };
 
   const handleCancel = () => {
-    if (!isSubmitting) {
-      onCancel?.();
-    }
+    if (!isSubmitting) onCancel?.();
   };
 
   const agregarNuevaCaracteristica = () => {
@@ -247,9 +245,7 @@ finally {
         setCaracSeleccionadas(prev => [...prev, caracteristicaExistente.id]);
         toast.success(`Característica "${caracteristicaExistente.nombre}" seleccionada`);
       } else {
-        toast(`La característica "${caracteristicaExistente.nombre}" ya está seleccionada`, {
-          icon: "ℹ️"
-        });
+        toast(`La característica "${caracteristicaExistente.nombre}" ya está seleccionada`, { icon: "ℹ️" });
       }
       setNuevaCarac("");
       setMostrarAgregarCarac(false);
@@ -339,29 +335,62 @@ finally {
             isMulti
             options={caracteristicas.map((c) => ({
               value: c.id,
-              label: c.nombre,
+              label: `${c.nombre}${c.tipo_dato ? ` (${c.tipo_dato})` : ''}${c.esNueva ? ' - Nuevo' : ''}`,
               tipo_dato: c.tipo_dato,
+              esNueva: c.esNueva
             }))}
             value={caracteristicas
               .filter(c => caracSeleccionadas.includes(c.id))
               .map(c => ({
                 value: c.id,
-                label: c.nombre,
+                label: `${c.nombre}${c.tipo_dato ? ` (${c.tipo_dato})` : ''}${c.esNueva ? ' - Nuevo' : ''}`,
                 tipo_dato: c.tipo_dato,
+                esNueva: c.esNueva
               }))
             }
             onChange={(selectedOptions) => {
-              const nuevasIds = selectedOptions.map(opt => opt.value);
-              setCaracSeleccionadas(nuevasIds);
+              // Permitir cambios si:
+              // 1. No es edición (creación nuevo tipo)
+              // 2. Es edición pero no tiene equipos asociados
+              if (!tipoEditado || !tieneEquiposAsociados) {
+                const nuevasIds = selectedOptions.map(opt => opt.value);
+                setCaracSeleccionadas(nuevasIds);
+              }
             }}
-            placeholder={isLoading ? "Cargando características..." : "Selecciona características..."}
+            placeholder={
+              isLoading 
+                ? "Cargando características..." 
+                : tipoEditado && tieneEquiposAsociados
+                  ? "No se pueden quitar características existentes"
+                  : "Selecciona características..."
+            }
             className="react-select-container"
             classNamePrefix="react-select"
             noOptionsMessage={() => "No hay características disponibles"}
             isDisabled={isLoading || isSubmitting}
+            closeMenuOnSelect={true} // Cambiado a true para cerrar al seleccionar
+            hideSelectedOptions={false}
+            controlShouldRenderValue={true}
+            isClearable={false}
+            menuPlacement="auto"
+            styles={{
+              control: (base) => ({
+                ...base,
+                borderColor: tipoEditado && tieneEquiposAsociados ? '#ffc107' : '#ced4da',
+                backgroundColor: tipoEditado && tieneEquiposAsociados ? 'rgba(255, 193, 7, 0.1)' : 'white',
+              }),
+              multiValueRemove: (base, state) => ({
+                ...base,
+                display: tipoEditado && tieneEquiposAsociados && !state.data.esNueva ? 'none' : base.display,
+              }),
+            }}
+            components={{
+              DropdownIndicator: null,
+              IndicatorSeparator: null,
+            }}
           />
 
-          {/* Link para mostrar el formulario para agregar característica */}
+          {/* Formulario para agregar nueva característica - SIEMPRE PERMITIDO */}
           <div className="mt-2">
             <button
               type="button"
@@ -373,7 +402,6 @@ finally {
             </button>
           </div>
 
-          {/* Formulario para agregar nueva característica */}
           {mostrarAgregarCarac && (
             <div className="mt-3 d-flex gap-2">
               <input
@@ -412,26 +440,40 @@ finally {
         {caracSeleccionadas.length > 0 && (
           <div className="mb-3">
             <label className="form-label">Características seleccionadas</label>
+            {tipoEditado && tieneEquiposAsociados && (
+              <div className="alert alert-warning mb-2">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                Este tipo de equipo tiene equipos asociados. Solo se pueden eliminar características nuevas.
+              </div>
+            )}
             <ul className="list-group">
               {caracteristicas
                 .filter(c => caracSeleccionadas.includes(c.id))
                 .map((carac) => (
                   <li key={carac.id} className="list-group-item d-flex justify-content-between align-items-center">
-                    {carac.nombre}
-                    {carac.esNueva && (
-                      <span className="badge bg-warning text-dark me-2">Nueva</span>
-                    )}
+                    <div>
+                      {carac.nombre}
+                      {carac.tipo_dato && <span className="text-muted ms-2">({carac.tipo_dato})</span>}
+                      {carac.esNueva && (
+                        <span className="badge bg-warning text-dark ms-2" style={{ padding: "0.35em 0.65em" }}>Nuevo</span>
+                      )}
+                    </div>
                     <button
                       type="button"
                       className="btn btn-sm btn-danger"
                       onClick={() => {
                         if (carac.esNueva) {
                           eliminarCaracteristicaLocal(carac.id);
-                        } else {
+                        } else if (!tieneEquiposAsociados) {
                           setCaracSeleccionadas(prev => prev.filter(id => id !== carac.id));
                         }
                       }}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || (tipoEditado && tieneEquiposAsociados && !carac.esNueva)}
+                      title={
+                        tipoEditado && tieneEquiposAsociados && !carac.esNueva 
+                          ? "No se puede eliminar esta característica porque hay equipos asociados" 
+                          : ""
+                      }
                     >
                       Quitar
                     </button>
@@ -451,11 +493,7 @@ finally {
           >
             {isSubmitting ? (
               <>
-                <span
-                  className="spinner-border spinner-border-sm me-1"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
+                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                 {tipoEditado ? "Actualizando..." : "Creando..."}
               </>
             ) : (

@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import Slider from "react-slick";
 import Button from "react-bootstrap/Button";
 import { APIURL } from "~/constants/constant";
+import { Spinner } from "react-bootstrap";
 
 interface EquipoIndividual {
   equipo_id: number;
@@ -30,7 +31,6 @@ interface GrupoEquiposPorModelo {
 interface Props {
   formData: any;
   setFormData: React.Dispatch<React.SetStateAction<any>>;
-  checkingAvailability: boolean;
   isDateTimeComplete: boolean;
   onGuardarReserva?: (data: any) => void;
   onCancelarReserva?: () => void;
@@ -39,13 +39,13 @@ interface Props {
 export default function EquiposSelect({
   formData,
   setFormData,
-  checkingAvailability,
   isDateTimeComplete,
   onGuardarReserva,
   onCancelarReserva,
   onModificarReserva,
 }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [checkingAvailability, setCheckingAvailability] = useState(true);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [cantidadInputs, setCantidadInputs] = useState<Record<number, number>>(
     {}
@@ -59,6 +59,7 @@ export default function EquiposSelect({
   const [loadingNextPage, setLoadingNextPage] = useState(false);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const pagesLoaded = useRef<Set<number>>(new Set());
+  const [loadingSave, setLoadingSave] = useState(false);
 
   // Debounce de búsqueda
   useEffect(() => {
@@ -118,6 +119,7 @@ export default function EquiposSelect({
       setTotalItems(response.data.total);
       setTotalPages(response.data.last_page || 1);
       pagesLoaded.current.add(pageToLoad);
+      setCheckingAvailability(false);
     } catch (error) {
       toast.error("Error al cargar equipos disponibles");
     } finally {
@@ -398,44 +400,54 @@ export default function EquiposSelect({
         </Slider>
       )}
 
-      {formData.equiposSeleccionados?.length > 0 && (
-        <div className="d-flex flex-wrap gap-3 justify-content-end mt-4">
-          {/* @ts-ignore */}
-          <Button
-            variant="primary"
-            onClick={() => {
-              // Debes pasar la función que guarde la reserva de equipos
-              // Puedes enviar formData, por ejemplo:
-              onGuardarReserva && onGuardarReserva(formData);
-            }}
-            disabled={formData.equiposSeleccionados.length === 0}
-          >
-            Guardar Reserva
-          </Button>
-          <Button
-            variant="outline-danger"
-            onClick={() => {
-              // Debes pasar tu función para resetear el chat
-              onCancelarReserva && onCancelarReserva();
-            }}
-          >
-            Cancelar Reserva
-          </Button>
-          <Button
-            variant="outline-secondary"
-            onClick={() => {
-              // Envía el mensaje al chatbot para modificar
-              if (onModificarReserva) {
-                onModificarReserva(
-                  "Quiero cambiar algunos datos de mi reserva"
-                );
-              }
-            }}
-          >
-            Modificar Reserva
-          </Button>
-        </div>
-      )}
+      <div className="d-flex flex-wrap gap-3 justify-content-end mt-4">
+        {/* @ts-ignore */}
+        <Button
+          variant="primary"
+          onClick={() => {
+            // Debes pasar la función que guarde la reserva de equipos
+            // Puedes enviar formData, por ejemplo:
+            onGuardarReserva && onGuardarReserva(formData);
+            setLoadingSave(true);
+          }}
+          disabled={
+            !formData.equiposSeleccionados ||
+            formData.equiposSeleccionados?.length === 0
+          }
+        >
+          Guardar Reserva
+          {loadingSave && (
+            <Spinner
+              as="span"
+              animation="border"
+              size="sm"
+              role="status"
+              aria-hidden="true"
+              className="me-2"
+            />
+          )}
+        </Button>
+        <Button
+          variant="outline-danger"
+          onClick={() => {
+            // Debes pasar tu función para resetear el chat
+            onCancelarReserva && onCancelarReserva();
+          }}
+        >
+          Cancelar Reserva
+        </Button>
+        <Button
+          variant="outline-secondary"
+          onClick={() => {
+            // Envía el mensaje al chatbot para modificar
+            if (onModificarReserva) {
+              onModificarReserva("Quiero cambiar algunos datos de mi reserva");
+            }
+          }}
+        >
+          Modificar Reserva
+        </Button>
+      </div>
     </div>
   );
 }

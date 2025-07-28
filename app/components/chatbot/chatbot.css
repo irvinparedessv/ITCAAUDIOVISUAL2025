@@ -1,15 +1,4 @@
-.ubicacion-btn,
-.equipo-btn {
-  margin: 0.2rem;
-}
-
-.bot-options,
-.ubicacion-botones {
-  display: grid;
-}
-.bot-options button {
-  margin: 0.3rem;
-}
+/* ----- CONTENEDOR PRINCIPAL ----- */
 .chatbot-container {
   position: fixed;
   bottom: 20px;
@@ -20,72 +9,104 @@
   color: #fff;
   border-radius: 16px 16px 0 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-  transition: box-shadow 0.3s;
+  transition: box-shadow 0.3s, max-height 0.25s cubic-bezier(0.5, 1.6, 0.25, 1);
   overflow: hidden;
   font-family: "Inter", Arial, sans-serif;
+  background: #fff;
 }
 
 .chatbot-container.open {
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: 70vh;
+  max-height: 60vh;
 }
 
+.chatbot-container.open.expandido {
+  max-height: 98%;
+  max-width: 100%;
+  width: 96vw;
+  border-radius: 18px;
+}
+
+/* ----- HEADER ----- */
 .chat-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: #282838;
-  font-size: 1.12rem;
-  border-bottom: 1px solid #363649;
+  background: #f5c35c;
+  font-size: 1.16rem;
+  font-weight: 600;
+  color: #000;
+  border-bottom: 1px solid #d4b242;
 }
 
+/* ----- BOTÓN CERRAR ----- */
 .chat-close-button {
   background: none;
   border: none;
-  color: #fff;
+  color: #000;
   font-size: 1.1rem;
   cursor: pointer;
 }
 
+/* ----- VENTANA CHAT ----- */
 .chat-window {
   flex: 1;
   width: 100%;
   display: flex;
   flex-direction: column;
   padding: 1rem;
+  background: #fff;
   overflow-y: auto;
+  min-height: 350px;
+  transition: max-height 0.25s cubic-bezier(0.5, 1.6, 0.25, 1), min-height 0.25s;
 }
 
+.chat-window.expandido {
+  max-width: 100%;
+  min-width: 350px;
+  max-height: 100%;
+  min-height: 600px;
+  width: 100%;
+}
+
+/* ----- MENSAJES ----- */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
   margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .message {
-  margin-bottom: 0.7rem;
-  padding: 0.6rem 1rem;
-  border-radius: 12px;
-  max-width: 80%;
+  margin-bottom: 0;
+  padding: 0.7rem 1rem;
+  border-radius: 14px;
+  max-width: 84%;
   word-break: break-word;
   font-size: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .message.user {
   align-self: flex-end;
-  background: #1e90ff;
+  background: #8b0000;
   color: #fff;
+  border-bottom-right-radius: 4px;
 }
 
 .message.bot {
   align-self: flex-start;
-  background: #393953;
-  color: #fff;
+  background: #f0f0f0;
+  color: #333;
+  border-bottom-left-radius: 4px;
 }
 
+/* ----- INPUT ----- */
 .chat-input-container {
   display: flex;
   gap: 0.4rem;
@@ -95,39 +116,47 @@
 .chat-input {
   flex: 1;
   padding: 0.6rem 1rem;
-  border-radius: 12px;
-  border: 1px solid #363649;
-  color: #fff;
+  border-radius: 14px;
+  border: 1px solid #cfcfcf;
+  color: #222;
+  font-size: 1rem;
 }
 
 .chat-input:disabled {
   opacity: 0.5;
 }
 
+/* Botón ENVIAR */
 .chat-send-button {
-  background: #1e90ff;
+  background: #8b0000;
   color: #fff;
   border: none;
-  border-radius: 12px;
-  padding: 0.6rem 1.2rem;
+  border-radius: 14px;
+  padding: 0.6rem 1.3rem;
   font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .chat-send-button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
+.chat-send-button:hover {
+  background: #a52a2a;
+}
+
+/* Botón flotante */
 .chatbot-button {
-  background: #1e90ff;
-  color: #fff;
+  background: #f5c35c;
+  color: #8b0000;
   border: none;
   border-radius: 50%;
   width: 56px;
   height: 56px;
-  box-shadow: 0 2px 8px rgba(30, 144, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(30, 144, 255, 0.13);
   font-size: 1.75rem;
   display: flex;
   align-items: center;
@@ -137,97 +166,165 @@
   bottom: 20px;
   right: 20px;
   z-index: 1100;
+  transition: background 0.2s, transform 0.2s;
 }
 
-/* -------- FULLSCREEN SUGERENCIAS --------- */
-
-.fullscreen-sugerencias {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  max-width: none !important;
-  max-height: none !important;
-  border-radius: 0 !important;
-  background: #20202b !important;
-  z-index: 99999 !important;
-  display: flex !important;
-  flex-direction: column;
-  animation: fadeIn 0.3s;
+.chatbot-button:hover {
+  background: #ffe196;
+  transform: scale(1.08);
 }
 
-.sugerencias-body {
-  flex: 1;
-  padding: 2.5rem 2rem;
+/* ----- CARDS DE SUGERENCIA (CUADRADAS) ----- */
+.cards-cuadradas-grid {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow-y: auto;
-  background: #20202b;
-}
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 2rem;
   width: 100%;
   max-width: 950px;
   margin: 0 auto;
 }
 
-.card-sugerencia {
+.card-cuadrada {
+  width: 480px; /* Aumentado */
+  height: 380px; /* Aumentado */
   background: #282838;
   border-radius: 18px;
-  box-shadow: 0 4px 16px rgba(10, 10, 30, 0.09);
-  padding: 2rem 1.5rem 1.2rem 1.5rem;
+  box-shadow: 0 4px 18px rgba(10, 10, 30, 0.14);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  min-height: 180px;
+  align-items: center;
+  padding: 1.1rem 1rem 1rem 1rem;
   transition: box-shadow 0.15s;
+  margin-bottom: 1rem;
+  border: 2px solid transparent;
+  position: relative;
 }
 
-.card-sugerencia h4 {
-  margin: 0 0 0.7rem 0;
-  font-size: 1.18rem;
+.card-cuadrada:hover,
+.card-cuadrada:focus-within {
+  box-shadow: 0 6px 28px rgba(30, 144, 255, 0.19);
+  border: 2px solid #1e90ff;
+}
+
+.card-cuadrada-titulo {
+  font-size: 1.08rem;
+  font-weight: 700;
   color: #1e90ff;
+  margin-bottom: 0.4rem;
+  text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.card-sugerencia p {
-  font-size: 1rem;
-  margin-bottom: 1.2rem;
+.card-cuadrada-img {
+  width: 99%; /* Aumentado */
+  height: 220px; /* Aumentado */
+  border-radius: 13px;
+  object-fit: cover;
+  background: #232333;
+  margin-bottom: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-cuadrada-sugerencia {
+  font-size: 0.98rem;
   color: #d1d1e6;
+  margin-bottom: 1.1rem;
+  text-align: center;
+  min-height: 48px;
+  max-height: 70px;
+  overflow: auto;
 }
 
-.seleccionar-btn {
-  align-self: flex-end;
+.card-cuadrada-boton {
+  margin-top: auto;
+  width: 90%;
   background: #1e90ff;
   color: #fff;
   border: none;
   border-radius: 12px;
-  padding: 0.5rem 1.3rem;
+  padding: 0.5rem 0;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.05rem;
   cursor: pointer;
   transition: background 0.2s;
 }
 
-.seleccionar-btn:hover {
+.card-cuadrada-boton:hover {
   background: #176bc7;
 }
 
-.sugerencias-loading {
-  font-size: 1.2rem;
-  color: #ddd;
-  margin-top: 2rem;
-  text-align: center;
+/* ----- MODO OSCURO (usa body.dark-theme como en tu ejemplo) ----- */
+body.dark-theme .chatbot-container,
+body.dark-theme .chat-window {
+  background: #232324;
+  color: #f0f0f0;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
+body.dark-theme .message.bot {
+  background: #282838;
+  color: #f0f0f0;
+}
+
+body.dark-theme .chat-input,
+body.dark-theme .chat-input-container {
+  background: #232324;
+  color: #fff;
+  border-color: #363649;
+}
+
+body.dark-theme .chat-send-button {
+  background: #1e90ff;
+  color: #fff;
+}
+
+body.dark-theme .card-cuadrada {
+  background: #282838;
+  color: #fff;
+}
+
+body.dark-theme .card-cuadrada-titulo {
+  color: #4fc3f7;
+}
+
+body.dark-theme .card-cuadrada-sugerencia {
+  color: #eee;
+}
+
+/* ----- RESPONSIVE PARA MOVIL ----- */
+@media (max-width: 700px) {
+  .chatbot-container.open,
+  .chatbot-container.open.expandido {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    right: 0 !important;
+    left: 0 !important;
+    border-radius: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    min-height: 100vh !important;
+    height: 100vh !important;
   }
-  to {
-    opacity: 1;
+  .chat-window,
+  .chat-window.expandido {
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    padding: 1rem 0.3rem !important;
+    min-height: 100vh !important;
+    height: 100vh !important;
+  }
+  .card-cuadrada {
+    width: 98vw !important;
+    height: 320px !important;
+    max-width: 100vw !important;
+  }
+  .card-cuadrada-img {
+    width: 99vw !important;
+    height: 180px !important;
   }
 }

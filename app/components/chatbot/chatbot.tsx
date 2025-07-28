@@ -3,7 +3,7 @@ import { FaCommentDots, FaTimes } from "react-icons/fa";
 import { APIURL } from "../../constants/constant";
 import { useChatbotLogic } from "./useChatbotLogic";
 import EquiposSelect from "./Equipos";
-import "./chatbot.css"; // Asegúrate de tener los estilos recomendados
+import "./chatbot.css";
 import { useAuth } from "~/hooks/AuthContext";
 
 const Chatbot = () => {
@@ -67,15 +67,16 @@ const Chatbot = () => {
 
   // Busca los datos completos de aula según sugerencia
   const getAulaCompleta = (sugerencia: any) => {
-    console.log(aulasDisponibles);
-    return (
-      aulasDisponibles?.find((a) => a.id === sugerencia.id) || sugerencia // fallback por si acaso
-    );
+    return aulasDisponibles?.find((a) => a.id === sugerencia.id) || sugerencia;
   };
 
   return (
     <div
-      className={`chatbot-container${isOpen ? " open" : ""}`}
+      className={
+        "chatbot-container" +
+        (isOpen ? " open" : "") +
+        (showFullScreen || mostrarEquipos ? " expandido" : "")
+      }
       ref={containerRef}
     >
       {isOpen && (
@@ -91,107 +92,12 @@ const Chatbot = () => {
             </button>
           </div>
 
-          {/* ---- Overlay selección de AULA ---- */}
-          {showFullScreen && (
-            <div className="fullscreen-sugerencias-overlay">
-              <div
-                className="fullscreen-sugerencias"
-                style={{ minHeight: "90vh" }}
-              >
-                <h4 className="mb-3">Selecciona un espacio sugerido</h4>
-                <div className="row g-3">
-                  {espaciosParaSeleccionar.map((sugerencia: any) => {
-                    const aula = getAulaCompleta(sugerencia);
-                    return (
-                      <div key={aula.id} className="col-12">
-                        <div className="card shadow-sm d-flex flex-row align-items-center p-2">
-                          <div style={{ width: 120, height: 100 }}>
-                            {aula.path_modelo ? (
-                              //@ts-ignore
-                              <model-viewer
-                                src={APIURL + "/" + aula.path_modelo}
-                                alt={aula.nombre}
-                                camera-controls
-                                style={{
-                                  width: 120,
-                                  height: 100,
-                                  background: "#f4f6fa",
-                                  borderRadius: 12,
-                                }}
-                                auto-rotate
-                                shadow-intensity="1"
-                              />
-                            ) : aula.imagen_normal ? (
-                              <img
-                                src={APIURL + "/" + aula.imagen_normal}
-                                alt={aula.nombre}
-                                style={{
-                                  width: 120,
-                                  height: 100,
-                                  objectFit: "cover",
-                                  borderRadius: 12,
-                                }}
-                              />
-                            ) : (
-                              <div
-                                className="bg-secondary text-white d-flex align-items-center justify-content-center"
-                                style={{
-                                  width: 120,
-                                  height: 100,
-                                  borderRadius: 12,
-                                }}
-                              >
-                                Sin imagen
-                              </div>
-                            )}
-                          </div>
-                          <div className="ms-3 flex-grow-1">
-                            <div className="fw-bold">
-                              {aula.nombre || `Espacio #${aula.id}`}
-                            </div>
-                            <div className="small text-muted mb-1">
-                              {sugerencia.recomendacion}
-                            </div>
-                            <button
-                              className="btn btn-primary btn-sm mt-1"
-                              onClick={() =>
-                                handleSeleccionarEspacio(aula, sugerencia)
-                              }
-                            >
-                              Seleccionar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ---- Overlay selección de EQUIPOS ---- */}
-          {mostrarEquipos && (
-            <div className="fullscreen-sugerencias-overlay">
-              <div
-                className="fullscreen-sugerencias"
-                style={{ minHeight: "90vh" }}
-              >
-                <EquiposSelect
-                  formData={formData}
-                  setFormData={setFormData}
-                  checkingAvailability={true}
-                  isDateTimeComplete={true}
-                  onGuardarReserva={onGuardarReserva} // tu lógica para guardar reserva
-                  onCancelarReserva={onCancelarReserva} // tu resetChat o lo que uses
-                  onModificarReserva={onModificarReserva} // función que envía mensaje al chatbot
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ---- Historial de mensajes ---- */}
-          <div className="chat-window" style={{ maxHeight: 820 }}>
+          <div
+            className={
+              "chat-window" +
+              (showFullScreen || mostrarEquipos ? " expandido" : "")
+            }
+          >
             <div className="chat-messages">
               {messages.map((msg, idx) => (
                 <div
@@ -203,9 +109,99 @@ const Chatbot = () => {
                   {msg.text}
                 </div>
               ))}
+
+              {/* --- Selección de AULA (cards cuadradas) --- */}
+              {showFullScreen && (
+                <div>
+                  <h4
+                    style={{ textAlign: "center", margin: "1.5rem 0 1.1rem" }}
+                  >
+                    Selecciona un espacio sugerido
+                  </h4>
+                  <div className="cards-cuadradas-grid">
+                    {espaciosParaSeleccionar.map((sugerencia) => {
+                      const aula = getAulaCompleta(sugerencia);
+                      return (
+                        <div key={aula.id} className="card-cuadrada">
+                          <div className="card-cuadrada-titulo">
+                            {aula.nombre || `Espacio #${aula.id}`}
+                          </div>
+                          <div className="card-cuadrada-img">
+                            {aula.path_modelo ? (
+                              //@ts-ignore
+                              <model-viewer
+                                src={APIURL + "/" + aula.path_modelo}
+                                alt={aula.nombre}
+                                camera-controls
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  background: "#f4f6fa",
+                                  borderRadius: 12,
+                                }}
+                                auto-rotate
+                                shadow-intensity="1"
+                              />
+                            ) : aula.imagen_normal ? (
+                              <img
+                                src={APIURL + "/" + aula.imagen_normal}
+                                alt={aula.nombre}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  borderRadius: 12,
+                                }}
+                              />
+                            ) : (
+                              <div
+                                className="bg-secondary text-white d-flex align-items-center justify-content-center"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  borderRadius: 12,
+                                  fontSize: 15,
+                                }}
+                              >
+                                Sin imagen
+                              </div>
+                            )}
+                          </div>
+                          <div className="card-cuadrada-sugerencia">
+                            {sugerencia.recomendacion}
+                          </div>
+                          <button
+                            className="card-cuadrada-boton"
+                            onClick={() =>
+                              handleSeleccionarEspacio(aula, sugerencia)
+                            }
+                          >
+                            Seleccionar
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* --- Selección de EQUIPOS --- */}
+              {mostrarEquipos && (
+                <div style={{ marginTop: 20, padding: 30 }}>
+                  <EquiposSelect
+                    formData={formData}
+                    setFormData={setFormData}
+                    isDateTimeComplete={true}
+                    onGuardarReserva={onGuardarReserva}
+                    onCancelarReserva={onCancelarReserva}
+                    onModificarReserva={onModificarReserva}
+                  />
+                </div>
+              )}
+
               <div ref={bottomRef} />
             </div>
-            {/* Input solo si no está bloqueado por overlay */}
+            {/* Input SOLO si no hay selección activa */}
             {!showFullScreen && !mostrarEquipos && (
               <div className="chat-input-container">
                 <input

@@ -71,15 +71,34 @@ export const useChatbotLogic = (user?: UserLogin) => {
   };
 
   // Reset total del chat
-  const resetChat = () => {
+  const resetChat = (msg?: string) => {
     setInputMessage("");
-    setMessages([
-      {
-        id: 1,
-        text: "¡Hola! ¿En qué puedo ayudarte, necesitas asistencia? ¿Quieres realizar una reserva de espacio o préstamo de equipo?",
-        sender: "bot",
-      },
-    ]);
+    if (msg) {
+      setMessages([
+        {
+          id: 1,
+          text: msg,
+          sender: "bot",
+        },
+      ]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          text: "¡Hola! ¿En qué puedo ayudarte, necesitas asistencia? ¿Quieres realizar una reserva de espacio o préstamo de equipo?",
+          sender: "bot",
+        },
+      ]);
+    } else {
+      setMessages([
+        {
+          id: 1,
+          text: "¡Hola! ¿En qué puedo ayudarte, necesitas asistencia? ¿Quieres realizar una reserva de espacio o préstamo de equipo?",
+          sender: "bot",
+        },
+      ]);
+    }
+
     setThreadId(null);
     setAsistenteData(null);
     setFormData({});
@@ -296,23 +315,17 @@ export const useChatbotLogic = (user?: UserLogin) => {
         await api.post("/reservas", formPayload, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: prev.length + 1,
-            text: `✅ ¡Reserva creada exitosamente!\n\nAula: ${
-              formData.aula.nombre
-            }\nFecha: ${
-              formData.fecha
-            }\nEquipos: ${formData.equiposSeleccionados
-              .map((eq: any) => eq.nombre_modelo)
-              .join(", ")}`,
-            sender: "bot",
-          },
-        ]);
+        const text = `✅ ¡Reserva creada exitosamente!\n\nAula: ${
+          formData.aula.nombre
+        }\nFecha: ${formatDate(formData.fecha)}\n• Horario: ${
+          formData.horaInicio
+        } - ${formData.horaFin}\n\nEquipos: ${formData.equiposSeleccionados
+          .map((eq: any) => eq.nombre_modelo)
+          .join(", ")}`;
+
+        setReservaConfirmada("¡Reserva de equipos guardada exitosamente!");
+        setTimeout(() => resetChat(text), 2500);
       }
-      setReservaConfirmada("¡Reserva de equipos guardada exitosamente!");
-      setTimeout(() => resetChat(), 2500);
     } catch (error: any) {
       setMessages((prev) => [
         ...prev,
@@ -340,6 +353,8 @@ export const useChatbotLogic = (user?: UserLogin) => {
     msg: string = "Quiero cambiar algunos datos de mi reserva"
   ) => {
     enviarMensajeAsistente(msg);
+    setShowFullScreen(false);
+    setMostrarEquipos(false);
   };
 
   // -- Resto igual (espacios sugeridos, selecciona aula, etc) --
@@ -540,17 +555,11 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
 
       try {
         await api.post("/reservasAula", body);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: prev.length + 1,
-            text: `✅ Reserva realizada correctamente\n\n• Aula: ${aula.nombre}\n• Fecha: ${formData.fecha}\n• Horario: ${formData.horaInicio} - ${formData.horaFin}\n\n¡Gracias por usar el asistente!`,
-            sender: "bot",
-          },
-        ]);
+        const chatmsg = `✅ Reserva realizada correctamente\n\n• Aula: ${aula.nombre}\n• Fecha: ${formData.fecha}\n• Horario: ${formData.horaInicio} - ${formData.horaFin}\n\n¡Gracias por usar el asistente!`;
+
         setReservaConfirmada("¡Reserva realizada exitosamente!");
         setTimeout(() => {
-          resetChat();
+          resetChat(chatmsg);
         }, 2500);
       } catch (err) {
         setMessages((prev) => [

@@ -16,7 +16,6 @@ export type UserOption = OptionType & { value: number };
 
 interface LoadingState {
   tipoReserva: boolean;
-  aulas: boolean;
   equipments: boolean;
   submit: boolean;
 }
@@ -34,7 +33,6 @@ export default function useReservationFormLogic(reservaId?: string | null) {
   const [tipoReservaOptions, setTipoReservaOptions] = useState<OptionType[]>(
     []
   );
-  const [aulaOptions, setAulaOptions] = useState<OptionType[]>([]);
   const [availableEquipmentOptions, setAvailableEquipmentOptions] = useState<
     EquipoResumen[]
   >([]);
@@ -50,7 +48,6 @@ export default function useReservationFormLogic(reservaId?: string | null) {
 
   const [loading, setLoading] = useState<LoadingState>({
     tipoReserva: true,
-    aulas: true,
     equipments: false,
     submit: false,
   });
@@ -78,33 +75,6 @@ export default function useReservationFormLogic(reservaId?: string | null) {
       }
     };
     fetchTipos();
-  }, []);
-
-  useEffect(() => {
-    const fetchUbicaciones = async () => {
-      try {
-        const response = await api.get("/aulas");
-        const data = response.data;
-        setAulaOptions(
-          data.map(
-            (item: {
-              id: number;
-              name: string;
-              path_modelo: string | null;
-            }) => ({
-              value: item.id,
-              label: item.name,
-              path_modelo: item.path_modelo,
-            })
-          )
-        );
-      } catch {
-        toast.error("Error cargando las ubicaciones");
-      } finally {
-        setLoading((prev) => ({ ...prev, aulas: false }));
-      }
-    };
-    fetchUbicaciones();
   }, []);
 
   useEffect(() => {
@@ -309,7 +279,6 @@ export default function useReservationFormLogic(reservaId?: string | null) {
     prestamistaOptions,
     selectedPrestamista,
     setSelectedPrestamista,
-    aulaOptions,
     availableEquipmentOptions,
     allEquipmentOptions,
     uploadedFile,

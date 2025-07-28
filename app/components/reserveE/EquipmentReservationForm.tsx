@@ -36,7 +36,6 @@ export default function EquipmentReservationForm() {
     prestamistaOptions,
     selectedPrestamista,
     setSelectedPrestamista,
-    aulaOptions,
     availableEquipmentOptions,
     allEquipmentOptions,
     uploadedFile,
@@ -144,13 +143,19 @@ export default function EquipmentReservationForm() {
           uploadedFile={uploadedFile}
           setUploadedFile={setUploadedFile}
         />
-        <UbicacionSelect
-          formData={formData}
-          setFormData={setFormData}
-          aulaOptions={aulaOptions}
-          loadingAulas={loading.aulas}
-          isDateTimeComplete={isDateTimeComplete}
-        />
+        <div
+          style={{
+            display:
+              isDateTimeComplete && formData.tipoReserva ? "block" : "none",
+          }}
+        >
+          <UbicacionSelect
+            formData={formData}
+            setFormData={setFormData}
+            isDateTimeComplete={isDateTimeComplete}
+            selectedPrestamista={selectedPrestamista}
+          />
+        </div>
         <div style={{ display: formData.aula ? "block" : "none" }}>
           <EquiposSelect
             formData={formData}

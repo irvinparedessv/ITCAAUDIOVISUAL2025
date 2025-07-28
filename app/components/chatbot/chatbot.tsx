@@ -2,10 +2,13 @@ import { useRef, useEffect } from "react";
 import { FaCommentDots, FaTimes } from "react-icons/fa";
 import { APIURL } from "../../constants/constant";
 import { useChatbotLogic } from "./useChatbotLogic";
-import EquiposSelect from "../reserveE/Equipos";
+import EquiposSelect from "./Equipos";
 import "./chatbot.css"; // Asegúrate de tener los estilos recomendados
+import { useAuth } from "~/hooks/AuthContext";
 
 const Chatbot = () => {
+  const { user } = useAuth();
+
   const {
     isOpen,
     isReady,
@@ -24,7 +27,10 @@ const Chatbot = () => {
     mostrarEquipos,
     setMostrarEquipos,
     pensando,
-  } = useChatbotLogic();
+    onGuardarReserva,
+    onCancelarReserva,
+    onModificarReserva,
+  } = useChatbotLogic(user);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -173,17 +179,13 @@ const Chatbot = () => {
               >
                 <EquiposSelect
                   formData={formData}
-                  isDateTimeComplete={true}
-                  checkingAvailability={true}
                   setFormData={setFormData}
-                  // agrega más props si necesitas
+                  checkingAvailability={true}
+                  isDateTimeComplete={true}
+                  onGuardarReserva={onGuardarReserva} // tu lógica para guardar reserva
+                  onCancelarReserva={onCancelarReserva} // tu resetChat o lo que uses
+                  onModificarReserva={onModificarReserva} // función que envía mensaje al chatbot
                 />
-                <button
-                  className="btn btn-outline-secondary mt-3"
-                  onClick={() => setMostrarEquipos(false)}
-                >
-                  Volver al chat
-                </button>
               </div>
             </div>
           )}
@@ -217,7 +219,7 @@ const Chatbot = () => {
                   aria-label="Escribe un mensaje"
                 />
                 <button
-                  className="chat-send-button"
+                  className="chat-send-button btn btn-primary"
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || !isReady || pensando}
                   aria-label="Enviar"

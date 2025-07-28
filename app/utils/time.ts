@@ -87,4 +87,11 @@ export const formatDate = (dateStr: string) => {
   return `${dd}/${mm}/${yyyy}`;
 };
 
+export const formatFecha = (fecha: string) => {
+  const dateObj = new Date(fecha);
+  return `${String(dateObj.getDate()).padStart(2, "0")}/${String(
+    dateObj.getMonth() + 1
+  ).padStart(2, "0")}/${dateObj.getFullYear()}`;
+};
+
 export const timeOptions = generateTimeOptions();

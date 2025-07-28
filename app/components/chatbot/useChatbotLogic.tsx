@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { ASSISTID, CHATGPT } from "~/constants/constant";
 import api from "../../api/axios";
+import type { UserLogin } from "~/types/user";
+import { formatDate } from "~/utils/time";
 
 const ASSISTANT_ID = ASSISTID;
 const OPENAI_API_KEY = CHATGPT;
@@ -21,7 +23,7 @@ export interface AsistenteRespuesta {
   correccion?: boolean;
 }
 
-export const useChatbotLogic = (user?: any) => {
+export const useChatbotLogic = (user?: UserLogin) => {
   const [isReady, setIsReady] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
@@ -51,20 +53,11 @@ export const useChatbotLogic = (user?: any) => {
     null
   );
   const [pensando, setPensando] = useState(false);
-  const [sugerenciasSolicitadas, setSugerenciasSolicitadas] = useState(false);
 
   const [mostrarEquipos, setMostrarEquipos] = useState(false);
   const [seleccionDeAulaCompleta, setSeleccionDeAulaCompleta] = useState(false);
 
-  const camposObligatorios = [
-    "reserva",
-    "tipoEvento",
-    "personas",
-    "fecha",
-    "horaInicio",
-    "horaFin",
-  ];
-
+  // Extrae JSON de la respuesta de ChatGPT
   const extraeJson = (text: string): any => {
     try {
       const match =
@@ -77,6 +70,7 @@ export const useChatbotLogic = (user?: any) => {
     return null;
   };
 
+  // Reset total del chat
   const resetChat = () => {
     setInputMessage("");
     setMessages([
@@ -94,11 +88,10 @@ export const useChatbotLogic = (user?: any) => {
     setLoadingReserva(false);
     setReservaConfirmada(null);
     setAulasDisponibles([]);
-    setSugerenciasSolicitadas(false);
     setPensando(false);
     setMostrarEquipos(false);
-    setSeleccionDeAulaCompleta(false); // Reset el flag loop
-    console.log("[resetChat] Estado reseteado.");
+    setSeleccionDeAulaCompleta(false);
+    // console.log("[resetChat] Estado reseteado.");
   };
 
   const toggleChat = () => {
@@ -106,6 +99,7 @@ export const useChatbotLogic = (user?: any) => {
     setIsOpen(!isOpen);
   };
 
+  // Enviar mensaje normal al asistente
   const enviarMensajeAsistente = async (mensaje: string) => {
     setMessages((prev) => [
       ...prev,
@@ -217,10 +211,6 @@ export const useChatbotLogic = (user?: any) => {
       let json = extraeJson(respuestaTexto);
 
       if (json?.step === "FINAL") {
-        console.log(
-          "[enviarMensajeAsistente] Paso FINAL detectado. json:",
-          json
-        );
         setAsistenteData(json);
         setFormData((prev: any) => ({
           ...prev,
@@ -237,6 +227,8 @@ export const useChatbotLogic = (user?: any) => {
             })
         );
         setPensando(false);
+        setLoadingSpaces(true);
+
         return;
       }
 
@@ -265,7 +257,7 @@ export const useChatbotLogic = (user?: any) => {
             sender: "bot",
           })
       );
-      console.error("[enviarMensajeAsistente] Error:", e);
+      // console.error("[enviarMensajeAsistente] Error:", e);
     } finally {
       setPensando(false);
     }
@@ -276,8 +268,82 @@ export const useChatbotLogic = (user?: any) => {
     await enviarMensajeAsistente(inputMessage.trim());
   };
 
+  // --- GUARDAR RESERVA DE EQUIPOS ---
+  // ... (resto del hook igual)
+
+  const onGuardarReserva = async () => {
+    // Aquí: datos requeridos están en formData
+    // Se asume que los datos ya están completos (no validaciones)
+    setLoadingReserva(true);
+    setReservaConfirmada(null);
+
+    try {
+      // --- Si es reserva de AULA + EQUIPOS ---
+      if (formData.equiposSeleccionados?.length > 0 && formData.aula?.id) {
+        const formPayload = new FormData();
+        formPayload.append("user_id", user.id.toString());
+        formPayload.append("aula", formData.aula.id);
+        formPayload.append("fecha_reserva", formData.fecha);
+        formPayload.append("startTime", formData.horaInicio);
+        formPayload.append("endTime", formData.horaFin);
+        formPayload.append("tipo_reserva_id", "3"); // Siempre 1 para tu lógica
+
+        formData.equiposSeleccionados.forEach((eq: any, idx: number) => {
+          formPayload.append(`equipo[${idx}][id]`, eq.id.toString());
+          formPayload.append(`equipo[${idx}][cantidad]`, "1");
+        });
+
+        await api.post("/reservas", formPayload, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: prev.length + 1,
+            text: `✅ ¡Reserva creada exitosamente!\n\nAula: ${
+              formData.aula.nombre
+            }\nFecha: ${
+              formData.fecha
+            }\nEquipos: ${formData.equiposSeleccionados
+              .map((eq: any) => eq.nombre_modelo)
+              .join(", ")}`,
+            sender: "bot",
+          },
+        ]);
+      }
+      setReservaConfirmada("¡Reserva de equipos guardada exitosamente!");
+      setTimeout(() => resetChat(), 2500);
+    } catch (error: any) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          text:
+            error?.response?.data?.message ||
+            "Ocurrió un error al guardar la reserva.",
+          sender: "bot",
+        },
+      ]);
+      setReservaConfirmada("Ocurrió un error al guardar la reserva.");
+    } finally {
+      setLoadingReserva(false);
+    }
+  };
+
+  // --- CANCELAR RESERVA (reset total) ---
+  const onCancelarReserva = () => {
+    resetChat();
+  };
+
+  // --- MODIFICAR RESERVA: envía mensaje al asistente para corrección ---
+  const onModificarReserva = (
+    msg: string = "Quiero cambiar algunos datos de mi reserva"
+  ) => {
+    enviarMensajeAsistente(msg);
+  };
+
+  // -- Resto igual (espacios sugeridos, selecciona aula, etc) --
   const enviarRecomendacionEspacios = async (aulas: any[]) => {
-    console.log("[enviarRecomendacionEspacios] Entrando, aulas:", aulas);
     const prompt = `
 A continuación tienes una lista de espacios disponibles para un evento.
 Datos del evento:
@@ -400,8 +466,6 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
       let respuestaTexto = assistantMsg?.content?.[0]?.text?.value ?? "[]";
       let recomendaciones = extraeJson(respuestaTexto);
 
-      console.log("[enviarRecomendacionEspacios] Respuesta:", recomendaciones);
-
       if (
         recomendaciones?.step === "FINAL" &&
         Array.isArray(recomendaciones?.data)
@@ -415,57 +479,17 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
         recomendacionesEspacios: recomendaciones,
       }));
     } catch (err) {
-      console.error("[enviarRecomendacionEspacios] Error:", err);
+      // Manejo de error silencioso
     } finally {
       setLoadingSugerencias(false);
       setLoadingSpaces(false);
-      console.log(
-        "[enviarRecomendacionEspacios] FIN - loadingSpaces:",
-        loadingSpaces,
-        "loadingSugerencias:",
-        loadingSugerencias
-      );
     }
   };
-
-  useEffect(() => {
-    const completos = camposObligatorios.every((key) => formData[key]);
-    console.log(
-      "[useEffect] completos:",
-      completos,
-      "formData:",
-      formData,
-      "loadingSpaces:",
-      loadingSpaces,
-      "sugerenciasSolicitadas:",
-      sugerenciasSolicitadas,
-      "seleccionDeAulaCompleta:",
-      seleccionDeAulaCompleta
-    );
-    if (
-      completos &&
-      Object.keys(formData).length > 0 &&
-      !loadingSpaces &&
-      !sugerenciasSolicitadas &&
-      !seleccionDeAulaCompleta
-    ) {
-      setLoadingSpaces(true);
-      setSugerenciasSolicitadas(true);
-      console.log("[useEffect] Disparando búsqueda de sugerencias");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    formData,
-    loadingSpaces,
-    sugerenciasSolicitadas,
-    seleccionDeAulaCompleta,
-  ]);
 
   useEffect(() => {
     if (loadingSpaces) {
       (async () => {
         try {
-          console.log("[loadingSpaces] POST /sugerir-espacios", formData);
           const resp = await api.post("/sugerir-espacios", {
             fecha: formData.fecha,
             horaInicio: formData.horaInicio,
@@ -475,7 +499,6 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
           });
           const aulas = resp.data.aulas || [];
           setAulasDisponibles(aulas);
-          console.log("[loadingSpaces] aulasDisponibles:", aulas);
           await enviarRecomendacionEspacios(aulas);
         } catch (err) {
           setMessages((prev) =>
@@ -486,8 +509,6 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
             })
           );
           setLoadingSpaces(false);
-          setSugerenciasSolicitadas(false);
-          console.error("[loadingSpaces] Error:", err);
         }
       })();
     }
@@ -501,14 +522,11 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
       aulaSeleccionada: aula,
       aula,
     }));
-    setSugerenciasSolicitadas(false);
     setSeleccionDeAulaCompleta(true);
-    console.log("[handleSeleccionarEspacio] Aula seleccionada:", aula);
 
     if (formData.reserva === "espacio") {
       setLoadingReserva(true);
       setReservaConfirmada(null);
-      console.log("user=>", user);
       const body: any = {
         aula_id: aula.id,
         fecha: formData.fecha,
@@ -544,7 +562,6 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
           },
         ]);
         setReservaConfirmada("Ocurrió un error al guardar la reserva.");
-        console.error("[handleSeleccionarEspacio] Error reserva aula:", err);
       } finally {
         setLoadingReserva(false);
       }
@@ -584,5 +601,9 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
     aulasDisponibles,
     mostrarEquipos,
     setMostrarEquipos,
+    // NUEVAS FUNCIONES PARA TUS BOTONES
+    onGuardarReserva,
+    onCancelarReserva,
+    onModificarReserva,
   };
 };

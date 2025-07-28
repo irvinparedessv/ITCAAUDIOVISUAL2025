@@ -32,6 +32,7 @@ interface EquipoIndividual {
   numero_serie: string;
   modelo_path?: string | null;
   escala: number;
+  en_reposo?: boolean;
 }
 
 interface GrupoEquiposPorModelo {
@@ -41,6 +42,7 @@ interface GrupoEquiposPorModelo {
   equipos: EquipoIndividual[];
   imagen_glb: string | null;
   imagen_normal: string | null;
+  en_reposo?: number;
 }
 
 export default function EquiposSelect({
@@ -104,7 +106,6 @@ export default function EquiposSelect({
     if (pagesLoaded.current.has(pageToLoad)) return;
 
     try {
-      console.log("📦 Cargando página:", pageToLoad);
       if (pageToLoad !== 1) setLoadingNextPage(true);
 
       const response = await api.get("/equiposDisponiblesPorTipoYFecha", {
@@ -120,15 +121,10 @@ export default function EquiposSelect({
       });
 
       const rows: GrupoEquiposPorModelo[] = response.data.data || [];
-      console.log(rows);
       setAvailableEquipmentSlides((prev) => {
         const nuevos = rows.filter(
           (nuevo) =>
             !prev.some((existente) => existente.modelo_id === nuevo.modelo_id)
-        );
-        console.log(
-          "🆕 Nuevos modelos agregados:",
-          nuevos.map((n) => n.modelo_id)
         );
         return [...prev, ...nuevos];
       });
@@ -136,7 +132,6 @@ export default function EquiposSelect({
       setTotalPages(response.data.last_page || 1);
       pagesLoaded.current.add(pageToLoad);
     } catch (error) {
-      console.error("❌ Error al cargar equipos:", error);
       toast.error("Error al cargar equipos disponibles");
     } finally {
       if (pageToLoad === 1) setLoadingSearch(false);
@@ -174,7 +169,11 @@ export default function EquiposSelect({
 
   const agregarEquipo = (grupo: GrupoEquiposPorModelo) => {
     const idsDisponibles = grupo.equipos
-      .filter((e) => !formData.equipment?.some((sel) => sel.id === e.equipo_id))
+      .filter(
+        (e) =>
+          !formData.equipment?.some((sel) => sel.id === e.equipo_id) &&
+          !e.en_reposo
+      )
       .map((e) => e.equipo_id);
 
     const cantidad = cantidadInputs[grupo.modelo_id] || 0;
@@ -189,7 +188,6 @@ export default function EquiposSelect({
       const actuales: EquipmentSeleccionado[] = [...(prev.equipment || [])];
       idsAsignados.forEach((idEquipo) => {
         const equipoObj = grupo.equipos.find((e) => e.equipo_id === idEquipo);
-        console.log(equipoObj);
         actuales.push({
           modelo_id: grupo.modelo_id,
           nombre_modelo: grupo.nombre_modelo,
@@ -198,6 +196,7 @@ export default function EquiposSelect({
           modelo_path: equipoObj?.modelo_path ?? equipoObj?.imagen_glb ?? "",
           numero_serie: equipoObj?.numero_serie,
           escala: equipoObj?.escala,
+          en_reposo: equipoObj?.en_reposo,
         });
       });
       return { ...prev, equipment: actuales };
@@ -215,7 +214,6 @@ export default function EquiposSelect({
   const puedeVisualizarFull =
     !!aulaModelPath && equiposConModeloPath.length > 0;
 
-  // Reemplaza el bloque sliderSettings existente por este:
   const sliderSettings = {
     dots: true,
     infinite: false,
@@ -498,13 +496,19 @@ export default function EquiposSelect({
       {!loadingSearch && availableEquipmentSlides.length > 0 && (
         <Slider {...sliderSettings}>
           {availableEquipmentSlides.map((grupo, index) => {
-            const equiposNoAgregados = grupo.equipos.filter(
+            // Equipos no agregados (incluye en_reposo, pero solo para contar y mostrar)
+            const equiposFiltrados = grupo.equipos.filter(
               (eq) =>
                 !formData.equipment?.some((sel) => sel.id === eq.equipo_id)
             );
-            if (equiposNoAgregados.length === 0) return null;
 
-            const max = equiposNoAgregados.length;
+            // Solo disponibles, NO en reposo, para seleccionar/agregar
+            const cantidadDisponibles = equiposFiltrados.filter(
+              (eq) => !eq.en_reposo
+            ).length;
+
+            // Mostrar aunque no haya disponibles (por si todos están en reposo)
+            if (equiposFiltrados.length === 0) return null;
 
             return (
               <div
@@ -562,13 +566,27 @@ export default function EquiposSelect({
                   )}
 
                   <div className="card-body">
-                    <h5 className="card-title text-capitalize mb-1">
+                    <h5 className="card-title text-capitalize mb-1 d-flex justify-content-between align-items-center">
                       {grupo.nombre_modelo}
+                      {grupo.en_reposo > 0 && (
+                        <span className="badge bg-danger ms-2">
+                          {grupo.en_reposo} en reposo
+                        </span>
+                      )}
                     </h5>
                     <p className="mb-1 text-muted">
                       Marca: {grupo.nombre_marca}
                     </p>
-                    <p className="mb-2 text-bgpri fw-bold">{max} disponibles</p>
+                    <div className="mb-2">
+                      <span className="fw-bold text-bgpri me-2">
+                        {cantidadDisponibles} disponibles
+                      </span>
+                      {grupo.en_reposo > 0 && (
+                        <span className="badge bg-danger">
+                          {grupo.en_reposo} en reposo
+                        </span>
+                      )}
+                    </div>
 
                     <div className="d-flex align-items-center">
                       <input
@@ -576,7 +594,7 @@ export default function EquiposSelect({
                         className="form-control form-control-sm me-2"
                         style={{ width: "80px" }}
                         min={0}
-                        max={max}
+                        max={cantidadDisponibles}
                         value={cantidadInputs[grupo.modelo_id] || ""}
                         placeholder="0"
                         onChange={(e) =>
@@ -585,12 +603,13 @@ export default function EquiposSelect({
                             parseInt(e.target.value) || 0
                           )
                         }
+                        disabled={cantidadDisponibles === 0}
                       />
                       <button
                         type="button"
                         className="btn btn-sm btn-success bgpri"
                         onClick={() => agregarEquipo(grupo)}
-                        disabled={max <= 0}
+                        disabled={cantidadDisponibles === 0}
                       >
                         Agregar
                       </button>
@@ -677,6 +696,7 @@ export default function EquiposSelect({
                           imagen_normal: null,
                           modelo_path: equipoAEditar.modelo_path ?? null,
                           escala: equipoAEditar.escala,
+                          en_reposo: equipoAEditar.en_reposo,
                         });
                       return { ...grupo, equipos: nuevaLista };
                     })

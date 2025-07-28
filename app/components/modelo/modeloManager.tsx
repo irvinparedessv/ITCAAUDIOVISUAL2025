@@ -220,7 +220,7 @@ export default function ModeloManager() {
           value={search}
           onChange={handleSearchChange}
         />
-        <Button onClick={handleShow}>Agregar</Button>
+        <Button onClick={() => handleShow()}>Agregar</Button>
       </InputGroup>
 
       <Table striped bordered hover>

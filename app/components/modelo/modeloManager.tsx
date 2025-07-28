@@ -1,24 +1,35 @@
 import { useEffect, useState, useCallback } from "react";
 import {
-  Table,
   Button,
-  Modal,
-  Form,
-  Pagination,
-  InputGroup,
   Spinner,
+  Form,
+  InputGroup,
+  Badge,
+  Modal,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import debounce from "lodash.debounce";
 import toast from "react-hot-toast";
 import api from "../../api/axios";
-import { FaSave, FaTimes } from "react-icons/fa";
+import { 
+  FaSave, 
+  FaTimes, 
+  FaEdit, 
+  FaTrash, 
+  FaLongArrowAltLeft, 
+  FaPlus, 
+  FaFilter, 
+  FaSearch,
+  FaImages
+} from "react-icons/fa";
+import PaginationComponent from "~/utils/Pagination";
 
 interface Modelo {
   id: number;
   nombre: string;
   marca_id: number;
   marca: { nombre: string };
+  equipos_count?: number;
 }
 
 interface Marca {
@@ -29,15 +40,18 @@ interface Marca {
 export default function ModeloManager() {
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [perPage] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
+  const [filters, setFilters] = useState({
+    search: "",
+    page: 1,
+    perPage: 5,
+  });
+  const [totalPaginas, setTotalPaginas] = useState(1);
   const [loading, setLoading] = useState(false);
   const [loadingMarcas, setLoadingMarcas] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formValidated, setFormValidated] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [editing, setEditing] = useState<Modelo | null>(null);
   const [formData, setFormData] = useState({ nombre: "", marca_id: "" });
 
@@ -62,52 +76,51 @@ export default function ModeloManager() {
     }
   };
 
-  const fetchModelos = async (
-    searchText: string = "",
-    currentPage: number = 1
-  ) => {
+  const fetchModelos = async () => {
     setLoading(true);
     try {
       const res = await api.get("/mod/modelos", {
-        params: { search: searchText, perPage, page: currentPage },
+        params: { 
+          search: filters.search, 
+          perPage: filters.perPage, 
+          page: filters.page 
+        },
       });
 
       const data = res.data;
       if (Array.isArray(data.data)) {
         setModelos(data.data);
-        setTotalPages(data.last_page ?? 1);
+        setTotalPaginas(data.last_page ?? 1);
       } else {
         console.error("❌ Respuesta inesperada de modelos:", data);
         setModelos([]);
-        setTotalPages(1);
+        setTotalPaginas(1);
       }
     } catch (err) {
       console.error("Error al cargar modelos:", err);
       setModelos([]);
-      setTotalPages(1);
+      setTotalPaginas(1);
     } finally {
       setLoading(false);
     }
   };
 
   const debouncedFetch = useCallback(
-    debounce((val: string) => {
-      fetchModelos(val, 1);
-      setPage(1);
+    debounce(() => {
+      fetchModelos();
     }, 500),
     []
   );
 
-  const handleSearchChange = (e: React.ChangeEvent<any>) => {
-    const val = e.target.value;
-    setSearch(val);
-    debouncedFetch(val);
-  };
+  useEffect(() => {
+    fetchModelos();
+    fetchMarcas();
+  }, [filters.page]);
 
   useEffect(() => {
-    fetchModelos(search, page);
-    fetchMarcas();
-  }, [page]);
+    debouncedFetch();
+    return () => debouncedFetch.cancel();
+  }, [filters.search]);
 
   const handleShow = (modelo?: Modelo) => {
     if (modelo) {
@@ -128,8 +141,24 @@ export default function ModeloManager() {
     setFormValidated(false);
   };
 
-  const handleChange = (e: React.ChangeEvent<any>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleFilterUpdate = (key: string, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value,
+      page: 1,
+    }));
+  };
+
+  const handlePageChange = (page: number) => {
+    setFilters(prev => ({ ...prev, page }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      search: "",
+      page: 1,
+      perPage: 5,
+    });
   };
 
   const handleSubmit = async () => {
@@ -149,7 +178,7 @@ export default function ModeloManager() {
         await api.post("/mod/modelos", formData);
         toast.success("Modelo creado correctamente.");
       }
-      fetchModelos(search, page);
+      fetchModelos();
       handleClose();
     } catch (err) {
       console.error("Error al guardar modelo:", err);
@@ -159,129 +188,272 @@ export default function ModeloManager() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    toast.custom((t) => (
-      <div className="bg-white p-3 rounded shadow-sm">
-        ¿Eliminar modelo?
-        <div className="mt-2 d-flex gap-2">
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={async () => {
-              try {
-                await api.delete(`/mod/modelos/${id}`);
-                fetchModelos(search, page);
-                toast.dismiss(t.id);
-                toast.success("Modelo eliminado correctamente.");
-              } catch (err: any) {
-                toast.dismiss(t.id);
-                const msg =
-                  err?.response?.data?.message ||
-                  "Error al eliminar el modelo.";
-                toast.error(msg);
-              }
+  const confirmarEliminacion = async (id: number) => {
+    const modelo = modelos.find(m => m.id === id);
+    if (!modelo) {
+      toast.error("Modelo no encontrado");
+      return;
+    }
+
+    // Verificar si tiene equipos asociados
+    if (modelo.equipos_count && modelo.equipos_count > 0) {
+      toast.error(
+        `No se puede eliminar "${modelo.nombre}" porque tiene ${modelo.equipos_count} equipo(s) asociado(s)`,
+        { duration: 5000 }
+      );
+      return;
+    }
+
+    const toastId = `eliminar-modelo-${id}`;
+    toast.dismiss();
+
+    toast(
+      (t) => (
+        <div>
+          <p>
+            ¿Seguro que deseas eliminar el modelo{" "}
+            <strong>{modelo.nombre}</strong>?
+          </p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={async () => {
+                try {
+                  await api.delete(`/mod/modelos/${id}`);
+                  toast.dismiss(t.id);
+                  toast.success(
+                    `Modelo "${modelo.nombre}" eliminado correctamente`,
+                    { duration: 4000 }
+                  );
+                  await fetchModelos();
+                } catch (err: any) {
+                  toast.dismiss(t.id);
+                  const msg =
+                    err?.response?.data?.message ||
+                    "Error al eliminar el modelo.";
+                  toast.error(msg, { duration: 4000 });
+                }
+              }}
+            >
+              Sí, eliminar
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 10000,
+        id: toastId,
+      }
+    );
+  };
+
+  const handleBack = () => {
+    navigate("/equipos");
+  };
+
+  return (
+    <div className="table-responsive rounded shadow p-3 mt-4">
+      {/* Encabezado */}
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+        <div className="d-flex align-items-center gap-3">
+          <FaLongArrowAltLeft
+            onClick={handleBack}
+            title="Regresar"
+            style={{
+              cursor: 'pointer',
+              fontSize: '2rem',
             }}
-          >
-            Confirmar
-          </Button>
+          />
+          <h2 className="fw-bold m-0">Gestión de Modelos</h2>
+        </div>
+
+        <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
           <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => toast.dismiss(t.id)}
+            variant="primary"
+            className="d-flex align-items-center gap-2"
+            onClick={() => handleShow()}
           >
-            Cancelar
+            <FaPlus />
+            Nuevo Modelo
           </Button>
         </div>
       </div>
-    ));
-  };
 
-  const renderPagination = () => (
-    <Pagination>
-      {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-        <Pagination.Item
-          key={number}
-          active={number === page}
-          onClick={() => setPage(number)}
-        >
-          {number}
-        </Pagination.Item>
-      ))}
-    </Pagination>
-  );
+      {/* Buscador + Filtros */}
+      <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
+        <div className="d-flex flex-grow-1">
+          <InputGroup className="flex-grow-1">
+            <InputGroup.Text>
+              <FaSearch />
+            </InputGroup.Text>
+            <Form.Control
+              type="text"
+              placeholder="Buscar por nombre"
+              value={filters.search}
+              onChange={(e) => handleFilterUpdate("search", e.target.value)}
+            />
+            {filters.search && (
+              <Button
+                variant="outline-secondary"
+                onClick={() => handleFilterUpdate("search", "")}
+              >
+                <FaTimes />
+              </Button>
+            )}
+          </InputGroup>
+        </div>
 
-  return (
-    <div className="p-4">
-      <h3>Gestión de Modelos</h3>
+      </div>
 
-      <InputGroup className="mb-3 w-50">
-        <Form.Control
-          placeholder="Buscar por nombre..."
-          value={search}
-          onChange={handleSearchChange}
-        />
-        <Button onClick={() => handleShow()}>Agregar</Button>
-      </InputGroup>
+      {showFilters && (
+        <div className="p-3 rounded mb-4 border border-secondary">
+          <div className="row g-3">
+            <div className="col-12">
+              <Button
+                variant="outline-danger"
+                onClick={resetFilters}
+                className="w-100"
+              >
+                <FaTimes className="me-2" />
+                Limpiar filtros
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Marca</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan={3} className="text-center">
-                <Spinner animation="border" size="sm" /> Cargando modelos...
-              </td>
-            </tr>
-          ) : modelos.length === 0 ? (
-            <tr>
-              <td colSpan={3} className="text-center">
-                No hay resultados
-              </td>
-            </tr>
-          ) : (
-            modelos.map((modelo) => (
-              <tr key={modelo.id}>
-                <td>{modelo.nombre}</td>
-                <td>{modelo.marca?.nombre}</td>
-                <td>
-                  <Button
-                    variant="warning"
-                    size="sm"
-                    onClick={() => handleShow(modelo)}
-                    className="me-2"
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    variant="info"
-                    size="sm"
-                    className="me-2"
-                    onClick={() => navigate(`/modelos/gestionar/${modelo.id}`)}
-                  >
-                    Imágenes
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(modelo.id)}
-                  >
-                    Eliminar
-                  </Button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </Table>
+      {loading ? (
+        <div className="text-center my-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando datos...</p>
+        </div>
+      ) : (
+        <>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle text-center">
+              <thead className="table-dark">
+                <tr>
+                  <th className="rounded-top-start">Nombre</th>
+                  <th>Marca</th>
+                  <th className="rounded-top-end">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modelos.length > 0 ? (
+                  modelos.map((modelo) => (
+                    <tr key={modelo.id}>
+                      <td className="fw-bold">{modelo.nombre}</td>
+                      <td>
+                        <Badge bg="info" pill>
+                          {modelo.marca?.nombre || 'Sin marca'}
+                        </Badge>
+                      </td>
+                      <td>
+                        <div className="d-flex justify-content-center gap-2">
+                          <Button
+                            variant="outline-primary"
+                            className="rounded-circle"
+                            title="Editar modelo"
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out"
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => handleShow(modelo)}
+                          >
+                            <FaEdit />
+                          </Button>
 
-      {renderPagination()}
+                          <Button
+                            variant="outline-info"
+                            className="rounded-circle"
+                            title="Gestionar imágenes"
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out"
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => navigate(`/modelos/gestionar/${modelo.id}`)}
+                          >
+                            <FaImages />
+                          </Button>
 
+                          <Button
+                            variant="outline-danger"
+                            className="rounded-circle"
+                            title={
+                              (modelo.equipos_count || 0) > 0
+                                ? `No se puede eliminar (${modelo.equipos_count} equipo(s) asociado(s))`
+                                : "Eliminar modelo"
+                            }
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                              opacity: (modelo.equipos_count || 0) > 0 ? 0.6 : 1,
+                              cursor: (modelo.equipos_count || 0) > 0 ? "not-allowed" : "pointer",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!(modelo.equipos_count || 0)) {
+                                e.currentTarget.style.transform = "scale(1.15)";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "scale(1)";
+                            }}
+                            onClick={() => {
+                              if (!(modelo.equipos_count || 0)) {
+                                confirmarEliminacion(modelo.id);
+                              }
+                            }}
+                            disabled={(modelo.equipos_count || 0) > 0}
+                          >
+                            <FaTrash />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="text-muted text-center">
+                      No se encontraron modelos.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <PaginationComponent
+            page={filters.page}
+            totalPages={totalPaginas}
+            onPageChange={handlePageChange}
+          />
+        </>
+      )}
+
+      {/* Modal para crear/editar */}
       <Modal show={showModal} onHide={handleClose}>
         <Modal.Header closeButton>
           <Modal.Title>
@@ -297,7 +469,7 @@ export default function ModeloManager() {
                 type="text"
                 name="nombre"
                 value={formData.nombre}
-                onChange={handleChange}
+                onChange={(e) => setFormData({...formData, nombre: e.target.value})}
                 isInvalid={formValidated && formData.nombre.trim() === ""}
               />
               <Form.Control.Feedback type="invalid">
@@ -318,7 +490,7 @@ export default function ModeloManager() {
                     required
                     name="marca_id"
                     value={formData.marca_id}
-                    onChange={handleChange}
+                    onChange={(e) => setFormData({...formData, marca_id: e.target.value})}
                     isInvalid={formValidated && formData.marca_id === ""}
                   >
                     <option value="">Seleccionar marca</option>
@@ -341,17 +513,22 @@ export default function ModeloManager() {
             variant="primary"
             onClick={handleSubmit}
             disabled={submitting}
+            className="d-flex align-items-center gap-2"
           >
-            {submitting && <Spinner size="sm" className="me-2" />}
-            <FaSave className="me-2" />
+            {submitting ? (
+              <Spinner size="sm" animation="border" />
+            ) : (
+              <FaSave />
+            )}
             {editing ? "Actualizar" : "Crear"}
           </Button>
           <Button
             variant="secondary"
             onClick={handleClose}
             disabled={submitting}
+            className="d-flex align-items-center gap-2"
           >
-            <FaTimes className="me-2" />
+            <FaTimes />
             Cancelar
           </Button>
         </Modal.Footer>

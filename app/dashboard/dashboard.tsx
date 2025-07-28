@@ -12,8 +12,9 @@ import {
   FaRegFileAlt,
   FaUsers,
   FaImage,
+  FaToolbox,
 } from "react-icons/fa";
-import { FaComputer, FaBookmark, FaMapLocation } from "react-icons/fa6";
+import { FaComputer, FaBookmark, FaMapLocation, FaScrewdriverWrench } from "react-icons/fa6";
 import { Card, Container, Row, Col } from "react-bootstrap";
 import { Role } from "../types/roles";
 import toast from "react-hot-toast";
@@ -99,6 +100,12 @@ export default function Dashboard() {
               icon={<FaImage size={24} />}
               link="/imagenes"
               description="Administracion de Imagenes"
+            />
+            <DashboardCard
+              title="Mantenimiento"
+              icon={<FaToolbox size={24} />}
+              link="/mantenimiento de Equipos"
+              description="Gestión de mantenimiento de equipos audiovisuales"
             />
           </Row>
         </div>

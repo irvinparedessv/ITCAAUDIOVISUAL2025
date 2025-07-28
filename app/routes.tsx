@@ -1,4 +1,3 @@
-// routes.tsx
 import { createBrowserRouter } from "react-router-dom";
 import ProtectedLayout from "./layouts/protected-layout";
 
@@ -69,6 +68,21 @@ import ModeloManager from "./components/modelo/modeloManager";
 import ModelUploader from "./components/renders/components/CreationUpload";
 import GestorModelos from "./components/renders/components/CreationUpload";
 
+// Importa los componentes de mantenimientos
+import MantenimientoList from "./components/mantenimiento/mantenimientoList";
+import FormMantenimiento from "./components/FormMantenimiento";
+import MantenimientoEdit from "./components/mantenimiento/mantenimientoEdit";
+//Tipo Mantenimiento
+import TipoMantenimientoList from "./components/tipoMantenimiento/tipoMantenimientoList";
+import TipoMantenimientoEdit from "./components/tipoMantenimiento/tipoMantenimientoEdit";
+import FormTipoMantenimiento from "./components/FormTipoMantenimiento"; // si planeas editar también
+
+//Futuro Mantenimientos
+import FuturoMantenimientoList from "./components/futuroMantenimiento/futuroMantenimientoList";
+import FormFuturoMantenimiento from "./components/FormFuturoMantenimiento";
+import FuturoMantenimientoEdit from "./components/futuroMantenimiento/futuroMantenimientoEdit";
+
+
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -100,11 +114,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: <App />, // ← App ahora es el layout principal
+    element: <App />, // layout principal
     children: [
       {
         path: "/",
-        element: <ProtectedLayout />, // ← layout adicional si querés
+        element: <ProtectedLayout />, // layout protegido
         children: [
           {
             index: true,
@@ -258,7 +272,6 @@ const router = createBrowserRouter([
             path: "modelos/gestionar/:id",
             element: <GestorModelos />,
           },
-
           {
             path: "administracion",
             element: <OpcionesPanel />,
@@ -310,6 +323,50 @@ const router = createBrowserRouter([
           {
             path: "prediccionAula",
             element: <PrediccionAulaPage />,
+          },
+
+          // --- RUTAS DE MANTENIMIENTOS ---
+          {
+            path: "mantenimiento",
+            element: <MantenimientoList />,
+          },
+          {
+            path: "mantenimientos/nuevo",
+            element: <FormMantenimiento />,
+          },
+          {
+            path: "mantenimientos/editar/:id",
+            element: <MantenimientoEdit />,
+          },
+
+          // RUTAS TIPO MANTENIMIENTO
+
+          {
+            path: "tipoMantenimiento",
+            element: <TipoMantenimientoList />,
+          },
+          {
+            path: "tipoMantenimiento/nuevo",
+            element: <FormTipoMantenimiento />,
+          },
+          {
+            path: "tipoMantenimiento/editar/:id",
+            element: <TipoMantenimientoEdit />,
+          },
+
+          //RUTAS FUTUROS MANTENIMIENTOS
+
+          {
+            path: "futuroMantenimiento",
+            element: <FuturoMantenimientoList />,
+          },
+          {
+            path: "futuroMantenimiento/crear",
+            element: <FormFuturoMantenimiento />,
+          },
+          {
+            path: "futuroMantenimiento/editar/:id",
+            element: <FuturoMantenimientoEdit />,
           },
         ],
       },

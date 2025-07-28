@@ -7,6 +7,7 @@ export interface TipoEquipo {
   categoria?: Categoria; // ✅ importante para mostrar nombre de categoría
   created_at?: string;
   updated_at?: string;
+  equipos_count?: number; // <-- Añade esta línea
 }
 
 export interface Categoria {

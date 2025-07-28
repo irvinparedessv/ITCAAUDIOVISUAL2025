@@ -194,9 +194,28 @@ export default function TipoEquipoForm({
       onSuccess?.();
 
     } catch (error) {
-      console.error("Error al guardar el tipo de equipo:", error);
-      toast.error("Error al guardar el tipo de equipo");
-    } finally {
+  console.error("Error al guardar el tipo de equipo:", error);
+
+  if (error.response?.status === 422) {
+    // Laravel 422 validation error
+    const mensaje = error.response.data.message || "Datos inválidos.";
+
+    if (mensaje.includes("nombre ya existe") || mensaje.includes("nombre")) {
+      toast.error("Ya existe un tipo de equipo con ese nombre.");
+    } else {
+      toast.error(mensaje);
+    }
+  } else if (
+    error.response?.data?.error?.includes("Duplicate entry") ||
+    error.response?.data?.message?.includes("Duplicate entry")
+  ) {
+    // Fallback si falla por error SQL
+    toast.error("Ya existe un tipo de equipo con ese nombre.");
+  } else {
+    toast.error("Error al guardar el tipo de equipo.");
+  }
+}
+finally {
       setIsSubmitting(false);
     }
   };

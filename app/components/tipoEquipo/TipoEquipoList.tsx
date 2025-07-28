@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getTipoEquipo } from "../../services/tipoEquipoService";
+import { checkEquiposAsociados, checkEquiposMasivo, getTipoEquipo } from "../../services/tipoEquipoService";
 import type { TipoEquipo } from "app/types/tipoEquipo";
 import toast from "react-hot-toast";
 import { FaEdit, FaTrash, FaLongArrowAltLeft, FaPlus, FaFilter, FaTimes, FaSearch } from "react-icons/fa";
@@ -25,6 +25,44 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const [equiposAsociados, setEquiposAsociados] = useState<Record<number, boolean>>({});
+
+  // Llamar esta función cuando se cargan los tipos
+  useEffect(() => {
+    cargarTipos();
+  }, [filters.page]);
+
+
+
+  // Modificar la función cargarTipos para verificar equipos asociados
+
+  // services/tipoEquipoService.ts
+
+
+  // En tu componente
+  const cargarTipos = async () => {
+    setLoading(true);
+    try {
+      const res = await getTipoEquipo(filters.page);
+
+      // Verificación MASIVA y mezcla de datos
+      const ids = res.data.map(tipo => tipo.id);
+      const conteoEquipos = await checkEquiposMasivo(ids);
+
+      const tiposActualizados = res.data.map(tipo => ({
+        ...tipo,
+        equipos_count: conteoEquipos[tipo.id] || 0
+      }));
+
+      setTipos(tiposActualizados);
+      setTotalPaginas(res.last_page);
+    } catch (error) {
+      console.error("Error al cargar tipos:", error);
+      toast.error("Error al cargar datos");
+    } finally {
+      setLoading(false);
+    }
+  };
   // Función para determinar el color según la categoría
   const getCategoryColor = (categoryName: string) => {
     if (!categoryName) return 'secondary';
@@ -33,19 +71,7 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
       lowerName.includes('insumo') ? 'info' : 'light';
   };
 
-  const cargarTipos = async () => {
-    setLoading(true);
-    try {
-      const res = await getTipoEquipo(filters.page);
-      setTipos(res.data);
-      setTotalPaginas(res.last_page);
-    } catch (error) {
-      console.error("Error al cargar tipos de equipo:", error);
-      toast.error("Error al cargar tipos de equipo");
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   useEffect(() => {
     cargarTipos();
@@ -80,9 +106,22 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
   };
 
   const confirmarEliminacion = async (id: number) => {
-    const tipoAEliminar = tipos.find((tipo) => tipo.id === id);
-    if (!tipoAEliminar) return;
+    const tipo = tipos.find(t => t.id === id);
+    if (!tipo) {
+      toast.error("Tipo de equipo no encontrado");
+      return;
+    }
 
+    // Verificación directa con datos precargados
+    if (tipo.equipos_count && tipo.equipos_count > 0) {
+      toast.error(
+        `No se puede eliminar "${tipo.nombre}" porque tiene ${tipo.equipos_count} equipo(s) asociado(s)`,
+        { duration: 5000 }
+      );
+      return;
+    }
+
+    // Mostrar diálogo de confirmación
     const toastId = `eliminar-tipo-${id}`;
     toast.dismiss();
 
@@ -91,17 +130,29 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
         <div>
           <p>
             ¿Seguro que deseas eliminar el tipo de equipo{" "}
-            <strong>{tipoAEliminar.nombre}</strong>?
+            <strong>{tipo.nombre}</strong>?
           </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <Button
               variant="danger"
               size="sm"
               onClick={async () => {
-                await onDelete(id);
-                toast.dismiss(t.id);
-                toast.success(`Tipo de equipo ${tipoAEliminar.nombre} eliminado`);
-                cargarTipos();
+                try {
+                  await onDelete(id);
+                  toast.dismiss(t.id);
+                  toast.success(
+                    `Tipo de equipo "${tipo.nombre}" eliminado correctamente`,
+                    { duration: 4000 }
+                  );
+                  await cargarTipos();
+                  onSuccess(); // Llama a la función de éxito si existe
+                } catch (error) {
+                  console.error("Error al eliminar:", error);
+                  toast.error(
+                    `Error al eliminar "${tipo.nombre}"`,
+                    { duration: 4000 }
+                  );
+                }
               }}
             >
               Sí, eliminar
@@ -117,7 +168,7 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
         </div>
       ),
       {
-        duration: 8000,
+        duration: 10000, // 10 segundos para decidir
         id: toastId,
       }
     );
@@ -275,19 +326,38 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
                           <Button
                             variant="outline-danger"
                             className="rounded-circle"
-                            title="Eliminar tipo"
+                            title={
+                              (tipo.equipos_count || 0) > 0
+                                ? `No se puede eliminar (${tipo.equipos_count} equipo(s) asociado(s))`
+                                : "Eliminar tipo"
+                            }
                             style={{
                               width: "44px",
                               height: "44px",
-                              transition: "transform 0.2s ease-in-out"
+                              transition: "transform 0.2s ease-in-out",
+                              opacity: (tipo.equipos_count || 0) > 0 ? 0.6 : 1,
+                              cursor: (tipo.equipos_count || 0) > 0 ? "not-allowed" : "pointer",
+                              transform: "scale(1)" // Estado inicial
                             }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
+                            onMouseEnter={(e) => {
+                              if (!(tipo.equipos_count || 0)) {
+                                e.currentTarget.style.transform = "scale(1.15)";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "scale(1)";
+                            }}
+                            onClick={() => {
+                              if (!(tipo.equipos_count || 0)) {
+                                confirmarEliminacion(tipo.id);
+                              }
+                            }}
+                            disabled={(tipo.equipos_count || 0) > 0}
+                            aria-label={
+                              (tipo.equipos_count || 0) > 0
+                                ? "Deshabilitado: tiene equipos asociados"
+                                : "Eliminar tipo de equipo"
                             }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                            onClick={() => confirmarEliminacion(tipo.id)}
                           >
                             <FaTrash />
                           </Button>

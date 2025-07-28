@@ -94,3 +94,27 @@ export async function createCaracteristica(data: {
   const response = await api.post("/nuevaCaracteristica", data);
   return response.data;
 }
+
+// Cambia estas funciones para que coincidan con tus rutas Laravel
+export const checkEquiposAsociados = async (tipoEquipoId: number): Promise<boolean> => {
+  try {
+    const res = await api.get(`/tipo-equipo/${tipoEquipoId}/check-equipos`);
+    return res.data.tiene_equipos; // Asegúrate que coincide con la respuesta del backend
+  } catch (error) {
+    console.error("Error al verificar equipos asociados:", error);
+    return true; // Por seguridad, asumimos que hay equipos si hay error
+  }
+};
+
+
+export const checkEquiposMasivo = async (ids: number[]): Promise<Record<number, number>> => {
+  try {
+    const response = await api.post('/tipo-equipo/check-equipos-masivo', { ids });
+    return response.data || {}; // Ej: { "1": 5, "2": 0 }
+  } catch (error) {
+    console.error("Error en verificación masiva:", error);
+    return {};
+  }
+};
+
+

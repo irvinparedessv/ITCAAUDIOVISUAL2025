@@ -232,11 +232,16 @@ export default function useReservationFormLogic(reservaId?: string | null) {
       formPayload.append("modelo_3d", formData.modelFile); // nombre que usará backend
     }
     console.log(formData.equipment);
+    let withReposo = false;
     formData.equipment.forEach((eq, index) => {
+      console.log(eq);
+      if (eq.en_reposo) {
+        withReposo = true;
+      }
       formPayload.append(`equipo[${index}][id]`, eq.id.toString());
       formPayload.append(`equipo[${index}][cantidad]`, "1");
     });
-
+    formPayload.append(`en_reposo`, String(withReposo));
     try {
       setLoading((prev) => ({ ...prev, submit: true }));
 

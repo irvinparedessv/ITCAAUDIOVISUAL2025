@@ -225,7 +225,7 @@ export default function GestorModelosAula() {
   }
 
   const handleBack = () => {
-    navigate("/aulas");
+    navigate("/rooms");
   };
 
   return (

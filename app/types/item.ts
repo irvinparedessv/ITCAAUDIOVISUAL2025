@@ -25,8 +25,11 @@ export interface Caracteristica {
   tipo_dato: 'string' | 'integer' | 'decimal' | 'boolean';
 }
 
-export interface CaracteristicaValor {
+export interface CaracteristicaItem {
+  id?: number; // Opcional según tu backend
   caracteristica_id: number;
+  nombre: string;
+  tipo_dato?: 'string' | 'integer' | 'decimal' | 'boolean'; // Opcional
   valor: string | number | boolean;
 }
 
@@ -45,6 +48,7 @@ export interface ItemBase {
   updated_at?: string;
   tipo: ItemTipo;
   modelo?: Modelo;
+  caracteristicas?: CaracteristicaItem[];
   asignaciones?: Array<{
     id: number;
     tipo: 'equipo' | 'insumo';
@@ -79,28 +83,28 @@ export interface CaracteristicaConValor extends Caracteristica {
 }
 
 export interface ItemConCaracteristicas extends ItemBase {
-  caracteristicas: CaracteristicaConValor[];
+  caracteristicas: CaracteristicaItem[];
 }
 
 // Actualiza tus DTOs para incluir características
 export interface EquipoCreateDTO extends Omit<Equipo, 'id' | 'tipo' | 'imagen_url' | 'created_at' | 'updated_at'> {
   imagen?: File | null;
-  caracteristicas?: CaracteristicaValor[]; // Nuevo campo
+  caracteristicas?: CaracteristicaItem[]; // Nuevo campo
 }
 
 export interface InsumoCreateDTO extends Omit<Insumo, 'id' | 'tipo' | 'imagen_url' | 'created_at' | 'updated_at'> {
   imagen?: File | null;
-  caracteristicas?: CaracteristicaValor[]; // Nuevo campo
+  caracteristicas?: CaracteristicaItem[]; // Nuevo campo
 }
 
 export interface EquipoUpdateDTO extends Partial<EquipoCreateDTO> {
   id: number;
-  caracteristicas?: CaracteristicaValor[]; // Nuevo campo
+  caracteristicas?: CaracteristicaItem[]; // Nuevo campo
 }
 
 export interface InsumoUpdateDTO extends Partial<InsumoCreateDTO> {
   id: number;
-  caracteristicas?: CaracteristicaValor[]; // Nuevo campo
+  caracteristicas?: CaracteristicaItem[]; // Nuevo campo
 }
 
 // Tipo mixto para resultados

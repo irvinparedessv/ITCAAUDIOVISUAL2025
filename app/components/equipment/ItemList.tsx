@@ -125,50 +125,6 @@ export default function ItemList({
         return tipo ? tipo.nombre : "Desconocido";
     };
 
-    const handleImageClick = (imageUrl: string, itemName: string) => {
-        setSelectedItemImage({
-            imageUrl,
-            name: itemName
-        });
-        setShowImageModal(true);
-    };
-
-    const confirmarEliminacion = (id: number, name: string, tipo: ItemTipo) => {
-        const toastId = `delete-confirmation-${id}`;
-        toast.dismiss();
-
-        toast(
-            (t) => (
-                <div>
-                    <p>¿Seguro que deseas eliminar el {tipo} <strong>{name}</strong>?</p>
-                    <div className="d-flex justify-content-end gap-2 mt-2">
-                        <button
-                            className="btn btn-sm btn-danger"
-                            onClick={async () => {
-                                await onDelete(id, tipo);
-                                toast.dismiss(t.id);
-                                toast.success(`${tipo === 'equipo' ? 'Equipo' : 'Insumo'} "${name}" eliminado`, { id: toastId });
-                                fetchItems();
-                            }}
-                        >
-                            Sí, eliminar
-                        </button>
-                        <button
-                            className="btn btn-sm btn-secondary"
-                            onClick={() => toast.dismiss(t.id)}
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            ),
-            {
-                duration: 5000,
-                id: toastId,
-            }
-        );
-    };
-
 
     const handleFilterUpdate = <K extends keyof ItemFilters>(
         key: K,
@@ -248,7 +204,6 @@ export default function ItemList({
             setAsignando(false);
         }
     };
-
 
     const cargarInsumosDisponibles = async () => {
         if (!selectedEquipo) return;
@@ -392,7 +347,7 @@ export default function ItemList({
 
             {/* Modal Asignaciones */}
             <Modal show={showAsignacionesModal} onHide={() => setShowAsignacionesModal(false)} size="lg">
-                <Modal.Header closeButton>
+                <Modal.Header className="text-white py-3" style={{ backgroundColor: "#b1291d" }} closeButton>
                     <Modal.Title>Detalles de asignaciones</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
@@ -400,6 +355,7 @@ export default function ItemList({
                         <table className="table">
                             <thead>
                                 <tr>
+                                    <th>#</th>
                                     <th>Tipo</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
@@ -410,6 +366,7 @@ export default function ItemList({
                             <tbody>
                                 {currentAsignaciones.map((asignacion) => (
                                     <tr key={asignacion.id}>
+                                        <td>{asignacion.id}</td>
                                         <td>
                                             <Badge bg={asignacion.tipo === 'equipo' ? 'primary' : 'info'}>
                                                 {asignacion.tipo}
@@ -479,9 +436,6 @@ export default function ItemList({
                 </Button>
             </div>
 
-
-
-
             {loading && (
                 <div className="text-center my-5">
                     <Spinner animation="border" variant="primary" />
@@ -535,7 +489,7 @@ export default function ItemList({
                                     <th>Cantidad</th>
                                     <th>Reposo</th>
                                     <th>Detalles</th>
-                                    <th>Imagen</th>
+                                    <th>Caracteristicas</th>
                                     <th>Asignaciones</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -579,22 +533,28 @@ export default function ItemList({
 
                                                 <td>{item.detalles || 'N/A'}</td>
                                                 <td>
-                                                    {item.imagen_url ? (
-                                                        <img
-                                                            src={item.imagen_url}
-                                                            alt={item.detalles || 'Item'}
-                                                            style={{
-                                                                width: "60px",
-                                                                height: "60px",
-                                                                objectFit: "cover",
-                                                                borderRadius: "8px",
-                                                                cursor: "pointer"
-                                                            }}
-                                                            onClick={() => item.imagen_url && handleImageClick(item.imagen_url, item.detalles || 'Item')}
-                                                        />
-                                                    ) : (
-                                                        <span className="text-muted">Sin imagen</span>
-                                                    )}
+                                                    <div style={{ maxWidth: "200px" }}>
+                                                        {(item.caracteristicas || []).length > 0 ? (
+                                                            <ul className="list-unstyled mb-0">
+                                                                {(item.caracteristicas || []).slice(0, 3).map((caracteristica) => (
+                                                                    <li key={caracteristica.caracteristica_id}>
+                                                                        <small>
+                                                                            <strong>{caracteristica.nombre}:</strong> {caracteristica.valor}
+                                                                        </small>
+                                                                    </li>
+                                                                ))}
+                                                                {(item.caracteristicas || []).length > 3 && (
+                                                                    <li>
+                                                                        <small className="text-muted">
+                                                                            +{(item.caracteristicas || []).length - 3} más...
+                                                                        </small>
+                                                                    </li>
+                                                                )}
+                                                            </ul>
+                                                        ) : (
+                                                            <span className="text-muted">Sin características</span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     {asignaciones.length > 0 ? (

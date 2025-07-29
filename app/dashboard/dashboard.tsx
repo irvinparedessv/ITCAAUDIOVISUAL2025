@@ -165,6 +165,12 @@ export default function Dashboard() {
               description="Leer Codigo QR"
             />
             <DashboardCard
+              title="Gestión de Equipos"
+              icon={<FaTools size={24} />}
+              link="/equipos"
+              description="Administrar inventario de equipos"
+            />
+            <DashboardCard
               title="Equipos Disponibles"
               icon={<FaComputer size={24} />}
               link="/equipmentavailability"

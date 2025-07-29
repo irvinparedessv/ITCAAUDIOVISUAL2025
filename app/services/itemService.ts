@@ -14,6 +14,11 @@ import type {
   Insumo,
 } from "../types/item";
 
+export interface CaracteristicaFilter {
+  id: number;
+  valor: string;
+}
+
 export interface ItemFilters {
   tipo?: 'equipos' | 'insumos' | 'todos';
   search?: string;
@@ -23,6 +28,7 @@ export interface ItemFilters {
   marcaId?: number;
   estadoId?: number;
   modeloId?: number;
+  caracteristicas?: CaracteristicaFilter[];
 }
 
 // Asegura que siempre devuelva un array
@@ -56,6 +62,7 @@ export const getItems = async (
     search,
     tipoEquipoId,
     estadoId,
+    caracteristicas, // Nuevo parámetro
     // Agrega aquí otros filtros que necesites
   } = filters;
 
@@ -75,7 +82,11 @@ export const getItems = async (
   if (search) params.search = search;
   if (tipoEquipoId) params.tipo_equipo_id = tipoEquipoId;
   if (estadoId) params.estado_id = estadoId;
-  // Agrega aquí otros filtros de la misma manera
+  
+  // Agrega el filtro de características si existe
+  if (caracteristicas && caracteristicas.length > 0) {
+    params.caracteristicas = JSON.stringify(caracteristicas);
+  }
 
   const res = await api.get(url, { params });
 

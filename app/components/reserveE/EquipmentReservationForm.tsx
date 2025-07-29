@@ -67,7 +67,7 @@ export default function EquipmentReservationForm() {
             label: data.aula.name,
             value: data.aula.id.toString(),
             path_modelo: data.aula.path_modelo,
-            escala: 1,
+            escala: data.aula.escala,
           },
           equipment: data.equipos.map((eq: any) => ({
             id: eq.id,

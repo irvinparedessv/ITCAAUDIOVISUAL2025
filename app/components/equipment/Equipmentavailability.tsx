@@ -235,6 +235,7 @@ export default function EquipmentAvailabilityList() {
               <div style={{ minHeight: "38px" }}>
                 <Select
                   options={modelosDisponibles}
+                  isMulti
                   value={modelosDisponibles.filter((m) =>
                     filtros.modelo_id.includes(m.value)
                   )}
@@ -246,7 +247,11 @@ export default function EquipmentAvailabilityList() {
                         : [],
                     })
                   }
-                  menuPortalTarget={document.body} // Renderiza fuera del contenedor
+                  placeholder="Seleccione modelo(s)"
+                  noOptionsMessage={() => "No hay más modelos disponibles"}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  menuPortalTarget={document.body}
                   styles={{
                     control: (base) => ({
                       ...base,
@@ -257,11 +262,15 @@ export default function EquipmentAvailabilityList() {
                       fontSize: "1rem",
                       fontWeight: 400,
                       padding: "0.4rem",
+                      backgroundColor: "transparent !important", // ← fondo del input
                     }),
                     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                     multiValue: (base) => ({
                       ...base,
-                      backgroundColor: "#e9ecef",
+                      backgroundColor: "transparent", // ← fondo del chip
+                      border: "1px solid #ced4da",     // ← borde sutil (puedes quitarlo)
+                      borderRadius: "0.25rem",
+                      padding: "0 2px",
                     }),
                     multiValueLabel: (base) => ({
                       ...base,
@@ -270,15 +279,16 @@ export default function EquipmentAvailabilityList() {
                     multiValueRemove: (base) => ({
                       ...base,
                       color: "#495057",
+                      cursor: "pointer",
                       ":hover": {
-                        backgroundColor: "#ced4da",
+                        backgroundColor: "#f8f9fa", // ← hover sutil, o pon "transparent"
                         color: "#212529",
                       },
                     }),
                   }}
-                  isMulti
-                  placeholder="Seleccione modelo(s)"
                 />
+
+
               </div>
             </Form.Group>
           </div>
@@ -290,21 +300,21 @@ export default function EquipmentAvailabilityList() {
                 selected={
                   filtros.fecha
                     ? (() => {
-                        const [year, month, day] = filtros.fecha
-                          .split("-")
-                          .map(Number);
-                        const date = new Date();
-                        date.setFullYear(year, month - 1, day);
-                        date.setHours(0, 0, 0, 0);
-                        return date;
-                      })()
+                      const [year, month, day] = filtros.fecha
+                        .split("-")
+                        .map(Number);
+                      const date = new Date();
+                      date.setFullYear(year, month - 1, day);
+                      date.setHours(0, 0, 0, 0);
+                      return date;
+                    })()
                     : null
                 }
                 onChange={(date: Date | null) => {
                   const formatted = date
                     ? `${date.getFullYear()}-${(date.getMonth() + 1)
-                        .toString()
-                        .padStart(2, "0")}-${date
+                      .toString()
+                      .padStart(2, "0")}-${date
                         .getDate()
                         .toString()
                         .padStart(2, "0")}`

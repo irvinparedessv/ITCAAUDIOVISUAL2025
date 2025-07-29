@@ -310,14 +310,110 @@ const router = createBrowserRouter([
             path: "prediccionAula",
             element: <PrediccionAulaPage />,
           },
+          // --- RUTAS DE MANTENIMIENTOS ---
+
+          {
+
+            path: "mantenimiento",
+
+            element: <MantenimientoList />,
+
+          },
+
+          {
+
+            path: "mantenimientos/nuevo",
+
+            element: <FormMantenimiento />,
+
+          },
+
+          {
+
+            path: "mantenimientos/editar/:id",
+
+            element: <MantenimientoEdit />,
+
+          },
+
+
+
+          // RUTAS TIPO MANTENIMIENTO
+
+
+
+          {
+
+            path: "tipoMantenimiento",
+
+            element: <TipoMantenimientoList />,
+
+          },
+
+          {
+
+            path: "tipoMantenimiento/nuevo",
+
+            element: <FormTipoMantenimiento />,
+
+          },
+
+          {
+
+            path: "tipoMantenimiento/editar/:id",
+
+            element: <TipoMantenimientoEdit />,
+
+          },
+
+
+
+          //RUTAS FUTUROS MANTENIMIENTOS
+
+
+
+          {
+
+            path: "futuroMantenimiento",
+
+            element: <FuturoMantenimientoList />,
+
+          },
+
+          {
+
+            path: "futuroMantenimiento/crear",
+
+            element: <FormFuturoMantenimiento />,
+
+          },
+
+          {
+
+            path: "futuroMantenimiento/editar/:id",
+
+            element: <FuturoMantenimientoEdit />,
+
+          },
+
         ],
+
       },
+
     ],
+
   },
+
   {
+
     path: "*",
+
     element: <NoEncontrado />,
+
   },
+
 ]);
+
+
 
 export default router;

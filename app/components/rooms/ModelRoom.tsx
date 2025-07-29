@@ -1,28 +1,43 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Form, Alert, Spinner } from "react-bootstrap";
+import { Button, Form, Alert, Spinner } from "react-bootstrap";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import toast from "react-hot-toast";
-import api from "../../../api/axios";
+import api from "../../api/axios";
 import { APIURL, APPLARAVEL } from "~/constants/constant";
-import { FaLongArrowAltLeft, FaSave, FaTimes, FaUpload } from "react-icons/fa";
+import { FaLongArrowAltLeft } from "react-icons/fa";
 
-interface Producto {
+// ===== INTERFACES AJUSTADAS =====
+interface AulaImagen {
   id: number;
-  nombre: string;
-  imagen_normal: string | null;
-  imagen_glb: string | null;
-  escala: number;
+  aula_id: number;
+  image_path: string;
+  is360: boolean;
 }
 
+interface Aula {
+  id: number;
+  name: string;
+  descripcion: string;
+  capacidad_maxima: number;
+  horarios: any[]; // Define mejor si lo usas
+  imagenes: AulaImagen[];
+  path_modelo: string | null;
+  created_at: string;
+  escala: number;
+  updated_at: string;
+}
+
+// Para calcular medidas
 interface Size {
   x: number;
   y: number;
   z: number;
 }
 
+// Modelo GLB
 const ModelObject = ({
   url,
   scale,
@@ -43,7 +58,7 @@ const ModelObject = ({
     box.getSize(size);
     box.getCenter(center);
 
-    cloned.position.x -= center.x;
+    //cloned.position.x -= center.x;
     cloned.position.z -= center.z;
     cloned.position.y += 0.1;
     setBaseOffset(box.min.y);
@@ -62,61 +77,76 @@ const ModelObject = ({
   );
 };
 
-const ReferenceObjects = () => (
+// Salones 4x4 y 8x8
+const ReferenceRooms = () => (
   <>
-    <mesh position={[2, 0.6, 0]}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="orange" transparent opacity={0.4} />
+    <mesh position={[0, 0.01, 0]}>
+      <boxGeometry args={[4, 0.02, 4]} />
+      <meshStandardMaterial color="orange" transparent opacity={0.28} />
     </mesh>
-    <mesh position={[-2, 1, 0]}>
-      <cylinderGeometry args={[0.25, 0.25, 1.8, 32]} />
-      <meshStandardMaterial color="lightblue" transparent opacity={0.6} />
+    <mesh position={[0, 0, 0]}>
+      <boxGeometry args={[8, 0.02, 8]} />
+      <meshStandardMaterial color="blue" transparent opacity={0.13} />
+    </mesh>
+    <mesh position={[-2, 0.9, 2]}>
+      <cylinderGeometry args={[0.2, 0.2, 1.8, 32]} />
+      <meshStandardMaterial color="lightblue" transparent opacity={0.7} />
     </mesh>
   </>
 );
 
-export default function GestorModelos() {
+export default function GestorModelosAula() {
   const { id } = useParams<{ id: string }>();
-  const [producto, setProducto] = useState<Producto | null>(null);
+  const [aula, setAula] = useState<Aula | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Para imagen
   const [fileImg, setFileImg] = useState<File | null>(null);
   const [fileImgUrl, setFileImgUrl] = useState<string | null>(null);
-  const [file3D, setFile3D] = useState<File | null>(null);
   const [loadingImg, setLoadingImg] = useState(false);
-  const [loading3D, setLoading3D] = useState(false);
-  const [scale, setScale] = useState<number>(0.5);
-  const [selectedType, setSelectedType] = useState<"normal" | "3d">("normal");
-  const [modelSize, setModelSize] = useState<Size | null>(null);
+
+  // Para modelo 3D
+  const [file3D, setFile3D] = useState<File | null>(null);
   const [remoteUrl, setRemoteUrl] = useState<string | null>(null);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [loading3D, setLoading3D] = useState(false);
+  const [scale, setScale] = useState<number>(1);
+  const [modelSize, setModelSize] = useState<Size | null>(null);
+
+  // UI
+  const [selectedType, setSelectedType] = useState<"normal" | "3d">("normal");
   const navigate = useNavigate();
 
+  // Cargar datos aula
   useEffect(() => {
     if (!id) return;
     api
-      .get(`/mod/modelos/${id}`)
+      .get(`/aulas/${id}`)
       .then((res) => {
-        const prod = res.data;
-        setProducto(prod);
-        setSelectedType(prod.imagen_glb ? "3d" : "normal");
-        setScale(prod.escala || 0.5);
-        if (prod.imagen_glb) setRemoteUrl(`${APIURL}/${prod.imagen_glb}`);
-        if (prod.imagen_normal)
-          setFileImgUrl(`${APPLARAVEL}/storage/${prod.imagen_normal}`);
+        const aulaData = res.data as Aula;
+        setAula(aulaData);
+        // Imagen preview por defecto: primera imagen de imágenes
+        if (aulaData.imagenes?.length > 0)
+          setFileImgUrl(`${APPLARAVEL}/${aulaData.imagenes[0].image_path}`);
+        // Si tiene modelo glb, usarlo
+        if (aulaData.path_modelo)
+          setRemoteUrl(`${APIURL}/${aulaData.path_modelo}`);
+        setSelectedType(aulaData.path_modelo ? "3d" : "normal");
+        setScale(aulaData.escala ? Number(aulaData.escala) : 1);
       })
-      .catch(() => toast.error("Error al cargar el modelo"))
+      .catch(() => toast.error("Error al cargar el aula"))
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Subir imagen
   const handleImageUpload = async () => {
-    if (!fileImg || !producto) return;
+    if (!fileImg || !aula) return;
     const formData = new FormData();
-    formData.append("producto_id", producto.id.toString());
+    formData.append("aula_id", aula.id.toString());
     formData.append("file", fileImg);
-    formData.append("tipo", selectedType);
+    formData.append("tipo", "normal");
     setLoadingImg(true);
     try {
-      await api.post("/mod/modUpload", formData);
+      await api.post("/aula/aulaUpload", formData);
       toast.success("Imagen subida correctamente.");
       setFileImgUrl(URL.createObjectURL(fileImg));
     } catch {
@@ -126,13 +156,13 @@ export default function GestorModelos() {
     }
   };
 
+  // Subir modelo 3D
   const handleModelUpload = async () => {
-    if (!producto) return;
-
+    if (!aula) return;
     const formData = new FormData();
-    formData.append("producto_id", producto.id.toString());
+    formData.append("aula_id", aula.id.toString());
     formData.append("scale", scale.toString());
-    formData.append("tipo", selectedType);
+    formData.append("tipo", "3d");
 
     if (file3D) {
       formData.append("file", file3D);
@@ -140,22 +170,18 @@ export default function GestorModelos() {
       toast.error("Debes subir un archivo o tener uno existente.");
       return;
     }
-
     setLoading3D(true);
     try {
-      await api.post("/mod/modUpload", formData);
+      await api.post("/aula/aulaUpload", formData);
       toast.success("Modelo 3D actualizado correctamente.");
-      setIsNavigating(true);
-      setTimeout(() => navigate("/modelos"), 1500);
     } catch {
       toast.error("Error al actualizar el modelo 3D.");
     } finally {
-      if (!isNavigating) {
-        setLoading3D(false);
-      }
+      setLoading3D(false);
     }
   };
 
+  // File changes
   const handleFileImgChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target as HTMLInputElement;
     const f = input.files?.[0];
@@ -173,85 +199,82 @@ export default function GestorModelos() {
       toast.error("Formato inválido. Solo .glb o .gltf");
       return;
     }
-
     if (f.size > 20 * 1024 * 1024) {
       toast.error("El archivo no debe superar los 20MB.");
       return;
     }
-
     setFile3D(f);
     setRemoteUrl(null);
     setModelSize(null);
   };
 
-  const handleBack = () => {
-    if (!isNavigating) navigate("/modelos");
-  };
-
   if (loading) {
     return (
-      <div className="form-container">
-        <div className="text-center my-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3">Cargando modelo...</p>
-        </div>
+      <div className="p-4">
+        <Spinner animation="border" /> Cargando aula...
       </div>
     );
   }
 
-  if (!producto) {
+  if (!aula) {
     return (
-      <div className="form-container">
-        <Alert variant="danger">No se encontró el modelo solicitado.</Alert>
+      <div className="p-4">
+        <Alert variant="danger">No se encontró el aula solicitada.</Alert>
       </div>
     );
   }
+
+  const handleBack = () => {
+    navigate("/aulas");
+  };
 
   return (
-    <div className="form-container position-relative">
-      <FaLongArrowAltLeft
-        onClick={handleBack}
-        title="Regresar"
-        style={{
-          position: 'absolute',
-          top: '25px',
-          left: '30px',
-          cursor: isNavigating ? 'not-allowed' : 'pointer',
-          fontSize: '2rem',
-          zIndex: 10,
-          opacity: isNavigating ? 0.5 : 1
-        }}
-      />
-      
-      <h2 className="mb-4 text-center fw-bold">
-        Gestión de Imágenes para: {producto.nombre}
-      </h2>
+    <div className="p-4">
+      <div
+        className="d-flex align-items-center gap-2 gap-md-3"
+        style={{ marginBottom: "30px" }}
+      >
+        <FaLongArrowAltLeft
+          onClick={handleBack}
+          title="Regresar"
+          style={{ cursor: "pointer", fontSize: "2rem" }}
+        />
+        <h2 className="fw-bold m-0">
+          Gestión de Recursos para Aula: {aula.name}
+        </h2>
+      </div>
 
-      {(producto.imagen_normal || producto.imagen_glb) && (
+      <div className="mb-2">
+        <b>Descripción:</b> {aula.descripcion}
+        <br />
+        <b>Capacidad:</b> {aula.capacidad_maxima} personas
+      </div>
+
+      {(aula.imagenes?.length > 0 || aula.path_modelo) && (
         <Alert variant="info" className="mt-3">
           <strong>Recurso actual:</strong>{" "}
-          {producto.imagen_glb
+          {aula.path_modelo
             ? "Modelo 3D cargado"
-            : producto.imagen_normal
+            : aula.imagenes?.length > 0
             ? "Imagen cargada"
             : "Ninguno"}
         </Alert>
       )}
 
-      <Form.Group className="mb-4">
-        <Form.Label className="fw-bold">Tipo de visualización</Form.Label>
-        <div className="d-flex gap-3">
+      <Form.Group className="mt-3">
+        <Form.Label>Tipo de visualización</Form.Label>
+        <div>
           <Form.Check
+            inline
             type="radio"
             label="Normal"
-            id="normal-type"
             checked={selectedType === "normal"}
             onChange={() => setSelectedType("normal")}
           />
           <Form.Check
+            inline
             type="radio"
             label="3D"
-            id="3d-type"
             checked={selectedType === "3d"}
             onChange={() => setSelectedType("3d")}
           />
@@ -259,15 +282,47 @@ export default function GestorModelos() {
       </Form.Group>
 
       {selectedType === "normal" && (
-        <div className="mb-4">
-          <Form.Label className="fw-bold">Subir imagen normal (.jpg, .png)</Form.Label>
+        <Form.Group className="mt-4">
+          <Form.Label>Subir imagen (.jpg, .png)</Form.Label>
+          {/* Galería de imágenes existentes */}
+          {aula.imagenes && aula.imagenes.length > 0 && !fileImgUrl && (
+            <div
+              style={{
+                display: "flex",
+                gap: 16,
+                flexWrap: "wrap",
+                marginBottom: 10,
+              }}
+            >
+              {aula.imagenes.map((img) => (
+                <img
+                  key={img.id}
+                  src={`${APPLARAVEL}/${img.image_path}`}
+                  alt="Vista previa"
+                  style={{
+                    maxWidth: "160px",
+                    maxHeight: "160px",
+                    border: "1px solid #eee",
+                    borderRadius: 7,
+                    objectFit: "cover",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          {/* Nueva imagen subida */}
           {fileImgUrl && (
-            <div className="mb-3 text-center">
+            <div className="mb-2">
               <img
                 src={fileImgUrl}
-                alt="Vista previa"
-                className="img-fluid rounded border mb-2"
-                style={{ maxWidth: "300px", maxHeight: "300px" }}
+                alt="Vista previa nueva"
+                style={{
+                  maxWidth: "160px",
+                  maxHeight: "160px",
+                  border: "1px solid #eee",
+                  borderRadius: 7,
+                  objectFit: "cover",
+                }}
               />
             </div>
           )}
@@ -275,43 +330,30 @@ export default function GestorModelos() {
             type="file"
             accept=".jpg,.jpeg,.png"
             onChange={handleFileImgChange}
-            className="mb-3"
           />
-          <button
-            type="button"
-            className="btn primary-btn"
-            disabled={loadingImg || isNavigating || !fileImg}
+          <Button
+            className="mt-2"
+            variant="primary"
+            disabled={loadingImg}
             onClick={handleImageUpload}
           >
-            {loadingImg ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Subiendo...
-              </>
-            ) : (
-              <>
-                <FaUpload className="me-2" />
-                Guardar imagen
-              </>
-            )}
-          </button>
-        </div>
+            {loadingImg ? "Subiendo..." : "Guardar imagen"}
+          </Button>
+        </Form.Group>
       )}
 
       {selectedType === "3d" && (
         <>
-          <div className="mb-4">
-            <Form.Label className="fw-bold">Archivo .glb o .gltf</Form.Label>
+          <Form.Group>
+            <Form.Label>Archivo .glb o .gltf</Form.Label>
             <Form.Control
               type="file"
               accept=".glb,.gltf"
               onChange={handleFile3DChange}
-              className="mb-3"
             />
-          </div>
-
-          <div className="mb-4">
-            <Form.Label className="fw-bold">Escala: {scale}</Form.Label>
+          </Form.Group>
+          <Form.Group className="mt-3">
+            <Form.Label>Escala: {scale}</Form.Label>
             <Form.Range
               min={0.01}
               max={2}
@@ -319,25 +361,27 @@ export default function GestorModelos() {
               value={scale}
               onChange={(e) => setScale(parseFloat(e.target.value))}
             />
-          </div>
-
-          <Alert variant="info" className="mb-4">
-            El <strong>cubo naranja</strong> representa 1m³. El{" "}
-            <strong>cilindro azul</strong> mide 1.8m (altura promedio humana).
+          </Form.Group>
+          <Alert variant="info" className="mt-4">
+            El <strong>cuadro naranja</strong> es un aula de 4x4 metros.
+            <br />
+            El <strong>cuadro azul</strong> es un aula de 8x8 metros.
+            <br />
+            El <strong>cilindro azul claro</strong> representa la altura
+            promedio humana (1.8 m).
           </Alert>
-
-          <div style={{ height: "400px", marginBottom: "1.5rem" }}>
-            <Canvas camera={{ position: [0, 1.2, 6], fov: 50 }}>
+          <div style={{ height: "400px", marginTop: "1rem" }}>
+            <Canvas camera={{ position: [0, 3.5, 11], fov: 50 }}>
               <ambientLight />
               <pointLight position={[10, 10, 10]} />
               <Environment preset="sunset" />
               <OrbitControls
                 makeDefault
-                target={[0, 2, 0]}
+                target={[0, 1.5, 0]}
                 minPolarAngle={0}
                 maxPolarAngle={Math.PI}
               />
-              <ReferenceObjects />
+              <ReferenceRooms />
               {file3D && (
                 <Suspense fallback={null}>
                   <ModelObject
@@ -358,9 +402,8 @@ export default function GestorModelos() {
               )}
             </Canvas>
           </div>
-
           {modelSize && (
-            <Alert variant="secondary" className="mb-4">
+            <Alert variant="secondary" className="mt-3">
               <strong>Dimensiones originales:</strong> {modelSize.x.toFixed(2)}m
               x {modelSize.y.toFixed(2)}m x {modelSize.z.toFixed(2)}m
               <br />
@@ -369,37 +412,15 @@ export default function GestorModelos() {
               {(modelSize.z * scale).toFixed(2)}m
             </Alert>
           )}
-
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn primary-btn"
-              disabled={loading3D || isNavigating || (!file3D && !remoteUrl)}
-              onClick={handleModelUpload}
-            >
-              {loading3D || isNavigating ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  {isNavigating ? "Redirigiendo..." : "Subiendo..."}
-                </>
-              ) : (
-                <>
-                  <FaSave className="me-2" />
-                  Guardar modelo 3D
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={handleBack}
-              disabled={loading3D || isNavigating}
-            >
-              <FaTimes className="me-2" />
-              Cancelar
-            </button>
-          </div>
+          {/* @ts-ignore */}
+          <Button
+            className="mt-3"
+            variant="primary"
+            disabled={loading3D}
+            onClick={handleModelUpload}
+          >
+            {loading3D ? "Subiendo..." : "Guardar modelo 3D"}
+          </Button>
         </>
       )}
     </div>

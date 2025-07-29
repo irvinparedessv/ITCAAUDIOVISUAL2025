@@ -8,10 +8,13 @@ import type {
 import api from "../api/axios";
 
 // Listar todos los futuros mantenimientos (respuesta paginada)
-export const getFuturosMantenimiento = async () => {
+
+export const getFuturosMantenimiento = async (filters?: any) => {
   try {
-    const res = await api.get("/futuroMantenimiento"); // Asegúrate que la ruta sea correcta
-    return res.data; // Esto incluye { data: [...], current_page, etc. }
+    const res = await api.get("/futuroMantenimiento", {
+      params: filters,  // Aquí pasamos los filtros como query params
+    });
+    return res.data;
   } catch (error) {
     console.error("Error al obtener mantenimientos futuros:", error);
     throw error;

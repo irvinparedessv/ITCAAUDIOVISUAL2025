@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Modal, Button, Spinner } from "react-bootstrap";
-import Select from "react-select";
+import Select, { components } from "react-select";
 import toast from "react-hot-toast";
 import api from "~/api/axios";
 
 interface Option {
     value: number;
     label: string;
+    bloqueado?: boolean;
 }
 
 interface ModeloAccesoriosModalProps {
@@ -15,6 +16,14 @@ interface ModeloAccesoriosModalProps {
     modeloId: string | undefined;
     onSuccess?: () => void;
 }
+
+// Componente para desactivar la X de los insumos bloqueados
+const MultiValueRemove = (props: any) => {
+    if (props.data.bloqueado) {
+        return null; // Oculta la X
+    }
+    return <components.MultiValueRemove {...props} />;
+};
 
 export default function ModeloAccesoriosModal({
     show,
@@ -36,7 +45,7 @@ export default function ModeloAccesoriosModal({
 
                 const [insumosRes, accesoriosRes] = await Promise.all([
                     api.get("/modelos/insumos/listar"),
-                    api.get(`/modelos/${modeloId}/accesorios`),
+                    api.get(`/modelos/${modeloId}/accesorios`), // <- debe incluir campo "bloqueado"
                 ]);
 
                 setInsumos(
@@ -50,6 +59,7 @@ export default function ModeloAccesoriosModal({
                     accesoriosRes.data.map((acc: any) => ({
                         value: acc.id,
                         label: `${acc.nombre} (${acc.nombre_marca || "Sin marca"})`,
+                        bloqueado: acc.bloqueado || false,
                     }))
                 );
             } catch (error) {
@@ -74,9 +84,7 @@ export default function ModeloAccesoriosModal({
 
             toast.success("Asociaciones guardadas correctamente");
 
-            if (onSuccess) {
-                onSuccess();
-            }
+            if (onSuccess) onSuccess();
 
             onHide();
         } catch (error: any) {
@@ -91,7 +99,11 @@ export default function ModeloAccesoriosModal({
 
     return (
         <Modal show={show} onHide={onHide} centered>
-            <Modal.Header className="text-white py-3" style={{ backgroundColor: "#b1291d" }}  closeButton>
+            <Modal.Header
+                className="text-white py-3"
+                style={{ backgroundColor: "#b1291d" }}
+                closeButton
+            >
                 <Modal.Title>Asociar Insumos al Equipo</Modal.Title>
             </Modal.Header>
             <Modal.Body>
@@ -108,11 +120,16 @@ export default function ModeloAccesoriosModal({
                                 options={insumos}
                                 isMulti
                                 value={selected}
-                                onChange={(options) => setSelected(options as Option[])}
+                                onChange={(options) => {
+                                    const nuevos = (options ?? []).filter((opt) => !opt.bloqueado);
+                                    const bloqueados = selected.filter((opt) => opt.bloqueado);
+                                    setSelected([...bloqueados, ...nuevos]);
+                                }}
                                 placeholder="Selecciona insumos..."
                                 noOptionsMessage={() => "No hay más insumos disponibles"}
                                 className="react-select-container"
                                 classNamePrefix="react-select"
+                                components={{ MultiValueRemove }}
                             />
                         </div>
                     </div>

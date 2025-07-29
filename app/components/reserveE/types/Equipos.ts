@@ -17,4 +17,5 @@ export interface EquipmentSeleccionado {
   modelo_path: string;
   numero_serie: string | undefined;
   escala: number | undefined;
+  en_reposo: boolean;
 }

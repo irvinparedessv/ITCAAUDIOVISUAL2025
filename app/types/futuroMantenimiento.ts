@@ -8,9 +8,10 @@ export interface FuturoMantenimiento {
 
   equipo?: {
     id: number;
-    nombre: string;
-    modelo?: string; // <- AÑADIR
-    codigo?: string; // <- AÑADIR
+    numero_serie?: string;
+    detalles?: string;
+    modelo_id?: number;
+    tipo_equipo_id?: number;
   };
 
   tipo_mantenimiento?: {

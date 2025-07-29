@@ -35,7 +35,6 @@ import EquipmentListPage from "./routes/equipment/equipmentListPage";
 import EquipmentEditPage from "./routes/equipment/equipmentEditPage";
 import PrediccionPorEquipoPage from "./components/prediction/PrediccionPorEquipoPage";
 import AulaList from "./components/attendantadmin/RoomList";
-import EditEquipmentReservationForm from "./components/EditEquipmentReservationForm";
 import AsignarEncargadosForm from "./components/FormEncargadosEspacio";
 import EquipmentAvailabilityListPage from "./routes/EquipmentAvailabilityPage";
 import ReporteReservasPorFecha from "./components/reports/ReporteReservasPorFecha";
@@ -51,13 +50,9 @@ import RoomsAvailabilityList from "./components/rooms/RoomsAvailability";
 import NoEncontrado from "./components/error/NoEncontrado";
 import PublicOnlyRoute from "./layouts/PublicOnlyRoute";
 import ReservaCalendar from "./components/rooms/ReserveCalendar";
-import ViewScene from "./components/renders/rooms/Visualizacion";
-import SceneCanvas from "./components/renders/rooms/Scene";
-import SceneCanvas2 from "./components/renders/rooms/Scene2";
 import ItemListPage from "./routes/equipment/ItemListPage";
 import ItemCreatePage from "./routes/equipment/ItemCreatePage";
 import TipoEquipoForm from "./components/tipoEquipo/TipoEquipoForm";
-import { APIURL, APPLARAVEL } from "./constants/constant";
 import ItemEditPage from "./routes/equipment/ItemEditPage";
 import InventoryList from "./components/equipment/inventoryList";
 import TipoEquipoPage from "./routes/tipoEquipoPage";
@@ -65,19 +60,21 @@ import ModeloAccesoriosForm from "./components/equipment/Modelo/ModeloAccesorios
 import EquipmentReservationForm from "./components/reserveE/EquipmentReservationForm";
 import OpcionesEquipos from "./dashboard/OpcionesEquipos";
 import ModeloManager from "./components/modelo/modeloManager";
-import ModelUploader from "./components/renders/components/CreationUpload";
 import GestorModelos from "./components/renders/components/CreationUpload";
+import GestorModelosAula from "./components/rooms/ModelRoom";
+import MarcaManager from "./components/marca/marcaManager";
 
-// Importa los componentes de mantenimientos
+// -------------------- Mantenimientos --------------------
 import MantenimientoList from "./components/mantenimiento/mantenimientoList";
 import FormMantenimiento from "./components/FormMantenimiento";
 import MantenimientoEdit from "./components/mantenimiento/mantenimientoEdit";
-//Tipo Mantenimiento
-import TipoMantenimientoList from "./components/tipoMantenimiento/tipoMantenimientoList";
-import TipoMantenimientoEdit from "./components/tipoMantenimiento/tipoMantenimientoEdit";
-import FormTipoMantenimiento from "./components/FormTipoMantenimiento"; // si planeas editar también
 
-//Futuro Mantenimientos
+// --------------- Tipo de Mantenimiento ------------------
+import TipoMantenimientoList from "./components/tipoMantenimiento/tipoMantenimientoList";
+import FormTipoMantenimiento from "./components/FormTipoMantenimiento"; // útil para crear o editar
+import TipoMantenimientoEdit from "./components/tipoMantenimiento/tipoMantenimientoEdit";
+
+// -------------- Futuro Mantenimiento -------------------
 import FuturoMantenimientoList from "./components/futuroMantenimiento/futuroMantenimientoList";
 import FormFuturoMantenimiento from "./components/FormFuturoMantenimiento";
 import FuturoMantenimientoEdit from "./components/futuroMantenimiento/futuroMantenimientoEdit";
@@ -213,10 +210,6 @@ const router = createBrowserRouter([
             element: <ItemEditPage />,
           },
           {
-            path: "modelo/:id/accesorios",
-            element: <ModeloAccesoriosForm />,
-          },
-          {
             path: "/equipos/editar/:id",
             element: <EquipmentEditPage />,
           },
@@ -273,6 +266,10 @@ const router = createBrowserRouter([
             element: <GestorModelos />,
           },
           {
+            path: "espacio/gestionar/:id",
+            element: <GestorModelosAula />,
+          },
+          {
             path: "administracion",
             element: <OpcionesPanel />,
           },
@@ -283,6 +280,10 @@ const router = createBrowserRouter([
           {
             path: "modelos",
             element: <ModeloManager />,
+          },
+          {
+            path: "marcas",
+            element: <MarcaManager />,
           },
           {
             path: "opcionesReportes",
@@ -324,58 +325,110 @@ const router = createBrowserRouter([
             path: "prediccionAula",
             element: <PrediccionAulaPage />,
           },
-
           // --- RUTAS DE MANTENIMIENTOS ---
+
           {
+
             path: "mantenimiento",
+
             element: <MantenimientoList />,
+
           },
+
           {
+
             path: "mantenimientos/nuevo",
+
             element: <FormMantenimiento />,
+
           },
+
           {
+
             path: "mantenimientos/editar/:id",
+
             element: <MantenimientoEdit />,
+
           },
+
+
 
           // RUTAS TIPO MANTENIMIENTO
 
+
+
           {
+
             path: "tipoMantenimiento",
+
             element: <TipoMantenimientoList />,
+
           },
+
           {
+
             path: "tipoMantenimiento/nuevo",
+
             element: <FormTipoMantenimiento />,
+
           },
+
           {
+
             path: "tipoMantenimiento/editar/:id",
+
             element: <TipoMantenimientoEdit />,
+
           },
+
+
 
           //RUTAS FUTUROS MANTENIMIENTOS
 
+
+
           {
+
             path: "futuroMantenimiento",
+
             element: <FuturoMantenimientoList />,
+
           },
+
           {
+
             path: "futuroMantenimiento/crear",
+
             element: <FormFuturoMantenimiento />,
+
           },
+
           {
+
             path: "futuroMantenimiento/editar/:id",
+
             element: <FuturoMantenimientoEdit />,
+
           },
+
         ],
+
       },
+
     ],
+
   },
+
   {
+
     path: "*",
+
     element: <NoEncontrado />,
+
   },
+
 ]);
+
+
 
 export default router;

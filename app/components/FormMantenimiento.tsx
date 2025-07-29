@@ -1,255 +1,273 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { Form, Button, Spinner } from "react-bootstrap";
+import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { FaSave, FaTimes } from "react-icons/fa";
 
-import { createMantenimiento } from "../services/mantenimientoService";
 import { getEquipos } from "../services/equipoService";
 import { getTiposMantenimiento } from "../services/tipoMantenimientoService";
 import { getUsuarios } from "../services/userService";
+import { getMantenimientoById, createMantenimiento, updateMantenimiento } from "../services/mantenimientoService";
 
-interface EquipoConModelo {
-  id: number;
-  numero_serie: string;
-  modelo?: {
-    nombre: string;
-  };
-}
-
-interface TipoMantenimiento {
-  id: number;
-  nombre: string;
-}
-
-interface User {
-  id: number;
-  first_name: string;
-  last_name: string;
-}
-
-const FormMantenimiento: React.FC = () => {
-  const [equipos, setEquipos] = useState<EquipoConModelo[]>([]);
-  const [tipos, setTipos] = useState<TipoMantenimiento[]>([]);
-  const [usuarios, setUsuarios] = useState<User[]>([]);
-
-  const [equipo_id, setEquipoId] = useState<number | "">("");
-  const [tipo_id, setTipoId] = useState<number | "">(""); // CAMBIO: nombre de variable consistente
-  const [user_id, setUserId] = useState<number | "">("");
-  const [fecha_mantenimiento, setFechaMantenimiento] = useState("");
-  const [hora_mantenimiento_inicio, setHoraInicio] = useState("");
-  const [hora_mantenimiento_final, setHoraFinal] = useState("");
-  const [detalles, setDetalles] = useState("");
-  const [vida_util, setVidaUtil] = useState<number | "">("");
-
-  const [loading, setLoading] = useState(false);
-
+const FormMantenimiento = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    equipo_id: "",
+    tipo_id: "",
+    fecha_mantenimiento: "",
+    hora_mantenimiento_inicio: "",
+    hora_mantenimiento_final: "",
+    detalles: "",
+    user_id: "",
+    vida_util: "",
+  });
+
+  const [equipos, setEquipos] = useState<any[]>([]);
+  const [tipos, setTipos] = useState<any[]>([]);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: equiposData } = await getEquipos();
-        const tiposData = await getTiposMantenimiento();
-        const usuariosResponse = await getUsuarios();
+        const [equiposList, tiposList, usuariosList] = await Promise.all([
+          getEquipos(),
+          getTiposMantenimiento(),
+          getUsuarios(),
+        ]);
 
-        setEquipos(equiposData);
-        setTipos(tiposData);
-        setUsuarios(usuariosResponse.data);
+        setEquipos(equiposList?.data || []);
+        setTipos(tiposList || []);
+        setUsuarios(usuariosList?.data || []);
+
+        // Si estamos editando, obtener datos de mantenimiento
+        if (id) {
+          const mantenimiento = await getMantenimientoById(Number(id));
+          setFormData({
+            equipo_id: mantenimiento.equipo_id?.toString() || "",
+            tipo_id: mantenimiento.tipo_id?.toString() || "",
+            fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
+            hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0,5) || "",
+            hora_mantenimiento_final: mantenimiento.hora_mantenimiento_final?.slice(0,5) || "",
+            detalles: mantenimiento.detalles || "",
+            user_id: mantenimiento.user_id?.toString() || "",
+            vida_util: mantenimiento.vida_util?.toString() || "",
+          });
+        }
       } catch (error) {
         toast.error("Error al cargar datos");
+        console.error("Error:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [id]);
 
-  // Formatea hora para que tenga segundos "HH:mm:ss"
-  const formatTimeWithSeconds = (time: string) => {
-    if (!time) return "";
-    return time.length === 5 ? time + ":00" : time;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (
-      equipo_id === "" ||
-      tipo_id === "" ||
-      user_id === "" ||
-      fecha_mantenimiento.trim() === "" ||
-      hora_mantenimiento_inicio.trim() === "" ||
-      hora_mantenimiento_final.trim() === ""
-    ) {
-      toast.error("Por favor completa todos los campos obligatorios");
+  
+    // Validar campos requeridos
+    if (!formData.equipo_id || !formData.tipo_id || !formData.user_id || !formData.fecha_mantenimiento || !formData.hora_mantenimiento_inicio || !formData.hora_mantenimiento_final) {
+      toast.error("Por favor complete todos los campos obligatorios.");
       return;
     }
-
-    setLoading(true);
-
+  
+    setIsSubmitting(true);
+  
+    const dataToSend = {
+      ...formData,
+      equipo_id: Number(formData.equipo_id),
+      tipo_id: Number(formData.tipo_id), // corregido
+      user_id: Number(formData.user_id),
+      vida_util: formData.vida_util === "" ? null : Number(formData.vida_util),
+      hora_mantenimiento_inicio:
+        formData.hora_mantenimiento_inicio.length === 5
+          ? formData.hora_mantenimiento_inicio + ":00"
+          : formData.hora_mantenimiento_inicio,
+      hora_mantenimiento_final:
+        formData.hora_mantenimiento_final.length === 5
+          ? formData.hora_mantenimiento_final + ":00"
+          : formData.hora_mantenimiento_final,
+    };
+    
+  
     try {
-      const token = localStorage.getItem("token") || "";
-
-      await createMantenimiento(token, {
-        equipo_id: Number(equipo_id),
-        tipo_id: Number(tipo_id), // Envío con el nombre correcto
-        user_id: Number(user_id),
-        fecha_mantenimiento,
-        hora_mantenimiento_inicio: formatTimeWithSeconds(hora_mantenimiento_inicio),
-        hora_mantenimiento_final: formatTimeWithSeconds(hora_mantenimiento_final),
-        detalles: detalles.trim() || undefined,
-        vida_util: vida_util === "" ? undefined : Number(vida_util),
-      });
-
-      toast.success("Mantenimiento creado correctamente");
+      const token = localStorage.getItem("token") ?? "";
+      if (id) {
+        // Si estamos editando, usamos updateMantenimiento
+        await updateMantenimiento(Number(id), token, dataToSend);
+        toast.success("Mantenimiento actualizado");
+      } else {
+        // Si estamos creando, usamos createMantenimiento
+        await createMantenimiento(token, dataToSend);
+        toast.success("Mantenimiento creado");
+      }
       navigate("/mantenimiento");
-    } catch (error) {
-      toast.error("Error al crear mantenimiento");
+    } catch (error: any) {
+      console.error("Error al procesar mantenimiento:", error);
+      toast.error("Error al procesar mantenimiento");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
+  
+  if (loading) return <div className="text-center my-5">Cargando...</div>;
 
   return (
-    <Form
-      onSubmit={handleSubmit}
-      className="mx-auto p-4 bg-white shadow rounded"
-      style={{ maxWidth: "480px" }}
-    >
-      <h2 className="mb-4">Nuevo Mantenimiento</h2>
+    <div className="container mt-4">
+      <h2>{id ? "Editar Mantenimiento" : "Nuevo Mantenimiento"}</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label>Equipo</label>
+          <select
+            name="equipo_id"
+            value={formData.equipo_id}
+            onChange={handleChange}
+            required
+            className="form-select"
+          >
+            <option value="">Seleccione equipo</option>
+            {equipos.map((equipo) => (
+              <option key={equipo.id} value={equipo.id.toString()}>
+                {equipo.numero_serie || equipo.nombre || `Equipo #${equipo.id}`}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {/* Equipo */}
-      <Form.Group controlId="equipo" className="mb-3">
-        <Form.Label>Equipo</Form.Label>
-        <Form.Select
-          value={equipo_id}
-          onChange={(e) => setEquipoId(e.target.value === "" ? "" : Number(e.target.value))}
-          disabled={loading}
-          required
-        >
-          <option value="">Seleccione un equipo</option>
-          {equipos.map((equipo) => (
-            <option key={equipo.id} value={equipo.id}>
-              {equipo.modelo?.nombre} - {equipo.numero_serie}
-            </option>
-          ))}
-        </Form.Select>
-      </Form.Group>
+        <div className="mb-3">
+          <label>Tipo de Mantenimiento</label>
+          <select
+            name="tipo_id"
+            value={formData.tipo_id}
+            onChange={handleChange}
+            required
+            className="form-select"
+          >
+            <option value="">Seleccione tipo</option>
+            {tipos.map((tipo) => (
+              <option key={tipo.id} value={tipo.id.toString()}>
+                {tipo.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {/* Tipo de mantenimiento */}
-      <Form.Group controlId="tipo_mantenimiento" className="mb-3">
-        <Form.Label>Tipo de Mantenimiento</Form.Label>
-        <Form.Select
-          value={tipo_id}
-          onChange={(e) => setTipoId(e.target.value === "" ? "" : Number(e.target.value))}
-          disabled={loading}
-          required
-        >
-          <option value="">Seleccione un tipo</option>
-          {tipos.map((tipo) => (
-            <option key={tipo.id} value={tipo.id}>
-              {tipo.nombre}
-            </option>
-          ))}
-        </Form.Select>
-      </Form.Group>
+        <div className="mb-3">
+          <label>Fecha de mantenimiento</label>
+          <input
+            type="date"
+            name="fecha_mantenimiento"
+            value={formData.fecha_mantenimiento}
+            onChange={handleChange}
+            required
+            className="form-control"
+          />
+        </div>
 
-      {/* Usuario */}
-      <Form.Group controlId="usuario" className="mb-3">
-        <Form.Label>Responsable</Form.Label>
-        <Form.Select
-          value={user_id}
-          onChange={(e) => setUserId(e.target.value === "" ? "" : Number(e.target.value))}
-          disabled={loading}
-          required
-        >
-          <option value="">Seleccione un usuario</option>
-          {usuarios.map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.first_name} {user.last_name}
-            </option>
-          ))}
-        </Form.Select>
-      </Form.Group>
+        <div className="mb-3 d-flex gap-3">
+          <div className="flex-grow-1">
+            <label>Hora inicio</label>
+            <input
+              type="time"
+              name="hora_mantenimiento_inicio"
+              value={formData.hora_mantenimiento_inicio}
+              onChange={handleChange}
+              required
+              className="form-control"
+            />
+          </div>
+          <div className="flex-grow-1">
+            <label>Hora fin</label>
+            <input
+              type="time"
+              name="hora_mantenimiento_final"
+              value={formData.hora_mantenimiento_final}
+              onChange={handleChange}
+              required
+              className="form-control"
+            />
+          </div>
+        </div>
 
-      {/* Fecha mantenimiento */}
-      <Form.Group controlId="fecha_mantenimiento" className="mb-3">
-        <Form.Label>Fecha del mantenimiento</Form.Label>
-        <Form.Control
-          type="date"
-          value={fecha_mantenimiento}
-          onChange={(e) => setFechaMantenimiento(e.target.value)}
-          disabled={loading}
-          required
-        />
-      </Form.Group>
+        <div className="mb-3">
+          <label>Detalles</label>
+          <textarea
+            name="detalles"
+            value={formData.detalles}
+            onChange={handleChange}
+            className="form-control"
+            rows={3}
+          />
+        </div>
 
-      {/* Hora inicio */}
-      <Form.Group controlId="hora_inicio" className="mb-3">
-        <Form.Label>Hora de inicio</Form.Label>
-        <Form.Control
-          type="time"
-          value={hora_mantenimiento_inicio}
-          onChange={(e) => setHoraInicio(e.target.value)}
-          disabled={loading}
-          required
-        />
-      </Form.Group>
+        <div className="mb-3">
+          <label>Responsable (usuario)</label>
+          <select
+            name="user_id"
+            value={formData.user_id}
+            onChange={handleChange}
+            required
+            className="form-select"
+          >
+            <option value="">Seleccione usuario</option>
+            {usuarios.map((user) => (
+              <option key={user.id} value={user.id.toString()}>
+                {(user.nombre ?? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim()) || `Usuario #${user.id}`}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {/* Hora final */}
-      <Form.Group controlId="hora_final" className="mb-3">
-        <Form.Label>Hora de finalización</Form.Label>
-        <Form.Control
-          type="time"
-          value={hora_mantenimiento_final}
-          onChange={(e) => setHoraFinal(e.target.value)}
-          disabled={loading}
-          required
-        />
-      </Form.Group>
+        <div className="mb-3">
+          <label>Vida útil (meses)</label>
+          <input
+            type="number"
+            name="vida_util"
+            value={formData.vida_util}
+            onChange={handleChange}
+            min={0}
+            className="form-control"
+          />
+        </div>
 
-      {/* Vida útil */}
-      <Form.Group controlId="vida_util" className="mb-3">
-        <Form.Label>Vida útil (opcional)</Form.Label>
-        <Form.Control
-          type="number"
-          min={0}
-          value={vida_util}
-          onChange={(e) => {
-            const val = e.target.value;
-            setVidaUtil(val === "" ? "" : Number(val));
-          }}
-          disabled={loading}
-        />
-      </Form.Group>
-
-      {/* Detalles */}
-      <Form.Group controlId="detalles" className="mb-4">
-        <Form.Label>Detalles (opcional)</Form.Label>
-        <Form.Control
-          as="textarea"
-          rows={3}
-          value={detalles}
-          onChange={(e) => setDetalles(e.target.value)}
-          disabled={loading}
-        />
-      </Form.Group>
-
-      {/* Botones */}
-      <div className="d-flex justify-content-between">
-        <Button variant="secondary" disabled={loading} onClick={() => navigate("/mantenimiento")}>
-          Cancelar
-        </Button>
-        <Button variant="primary" type="submit" disabled={loading}>
-          {loading ? (
-            <>
-              <Spinner animation="border" size="sm" className="me-2" />
-              Guardando...
-            </>
-          ) : (
-            "Guardar"
-          )}
-        </Button>
-      </div>
-    </Form>
+        <div className="d-flex gap-2">
+          <button type="submit" disabled={isSubmitting} className="btn btn-primary">
+            {isSubmitting ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <FaSave className="me-2" />
+                Guardar Cambios
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => navigate("/mantenimiento")}
+            className="btn btn-secondary"
+          >
+            <FaTimes className="me-2" />
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

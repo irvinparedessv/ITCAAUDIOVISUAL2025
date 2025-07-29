@@ -11,6 +11,7 @@ import {
   FaUser,
   FaLongArrowAltLeft,
   FaPlus,
+  FaImage,
 } from "react-icons/fa";
 import { getAulas, deleteAula } from "../../services/aulaService";
 import { useNavigate } from "react-router-dom";
@@ -301,6 +302,26 @@ export default function AulaList() {
                             title="Editar aula"
                           >
                             <FaEdit />
+                          </Button>
+                          <Button
+                            className="rounded-circle"
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() =>
+                              navigate(`/espacio/gestionar/${aula.id}`)
+                            }
+                            title="Asignar Imagenes"
+                          >
+                            <FaImage />
                           </Button>
                           <Button
                             variant="outline-danger"

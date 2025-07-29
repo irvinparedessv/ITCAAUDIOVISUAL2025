@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Spinner, Modal, Button, Card } from "react-bootstrap";
+import { Spinner, Modal, Button } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../api/axios";
@@ -14,29 +14,16 @@ import {
   FaBroom,
   FaUser,
   FaLongArrowAltLeft,
-  FaImages,
 } from "react-icons/fa";
 import { useAuth } from "app/hooks/AuthContext";
 import { Role } from "~/types/roles";
-import PanoramaViewer from "./PanoramaViewer";
-
-type Horario = {
-  start_date: string;
-  end_date: string;
-  start_time: string;
-  end_time: string;
-  days: string[];
-};
-
-type ImagenAula = {
-  url: string;
-  is_360: boolean;
-};
 
 type Aula = {
   id: number;
   name: string;
-  imagenes?: ImagenAula[];
+  path_modelo?: string | null;
+  image_path?: string | null;
+  escala?: number;
 };
 
 type OptionType = { value: string; label: string };
@@ -57,32 +44,41 @@ export default function ReserveClassroom() {
   const { user } = useAuth();
   const userId = user?.id;
 
-  const [availableClassrooms, setAvailableClassrooms] = useState<Aula[]>([]);
-  const [selectedClassroom, setSelectedClassroom] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [startTime, setStartTime] = useState<string>("");
-  const [endTime, setEndTime] = useState<string>("");
-  const [descripcion, setDescripcion] = useState<string>("");
-  const [endDate, setEndDate] = useState<Date | null>(null);
-
   const [prestamistaOptions, setPrestamistaOptions] = useState<OptionType[]>(
     []
   );
   const [selectedPrestamista, setSelectedPrestamista] =
     useState<SingleValue<OptionType>>(null);
 
-  const [aulaHorarios, setAulaHorarios] = useState<Horario[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingHorarios, setLoadingHorarios] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [startTime, setStartTime] = useState<string>("");
+  const [endTime, setEndTime] = useState<string>("");
+  const [availableClassrooms, setAvailableClassrooms] = useState<Aula[]>([]);
+  const [selectedClassroom, setSelectedClassroom] = useState<number | "">("");
+  const [descripcion, setDescripcion] = useState<string>("");
   const [tipoReserva, setTipoReserva] = useState<string>("");
   const [diasSeleccionados, setDiasSeleccionados] = useState<string[]>([]);
-  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
-  const isDateTimeComplete = selectedDate && startTime && endTime;
+  const [loading, setLoading] = useState(true);
+  const [loadingAulas, setLoadingAulas] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
+  // Modal para visualizar
+  const [viewerModal, setViewerModal] = useState<{
+    open: boolean;
+    type: "3d" | "img" | null;
+    src: string | null;
+  }>({ open: false, type: null, src: null });
+
+  // Helpers
+  const formatDateTime = (date: Date, time: string) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(date.getDate()).padStart(2, "0")} ${time}`;
+  };
   const formatDateLocal = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
@@ -92,18 +88,14 @@ export default function ReserveClassroom() {
       "0"
     )}`;
   };
+  const parseTime = (timeStr: string): number => {
+    const [h, m] = timeStr.split(":").map(Number);
+    return h * 60 + m;
+  };
 
+  // Cargar prestamistas
   useEffect(() => {
     toast.dismiss();
-    const fetchAulas = async () => {
-      try {
-        const response = await api.get("/aulas");
-        setAvailableClassrooms(response.data);
-      } catch {
-        toast.error("Error al cargar aulas");
-      }
-    };
-
     const fetchPrestamistas = async () => {
       if (
         user?.role === Role.Administrador ||
@@ -121,27 +113,59 @@ export default function ReserveClassroom() {
         }
       }
     };
-
-    Promise.all([fetchAulas(), fetchPrestamistas()]).finally(() =>
-      setLoading(false)
-    );
+    fetchPrestamistas().finally(() => setLoading(false));
   }, [user]);
 
+  // Buscar aulas disponibles solo cuando cambia usuario, fecha, hora inicio/fin
+  useEffect(() => {
+    const canQuery =
+      selectedDate &&
+      startTime &&
+      endTime &&
+      (selectedPrestamista?.value || userId);
+
+    if (!canQuery) {
+      setAvailableClassrooms([]);
+      setSelectedClassroom("");
+      return;
+    }
+
+    const fetchAulasDisponibles = async () => {
+      setLoadingAulas(true);
+      try {
+        const fecha_inicio = formatDateTime(selectedDate!, startTime);
+        const fecha_fin = formatDateTime(selectedDate!, endTime);
+        const reqUserId = selectedPrestamista?.value || userId;
+        const { data } = await api.post("/aulas-disponibles", {
+          fecha_inicio,
+          fecha_fin,
+          user_id: reqUserId,
+        });
+        setAvailableClassrooms(data || []);
+        setSelectedClassroom("");
+      } catch {
+        toast.error("Error al consultar aulas disponibles");
+        setAvailableClassrooms([]);
+        setSelectedClassroom("");
+      } finally {
+        setLoadingAulas(false);
+      }
+    };
+    fetchAulasDisponibles();
+  }, [selectedDate, startTime, endTime, selectedPrestamista, userId]);
+
+  // Si está en modo edición, cargar reserva existente
   useEffect(() => {
     if (!id) return;
-
     const loadReserva = async () => {
       setLoading(true);
       try {
         const { data } = await api.get(`/reservas-aula/${id}`);
-        handleAulaSelect(data.aula.name, data.aula.id);
-        setSelectedClassroom(data.aula.name);
         setSelectedDate(new Date(data.fecha));
         setDescripcion(data.comentario || "");
         const [start, end] = data.horario.split(" - ");
         setStartTime(start.trim());
         setEndTime(end.trim());
-
         if (data.user) {
           setSelectedPrestamista({
             value: data.user.id,
@@ -151,69 +175,28 @@ export default function ReserveClassroom() {
         setTipoReserva(data.tipo || "");
         setDiasSeleccionados(data.dias || []);
         setEndDate(data.fecha_fin ? new Date(data.fecha_fin) : null);
+        setSelectedClassroom(data.aula.id);
       } catch {
         toast.error("Error al cargar datos de la reserva");
       } finally {
         setLoading(false);
       }
     };
-
     loadReserva();
   }, [id]);
 
-  const handleAulaSelect = async (aulaName: string, idaula: number) => {
-    setSelectedClassroom(aulaName);
-    setSelectedDate(null);
-    setStartTime("");
-    setEndTime("");
-    setSelectedPrestamista(null);
+  // Días disponibles (hardcode, ajusta si tienes lógica de horarios)
+  const diasDisponibles = [
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+    "Domingo",
+  ];
 
-    if (idaula === 0) {
-      const aula = availableClassrooms.find((c) => c.name === aulaName);
-      if (!aula) return;
-      idaula = aula.id;
-    }
-
-    setLoadingHorarios(true);
-    try {
-      const { data } = await api.get(`/aulas/${idaula}/horarios`);
-      setAulaHorarios(data.horarios);
-    } catch {
-      toast.error("Error al cargar horarios del aula");
-      setAulaHorarios([]);
-    } finally {
-      setLoadingHorarios(false);
-    }
-  };
-
-  const parseTime = (timeStr: string): number => {
-    const [h, m] = timeStr.split(":").map(Number);
-    return h * 60 + m;
-  };
-
-  const isDateEnabled = (date: Date): boolean => {
-    if (loadingHorarios) return false;
-    if (!aulaHorarios.length) return false;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (date < today) return false;
-
-    const dateString = formatDateLocal(date);
-    const dayName = date.toLocaleDateString("es-ES", { weekday: "long" });
-    const dayNameCapital = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-
-    const horariosValidos = aulaHorarios.filter((h) => {
-      return (
-        h.days.includes(dayNameCapital) &&
-        dateString >= h.start_date &&
-        dateString <= h.end_date
-      );
-    });
-
-    return horariosValidos.length > 0;
-  };
-
+  // Confirmación
   const showConfirmationToast = () => {
     return new Promise<boolean>((resolve) => {
       toast.dismiss("confirmation-toast");
@@ -247,19 +230,26 @@ export default function ReserveClassroom() {
       );
     });
   };
-  const diasDisponibles = Array.from(
-    new Set(aulaHorarios.flatMap((h) => h.days))
-  );
+
+  // Guardar o actualizar
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     toast.dismiss("submit-toast");
 
-    if (!selectedDate || !startTime || !endTime || !selectedClassroom) {
-      toast.error("Completa todos los campos", { id: "submit-toast" });
-      return;
-    }
-    if (!tipoReserva) {
-      toast.error("Debes seleccionar el tipo de reserva");
+    if (
+      !selectedDate ||
+      !startTime ||
+      !endTime ||
+      !selectedClassroom ||
+      !descripcion.trim() ||
+      !tipoReserva ||
+      ((user?.role === Role.Administrador ||
+        user?.role === Role.EspacioEncargado) &&
+        !selectedPrestamista)
+    ) {
+      toast.error("Completa todos los campos obligatorios", {
+        id: "submit-toast",
+      });
       return;
     }
     if (tipoReserva === "clase_recurrente") {
@@ -290,20 +280,17 @@ export default function ReserveClassroom() {
       });
       return;
     }
-
     if (id) {
       const userConfirmed = await showConfirmationToast();
       if (!userConfirmed) return;
     }
-
-    const aula = availableClassrooms.find((c) => c.name === selectedClassroom);
+    const aula = availableClassrooms.find((c) => c.id === selectedClassroom);
     if (!aula) {
       toast.error("Aula no válida", { id: "submit-toast" });
       return;
     }
 
     const horarioFinal = `${startTime} - ${endTime}`;
-
     try {
       setIsUpdating(true);
       const payload = {
@@ -340,6 +327,7 @@ export default function ReserveClassroom() {
     }
   };
 
+  // Limpiar/cancelar
   const handleClearOrCancel = async () => {
     try {
       setIsCancelling(true);
@@ -352,28 +340,20 @@ export default function ReserveClassroom() {
         setEndTime("");
         setSelectedClassroom("");
         setSelectedPrestamista(null);
-        setAulaHorarios([]);
+        setDescripcion("");
+        setTipoReserva("");
+        setDiasSeleccionados([]);
+        setAvailableClassrooms([]);
       }
     } finally {
       setIsCancelling(false);
     }
   };
 
+  // Encontrar aula seleccionada
   const selectedClassroomData = availableClassrooms.find(
-    (c) => c.name === selectedClassroom
+    (c) => c.id === selectedClassroom
   );
-
-  const handlePrev = () => {
-    setCarouselIndex((prev) =>
-      prev === 0 ? selectedClassroomData!.imagenes!.length - 1 : prev - 1
-    );
-  };
-
-  const handleNext = () => {
-    setCarouselIndex((prev) =>
-      prev === selectedClassroomData!.imagenes!.length - 1 ? 0 : prev + 1
-    );
-  };
 
   if (loading) {
     return (
@@ -393,10 +373,7 @@ export default function ReserveClassroom() {
         <FaLongArrowAltLeft
           onClick={() => navigate("/reservations-room")}
           title="Regresar"
-          style={{
-            cursor: "pointer",
-            fontSize: "2rem",
-          }}
+          style={{ cursor: "pointer", fontSize: "2rem" }}
         />
         <h2 className="fw-bold m-0">
           <FaDoorOpen className="me-2" />
@@ -405,46 +382,164 @@ export default function ReserveClassroom() {
       </div>
 
       <form onSubmit={handleSubmit}>
+        {(user?.role === Role.Administrador ||
+          user?.role === Role.EspacioEncargado) && (
+          <div className="mb-4">
+            <label className="form-label d-flex align-items-center">
+              <FaUser className="me-2" /> Usuario prestamista
+            </label>
+            <Select
+              options={prestamistaOptions}
+              value={selectedPrestamista}
+              onChange={(selected) => setSelectedPrestamista(selected)}
+              placeholder="Selecciona un usuario prestamista"
+              className="react-select-container"
+              classNamePrefix="react-select"
+              isDisabled={!!id}
+            />
+            {id && (
+              <div className="form-text text-muted">
+                No se puede cambiar el usuario prestamista en modo edición
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mb-4">
-          <label htmlFor="classroom" className="form-label">
-            <FaDoorOpen className="me-2" /> Aula
+          <label htmlFor="date" className="form-label">
+            <FaCalendarAlt className="me-2" /> Fecha
           </label>
-          <select
-            id="classroom"
-            className="form-select"
-            value={selectedClassroom}
-            onChange={(e) => handleAulaSelect(e.target.value, 0)}
+          <DatePicker
+            id="date"
+            selected={selectedDate}
+            onChange={(date) => {
+              if (date) {
+                date.setHours(12, 0, 0, 0);
+                setSelectedDate(date);
+                setStartTime("");
+                setEndTime("");
+                setAvailableClassrooms([]);
+                setSelectedClassroom("");
+              }
+            }}
+            className="form-control"
+            dateFormat="dd/MM/yyyy"
+            placeholderText="Selecciona la fecha"
             required
             disabled={!!id}
-          >
-            <option value="">Selecciona un aula</option>
-            {availableClassrooms.map((aula) => (
-              <option key={aula.id} value={aula.name}>
-                {aula.name}
-              </option>
-            ))}
-          </select>
-          {id && (
-            <div className="form-text text-muted">
-              No se puede editar el aula en modo edición
-            </div>
-          )}
+          />
         </div>
-        {selectedClassroomData?.imagenes?.length! > 0 && (
-          <button
-            type="button"
-            className="btn btn-info ms-3"
-            onClick={() => {
-              setCarouselIndex(0);
-              setShowModal(true);
-            }}
-          >
-            <FaImages className="me-2" /> Visualizar Imágenes
-          </button>
+        <div className="mb-4 row">
+          <div className="col-md-6 mb-2">
+            <label htmlFor="startTime" className="form-label">
+              <FaClock className="me-2" /> Hora de Inicio
+            </label>
+            <input
+              id="startTime"
+              type="time"
+              className="form-control"
+              value={startTime}
+              min="07:00"
+              max="22:00"
+              onChange={(e) => setStartTime(e.target.value)}
+              required
+              disabled={!selectedDate || !!id}
+            />
+          </div>
+          <div className="col-md-6 mb-2">
+            <label htmlFor="endTime" className="form-label">
+              <FaClock className="me-2" /> Hora de Fin
+            </label>
+            <input
+              id="endTime"
+              type="time"
+              className="form-control"
+              value={endTime}
+              min={startTime || "07:00"}
+              max="22:00"
+              onChange={(e) => setEndTime(e.target.value)}
+              required
+              disabled={!startTime || !!id}
+            />
+          </div>
+        </div>
+
+        {/* Mostrar select de aula y botones de visualización */}
+        {availableClassrooms.length > 0 && (
+          <div className="mb-4">
+            <label htmlFor="classroom" className="form-label">
+              <FaDoorOpen className="me-2" /> Aula disponible
+            </label>
+            <div className="d-flex align-items-center gap-2">
+              <select
+                id="classroom"
+                className="form-select"
+                value={selectedClassroom}
+                onChange={(e) => setSelectedClassroom(Number(e.target.value))}
+                required
+                disabled={!!id || loadingAulas}
+                style={{ maxWidth: 250 }}
+              >
+                <option value="">Selecciona un aula</option>
+                {availableClassrooms.map((aula) => (
+                  <option key={aula.id} value={aula.id}>
+                    {aula.name}
+                  </option>
+                ))}
+              </select>
+              {loadingAulas && (
+                <Spinner
+                  animation="border"
+                  variant="primary"
+                  size="sm"
+                  style={{ marginLeft: 8 }}
+                />
+              )}
+              {/* Botón visualizar imagen */}
+              {!!selectedClassroom && selectedClassroomData?.image_path && (
+                <Button
+                  variant="info"
+                  size="sm"
+                  onClick={() =>
+                    setViewerModal({
+                      open: true,
+                      type: "img",
+                      src: selectedClassroomData.image_path!,
+                    })
+                  }
+                >
+                  Visualizar Imagen
+                </Button>
+              )}
+              {/* Botón visualizar modelo 3D */}
+              {!!selectedClassroom && selectedClassroomData?.path_modelo && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    setViewerModal({
+                      open: true,
+                      type: "3d",
+                      src: selectedClassroomData.path_modelo!,
+                    })
+                  }
+                  className="ms-2"
+                >
+                  Visualizar 3D
+                </Button>
+              )}
+            </div>
+            {id && (
+              <div className="form-text text-muted">
+                No se puede editar el aula en modo edición
+              </div>
+            )}
+          </div>
         )}
+
         <div className="mb-4">
           <label htmlFor="descripcion" className="form-label">
-            Titulo{" "}
+            Título{" "}
             <small className="text-muted">
               (Grupo, Familia u otra información necesaria)
             </small>
@@ -459,18 +554,18 @@ export default function ReserveClassroom() {
             required
           ></textarea>
         </div>
+
         <div className="mb-4">
           <label htmlFor="tipoReserva" className="form-label">
             Tipo de Reserva
           </label>
           <select
             id="tipoReserva"
-            disabled={!!id || descripcion.trim().length < 1} // aquí agregas el !!id para bloquear edición en modo editar
             className="form-select"
             value={tipoReserva}
             onChange={(e) => {
               setTipoReserva(e.target.value);
-              setDiasSeleccionados([]); // Limpia días si cambia tipo
+              setDiasSeleccionados([]);
             }}
             required
           >
@@ -480,157 +575,61 @@ export default function ReserveClassroom() {
             <option value="clase_recurrente">Clase Recurrente</option>
           </select>
         </div>
-        <div className="mb-4">
-          <label htmlFor="date" className="form-label">
-            <FaCalendarAlt className="me-2" /> Fecha
-          </label>
-          <DatePicker
-            id="date"
-            selected={selectedDate}
-            onChange={(date) => {
-              if (date) {
-                date.setHours(12, 0, 0, 0);
-                setSelectedDate(date);
-                setStartTime("");
-                setEndTime("");
-              }
-            }}
-            className="form-control"
-            dateFormat="dd/MM/yyyy"
-            placeholderText="Selecciona la fecha"
-            required
-            disabled={
-              !selectedClassroom ||
-              loadingHorarios ||
-              tipoReserva == "" ||
-              tipoReserva == null
-            }
-            filterDate={isDateEnabled}
-          />
-          {loadingHorarios && (
-            <small className="text-muted">Restringiendo horarios...</small>
-          )}
-        </div>
+
         {tipoReserva === "clase_recurrente" && (
-          <div className="mb-4">
-            <label htmlFor="endDate" className="form-label">
-              <FaCalendarAlt className="me-2" /> Fecha de Finalización
-            </label>
-            <DatePicker
-              id="endDate"
-              selected={endDate}
-              filterDate={isDateEnabled}
-              onChange={(date) => {
-                if (date) {
-                  date.setHours(12, 0, 0, 0);
-                  setEndDate(date);
-                }
-              }}
-              className="form-control"
-              dateFormat="dd/MM/yyyy"
-              placeholderText="Selecciona la fecha de finalización"
-              minDate={selectedDate || new Date()}
-              required
-              disabled={selectedDate == null || loadingHorarios}
-            />
-            {loadingHorarios && (
-              <small className="text-muted">Restringiendo horarios...</small>
-            )}
-          </div>
-        )}
-        {tipoReserva === "clase_recurrente" && (
-          <div className="mb-4">
-            <label className="form-label">Días de la semana</label>
-            <div className="d-flex flex-wrap gap-3">
-              {diasDisponibles.map((dia) => (
-                <div key={dia} className="form-check">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id={`dia-${dia}`}
-                    disabled={!endDate}
-                    value={dia}
-                    checked={diasSeleccionados.includes(dia)}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (e.target.checked) {
-                        setDiasSeleccionados([...diasSeleccionados, value]);
-                      } else {
-                        setDiasSeleccionados(
-                          diasSeleccionados.filter((d) => d !== value)
-                        );
-                      }
-                    }}
-                  />
-                  <label className="form-check-label" htmlFor={`dia-${dia}`}>
-                    {dia}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="mb-4">
-          <label className="form-label">
-            <FaClock className="me-2" /> Horario
-          </label>
-          <div className="mb-4 row">
-            <div className="col-md-6 mb-2">
-              <label htmlFor="startTime" className="form-label">
-                Inicio
+          <>
+            <div className="mb-4">
+              <label htmlFor="endDate" className="form-label">
+                <FaCalendarAlt className="me-2" /> Fecha de Finalización
               </label>
-              <input
-                id="startTime"
-                type="time"
+              <DatePicker
+                id="endDate"
+                selected={endDate}
+                onChange={(date) => {
+                  if (date) {
+                    date.setHours(12, 0, 0, 0);
+                    setEndDate(date);
+                  }
+                }}
                 className="form-control"
-                value={startTime}
-                min="07:00"
-                max="22:00"
-                onChange={(e) => setStartTime(e.target.value)}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Selecciona la fecha de finalización"
+                minDate={selectedDate || new Date()}
                 required
                 disabled={!selectedDate}
               />
             </div>
-            <div className="col-md-6 mb-2">
-              <label htmlFor="endTime" className="form-label">
-                Fin
-              </label>
-              <input
-                id="endTime"
-                type="time"
-                className="form-control"
-                value={endTime}
-                min={startTime || "07:00"}
-                max="22:00"
-                onChange={(e) => setEndTime(e.target.value)}
-                required
-                disabled={!startTime}
-              />
-            </div>
-          </div>
-        </div>
-
-        {(user?.role === Role.Administrador ||
-          user?.role === Role.EspacioEncargado) && (
-          <div className="mb-4">
-            <label className="form-label d-flex align-items-center">
-              <FaUser className="me-2" /> Usuario prestamista
-            </label>
-            <Select
-              options={prestamistaOptions}
-              value={selectedPrestamista}
-              onChange={(selected) => setSelectedPrestamista(selected)}
-              placeholder="Selecciona un usuario prestamista"
-              className="react-select-container"
-              classNamePrefix="react-select"
-              isDisabled={!isDateTimeComplete || !!id}
-            />
-            {id && (
-              <div className="form-text text-muted">
-                No se puede cambiar el usuario prestamista en modo edición
+            <div className="mb-4">
+              <label className="form-label">Días de la semana</label>
+              <div className="d-flex flex-wrap gap-3">
+                {diasDisponibles.map((dia) => (
+                  <div key={dia} className="form-check">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id={`dia-${dia}`}
+                      disabled={!endDate}
+                      value={dia}
+                      checked={diasSeleccionados.includes(dia)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (e.target.checked) {
+                          setDiasSeleccionados([...diasSeleccionados, value]);
+                        } else {
+                          setDiasSeleccionados(
+                            diasSeleccionados.filter((d) => d !== value)
+                          );
+                        }
+                      }}
+                    />
+                    <label className="form-check-label" htmlFor={`dia-${dia}`}>
+                      {dia}
+                    </label>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          </>
         )}
 
         <br />
@@ -681,51 +680,56 @@ export default function ReserveClassroom() {
         </div>
       </form>
 
+      {/* Modal Visualización Imagen/3D */}
       <Modal
-        show={showModal}
-        onHide={() => setShowModal(false)}
+        show={viewerModal.open}
+        onHide={() => setViewerModal({ open: false, type: null, src: null })}
         size="xl"
         fullscreen
+        centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Imágenes del Aula</Modal.Title>
+          <Modal.Title>
+            Vista previa {viewerModal.type === "3d" ? "3D" : "de imagen"}
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body className="text-center">
-          {selectedClassroomData?.imagenes &&
-            selectedClassroomData.imagenes.length > 0 && (
-              <>
-                {selectedClassroomData.imagenes[carouselIndex].is_360 ? (
-                  <PanoramaViewer
-                    image={selectedClassroomData.imagenes[carouselIndex].url}
-                    pitch={10}
-                    yaw={180}
-                    hfov={110}
-                  />
-                ) : (
-                  <Card style={{ width: "100%" }}>
-                    <Card.Img
-                      variant="top"
-                      src={selectedClassroomData.imagenes[carouselIndex].url}
-                      style={{ maxHeight: "80vh", objectFit: "contain" }}
-                    />
-                  </Card>
-                )}
-                {selectedClassroomData?.imagenes &&
-                  selectedClassroomData.imagenes.length > 1 && (
-                    <div className="mt-3 d-flex justify-content-between">
-                      <Button variant="secondary" onClick={handlePrev}>
-                        Anterior
-                      </Button>
-                      <Button variant="secondary" onClick={handleNext}>
-                        Siguiente
-                      </Button>
-                    </div>
-                  )}
-              </>
-            )}
+        <Modal.Body className="text-center" style={{ background: "#212121" }}>
+          {viewerModal.type === "img" && (
+            <img
+              src={viewerModal.src!}
+              alt="Vista previa"
+              style={{
+                maxWidth: "98vw",
+                maxHeight: "90vh",
+                objectFit: "contain",
+                borderRadius: 8,
+              }}
+            />
+          )}
+          {viewerModal.type === "3d" && (
+            <model-viewer
+              src={viewerModal.src!}
+              alt="Modelo 3D"
+              style={{
+                width: "98vw",
+                height: "80vh",
+                background: "#212121",
+              }}
+              camera-controls
+              auto-rotate
+              ar
+              shadow-intensity="1"
+              exposure="1"
+            ></model-viewer>
+          )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              setViewerModal({ open: false, type: null, src: null })
+            }
+          >
             Cerrar
           </Button>
         </Modal.Footer>

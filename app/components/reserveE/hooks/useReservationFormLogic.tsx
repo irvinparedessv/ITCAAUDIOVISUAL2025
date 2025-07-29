@@ -241,7 +241,7 @@ export default function useReservationFormLogic(reservaId?: string | null) {
       formPayload.append(`equipo[${index}][id]`, eq.id.toString());
       formPayload.append(`equipo[${index}][cantidad]`, "1");
     });
-    formPayload.append(`en_reposo`, String(withReposo));
+    formPayload.append(`en_reposo`, withReposo ? "1" : "0");
     try {
       setLoading((prev) => ({ ...prev, submit: true }));
 

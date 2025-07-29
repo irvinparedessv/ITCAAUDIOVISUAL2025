@@ -709,6 +709,7 @@ export default function EquiposSelect({
             equipos={equiposConModeloPath}
             setFormData={setFormData}
             onClose={() => setShowFullView(false)}
+            escala={formData.aula?.escala ?? 1}
           />
         </Modal.Body>
       </Modal>

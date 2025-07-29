@@ -59,10 +59,12 @@ export default function UbicacionSelect({
               id: number;
               name: string;
               path_modelo: string | null;
+              escala: number;
             }) => ({
               value: item.id,
               label: item.name,
               path_modelo: item.path_modelo,
+              escala: item.escala,
             })
           )
         );
@@ -105,9 +107,10 @@ export default function UbicacionSelect({
         <Select
           options={aulaOptions}
           value={formData.aula}
-          onChange={(selected: any) =>
-            setFormData((prev: any) => ({ ...prev, aula: selected }))
-          }
+          onChange={(selected: any) => {
+            console.log("Aula seleccionada:", selected);
+            setFormData((prev: any) => ({ ...prev, aula: selected }));
+          }}
           placeholder="Selecciona aula"
           className="react-select-container"
           classNamePrefix="react-select"

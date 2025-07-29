@@ -15,4 +15,5 @@ export interface Aula {
   value: string;
   label: string;
   path_modelo: string;
+  escala: number;
 }

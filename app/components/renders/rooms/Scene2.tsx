@@ -28,6 +28,7 @@ interface InteractiveSceneProps {
   equipos: EquipmentSeleccionado[];
   setFormData;
   onClose: () => void;
+  escala: number;
 }
 
 function LoadingOverlay() {
@@ -235,6 +236,7 @@ function MoveableItem({
 
 export default function InteractiveScene({
   path_room,
+  escala,
   equipos,
   setFormData,
   onClose,
@@ -394,7 +396,7 @@ export default function InteractiveScene({
           <group ref={exportGroupRef}>
             <MemoizedRoom
               path={APIURL + "/" + path_room}
-              scale={0.01}
+              scale={escala}
               onReady={handleRoomReady}
             />
             {items.map(renderItem)}

@@ -11,16 +11,16 @@ import { useNavigate } from "react-router-dom";
 import debounce from "lodash.debounce";
 import toast from "react-hot-toast";
 import api from "../../api/axios";
-import { 
-  FaSave, 
-  FaTimes, 
-  FaEdit, 
-  FaTrash, 
-  FaLongArrowAltLeft, 
-  FaPlus, 
-  FaFilter, 
+import {
+  FaSave,
+  FaTimes,
+  FaEdit,
+  FaTrash,
+  FaLongArrowAltLeft,
+  FaPlus,
+  FaFilter,
   FaSearch,
-  FaImages
+  FaImages,
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
 
@@ -80,10 +80,10 @@ export default function ModeloManager() {
     setLoading(true);
     try {
       const res = await api.get("/mod/modelos", {
-        params: { 
-          search: filters.search, 
-          perPage: filters.perPage, 
-          page: filters.page 
+        params: {
+          search: filters.search,
+          perPage: filters.perPage,
+          page: filters.page,
         },
       });
 
@@ -142,7 +142,7 @@ export default function ModeloManager() {
   };
 
   const handleFilterUpdate = (key: string, value: any) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       [key]: value,
       page: 1,
@@ -150,7 +150,7 @@ export default function ModeloManager() {
   };
 
   const handlePageChange = (page: number) => {
-    setFilters(prev => ({ ...prev, page }));
+    setFilters((prev) => ({ ...prev, page }));
   };
 
   const resetFilters = () => {
@@ -189,7 +189,7 @@ export default function ModeloManager() {
   };
 
   const confirmarEliminacion = async (id: number) => {
-    const modelo = modelos.find(m => m.id === id);
+    const modelo = modelos.find((m) => m.id === id);
     if (!modelo) {
       toast.error("Modelo no encontrado");
       return;
@@ -215,6 +215,7 @@ export default function ModeloManager() {
             <strong>{modelo.nombre}</strong>?
           </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
+            {/* @ts-ignore*/}
             <Button
               variant="danger"
               size="sm"
@@ -268,8 +269,8 @@ export default function ModeloManager() {
             onClick={handleBack}
             title="Regresar"
             style={{
-              cursor: 'pointer',
-              fontSize: '2rem',
+              cursor: "pointer",
+              fontSize: "2rem",
             }}
           />
           <h2 className="fw-bold m-0">Gestión de Modelos</h2>
@@ -310,7 +311,6 @@ export default function ModeloManager() {
             )}
           </InputGroup>
         </div>
-
       </div>
 
       {showFilters && (
@@ -353,7 +353,7 @@ export default function ModeloManager() {
                       <td className="fw-bold">{modelo.nombre}</td>
                       <td>
                         <Badge bg="info" pill>
-                          {modelo.marca?.nombre || 'Sin marca'}
+                          {modelo.marca?.nombre || "Sin marca"}
                         </Badge>
                       </td>
                       <td>
@@ -365,7 +365,7 @@ export default function ModeloManager() {
                             style={{
                               width: "44px",
                               height: "44px",
-                              transition: "transform 0.2s ease-in-out"
+                              transition: "transform 0.2s ease-in-out",
                             }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
@@ -385,7 +385,7 @@ export default function ModeloManager() {
                             style={{
                               width: "44px",
                               height: "44px",
-                              transition: "transform 0.2s ease-in-out"
+                              transition: "transform 0.2s ease-in-out",
                             }}
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.transform = "scale(1.15)")
@@ -393,7 +393,9 @@ export default function ModeloManager() {
                             onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
-                            onClick={() => navigate(`/modelos/gestionar/${modelo.id}`)}
+                            onClick={() =>
+                              navigate(`/modelos/gestionar/${modelo.id}`)
+                            }
                           >
                             <FaImages />
                           </Button>
@@ -410,8 +412,12 @@ export default function ModeloManager() {
                               width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out",
-                              opacity: (modelo.equipos_count || 0) > 0 ? 0.6 : 1,
-                              cursor: (modelo.equipos_count || 0) > 0 ? "not-allowed" : "pointer",
+                              opacity:
+                                (modelo.equipos_count || 0) > 0 ? 0.6 : 1,
+                              cursor:
+                                (modelo.equipos_count || 0) > 0
+                                  ? "not-allowed"
+                                  : "pointer",
                             }}
                             onMouseEnter={(e) => {
                               if (!(modelo.equipos_count || 0)) {
@@ -469,7 +475,9 @@ export default function ModeloManager() {
                 type="text"
                 name="nombre"
                 value={formData.nombre}
-                onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, nombre: e.target.value })
+                }
                 isInvalid={formValidated && formData.nombre.trim() === ""}
               />
               <Form.Control.Feedback type="invalid">
@@ -490,7 +498,9 @@ export default function ModeloManager() {
                     required
                     name="marca_id"
                     value={formData.marca_id}
-                    onChange={(e) => setFormData({...formData, marca_id: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, marca_id: e.target.value })
+                    }
                     isInvalid={formValidated && formData.marca_id === ""}
                   >
                     <option value="">Seleccionar marca</option>
@@ -515,11 +525,7 @@ export default function ModeloManager() {
             disabled={submitting}
             className="d-flex align-items-center gap-2"
           >
-            {submitting ? (
-              <Spinner size="sm" animation="border" />
-            ) : (
-              <FaSave />
-            )}
+            {submitting ? <Spinner size="sm" animation="border" /> : <FaSave />}
             {editing ? "Actualizar" : "Crear"}
           </Button>
           <Button

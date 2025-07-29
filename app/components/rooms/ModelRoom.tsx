@@ -285,7 +285,7 @@ export default function GestorModelosAula() {
         <Form.Group className="mt-4">
           <Form.Label>Subir imagen (.jpg, .png)</Form.Label>
           {/* Galería de imágenes existentes */}
-          {aula.imagenes && aula.imagenes.length > 0 && (
+          {aula.imagenes && aula.imagenes.length > 0 && !fileImgUrl && (
             <div
               style={{
                 display: "flex",

@@ -63,6 +63,7 @@ export default function ItemList({
     const [loadingInsumos, setLoadingInsumos] = useState(false);
     const [asignando, setAsignando] = useState(false);
 
+
     // Estados para el modal de detalle
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedEquipoDetail, setSelectedEquipoDetail] = useState<string | null>(null);
@@ -271,14 +272,13 @@ export default function ItemList({
             await eliminarAsignacion(insumoId, selectedEquipo.id);
             toast.success("Asignación eliminada");
 
-            // Recargar los datos del equipo con insumos actualizados
-            const res = await api.get(`/equipos/${selectedEquipo.id}`);
-            const equipoActualizado = res.data;
+            // Recargar todos los datos
+            await fetchItems(); // Esto actualiza la tabla principal
+            await cargarInsumosDisponibles(); // Esto actualiza los insumos disponibles
 
-            await cargarInsumosDisponibles();
+            // Cerrar el modal
+            setShowAccesorioModal(false);
 
-            // Actualizar el estado
-            setSelectedEquipo(equipoActualizado);
         } catch (error) {
             console.error("Error eliminando asignación", error);
             toast.error("Error al eliminar la asignación");
@@ -571,9 +571,12 @@ export default function ItemList({
                                                 <td>{item.cantidad}</td>
                                                 <td>
                                                     {isEquipoItem
-                                                        ? item.reposo ?? '-' 
+                                                        ? item.reposo
+                                                            ? `${item.reposo} minutos`
+                                                            : '-'
                                                         : '-'}
                                                 </td>
+
                                                 <td>{item.detalles || 'N/A'}</td>
                                                 <td>
                                                     {item.imagen_url ? (

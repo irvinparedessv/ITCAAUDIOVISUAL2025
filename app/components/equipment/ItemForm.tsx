@@ -72,10 +72,31 @@ export default function ItemForm({
     return tipo?.categoria_id === 2;
   })();
 
+  // Filtrar los estados para mostrar solo Disponible (1) y Daniado (2)
+  const filteredEstados = estados.filter(e => e.id === 1 || e.id === 4);
+
+  // 1. Estado para controlar el bloqueo - inicializado como true si estamos en modo creación
+  const [bloquearEstado, setBloquearEstado] = useState(true);
+
+  // 2. Efecto para manejar el bloqueo diferentemente en creación vs edición
+  useEffect(() => {
+    if (isEditing) {
+      // En edición: bloquear por 2.2 segundos
+      const timer = setTimeout(() => {
+        setBloquearEstado(false);
+      }, 2200);
+
+      return () => clearTimeout(timer);
+    } else {
+      // En creación: mantener siempre bloqueado
+      setBloquearEstado(true);
+    }
+  }, [isEditing]);
+
   // Inicialización del formulario
   useEffect(() => {
     if (initialValues) {
-      console.log('Initial values received:', initialValues);
+      //console.log('Initial values received:', initialValues);
       setForm(prev => ({
         ...prev,
         ...initialValues,
@@ -804,16 +825,23 @@ export default function ItemForm({
             </label>
             <Select
               id="estado"
-              options={estados.map(e => ({ value: e.id, label: e.nombre }))}
-              value={estados.find(e => e.id === Number(form.estado_id)) ?
-                { value: Number(form.estado_id), label: estados.find(e => e.id === Number(form.estado_id))?.nombre || '' }
-                : isEditing ? null : { value: 1, label: 'Disponible' }} // Valor por defecto en creación
-              onChange={(selected) => setForm({ ...form, estado_id: selected ? String(selected.value) : '' })}
-              placeholder={isEditing ? "Seleccionar estado..." : "Disponible"}
-              isDisabled={loading || !isEditing} // Deshabilitado en creación
+              options={filteredEstados.map(e => ({ value: e.id, label: e.nombre }))}
+              value={filteredEstados.find(e => e.id === Number(form.estado_id)) ?
+                { value: Number(form.estado_id), label: filteredEstados.find(e => e.id === Number(form.estado_id))?.nombre || '' }
+                : isEditing ? null : { value: 1, label: 'Disponible' }}
+              onChange={(selected) => {
+                if (!bloquearEstado) { // Solo permitir cambios si no está bloqueado
+                  setForm({ ...form, estado_id: selected ? String(selected.value) : '' });
+                }
+              }}
+              placeholder={isEditing ? (bloquearEstado ? "Cargando..." : "Seleccionar estado...") : "Disponible"}
+              isDisabled={loading || bloquearEstado || !isEditing} // Bloqueado si: loading, bloquearEstado, o no es edición
               styles={customSelectStyles}
               menuPortalTarget={document.body}
             />
+            {isEditing && bloquearEstado && (
+              <small className="text-muted d-block mt-1">Cargando opciones, espere...</small>
+            )}
             {!isEditing && (
               <small className="text-muted d-block mt-1">Este campo no se puede modificar</small>
             )}

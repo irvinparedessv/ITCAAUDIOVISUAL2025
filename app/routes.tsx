@@ -65,6 +65,22 @@ import GestorModelos from "./components/renders/components/CreationUpload";
 import GestorModelosAula from "./components/rooms/ModelRoom";
 import MarcaManager from "./components/marca/marcaManager";
 
+// -------------------- Mantenimientos --------------------
+import MantenimientoList from "./components/mantenimiento/mantenimientoList";
+import FormMantenimiento from "./components/FormMantenimiento";
+import MantenimientoEdit from "./components/mantenimiento/mantenimientoEdit";
+
+// --------------- Tipo de Mantenimiento ------------------
+import TipoMantenimientoList from "./components/tipoMantenimiento/tipoMantenimientoList";
+import FormTipoMantenimiento from "./components/FormTipoMantenimiento"; // útil para crear o editar
+import TipoMantenimientoEdit from "./components/tipoMantenimiento/tipoMantenimientoEdit";
+
+// -------------- Futuro Mantenimiento -------------------
+import FuturoMantenimientoList from "./components/futuroMantenimiento/futuroMantenimientoList";
+import FormFuturoMantenimiento from "./components/FormFuturoMantenimiento";
+import FuturoMantenimientoEdit from "./components/futuroMantenimiento/futuroMantenimientoEdit";
+
+
 const router = createBrowserRouter([
   {
     path: "/login",

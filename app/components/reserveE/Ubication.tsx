@@ -27,7 +27,7 @@ export default function UbicacionSelect({
   const { user } = useAuth();
   const userid =
     user?.role === Role.Administrador || user?.role === Role.Encargado
-      ? selectedPrestamista.value
+      ? selectedPrestamista?.value
       : user.id;
   useEffect(() => {
     const fetchUbicaciones = async () => {

@@ -28,7 +28,7 @@ export default function FuturoMantenimientoList() {
   const [loading, setLoading] = useState(false);
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/equipos");
   };
 
   const cargarMantenimientos = async () => {
@@ -114,7 +114,7 @@ export default function FuturoMantenimientoList() {
           <FaLongArrowAltLeft
             onClick={handleBack}
             title="Regresar"
-            style={{ cursor: 'pointer', fontSize: '2rem' }}
+            style={{ cursor: "pointer", fontSize: "2rem" }}
           />
           <h2 className="fw-bold m-0">Mantenimientos Futuros</h2>
         </div>
@@ -144,7 +144,9 @@ export default function FuturoMantenimientoList() {
               onChange={(e) => handleFilterUpdate("search", e.target.value)}
             />
             {filters.search && (
-              <Button variant="outline-secondary" onClick={() => handleFilterUpdate("search", "")}> <FaTimes /> </Button>
+              <Button variant="outline-secondary" onClick={() => handleFilterUpdate("search", "")}>
+                <FaTimes />
+              </Button>
             )}
           </InputGroup>
         </div>
@@ -161,8 +163,6 @@ export default function FuturoMantenimientoList() {
         </Button>
       </div>
 
-      {/* Filtros adicionales si se necesitan */}
-
       {loading ? (
         <div className="text-center my-5">
           <Spinner animation="border" variant="primary" />
@@ -178,6 +178,8 @@ export default function FuturoMantenimientoList() {
                   <th>Equipo</th>
                   <th>Tipo de Mantenimiento</th>
                   <th>Fecha Programada</th>
+                  <th>Hora Inicio</th>
+                  <th>Hora Final</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -189,6 +191,8 @@ export default function FuturoMantenimientoList() {
                       <td>{item.equipo?.numero_serie || "-"}</td>
                       <td>{item.tipo_mantenimiento?.nombre || "-"}</td>
                       <td>{item.fecha_mantenimiento}</td>
+                      <td>{item.hora_mantenimiento_inicio || "-"}</td>
+                      <td>{item.hora_mantenimiento_final || "-"}</td>
                       <td>
                         <div className="d-flex justify-content-center gap-2">
                           <Button
@@ -196,7 +200,11 @@ export default function FuturoMantenimientoList() {
                             className="rounded-circle"
                             title="Editar"
                             onClick={() => navigate(`/futuroMantenimiento/editar/${item.id}`)}
-                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out" }}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
                             onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
                             onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                           >
@@ -207,7 +215,11 @@ export default function FuturoMantenimientoList() {
                             className="rounded-circle"
                             title="Eliminar"
                             onClick={() => confirmarEliminacion(item.id)}
-                            style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out" }}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
                             onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
                             onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                           >
@@ -219,7 +231,7 @@ export default function FuturoMantenimientoList() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="text-center py-4 text-muted">
+                    <td colSpan={7} className="text-center py-4 text-muted">
                       No se encontraron mantenimientos futuros.
                     </td>
                   </tr>

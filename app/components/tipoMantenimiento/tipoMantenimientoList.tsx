@@ -51,7 +51,7 @@ export default function TipoMantenimientoList() {
   }, []);
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/equipos");
   };
 
   return (

@@ -31,7 +31,7 @@ export default function MantenimientoList() {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/equipos");
   };
 
   const cargarTipos = async () => {
@@ -263,7 +263,7 @@ export default function MantenimientoList() {
                           <Button
                             variant="outline-primary"
                             title="Editar mantenimiento"
-                            onClick={() => navigate(`/mantenimientos/editar/${m.id}`)}
+                            onClick={() => navigate(`/mantenimiento/editar/${m.id}`)}
                             style={{ minWidth: "44px", minHeight: "44px" }}
                             className="d-flex justify-content-center align-items-center p-0 rounded-circle"
                           >

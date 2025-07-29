@@ -9,6 +9,7 @@ import {
   FaTools,
   FaFileArchive,
   FaFile,
+  FaCalendarAlt,
 } from "react-icons/fa";
 import { Card, Container, Row, Col } from "react-bootstrap";
 import { useAuth } from "../hooks/AuthContext";
@@ -49,6 +50,20 @@ const opciones = [
     descripcion: "Administracion de mantenimientos",
     ruta: "/mantenimiento",
     icono: <FaComputer size={24} />,
+    roles: [Role.Administrador, Role.Encargado, Role.EspacioEncargado],
+  },
+  {
+    nombre: "Tipo de Mantenimientos",
+    descripcion: "Gestión de los tipos de mantenimiento",
+    ruta: "/tipoMantenimiento",
+    icono: <FaFile size={24} />,
+    roles: [Role.Administrador, Role.Encargado, Role.EspacioEncargado],
+  },
+  {
+    nombre: "Futuros Mantenimientos",
+    descripcion: "Planificación de mantenimientos futuros",
+    ruta: "/futuroMantenimiento",
+    icono: <FaCalendarAlt size={24} />,
     roles: [Role.Administrador, Role.Encargado, Role.EspacioEncargado],
   },
 ];

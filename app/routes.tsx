@@ -63,6 +63,7 @@ import OpcionesEquipos from "./dashboard/OpcionesEquipos";
 import ModeloManager from "./components/modelo/modeloManager";
 import GestorModelos from "./components/renders/components/CreationUpload";
 import GestorModelosAula from "./components/rooms/ModelRoom";
+import MarcaManager from "./components/marca/marcaManager";
 
 const router = createBrowserRouter([
   {
@@ -264,6 +265,10 @@ const router = createBrowserRouter([
           {
             path: "modelos",
             element: <ModeloManager />,
+          },
+          {
+            path: "marcas",
+            element: <MarcaManager />,
           },
           {
             path: "opcionesReportes",

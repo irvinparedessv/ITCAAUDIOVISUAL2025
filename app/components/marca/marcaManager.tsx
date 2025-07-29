@@ -1,12 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import {
-  Button,
-  Spinner,
-  Form,
-  InputGroup,
-  Badge,
-  Modal,
-} from "react-bootstrap";
+import { Button, Spinner, Form, InputGroup, Modal } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import debounce from "lodash.debounce";
 import toast from "react-hot-toast";
@@ -18,27 +11,18 @@ import {
   FaTrash,
   FaLongArrowAltLeft,
   FaPlus,
-  FaFilter,
   FaSearch,
-  FaImages,
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
-
-interface Modelo {
-  id: number;
-  nombre: string;
-  marca_id: number;
-  marca: { nombre: string };
-  equipos_count?: number;
-}
 
 interface Marca {
   id: number;
   nombre: string;
+  is_deleted?: boolean;
+  modelos_count?: number; // Si tu backend lo incluye
 }
 
-export default function ModeloManager() {
-  const [modelos, setModelos] = useState<Modelo[]>([]);
+export default function MarcaManager() {
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [filters, setFilters] = useState({
     search: "",
@@ -47,39 +31,19 @@ export default function ModeloManager() {
   });
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [loadingMarcas, setLoadingMarcas] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formValidated, setFormValidated] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [editing, setEditing] = useState<Modelo | null>(null);
-  const [formData, setFormData] = useState({ nombre: "", marca_id: "" });
+  const [editing, setEditing] = useState<Marca | null>(null);
+  const [formData, setFormData] = useState({ nombre: "" });
 
   const navigate = useNavigate();
 
+  // Cambiado a /mar/marcas
   const fetchMarcas = async () => {
-    setLoadingMarcas(true);
-    try {
-      const res = await api.get("/mod/marcas");
-      const data = res.data;
-      if (Array.isArray(data)) {
-        setMarcas(data);
-      } else {
-        console.error("❌ Respuesta inesperada de marcas:", data);
-        setMarcas([]);
-      }
-    } catch (err) {
-      console.error("Error al cargar marcas:", err);
-      setMarcas([]);
-    } finally {
-      setLoadingMarcas(false);
-    }
-  };
-
-  const fetchModelos = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/mod/modelos", {
+      const res = await api.get("/mar/marcas", {
         params: {
           search: filters.search,
           perPage: filters.perPage,
@@ -89,16 +53,14 @@ export default function ModeloManager() {
 
       const data = res.data;
       if (Array.isArray(data.data)) {
-        setModelos(data.data);
+        setMarcas(data.data);
         setTotalPaginas(data.last_page ?? 1);
       } else {
-        console.error("❌ Respuesta inesperada de modelos:", data);
-        setModelos([]);
+        setMarcas([]);
         setTotalPaginas(1);
       }
     } catch (err) {
-      console.error("Error al cargar modelos:", err);
-      setModelos([]);
+      setMarcas([]);
       setTotalPaginas(1);
     } finally {
       setLoading(false);
@@ -107,13 +69,12 @@ export default function ModeloManager() {
 
   const debouncedFetch = useCallback(
     debounce(() => {
-      fetchModelos();
+      fetchMarcas();
     }, 500),
-    []
+    [filters.search, filters.page, filters.perPage]
   );
 
   useEffect(() => {
-    fetchModelos();
     fetchMarcas();
   }, [filters.page]);
 
@@ -122,20 +83,20 @@ export default function ModeloManager() {
     return () => debouncedFetch.cancel();
   }, [filters.search]);
 
-  const handleShow = (modelo?: Modelo) => {
-    if (modelo) {
-      setEditing(modelo);
-      setFormData({ nombre: modelo.nombre, marca_id: String(modelo.marca_id) });
+  const handleShow = (marca?: Marca) => {
+    if (marca) {
+      setEditing(marca);
+      setFormData({ nombre: marca.nombre });
     } else {
       setEditing(null);
-      setFormData({ nombre: "", marca_id: "" });
+      setFormData({ nombre: "" });
     }
     setFormValidated(false);
     setShowModal(true);
   };
 
   const handleClose = () => {
-    setFormData({ nombre: "", marca_id: "" });
+    setFormData({ nombre: "" });
     setEditing(null);
     setShowModal(false);
     setFormValidated(false);
@@ -161,79 +122,77 @@ export default function ModeloManager() {
     });
   };
 
+  // Cambiado a /mar/marcas
   const handleSubmit = async () => {
     setFormValidated(true);
 
-    if (formData.nombre.trim() === "" || formData.marca_id === "") {
-      toast.error("Por favor, completa todos los campos obligatorios.");
+    if (formData.nombre.trim() === "") {
+      toast.error("Por favor, completa el nombre de la marca.");
       return;
     }
 
     setSubmitting(true);
     try {
       if (editing) {
-        await api.put(`/mod/modelos/${editing.id}`, formData);
-        toast.success("Modelo actualizado correctamente.");
+        await api.put(`/mar/marcas/${editing.id}`, formData);
+        toast.success("Marca actualizada correctamente.");
       } else {
-        await api.post("/mod/modelos", formData);
-        toast.success("Modelo creado correctamente.");
+        await api.post("/mar/marcas", formData);
+        toast.success("Marca creada correctamente.");
       }
-      fetchModelos();
+      fetchMarcas();
       handleClose();
     } catch (err) {
-      console.error("Error al guardar modelo:", err);
       toast.error("Ocurrió un error al guardar.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  // Cambiado a /mar/marcas
   const confirmarEliminacion = async (id: number) => {
-    const modelo = modelos.find((m) => m.id === id);
-    if (!modelo) {
-      toast.error("Modelo no encontrado");
+    const marca = marcas.find((m) => m.id === id);
+    if (!marca) {
+      toast.error("Marca no encontrada");
       return;
     }
 
-    // Verificar si tiene equipos asociados
-    if (modelo.equipos_count && modelo.equipos_count > 0) {
+    if (marca.modelos_count && marca.modelos_count > 0) {
       toast.error(
-        `No se puede eliminar "${modelo.nombre}" porque tiene ${modelo.equipos_count} equipo(s) asociado(s)`,
+        `No se puede eliminar "${marca.nombre}" porque tiene ${marca.modelos_count} modelo(s) asociado(s)`,
         { duration: 5000 }
       );
       return;
     }
 
-    const toastId = `eliminar-modelo-${id}`;
+    const toastId = `eliminar-marca-${id}`;
     toast.dismiss();
 
     toast(
       (t) => (
         <div>
           <p>
-            ¿Seguro que deseas eliminar el modelo{" "}
-            <strong>{modelo.nombre}</strong>?
+            ¿Seguro que deseas eliminar la marca <strong>{marca.nombre}</strong>
+            ?
           </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
-            {/* @ts-ignore*/}
             <Button
               variant="danger"
               size="sm"
               onClick={async () => {
                 try {
-                  await api.delete(`/mod/modelos/${id}`);
+                  await api.delete(`/mar/marcas/${id}`);
                   toast.dismiss(t.id);
                   toast.success(
-                    `Modelo "${modelo.nombre}" eliminado correctamente`,
+                    `Marca "${marca.nombre}" eliminada correctamente`,
                     { duration: 4000 }
                   );
-                  await fetchModelos();
+                  await fetchMarcas();
                 } catch (err: any) {
                   toast.dismiss(t.id);
-                  const msg =
-                    err?.response?.data?.message ||
-                    "Error al eliminar el modelo.";
-                  toast.error(msg, { duration: 4000 });
+                  toast.error("Error al eliminar la marca.", {
+                    duration: 4000,
+                  });
                 }
               }}
             >
@@ -262,7 +221,6 @@ export default function ModeloManager() {
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
-      {/* Encabezado */}
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
         <div className="d-flex align-items-center gap-3">
           <FaLongArrowAltLeft
@@ -273,23 +231,20 @@ export default function ModeloManager() {
               fontSize: "2rem",
             }}
           />
-          <h2 className="fw-bold m-0">Gestión de Modelos</h2>
+          <h2 className="fw-bold m-0">Gestión de Marcas</h2>
         </div>
-
         <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
-          {/* @ts-ignore */}
           <Button
             variant="primary"
             className="d-flex align-items-center gap-2"
             onClick={() => handleShow()}
           >
             <FaPlus />
-            Nuevo Modelo
+            Nueva Marca
           </Button>
         </div>
       </div>
 
-      {/* Buscador + Filtros */}
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
         <div className="d-flex flex-grow-1">
           <InputGroup className="flex-grow-1">
@@ -314,23 +269,6 @@ export default function ModeloManager() {
         </div>
       </div>
 
-      {showFilters && (
-        <div className="p-3 rounded mb-4 border border-secondary">
-          <div className="row g-3">
-            <div className="col-12">
-              <Button
-                variant="outline-danger"
-                onClick={resetFilters}
-                className="w-100"
-              >
-                <FaTimes className="me-2" />
-                Limpiar filtros
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {loading ? (
         <div className="text-center my-5">
           <Spinner animation="border" variant="primary" />
@@ -343,26 +281,20 @@ export default function ModeloManager() {
               <thead className="table-dark">
                 <tr>
                   <th className="rounded-top-start">Nombre</th>
-                  <th>Marca</th>
-                  <th className="rounded-top-end">Acciones</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {modelos.length > 0 ? (
-                  modelos.map((modelo) => (
-                    <tr key={modelo.id}>
-                      <td className="fw-bold">{modelo.nombre}</td>
-                      <td>
-                        <Badge bg="info" pill>
-                          {modelo.marca?.nombre || "Sin marca"}
-                        </Badge>
-                      </td>
+                {marcas.length > 0 ? (
+                  marcas.map((marca) => (
+                    <tr key={marca.id}>
+                      <td className="fw-bold">{marca.nombre}</td>
                       <td>
                         <div className="d-flex justify-content-center gap-2">
                           <Button
                             variant="outline-primary"
                             className="rounded-circle"
-                            title="Editar modelo"
+                            title="Editar marca"
                             style={{
                               width: "44px",
                               height: "44px",
@@ -374,54 +306,31 @@ export default function ModeloManager() {
                             onMouseLeave={(e) =>
                               (e.currentTarget.style.transform = "scale(1)")
                             }
-                            onClick={() => handleShow(modelo)}
+                            onClick={() => handleShow(marca)}
                           >
                             <FaEdit />
-                          </Button>
-
-                          <Button
-                            variant="outline-info"
-                            className="rounded-circle"
-                            title="Gestionar imágenes"
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              transition: "transform 0.2s ease-in-out",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                            onClick={() =>
-                              navigate(`/modelos/gestionar/${modelo.id}`)
-                            }
-                          >
-                            <FaImages />
                           </Button>
 
                           <Button
                             variant="outline-danger"
                             className="rounded-circle"
                             title={
-                              (modelo.equipos_count || 0) > 0
-                                ? `No se puede eliminar (${modelo.equipos_count} equipo(s) asociado(s))`
-                                : "Eliminar modelo"
+                              (marca.modelos_count || 0) > 0
+                                ? `No se puede eliminar (${marca.modelos_count} modelo(s) asociado(s))`
+                                : "Eliminar marca"
                             }
                             style={{
                               width: "44px",
                               height: "44px",
                               transition: "transform 0.2s ease-in-out",
-                              opacity:
-                                (modelo.equipos_count || 0) > 0 ? 0.6 : 1,
+                              opacity: (marca.modelos_count || 0) > 0 ? 0.6 : 1,
                               cursor:
-                                (modelo.equipos_count || 0) > 0
+                                (marca.modelos_count || 0) > 0
                                   ? "not-allowed"
                                   : "pointer",
                             }}
                             onMouseEnter={(e) => {
-                              if (!(modelo.equipos_count || 0)) {
+                              if (!(marca.modelos_count || 0)) {
                                 e.currentTarget.style.transform = "scale(1.15)";
                               }
                             }}
@@ -429,11 +338,11 @@ export default function ModeloManager() {
                               e.currentTarget.style.transform = "scale(1)";
                             }}
                             onClick={() => {
-                              if (!(modelo.equipos_count || 0)) {
-                                confirmarEliminacion(modelo.id);
+                              if (!(marca.modelos_count || 0)) {
+                                confirmarEliminacion(marca.id);
                               }
                             }}
-                            disabled={(modelo.equipos_count || 0) > 0}
+                            disabled={(marca.modelos_count || 0) > 0}
                           >
                             <FaTrash />
                           </Button>
@@ -443,8 +352,8 @@ export default function ModeloManager() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={3} className="text-muted text-center">
-                      No se encontraron modelos.
+                    <td colSpan={2} className="text-muted text-center">
+                      No se encontraron marcas.
                     </td>
                   </tr>
                 )}
@@ -460,11 +369,10 @@ export default function ModeloManager() {
         </>
       )}
 
-      {/* Modal para crear/editar */}
       <Modal show={showModal} onHide={handleClose}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {editing ? "Editar Modelo" : "Agregar Modelo"}
+            {editing ? "Editar Marca" : "Agregar Marca"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -484,38 +392,6 @@ export default function ModeloManager() {
               <Form.Control.Feedback type="invalid">
                 Este campo es obligatorio.
               </Form.Control.Feedback>
-            </Form.Group>
-
-            <Form.Group controlId="marca">
-              <Form.Label>Marca</Form.Label>
-              {loadingMarcas ? (
-                <div className="d-flex align-items-center gap-2">
-                  <Spinner animation="border" size="sm" />
-                  <span>Cargando marcas...</span>
-                </div>
-              ) : (
-                <>
-                  <Form.Select
-                    required
-                    name="marca_id"
-                    value={formData.marca_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, marca_id: e.target.value })
-                    }
-                    isInvalid={formValidated && formData.marca_id === ""}
-                  >
-                    <option value="">Seleccionar marca</option>
-                    {marcas.map((marca) => (
-                      <option key={marca.id} value={marca.id}>
-                        {marca.nombre}
-                      </option>
-                    ))}
-                  </Form.Select>
-                  <Form.Control.Feedback type="invalid">
-                    Selecciona una marca.
-                  </Form.Control.Feedback>
-                </>
-              )}
             </Form.Group>
           </Form>
         </Modal.Body>

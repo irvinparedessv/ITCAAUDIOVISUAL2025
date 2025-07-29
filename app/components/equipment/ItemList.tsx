@@ -525,6 +525,7 @@ export default function ItemList({
                         <table className="table table-hover align-middle text-center">
                             <thead className="table-dark">
                                 <tr>
+                                    <th>#</th>
                                     <th className="rounded-top-start">Tipo</th>
                                     <th>Tipo Equipo</th>
                                     <th>Marca</th>
@@ -532,6 +533,7 @@ export default function ItemList({
                                     <th>Estado</th>
                                     <th>N° Serie</th>
                                     <th>Cantidad</th>
+                                    <th>Reposo</th>
                                     <th>Detalles</th>
                                     <th>Imagen</th>
                                     <th>Asignaciones</th>
@@ -547,6 +549,7 @@ export default function ItemList({
 
                                         return (
                                             <tr key={item.id}>
+                                                <td>{item.id}</td>
                                                 <td>{getItemTypeBadge(item.tipo)}</td>
                                                 <td><em>{getTipoNombre(item.tipo_equipo_id)}</em></td>
                                                 <td>{item.modelo?.marca?.nombre || 'Sin marca'}</td>
@@ -566,6 +569,11 @@ export default function ItemList({
                                                         : (item as Insumo).serie_asociada || '-'}
                                                 </td>
                                                 <td>{item.cantidad}</td>
+                                                <td>
+                                                    {isEquipoItem
+                                                        ? item.reposo ?? '-' 
+                                                        : '-'}
+                                                </td>
                                                 <td>{item.detalles || 'N/A'}</td>
                                                 <td>
                                                     {item.imagen_url ? (
@@ -691,7 +699,7 @@ export default function ItemList({
                                                                 <FaLink />
                                                             </Button>
                                                         )}
-                                                        <Button
+                                                        {/* <Button
                                                             variant="outline-danger"
                                                             className="rounded-circle"
                                                             title={`Eliminar ${item.tipo}`}
@@ -713,7 +721,7 @@ export default function ItemList({
                                                             )}
                                                         >
                                                             <FaTrash />
-                                                        </Button>
+                                                        </Button> */}
                                                     </div>
                                                 </td>
                                             </tr>

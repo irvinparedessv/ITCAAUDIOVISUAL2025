@@ -30,8 +30,6 @@ export interface CaracteristicaValor {
   valor: string | number | boolean;
 }
 
-
-
 export interface ItemBase {
   id: number;
   detalles?: string;
@@ -41,6 +39,7 @@ export interface ItemBase {
   cantidad: number;
   tipo_reserva_id?: number;
   fecha_adquisicion?: string;
+  reposo?: number;
   imagen_url?: string;
   created_at?: string;
   updated_at?: string;

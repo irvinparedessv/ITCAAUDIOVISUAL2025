@@ -25,9 +25,15 @@ export interface ItemFilters {
   modeloId?: number;
 }
 
+// Asegura que siempre devuelva un array
 export const getMarcas = async (): Promise<Marca[]> => {
-  const res = await api.get("/marcas");
-  return res.data;
+  try {
+    const res = await api.get('/marcas');
+    return Array.isArray(res.data) ? res.data : res.data.data || [];
+  } catch (error) {
+    console.error("Error fetching marcas:", error);
+    return [];
+  }
 };
 
 export const getModelos = async (): Promise<Modelo[]> => {
@@ -191,7 +197,7 @@ export const searchMarcas = async (
   limit?: number
 ): Promise<Marca[]> => {
   try {
-    const res = await api.get("/marcas", {
+    const res = await api.get("/marcas/search-select", {
       params: {
         search: searchTerm || undefined,
         limit: limit || undefined

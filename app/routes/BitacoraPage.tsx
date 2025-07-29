@@ -6,16 +6,21 @@ import { FaLongArrowAltLeft, FaSearch, FaTimes } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
-
-const formatDate = (date: Date) => date.toISOString().split("T")[0];
+import { Tooltip } from 'react-tooltip';
 
 const getDefaultDates = () => {
   const today = new Date();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(today.getDate() - 7);
+  
+  const format = (date: Date) => {
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  };
+
   return {
-    inicio: formatDate(sevenDaysAgo),
-    fin: formatDate(today),
+    inicio: format(sevenDaysAgo),
+    fin: format(today),
   };
 };
 
@@ -30,10 +35,6 @@ export default function BitacoraPage() {
   const [lastPage, setLastPage] = useState(1);
   const navigate = useNavigate();
 
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   useEffect(() => {
     const { inicio, fin } = getDefaultDates();
     setFechaInicio(inicio);
@@ -42,18 +43,19 @@ export default function BitacoraPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (fechaInicio && fechaFin && new Date(fechaInicio) > new Date(fechaFin)) {
+        toast.error('La fecha de inicio no puede ser mayor a la fecha final');
+        return;
+      }
+
       setIsLoading(true);
       try {
-        const params: any = {
-          page,
-        };
-
+        const params: any = { page };
         if (moduloFiltro !== "todos") params.modulo = moduloFiltro;
         if (fechaInicio) params.fecha_inicio = fechaInicio;
         if (fechaFin) params.fecha_fin = fechaFin;
 
-        const query = new URLSearchParams(params).toString();
-        const response = await api.get(`/bitacora?${query}`);
+        const response = await api.get(`/bitacora?${new URLSearchParams(params)}`);
         setRegistros(response.data.data);
         setLastPage(response.data.last_page);
       } catch (error) {
@@ -89,33 +91,27 @@ export default function BitacoraPage() {
       <div className="mb-4">
         <div className="d-flex align-items-center gap-3">
           <FaLongArrowAltLeft
-            onClick={handleBack}
+            onClick={() => navigate(-1)}
             title="Regresar"
-            style={{
-              cursor: "pointer",
-              fontSize: "2rem",
-            }}
+            style={{ cursor: "pointer", fontSize: "2rem" }}
           />
-          <h2 className="fw-bold m-0 flex-grow-1">Bitácora de estados</h2>
+          <h2 className="fw-bold m-0 flex-grow-1">
+            Bitácora {moduloFiltro !== 'todos' ? `de ${moduloFiltro}` : 'del sistema'}
+          </h2>
         </div>
       </div>
 
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
         <div className="flex-grow-1">
           <InputGroup>
-            <InputGroup.Text>
-              <FaSearch />
-            </InputGroup.Text>
+            <InputGroup.Text><FaSearch /></InputGroup.Text>
             <Form.Control
               placeholder="Buscar por usuario, acción o descripción"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
-              <Button
-                variant="outline-secondary"
-                onClick={() => setSearchTerm("")}
-              >
+              <Button variant="outline-secondary" onClick={() => setSearchTerm("")}>
                 <FaTimes />
               </Button>
             )}
@@ -124,43 +120,51 @@ export default function BitacoraPage() {
       </div>
 
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
-        <Form.Select
-          value={moduloFiltro}
-          onChange={(e) => {
-            setPage(1);
-            setModuloFiltro(e.target.value);
-          }}
-        >
-          <option value="todos">Todos los módulos</option>
-          <option value="Reserva Aula">Reserva Aula</option>
-          <option value="Reserva Equipo">Reserva Equipo</option>
-        </Form.Select>
-
-        <Form.Control
-          type="date"
-          value={fechaInicio}
-          onChange={(e) => {
-            setPage(1);
-            setFechaInicio(e.target.value);
-          }}
-        />
-
-        <Form.Control
-          type="date"
-          value={fechaFin}
-          onChange={(e) => {
-            setPage(1);
-            setFechaFin(e.target.value);
-          }}
-        />
+        <div className="d-flex flex-column flex-md-row gap-2 flex-grow-1">
+          <Form.Select
+            value={moduloFiltro}
+            onChange={(e) => {
+              setPage(1);
+              setModuloFiltro(e.target.value);
+            }}
+            className="flex-grow-1"
+          >
+            <option value="todos">Todos los módulos</option>
+            <option value="Reserva Aula">Reserva Aula</option>
+            <option value="Reserva Equipo">Reserva Equipo</option>
+            <option value="Inventario">Inventario</option>
+          </Form.Select>
+          
+          <div className="d-flex gap-2">
+            <Form.Control
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => {
+                setPage(1);
+                setFechaInicio(e.target.value);
+              }}
+            />
+            <Form.Control
+              type="date"
+              value={fechaFin}
+              onChange={(e) => {
+                setPage(1);
+                setFechaFin(e.target.value);
+              }}
+            />
+          </div>
+        </div>
 
         <Button
           variant="outline-danger"
           onClick={resetFilters}
+          className="flex-md-grow-0"
         >
           Limpiar filtros
         </Button>
       </div>
+
+      <Tooltip id="bitacora-tooltip" />
 
       {isLoading ? (
         <div className="text-center my-5">
@@ -197,12 +201,16 @@ export default function BitacoraPage() {
                         <Badge
                           bg={getActionBadgeColor(log.accion)}
                           className="px-2 py-1"
+                          data-tooltip-id="bitacora-tooltip"
+                          data-tooltip-content={log.accion}
                         >
-                          {log.accion}
+                          {log.accion.length > 15 ? `${log.accion.substring(0, 15)}...` : log.accion}
                         </Badge>
                       </td>
                       <td className="text-break" style={{ maxWidth: "300px" }}>
-                        {log.descripcion}
+                        {log.descripcion.split('\n').map((line, i) => (
+                          <div key={i}>{line}</div>
+                        ))}
                       </td>
                     </tr>
                   ))
@@ -229,17 +237,18 @@ export default function BitacoraPage() {
 }
 
 function getActionBadgeColor(accion: string) {
-  switch (accion.toLowerCase()) {
-    case "crear":
-    case "creación":
+  const action = accion.toLowerCase();
+  switch (true) {
+    case action.includes('crear') || action.includes('creación'):
       return "success";
-    case "editar":
-    case "actualizar":
+    case action.includes('editar') || action.includes('actualizar'):
       return "warning";
-    case "eliminar":
+    case action.includes('eliminar'):
       return "danger";
-    case "login":
+    case action.includes('login'):
       return "primary";
+    case action.includes('cambio de estado'):
+      return "info";
     default:
       return "secondary";
   }

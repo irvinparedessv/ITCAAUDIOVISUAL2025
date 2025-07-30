@@ -1,4 +1,9 @@
+import type { EquipoVidaUtilData } from "~/types/predict";
 import api from "../api/axios";
+
+
+
+
 
 // Predicción individual (opcional por tipo de equipo)
 export const getPrediccion = async (tipo_equipo_id?: number, meses = 6) => {
@@ -16,6 +21,13 @@ export const getPrediccionesPorTipo = async () => {
 // 🔍 Búsqueda de equipos para el combo (nuevo)
 export const buscarEquipos = async (search: string = '', limit: number = 10) => {
   const res = await api.get('/prediccion/equipos/buscar', {
+    params: { search, limit }
+  });
+  return res.data.data;
+};
+
+export const buscarEquiposVidaUtil = async (search: string = '', limit: number = 10) => {
+  const res = await api.get('/prediccion/equipos/buscarVidaUtil', {
     params: { search, limit }
   });
   return res.data.data;
@@ -54,3 +66,13 @@ export const getPrediccionAulasGeneral = async () => {
   const res = await api.get("/prediccion/aulas/general");
   return res.data;
 };
+
+
+// prediccionService.ts
+
+export const getPrediccionVidaUtilPorEquipo = async (equipoId: number): Promise<EquipoVidaUtilData> => {
+  const response = await api.get(`/prediccionVidaUtil/equipos/${equipoId}`);
+  return response.data;
+};
+
+

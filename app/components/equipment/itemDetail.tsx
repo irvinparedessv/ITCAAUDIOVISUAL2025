@@ -188,7 +188,7 @@ export default function ItemDetail({ id: propId }: ItemDetailProps) {
                   <DetailItem
                     icon={<FaHistory />}
                     title="Vida útil"
-                    value={equipo.vida_util ? `${equipo.vida_util} años` : "N/A"}
+                    value={equipo.vida_util ? `${equipo.vida_util} Horas` : "N/A"}
                   />
                 </Col>
               </Row>

@@ -79,6 +79,7 @@ import TipoMantenimientoEdit from "./components/tipoMantenimiento/tipoMantenimie
 import FuturoMantenimientoList from "./components/futuroMantenimiento/futuroMantenimientoList";
 import FormFuturoMantenimiento from "./components/FormFuturoMantenimiento";
 import FuturoMantenimientoEdit from "./components/futuroMantenimiento/futuroMantenimientoEdit";
+import PrediccionesPorEquipoVidaUtilPage from "./components/prediction/PrediccionesPorEquipoVidaUtil";
 
 
 const router = createBrowserRouter([
@@ -261,6 +262,10 @@ const router = createBrowserRouter([
           {
             path: "prediccionPorEquipoPage",
             element: <PrediccionPorEquipoPage />,
+          },
+          {
+            path: "prediccionPorEquipoVidaUtilPage",
+            element: <PrediccionesPorEquipoVidaUtilPage />,
           },
           {
             path: "modelos/gestionar/:id",

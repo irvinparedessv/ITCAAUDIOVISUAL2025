@@ -20,6 +20,13 @@ const opciones = [
         roles: [Role.Administrador, Role.Encargado]
     },
     {
+        nombre: 'Análisis por equipo Vida Util',
+        descripcion: 'Predicción y estadísticas',
+        ruta: '/prediccionPorEquipoVidaUtilPage',
+        icono: <FaChartLine size={24} />,
+        roles: [Role.Administrador, Role.Encargado]
+    },
+    {
         nombre: 'Análisis por espacio',
         descripcion: 'Predicción y estadísticas',
         ruta: '/prediccionAula',

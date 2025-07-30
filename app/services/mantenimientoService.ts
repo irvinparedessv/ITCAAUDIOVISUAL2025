@@ -35,18 +35,21 @@ export const getMantenimientos = async (
     per_page?: number;
     tipo_id?: number;
     equipo_id?: number;
+    search?: string; // ✅ añade esto
   }
 ): Promise<PaginatedResponse<Mantenimiento>> => {
   const params = new URLSearchParams();
 
   if (filters.page) params.append("page", filters.page.toString());
-  if (filters.per_page) params.append("perPage", filters.per_page.toString()); // ajusta según backend
-  if (filters.tipo_id) params.append("tipo_mantenimiento_id", filters.tipo_id.toString());
+  if (filters.per_page) params.append("perPage", filters.per_page.toString());
+  if (filters.tipo_id) params.append("tipo_id", filters.tipo_id.toString());
   if (filters.equipo_id) params.append("equipo_id", filters.equipo_id.toString());
+  if (filters.search) params.append("search", filters.search); // ✅ aquí se envía el filtro
 
   const response = await api.get(`/mantenimientos?${params.toString()}`);
   return response.data;
 };
+
 
 export const getMantenimientoById = async (id: number) => {
   const response = await api.get(`/mantenimientos/${id}`);

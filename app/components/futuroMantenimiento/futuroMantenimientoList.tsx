@@ -22,6 +22,7 @@ export default function FuturoMantenimientoList() {
     page: 1,
     per_page: 10,
   });
+  const [searchInput, setSearchInput] = useState(""); // <-- para debounce
   const [lastPage, setLastPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
@@ -48,6 +49,19 @@ export default function FuturoMantenimientoList() {
   useEffect(() => {
     cargarMantenimientos();
   }, [filters]);
+
+  // 🔁 Debounce para el campo de búsqueda
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      setFilters((prev: any) => ({
+        ...prev,
+        search: searchInput,
+        page: 1,
+      }));
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchInput]);
 
   const confirmarEliminacion = (id: number) => {
     const toastId = `delete-toast-${id}`;
@@ -84,14 +98,6 @@ export default function FuturoMantenimientoList() {
     );
   };
 
-  const handleFilterUpdate = (key: string, value: any) => {
-    setFilters((prev: any) => ({
-      ...prev,
-      [key]: value,
-      page: 1,
-    }));
-  };
-
   const handlePageChange = (page: number) => {
     setFilters((prev: any) => ({
       ...prev,
@@ -100,6 +106,7 @@ export default function FuturoMantenimientoList() {
   };
 
   const resetFilters = () => {
+    setSearchInput("");
     setFilters({
       search: "",
       page: 1,
@@ -140,27 +147,18 @@ export default function FuturoMantenimientoList() {
             <Form.Control
               type="text"
               placeholder="Buscar por equipo o tipo"
-              value={filters.search}
-              onChange={(e) => handleFilterUpdate("search", e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
-            {filters.search && (
-              <Button variant="outline-secondary" onClick={() => handleFilterUpdate("search", "")}>
+            {searchInput && (
+              <Button variant="outline-secondary" onClick={() => setSearchInput("")}>
                 <FaTimes />
               </Button>
             )}
           </InputGroup>
         </div>
 
-        <Button
-          variant="outline-secondary"
-          onClick={() => setShowFilters(!showFilters)}
-          className="d-flex align-items-center gap-2"
-          style={{ transition: "transform 0.2s ease-in-out" }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-        >
-          <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-        </Button>
+       
       </div>
 
       {loading ? (

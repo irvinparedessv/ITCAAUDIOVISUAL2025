@@ -6,7 +6,6 @@ import {
   FaEdit,
   FaSearch,
   FaTimes,
-  FaFilter,
   FaPlus,
   FaLongArrowAltLeft,
   FaTrash,
@@ -24,29 +23,25 @@ export default function MantenimientoList() {
     per_page: 10,
     tipo_id: undefined as number | undefined,
   });
+  const [searchInput, setSearchInput] = useState(""); // Para el debounce
   const [lastPage, setLastPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tipos, setTipos] = useState<Record<number, string>>({});
   const navigate = useNavigate();
 
-  const handleBack = () => {
-    navigate("/equipos");
-  };
+  const handleBack = () => navigate("/equipos");
 
   const cargarTipos = async () => {
     try {
-      // Ya no se necesita el token aquí ni validarlo
       const data = await getTiposMantenimiento();
-      const tiposActivos = data.filter((tipo: any) => tipo.estado === true);
-
-      const tiposFormateados: Record<number, string> = {};
-      tiposActivos.forEach((tipo: any) => {
-        tiposFormateados[tipo.id] = tipo.nombre;
+      const activos = data.filter((t: any) => t.estado === true);
+      const formateados: Record<number, string> = {};
+      activos.forEach((t: any) => {
+        formateados[t.id] = t.nombre;
       });
-
-      setTipos(tiposFormateados);
-    } catch (error) {
+      setTipos(formateados);
+    } catch {
       toast.error("Error al cargar tipos de mantenimiento");
     }
   };
@@ -54,11 +49,10 @@ export default function MantenimientoList() {
   const cargarMantenimientos = async () => {
     setLoading(true);
     try {
-      // Tampoco pasamos token aquí
       const response = await getMantenimientos(filters);
       setMantenimientos(response.data || []);
       setLastPage(response.last_page || 1);
-    } catch (error) {
+    } catch {
       toast.error("Error al cargar mantenimientos");
       setMantenimientos([]);
     } finally {
@@ -68,13 +62,11 @@ export default function MantenimientoList() {
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Está seguro de eliminar este mantenimiento?")) return;
-
     try {
-      // No pasamos token aquí
       const result = await deleteMantenimiento(id);
       if (result.success) {
         toast.success("Mantenimiento eliminado correctamente");
-        cargarMantenimientos(); // refresca la lista
+        cargarMantenimientos();
       } else {
         toast.error(result.message || "No se pudo eliminar el mantenimiento");
       }
@@ -84,19 +76,11 @@ export default function MantenimientoList() {
     }
   };
 
-  useEffect(() => {
-    cargarTipos();
-  }, []);
-
-  useEffect(() => {
-    cargarMantenimientos();
-  }, [filters]);
-
   const handleFilterUpdate = (key: string, value: any) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
-      page: 1,
+      page: 1, // Reinicia la página al cambiar filtro
     }));
   };
 
@@ -114,7 +98,25 @@ export default function MantenimientoList() {
       per_page: 10,
       tipo_id: undefined,
     });
+    setSearchInput(""); // limpia también el input controlado
   };
+
+  // Debounce para el buscador
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      handleFilterUpdate("search", searchInput);
+    }, 500);
+
+    return () => clearTimeout(delay);
+  }, [searchInput]);
+
+  useEffect(() => {
+    cargarTipos();
+  }, []);
+
+  useEffect(() => {
+    cargarMantenimientos();
+  }, [filters]);
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
@@ -148,32 +150,23 @@ export default function MantenimientoList() {
             </InputGroup.Text>
             <Form.Control
               type="text"
-              placeholder="Buscar por equipo o usuario"
-              value={filters.search}
-              onChange={(e) => handleFilterUpdate("search", e.target.value)}
+              placeholder="Buscar por equipo, tipo o usuario"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
             {filters.search && (
               <Button
                 variant="outline-secondary"
-                onClick={() => handleFilterUpdate("search", "")}
+                onClick={() => {
+                  setSearchInput("");
+                  handleFilterUpdate("search", "");
+                }}
               >
                 <FaTimes />
               </Button>
             )}
           </InputGroup>
         </div>
-
-        <Button
-          variant="outline-secondary"
-          onClick={() => setShowFilters(!showFilters)}
-          className="d-flex align-items-center gap-2"
-          style={{ transition: "transform 0.2s ease-in-out" }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-        >
-          <FaFilter />
-          {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-        </Button>
       </div>
 
       {showFilters && (
@@ -199,11 +192,7 @@ export default function MantenimientoList() {
               </Form.Select>
             </div>
             <div className="col-md-6 d-flex align-items-end">
-              <Button
-                variant="outline-danger"
-                onClick={resetFilters}
-                className="w-100"
-              >
+              <Button variant="outline-danger" onClick={resetFilters} className="w-100">
                 <FaTimes className="me-2" />
                 Limpiar filtros
               </Button>

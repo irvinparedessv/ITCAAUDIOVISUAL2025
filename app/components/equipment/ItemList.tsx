@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
 import type { TipoEquipo } from "~/types/tipoEquipo";
 import ItemDetail from "./itemDetail";
+import { FaWrench } from "react-icons/fa6";
 
 type Item = Equipo | Insumo;
 
@@ -685,6 +686,19 @@ export default function ItemList({
                                                         >
                                                             <FaTrash />
                                                         </Button> */}
+                                                        
+                                                    {/* NUEVO BOTÓN Crear mantenimiento */}
+                                                    <Button
+                                                        variant="outline-warning"
+                                                        title="Crear mantenimiento"
+                                                        className="rounded-circle"
+                                                        style={{ width: "44px", height: "44px", transition: "transform 0.2s ease-in-out" }}
+                                                        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.15)")}
+                                                        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+                                                        onClick={() => navigate("/mantenimiento")}
+                                                    >
+                                                        <FaWrench />
+                                                    </Button>
                                                     </div>
                                                 </td>
                                             </tr>

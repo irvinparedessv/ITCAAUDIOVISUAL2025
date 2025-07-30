@@ -116,7 +116,7 @@ const futuroMantenimientoEdit = () => {
             onChange={handleChange}
             required
           >
-            <option value="">Seleccione equipo</option>
+            
             {equipos.map((equipo: any) => (
               <option key={equipo.id} value={equipo.id}>
                 {equipo.numero_serie}
@@ -134,7 +134,7 @@ const futuroMantenimientoEdit = () => {
             onChange={handleChange}
             required
           >
-            <option value="">Seleccione tipo</option>
+            
             {tipos.map((tipo: any) => (
               <option key={tipo.id} value={tipo.id}>
                 {tipo.nombre}

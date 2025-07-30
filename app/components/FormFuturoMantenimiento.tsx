@@ -6,13 +6,32 @@ import { getTiposMantenimiento } from "../services/tipoMantenimientoService";
 import { toast } from "react-hot-toast";
 import { FaSave, FaTimes } from "react-icons/fa";
 
+interface Equipo {
+  id: number;
+  numero_serie?: string;
+  // Puedes agregar más campos si los necesitas
+}
+
+interface TipoMantenimiento {
+  id: number;
+  nombre: string;
+}
+
+interface FormData {
+  equipo_id: string;
+  tipo_mantenimiento_id: string;
+  fecha_mantenimiento: string;
+  hora_mantenimiento_inicio: string;
+  hora_mantenimiento_final: string;
+}
+
 const FormFuturoMantenimiento = () => {
   const navigate = useNavigate();
-  const [equipos, setEquipos] = useState<any[]>([]);
-  const [tipos, setTipos] = useState<any[]>([]);
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
+  const [tipos, setTipos] = useState<TipoMantenimiento[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     equipo_id: "",
     tipo_mantenimiento_id: "",
     fecha_mantenimiento: "",
@@ -50,13 +69,25 @@ const FormFuturoMantenimiento = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validación simple previa
+    if (
+      !formData.equipo_id ||
+      !formData.tipo_mantenimiento_id ||
+      !formData.fecha_mantenimiento ||
+      !formData.hora_mantenimiento_inicio ||
+      !formData.hora_mantenimiento_final
+    ) {
+      toast.error("Por favor complete todos los campos requeridos.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
       const dataToSend = {
-        ...formData,
         equipo_id: Number(formData.equipo_id),
         tipo_mantenimiento_id: Number(formData.tipo_mantenimiento_id),
+        fecha_mantenimiento: formData.fecha_mantenimiento,
         hora_mantenimiento_inicio:
           formData.hora_mantenimiento_inicio.length === 5
             ? formData.hora_mantenimiento_inicio + ":00"
@@ -77,6 +108,7 @@ const FormFuturoMantenimiento = () => {
 
       navigate("/futuroMantenimiento");
     } catch (error) {
+      console.error("Error al crear mantenimiento:", error);
       toast.error("Error al crear el mantenimiento.");
     } finally {
       setIsSubmitting(false);
@@ -97,9 +129,9 @@ const FormFuturoMantenimiento = () => {
             required
           >
             <option value="">Seleccione equipo</option>
-            {equipos.map((equipo: any) => (
+            {equipos.map((equipo) => (
               <option key={equipo.id} value={equipo.id}>
-                {equipo.numero_serie}
+                {equipo.numero_serie || `Equipo ${equipo.id}`}
               </option>
             ))}
           </select>
@@ -115,7 +147,7 @@ const FormFuturoMantenimiento = () => {
             required
           >
             <option value="">Seleccione tipo</option>
-            {tipos.map((tipo: any) => (
+            {tipos.map((tipo) => (
               <option key={tipo.id} value={tipo.id}>
                 {tipo.nombre}
               </option>

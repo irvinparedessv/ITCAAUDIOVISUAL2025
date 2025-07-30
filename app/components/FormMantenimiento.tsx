@@ -44,15 +44,14 @@ const FormMantenimiento = () => {
         setTipos(tiposList || []);
         setUsuarios(usuariosList?.data || []);
 
-        // Si estamos editando, obtener datos de mantenimiento
         if (id) {
           const mantenimiento = await getMantenimientoById(Number(id));
           setFormData({
             equipo_id: mantenimiento.equipo_id?.toString() || "",
             tipo_id: mantenimiento.tipo_id?.toString() || "",
             fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
-            hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0,5) || "",
-            hora_mantenimiento_final: mantenimiento.hora_mantenimiento_final?.slice(0,5) || "",
+            hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
+            hora_mantenimiento_final: mantenimiento.hora_mantenimiento_final?.slice(0, 5) || "",
             detalles: mantenimiento.detalles || "",
             user_id: mantenimiento.user_id?.toString() || "",
             vida_util: mantenimiento.vida_util?.toString() || "",
@@ -69,42 +68,57 @@ const FormMantenimiento = () => {
   }, [id]);
 
   const handleChange = (
-      e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-    ) => {
-      const { name, value } = e.target;
-  
-      // Mostrar alerta si se edita cualquier campo y vida útil es 0 o menor
-      if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
-        setShowVidaUtilAlert(true);
-      }
-  
-      // Ocultar alerta si se corrige la vida útil
-      if (name === "vida_util" && Number(value) > 0) {
-        setShowVidaUtilAlert(false);
-      }
-  
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    };
-  
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+
+    if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
+      setShowVidaUtilAlert(true);
+    }
+    if (name === "vida_util" && Number(value) > 0) {
+      setShowVidaUtilAlert(false);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
-    // Validar campos requeridos
-    if (!formData.equipo_id || !formData.tipo_id || !formData.user_id || !formData.fecha_mantenimiento || !formData.hora_mantenimiento_inicio || !formData.hora_mantenimiento_final) {
-      toast.error("Por favor complete todos los campos obligatorios.");
+
+    if (!formData.equipo_id) {
+      toast.error("Debe seleccionar un equipo.");
       return;
     }
-  
+    if (!formData.tipo_id) {
+      toast.error("Debe seleccionar un tipo de mantenimiento.");
+      return;
+    }
+    if (!formData.user_id) {
+      toast.error("Debe seleccionar un responsable.");
+      return;
+    }
+    if (!formData.fecha_mantenimiento) {
+      toast.error("Debe ingresar la fecha de mantenimiento.");
+      return;
+    }
+    if (!formData.hora_mantenimiento_inicio) {
+      toast.error("Debe ingresar la hora de inicio.");
+      return;
+    }
+    if (!formData.hora_mantenimiento_final) {
+      toast.error("Debe ingresar la hora final.");
+      return;
+    }
+
     setIsSubmitting(true);
-  
+
     const dataToSend = {
       ...formData,
       equipo_id: Number(formData.equipo_id),
-      tipo_id: Number(formData.tipo_id), // corregido
+      tipo_id: Number(formData.tipo_id),
       user_id: Number(formData.user_id),
       vida_util: formData.vida_util === "" ? null : Number(formData.vida_util),
       hora_mantenimiento_inicio:
@@ -116,34 +130,31 @@ const FormMantenimiento = () => {
           ? formData.hora_mantenimiento_final + ":00"
           : formData.hora_mantenimiento_final,
     };
-    
-  
+
     try {
-      const token = localStorage.getItem("token") ?? "";
       if (id) {
-        // Si estamos editando, usamos updateMantenimiento
-        await updateMantenimiento(Number(id), token, dataToSend);
+        await updateMantenimiento(Number(id), dataToSend);
         toast.success("Mantenimiento actualizado");
       } else {
-        // Si estamos creando, usamos createMantenimiento
-        await createMantenimiento(token, dataToSend);
+        await createMantenimiento(dataToSend);
         toast.success("Mantenimiento creado");
       }
       navigate("/mantenimiento");
     } catch (error: any) {
       console.error("Error al procesar mantenimiento:", error);
-      toast.error("Error al procesar mantenimiento");
+      toast.error(error.message || "Error al procesar mantenimiento");
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   if (loading) return <div className="text-center my-5">Cargando...</div>;
 
   return (
     <div className="container mt-4">
       <h2>{id ? "Editar Mantenimiento" : "Nuevo Mantenimiento"}</h2>
       <form onSubmit={handleSubmit}>
+        {/* Equipo */}
         <div className="mb-3">
           <label>Equipo</label>
           <select
@@ -153,15 +164,18 @@ const FormMantenimiento = () => {
             required
             className="form-select"
           >
-            
-            {equipos.map((equipo) => (
-              <option key={equipo.id} value={equipo.id.toString()}>
-                {equipo.numero_serie || equipo.nombre || `Equipo #${equipo.id}`}
-              </option>
-            ))}
+            <option value="">Seleccione un equipo</option>
+            {equipos
+              .filter((equipo) => !equipo.es_componente)  // Mostrar solo equipos que no son componentes
+              .map((equipo) => (
+                <option key={equipo.id} value={equipo.id.toString()}>
+                  {equipo.numero_serie || `Equipo #${equipo.id}`}
+                </option>
+              ))}
           </select>
         </div>
 
+        {/* Tipo de Mantenimiento */}
         <div className="mb-3">
           <label>Tipo de Mantenimiento</label>
           <select
@@ -171,7 +185,7 @@ const FormMantenimiento = () => {
             required
             className="form-select"
           >
-            
+            <option value="">Seleccione un tipo de mantenimiento</option>
             {tipos.map((tipo) => (
               <option key={tipo.id} value={tipo.id.toString()}>
                 {tipo.nombre}
@@ -180,6 +194,7 @@ const FormMantenimiento = () => {
           </select>
         </div>
 
+        {/* Fecha de mantenimiento */}
         <div className="mb-3">
           <label>Fecha de mantenimiento</label>
           <input
@@ -192,6 +207,7 @@ const FormMantenimiento = () => {
           />
         </div>
 
+        {/* Hora inicio y fin */}
         <div className="mb-3 d-flex gap-3">
           <div className="flex-grow-1">
             <label>Hora inicio</label>
@@ -217,6 +233,7 @@ const FormMantenimiento = () => {
           </div>
         </div>
 
+        {/* Detalles */}
         <div className="mb-3">
           <label>Detalles</label>
           <textarea
@@ -228,6 +245,7 @@ const FormMantenimiento = () => {
           />
         </div>
 
+        {/* Responsable */}
         <div className="mb-3">
           <label>Responsable (usuario)</label>
           <select
@@ -240,12 +258,13 @@ const FormMantenimiento = () => {
             <option value="">Seleccione usuario</option>
             {usuarios.map((user) => (
               <option key={user.id} value={user.id.toString()}>
-                {(user.nombre ?? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim()) || `Usuario #${user.id}`}
+                {(user.nombre ?? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim()) || `Usuario #${user.id}`}
               </option>
             ))}
           </select>
         </div>
 
+        {/* Vida útil */}
         <div className="mb-3">
           <label>Vida útil (horas)</label>
           <input
@@ -263,6 +282,7 @@ const FormMantenimiento = () => {
           )}
         </div>
 
+        {/* Botones */}
         <div className="d-flex gap-2">
           <button type="submit" disabled={isSubmitting} className="btn btn-primary">
             {isSubmitting ? (

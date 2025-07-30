@@ -1,7 +1,6 @@
-import axios from "axios";
+// mantenimientoService.ts
+import api from "../api/axios";// importa tu instancia con interceptor
 import type { Mantenimiento } from "../types/mantenimiento";
-
-const API_URL = "http://localhost:8000/api";
 
 export interface PaginationLinks {
   url: string | null;
@@ -25,118 +24,64 @@ export interface PaginatedResponse<T> {
   total: number;
 }
 
-// Función para obtener equipos
-export const getEquipos = (token: string) => {
-  return axios.get(`${API_URL}/equipos`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
-
-// Función para obtener tipos de mantenimiento
-export const getTiposMantenimiento = (token: string) => {
-  return axios.get(`${API_URL}/tipoMantenimiento`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
-
-// Función para obtener usuarios
-export const getUsuarios = (token: string) => {
-  return axios.get(`${API_URL}/users`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
-
-// Función para obtener futuros mantenimientos
-export const getFuturosMantenimiento = (token: string) => {
-  return axios.get(`${API_URL}/futuroMantenimiento`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export const getTiposMantenimiento = async () => {
+  const response = await api.get("/tipoMantenimiento");
+  return response.data;
 };
 
 export const getMantenimientos = async (
-  token: string,
   filters: {
     page?: number;
-    per_page?: number; // Mantener consistentemente per_page en minúsculas
-    tipo_id?: number;  // El backend traduce a tipo_mantenimiento_id
+    per_page?: number;
+    tipo_id?: number;
     equipo_id?: number;
   }
 ): Promise<PaginatedResponse<Mantenimiento>> => {
   const params = new URLSearchParams();
 
   if (filters.page) params.append("page", filters.page.toString());
-  if (filters.per_page) params.append("perPage", filters.per_page.toString()); // ojo: aquí corregí a "perPage" porque según tu backend usa camelCase
-  if (filters.tipo_id) params.append("tipo_mantenimiento_id", filters.tipo_id.toString()); // backend usa tipo_mantenimiento_id
+  if (filters.per_page) params.append("perPage", filters.per_page.toString()); // ajusta según backend
+  if (filters.tipo_id) params.append("tipo_mantenimiento_id", filters.tipo_id.toString());
   if (filters.equipo_id) params.append("equipo_id", filters.equipo_id.toString());
 
-  const response = await axios.get<PaginatedResponse<Mantenimiento>>(
-    `${API_URL}/mantenimientos?${params.toString()}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const response = await api.get(`/mantenimientos?${params.toString()}`);
   return response.data;
 };
 
-export const getMantenimientoById = (id: number) => {
-  const token = localStorage.getItem("token") ?? "";
-  return axios.get(`${API_URL}/mantenimientos/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  }).then(res => res.data);
+export const getMantenimientoById = async (id: number) => {
+  const response = await api.get(`/mantenimientos/${id}`);
+  return response.data;
 };
 
-
-export const createMantenimiento = async (
-  token: string,
-  mantenimientoData: Partial<Mantenimiento>
-) => {
-  const response = await axios.post(`${API_URL}/mantenimientos`, mantenimientoData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
+export const createMantenimiento = async (mantenimientoData: Partial<Mantenimiento>) => {
+  const response = await api.post("/mantenimientos", mantenimientoData);
   return response.data;
 };
 
 export const updateMantenimiento = async (
   id: number,
-  token: string,  // Ahora se espera el token
   mantenimientoData: Partial<Mantenimiento>
 ): Promise<Mantenimiento> => {
   try {
-    const response = await axios.put<Mantenimiento>(`${API_URL}/mantenimientos/${id}`, mantenimientoData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+    const response = await api.put<Mantenimiento>(`/mantenimientos/${id}`, mantenimientoData);
     return response.data;
   } catch (error: any) {
-    if (axios.isAxiosError(error) && error.response) {
+    if (error.response) {
       throw new Error(error.response.data.message || "Error al actualizar el mantenimiento");
     }
     throw new Error("Error inesperado al actualizar el mantenimiento");
   }
 };
 
-
-export const deleteMantenimiento = async (id: number, token: string) => {
+export const deleteMantenimiento = async (id: number) => {
   try {
-    const response = await axios.delete(`${API_URL}/mantenimientos/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+    const response = await api.delete(`/mantenimientos/${id}`);
     return {
       success: true,
       message: response.data.message || "Mantenimiento eliminado correctamente",
     };
   } catch (error: any) {
-    if (axios.isAxiosError(error) && error.response) {
+    if (error.response) {
       return {
         success: false,
         message: error.response.data.message || "Error al eliminar mantenimiento",
@@ -144,4 +89,4 @@ export const deleteMantenimiento = async (id: number, token: string) => {
     }
     return { success: false, message: "Error inesperado al eliminar mantenimiento" };
   }
-};  
+};

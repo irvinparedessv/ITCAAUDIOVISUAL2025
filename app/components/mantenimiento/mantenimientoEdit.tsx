@@ -5,7 +5,7 @@ import { FaSave, FaTimes } from "react-icons/fa";
 
 import { getEquipos } from "../../services/equipoService";
 import { getTiposMantenimiento } from "../../services/tipoMantenimientoService";
-import { getUsuarios } from "../../services/userService"; // Crea este servicio si no existe
+import { getUsuarios } from "../../services/userService"; // Asegúrate que exista
 import { getFuturosMantenimiento } from "../../services/futuroMantenimientoService";
 import { getMantenimientoById, updateMantenimiento } from "../../services/mantenimientoService";
 
@@ -35,7 +35,6 @@ const MantenimientoEdit = () => {
 
   const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
 
-
   useEffect(() => {
     if (!id) return;
 
@@ -50,13 +49,6 @@ const MantenimientoEdit = () => {
             getFuturosMantenimiento(),
           ]);
 
-        console.log('Mantenimiento:', mantenimiento);
-        console.log('Equipos:', equiposList);
-        console.log('Tipos de mantenimiento:', tiposList);
-        console.log('Usuarios:', usuariosList);
-        console.log('Futuros mantenimientos:', futurosList);
-
-        // Validación de la existencia de "data" en cada respuesta
         setFormData({
           equipo_id: mantenimiento.equipo_id?.toString() || "",
           tipo_mantenimiento_id: mantenimiento.tipo_mantenimiento_id?.toString() || "",
@@ -69,14 +61,13 @@ const MantenimientoEdit = () => {
           vida_util: mantenimiento.vida_util?.toString() || "",
         });
 
-        // Manejo de "data" en cada respuesta para asegurarse de que no esté vacío
         setEquipos(equiposList?.data || []);
         setTipos(tiposList || []);
         setUsuarios(usuariosList?.data || []);
         setFuturos(futurosList?.data || []);
       } catch (error) {
         toast.error("Error al cargar datos");
-        console.error("Error:", error);
+        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -85,28 +76,28 @@ const MantenimientoEdit = () => {
     fetchData();
   }, [id]);
 
-
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+) => {
+  const { name, value } = e.target;
 
-    // Mostrar alerta si se edita cualquier campo y vida útil es 0 o menor
-    if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
+  setFormData((prev) => {
+    const updatedFormData = {
+      ...prev,
+      [name]: value,
+    };
+
+    // Solo mostrar alerta si se edita cualquier campo excepto 'vida_util',
+    
+    if (name !== "vida_util") {
       setShowVidaUtilAlert(true);
-    }
-
-    // Ocultar alerta si se corrige la vida útil
-    if (name === "vida_util" && Number(value) > 0) {
+    } else {
       setShowVidaUtilAlert(false);
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
+    return updatedFormData;
+  });
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,8 +105,6 @@ const MantenimientoEdit = () => {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("token") ?? ""; // Obtener el token
-
       const dataToSend = {
         ...formData,
         equipo_id: Number(formData.equipo_id),
@@ -135,9 +124,11 @@ const MantenimientoEdit = () => {
             : formData.hora_mantenimiento_final,
       };
 
-      await updateMantenimiento(Number(id), token, dataToSend);  // Pasar el token como argumento
+      // Aquí NO pasamos token
+      await updateMantenimiento(Number(id), dataToSend);
+
       toast.success("Mantenimiento actualizado");
-      navigate("/mantenimiento");
+      navigate("/mantenimiento"); // Ajustado a plural para coincidir con tu listado
     } catch (error: any) {
       console.error("Error al actualizar mantenimiento:", error.response?.data || error);
       toast.error("Error al actualizar mantenimiento");
@@ -161,11 +152,12 @@ const MantenimientoEdit = () => {
             required
             className="form-select"
           >
-
-            {equipos.map((equipo) => (
-              <option key={equipo.id} value={equipo.id.toString()}>
-                {equipo.numero_serie || equipo.nombre || `Equipo #${equipo.id}`}
-              </option>
+            {equipos
+              .filter((equipo) => !equipo.es_componente)  // Mostrar solo equipos que no son componentes
+              .map((equipo) => (
+                <option key={equipo.id} value={equipo.id.toString()}>
+                  {equipo.numero_serie || `Equipo #${equipo.id}`}
+                </option>
             ))}
           </select>
         </div>
@@ -179,7 +171,6 @@ const MantenimientoEdit = () => {
             required
             className="form-select"
           >
-
             {tipos.map((tipo) => (
               <option key={tipo.id} value={tipo.id.toString()}>
                 {tipo.nombre}
@@ -249,7 +240,6 @@ const MantenimientoEdit = () => {
             {usuarios.map((user) => (
               <option key={user.id} value={user.id.toString()}>
                 {(user.nombre ?? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim()) || `Usuario #${user.id}`}
-
               </option>
             ))}
           </select>
@@ -269,8 +259,6 @@ const MantenimientoEdit = () => {
                 {`${futuro.fecha_mantenimiento} - ${futuro.equipo?.numero_serie || 'Equipo'}`}
               </option>
             ))}
-
-
           </select>
         </div>
 
@@ -286,17 +274,20 @@ const MantenimientoEdit = () => {
           />
           {showVidaUtilAlert && (
             <div className="alert alert-warning mt-2" role="alert">
-              Si editas el mantenimiento, recuerda registrar la vida útil estimada en horas.
+              Si editas el mantenimiento, recuerda registrar la nueva vida útil estimada en horas.
             </div>
           )}
         </div>
-
 
         <div className="d-flex gap-2">
           <button type="submit" disabled={isSubmitting} className="btn btn-primary">
             {isSubmitting ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                />
                 Guardando...
               </>
             ) : (
@@ -309,7 +300,7 @@ const MantenimientoEdit = () => {
           <button
             type="button"
             disabled={isSubmitting}
-            onClick={() => navigate("/mantenimientos")}
+            onClick={() => navigate("/mantenimiento")}
             className="btn btn-secondary"
           >
             <FaTimes className="me-2" />

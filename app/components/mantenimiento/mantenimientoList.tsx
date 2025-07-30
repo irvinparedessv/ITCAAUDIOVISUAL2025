@@ -36,10 +36,8 @@ export default function MantenimientoList() {
 
   const cargarTipos = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Token no encontrado");
-
-      const data = await getTiposMantenimiento(token); // pasa el token
+      // Ya no se necesita el token aquí ni validarlo
+      const data = await getTiposMantenimiento();
       const tiposActivos = data.filter((tipo: any) => tipo.estado === true);
 
       const tiposFormateados: Record<number, string> = {};
@@ -56,10 +54,8 @@ export default function MantenimientoList() {
   const cargarMantenimientos = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Token no encontrado");
-
-      const response = await getMantenimientos(token, filters);
+      // Tampoco pasamos token aquí
+      const response = await getMantenimientos(filters);
       setMantenimientos(response.data || []);
       setLastPage(response.last_page || 1);
     } catch (error) {
@@ -74,10 +70,8 @@ export default function MantenimientoList() {
     if (!window.confirm("¿Está seguro de eliminar este mantenimiento?")) return;
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Token no encontrado");
-
-      const result = await deleteMantenimiento(id, token);
+      // No pasamos token aquí
+      const result = await deleteMantenimiento(id);
       if (result.success) {
         toast.success("Mantenimiento eliminado correctamente");
         cargarMantenimientos(); // refresca la lista

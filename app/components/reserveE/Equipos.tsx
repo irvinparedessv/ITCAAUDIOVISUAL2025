@@ -15,6 +15,7 @@ import { useAuth } from "~/hooks/AuthContext";
 import { Role } from "~/types/roles";
 import VisualizarModal from "../attendantadmin/VisualizarModal";
 import { useNavigate } from "react-router-dom";
+import SugerenciasModelosModal from "./SugerenciasModal";
 
 interface Props {
   formData: FormDataType;
@@ -60,7 +61,8 @@ export default function EquiposSelect({
   const [availableEquipmentSlides, setAvailableEquipmentSlides] = useState<
     GrupoEquiposPorModelo[]
   >([]);
-  const navigate = useNavigate();
+  const [showSugerencias, setShowSugerencias] = useState(false);
+  const [sugerencias, setSugerencias] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const { user } = useAuth();
   const [totalPages, setTotalPages] = useState(1);
@@ -85,6 +87,7 @@ export default function EquiposSelect({
   };
   const [tempModelUrl, setTempModelUrl] = useState<string | null>(null);
   const [showVisualizar, setShowVisualizar] = useState(false);
+  //creacion temporal
   useEffect(() => {
     if (formData.modelFile) {
       const tempUrl = URL.createObjectURL(formData.modelFile);
@@ -173,7 +176,23 @@ export default function EquiposSelect({
   const handleCantidadChange = (modeloId: number, cantidad: number) => {
     setCantidadInputs((prev) => ({ ...prev, [modeloId]: cantidad }));
   };
+  async function urlToFile(url, fileName, mimeType) {
+    // 1. Descarga el archivo como blob
+    const response = await fetch(url);
+    const blob = await response.blob();
 
+    // 2. Crea el objeto File
+    return new File([blob], fileName, { type: mimeType || blob.type });
+  }
+  const handleCopy = async (path) => {
+    const url = path;
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const file = new File([blob], "archivo.glb", { type: blob.type });
+    setFormData((prev) => ({ ...prev, modelFile: file }));
+    toast.success("modelo adjuntado a la reserva");
+    setShowSugerencias(false);
+  };
   const agregarEquipo = (grupo: GrupoEquiposPorModelo) => {
     const idsDisponibles = grupo.equipos
       .filter(
@@ -210,6 +229,8 @@ export default function EquiposSelect({
     });
 
     setCantidadInputs((prev) => ({ ...prev, [grupo.modelo_id]: 0 }));
+
+    setTimeout(buscarSugerenciaModelo, 300);
   };
 
   // FUNCIONES PARA EQUIPOS EN REPOSO
@@ -242,6 +263,29 @@ export default function EquiposSelect({
     });
     setShowReposoModal(false);
     setEquipoReposoSeleccionado(null);
+  };
+  const buscarSugerenciaModelo = async () => {
+    if (!formData.aula?.value || !formData.equipment?.length) return;
+    console.log(formData.equipment);
+    const equipos_id = formData.equipment.map((e) => e.modelo_id);
+
+    try {
+      const response = await api.post("/buscar-sugerencias-modelo", {
+        aula_id: formData.aula.value,
+        equipos_id,
+      });
+      console.log(response.data);
+      if (
+        response.data &&
+        Array.isArray(response.data) &&
+        response.data.length
+      ) {
+        setSugerencias(response.data);
+        setShowSugerencias(true);
+      }
+    } catch (error) {
+      // manejar error
+    }
   };
 
   const aulaModelPath: string | null =
@@ -825,6 +869,12 @@ export default function EquiposSelect({
         show={showVisualizar}
         onHide={() => setShowVisualizar(false)}
         path={tempModelUrl}
+      />
+      <SugerenciasModelosModal
+        show={showSugerencias}
+        onHide={() => setShowSugerencias(false)}
+        sugerencias={sugerencias}
+        handleCopy={handleCopy}
       />
     </div>
   );

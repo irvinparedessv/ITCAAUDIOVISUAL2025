@@ -672,6 +672,7 @@ export default function EquiposSelect({
                           </span>
                           <span className="me-2">Serie: {eq.numero_serie}</span>
                           <button
+                            type="button"
                             className="btn btn-outline-danger btn-sm"
                             onClick={() => handleAgregarReposo(eq, grupo)}
                           >
@@ -802,10 +803,18 @@ export default function EquiposSelect({
           <div>¿Deseas continuar?</div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowReposoModal(false)}>
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={() => setShowReposoModal(false)}
+          >
             Cancelar
           </Button>
-          <Button variant="danger" onClick={confirmarAgregarReposo}>
+          <Button
+            variant="danger"
+            type="button"
+            onClick={confirmarAgregarReposo}
+          >
             Sí, agregar en reposo
           </Button>
         </Modal.Footer>

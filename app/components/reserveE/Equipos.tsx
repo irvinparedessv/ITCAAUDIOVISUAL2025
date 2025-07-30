@@ -14,6 +14,7 @@ import Slider from "react-slick";
 import { useAuth } from "~/hooks/AuthContext";
 import { Role } from "~/types/roles";
 import VisualizarModal from "../attendantadmin/VisualizarModal";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   formData: FormDataType;
@@ -59,6 +60,7 @@ export default function EquiposSelect({
   const [availableEquipmentSlides, setAvailableEquipmentSlides] = useState<
     GrupoEquiposPorModelo[]
   >([]);
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const { user } = useAuth();
   const [totalPages, setTotalPages] = useState(1);
@@ -349,7 +351,7 @@ export default function EquiposSelect({
         </div>
         <button
           type="button"
-          onClick={() => setShowDetails(!showDetails)}
+          onClick={() => window.open("/equipmentavailability", "_blank")}
           className="btn btn-sm ms-3 bgpri"
           style={{
             backgroundColor: "rgb(2 71 102)",

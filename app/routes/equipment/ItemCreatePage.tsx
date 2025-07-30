@@ -2,12 +2,20 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTipoEquipos } from "../../services/tipoEquipoService";
 import { getTipoReservas } from "../../services/tipoReservaService";
-import { createItem, getEstados, getMarcas, getModelos } from "../../services/itemService";
+import {
+  createItem,
+  getEstados,
+  getMarcas,
+  getModelos,
+} from "../../services/itemService";
 import type { TipoEquipo } from "app/types/tipoEquipo";
 import type { TipoReserva } from "app/types/tipoReserva";
 import toast from "react-hot-toast";
 import type { Estado, Marca, Modelo } from "~/types/item";
 import ItemForm from "~/components/equipment/ItemForm";
+
+// Si usas react-bootstrap
+import Spinner from "react-bootstrap/Spinner";
 
 export default function ItemCreatePage() {
   const navigate = useNavigate();
@@ -20,6 +28,7 @@ export default function ItemCreatePage() {
 
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
       try {
         const [tiposData, reservasData, marcasData, modelosData, estadosData] =
           await Promise.all([
@@ -27,7 +36,7 @@ export default function ItemCreatePage() {
             getTipoReservas(),
             getMarcas(),
             getModelos(),
-            getEstados()
+            getEstados(),
           ]);
 
         setTiposEquipo(tiposData);
@@ -47,39 +56,56 @@ export default function ItemCreatePage() {
   }, []);
 
   const handleSubmit = async (formData: FormData) => {
-  try {
-    setLoading(true);
-    
-    const tipoEquipoId = formData.get('tipo_equipo_id');
-    const tipoEquipo = tiposEquipo.find(t => t.id === Number(tipoEquipoId));
-    
-    if (!tipoEquipo) {
-      throw new Error("Tipo de equipo no encontrado");
-    }
+    try {
+      setLoading(true);
 
-    const tipo = tipoEquipo.categoria_id === 2 ? "insumo" : "equipo";
+      const tipoEquipoId = formData.get("tipo_equipo_id");
+      const tipoEquipo = tiposEquipo.find((t) => t.id === Number(tipoEquipoId));
 
-    if (tipo === "insumo") {
-      const cantidad = formData.get('cantidad');
-      if (!cantidad || Number(cantidad) <= 0) {
-        throw new Error("La cantidad debe ser mayor a cero");
+      if (!tipoEquipo) {
+        throw new Error("Tipo de equipo no encontrado");
       }
+
+      const tipo = tipoEquipo.categoria_id === 2 ? "insumo" : "equipo";
+
+      if (tipo === "insumo") {
+        const cantidad = formData.get("cantidad");
+        if (!cantidad || Number(cantidad) <= 0) {
+          throw new Error("La cantidad debe ser mayor a cero");
+        }
+      }
+
+      const response = await createItem(formData, tipo);
+      return response;
+    } catch (error: any) {
+      console.error("Error en handleSubmit:", error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
-
-    // Solo manejar la respuesta aquí, no mostrar toast de éxito
-    const response = await createItem(formData, tipo);
-    return response; // Devolver la respuesta para que ItemForm la maneje
-  } catch (error: any) {
-    console.error("Error en handleSubmit:", error);
-    throw error; // Relanzar el error para que ItemForm lo maneje
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4" style={{ position: "relative" }}>
+      {loading && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            zIndex: 10,
+            width: "100%",
+            height: "100%",
+            background: "rgba(255,255,255,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Spinner animation="border" variant="primary" />
+        </div>
+      )}
+
       <ItemForm
         loading={loading}
         tiposEquipo={tiposEquipo}

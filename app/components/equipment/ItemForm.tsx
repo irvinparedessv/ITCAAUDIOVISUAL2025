@@ -55,6 +55,7 @@ export default function ItemForm({
     fecha_adquisicion: "",
     numero_serie: "",
     vida_util: "",
+    reposo: "",
     cantidad: "",
     imagen: null as File | null,
   });
@@ -65,6 +66,7 @@ export default function ItemForm({
   const [loadingCaracteristicas, setLoadingCaracteristicas] = useState(false);
   const [showMarcaModal, setShowMarcaModal] = useState(false);
   const [showModeloModal, setShowModeloModal] = useState(false);
+
 
   // Determina si el tipo seleccionado es insumo
   const esInsumo = (() => {
@@ -104,7 +106,8 @@ export default function ItemForm({
         cantidad: isEditing ? "" : initialValues.cantidad || "",
 
         numero_serie: initialValues.numero_serie || "",
-        vida_util: initialValues.vida_util ? String(initialValues.vida_util) : ""
+        vida_util: initialValues.vida_util ? String(initialValues.vida_util) : "",
+        reposo: initialValues.reposo ? String(initialValues.reposo) : "" // Cambiado aquí
       }));
 
       if (initialValues.caracteristicas) {
@@ -277,6 +280,7 @@ export default function ItemForm({
       fecha_adquisicion: "",
       numero_serie: "",
       vida_util: "",
+      reposo: "",
       cantidad: "",
       imagen: null,
     });
@@ -467,6 +471,9 @@ export default function ItemForm({
       if (!form.vida_util || Number(form.vida_util) <= 0) {
         return toast.error("Ingrese una vida útil válida (mayor a 0 horas)");
       }
+      if (Number(form.reposo) < 0) { // Cambiado aquí
+        return toast.error("Ingrese un valor de reposo válido (≥ 0 minutos)");
+      }
     }
 
     // Validación de características
@@ -547,6 +554,9 @@ export default function ItemForm({
         formData.append("numero_serie", form.numero_serie);
         if (form.vida_util) {
           formData.append("vida_util", form.vida_util);
+        }
+        if (form.reposo) { // Cambiado aquí
+          formData.append("reposo", form.reposo);
         }
       }
 
@@ -795,7 +805,7 @@ export default function ItemForm({
                 menuPortalTarget={document.body}
                 className="flex-grow-1"
                 noOptionsMessage={({ inputValue }) =>
-                  inputValue ? 'No se encontraron modelos' : 'Escribe para más opciones'
+                  inputValue ? 'No se encontraron modelos' : 'Cargando...'
                 }
                 loadingMessage={() => 'Buscando modelos...'}
                 components={{
@@ -923,7 +933,6 @@ export default function ItemForm({
                     className="form-control"
                     value={form.numero_serie}
                     onChange={(e) => {
-                      // Eliminar espacios del valor ingresado
                       const value = e.target.value.replace(/\s/g, '');
                       setForm({ ...form, numero_serie: value });
                     }}
@@ -945,6 +954,22 @@ export default function ItemForm({
                     onChange={(e) => setForm({ ...form, vida_util: e.target.value })}
                     placeholder="horas de vida útil"
                   />
+                </div>
+                <div className="col-md-3" style={{ paddingTop: '20px' }}>
+
+                  <label htmlFor="reposo" className="form-label">
+                    Reposo (Min)
+                  </label>
+                  <input
+                    id="reposo"
+                    type="number"
+                    min={0}
+                    className="form-control"
+                    value={form.reposo}
+                    onChange={(e) => setForm({ ...form, reposo: e.target.value })}
+                    placeholder="minutos de reposo"
+                  />
+                  <small className="text-muted">Tiempo mínimo entre usos</small>
                 </div>
               </>
             )

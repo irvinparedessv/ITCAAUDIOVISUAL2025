@@ -31,6 +31,7 @@ export default function ItemEditForm({ item, caracteristicas, onSubmit, ...rest 
         detalles: item.detalles || "",
         fecha_adquisicion: item.fecha_adquisicion || "",
         imagen: null,
+        reposo: item.reposo,
         // Preparar características en el formato correcto
         caracteristicas: caracteristicas.map(c => ({
           id: c.id,

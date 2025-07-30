@@ -31,7 +31,7 @@ interface HorarioMasSolicitado {
     horario: string;
     total: number;
     tipo: string;
-    equipo_nombre?: string;
+    recurso_nombre?: string;
 }
 
 interface Aula {
@@ -143,20 +143,29 @@ const ReporteHorariosSolicitados = () => {
 
     // Función para cargar opciones en AsyncSelect
     const loadOptions = async (inputValue: string) => {
-        if (!inputValue.trim()) return [];
-        try {
-            const res = await api.get("/prediccion/equipos/buscar", {
-                params: { search: inputValue, limit: 10 },
-            });
-            return res.data.data.map((equipo: any) => ({
-                value: equipo.id,
-                label: equipo.nombre,
-            }));
-        } catch {
-            toast.error("Error cargando equipos", { id: "error-cargar-equipos" });
+    if (!inputValue.trim()) return [];
+    try {
+        const res = await api.get("/prediccion/equipos/buscar", {
+            params: { search: inputValue, limit: 10 },
+        });
+        
+        // Asegúrate de que `res.data.data` existe y tiene el formato correcto
+        if (!res.data?.data) {
+            console.error("Formato de respuesta inesperado:", res.data);
             return [];
         }
-    };
+
+        return res.data.data.map((equipo: any) => ({
+            value: equipo.id,
+            label: `${equipo.marca_modelo} (${equipo.numero_serie})`, // Ej: "HP EliteBook (SN12345)"
+            equipo, // Opcional: guardar el objeto completo para usarlo después
+        }));
+    } catch (error) {
+        console.error("Error al cargar equipos:", error);
+        toast.error("Error cargando equipos", { id: "error-cargar-equipos" });
+        return [];
+    }
+};
 
     const fetchReporte = async () => {
         const ERROR_FILTROS_ID = "error-filtros";
@@ -235,7 +244,7 @@ const ReporteHorariosSolicitados = () => {
                                     const datos = data.map((d) => ({
                                         Horario: d.horario,
                                         Tipo: d.tipo,
-                                        ...(tipo === "equipo" ? { Equipo: d.equipo_nombre ?? "—" } : {}),
+                                        ...(tipo === "equipo" ? { Equipo: d.recurso_nombre?? "—" } : {}),
                                         Total: d.total,
                                     }));
 
@@ -312,7 +321,7 @@ const ReporteHorariosSolicitados = () => {
                                     i + 1,
                                     d.horario,
                                     d.tipo,
-                                    ...(tipo === "equipo" ? [d.equipo_nombre ?? "—"] : []),
+                                    ...(tipo === "equipo" ? [d.recurso_nombre ?? "—"] : []),
                                     d.total,
                                 ]);
 
@@ -756,7 +765,7 @@ const ReporteHorariosSolicitados = () => {
                                         <tr key={i}>
                                             <td>{(currentPage - 1) * perPage + i + 1}</td>
                                             <td>{d.horario}</td>
-                                            {tipo === "equipo" && <td>{d.equipo_nombre ?? "—"}</td>}
+                                            {tipo === "equipo" && <td>{d.recurso_nombre ?? "—"}</td>}
                                             <td>{d.total}</td>
                                         </tr>
                                     ))

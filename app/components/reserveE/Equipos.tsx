@@ -229,8 +229,7 @@ export default function EquiposSelect({
     });
 
     setCantidadInputs((prev) => ({ ...prev, [grupo.modelo_id]: 0 }));
-
-    setTimeout(buscarSugerenciaModelo, 300);
+    buscarSugerenciaModelo(grupo.modelo_id);
   };
 
   // FUNCIONES PARA EQUIPOS EN REPOSO
@@ -264,11 +263,14 @@ export default function EquiposSelect({
     setShowReposoModal(false);
     setEquipoReposoSeleccionado(null);
   };
-  const buscarSugerenciaModelo = async () => {
+  const buscarSugerenciaModelo = async (equipoid) => {
     if (!formData.aula?.value || !formData.equipment?.length) return;
-    console.log(formData.equipment);
-    const equipos_id = formData.equipment.map((e) => e.modelo_id);
+    setSugerencias([]);
+    let equipos_id = formData.equipment.map((e) => e.modelo_id);
 
+    if (!equipos_id.includes(equipoid)) {
+      equipos_id.push(equipoid);
+    }
     try {
       const response = await api.post("/buscar-sugerencias-modelo", {
         aula_id: formData.aula.value,

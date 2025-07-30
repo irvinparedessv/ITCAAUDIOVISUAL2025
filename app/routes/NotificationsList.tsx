@@ -32,6 +32,19 @@ interface Notification {
   created_at: string;
 }
 
+function getAulaNombre(aula: unknown): string {
+  if (typeof aula === "object" && aula !== null && "name" in aula) {
+    return (aula as { name?: string }).name ?? "Sin nombre";
+  }
+  if (typeof aula === "string") {
+    return aula;
+  }
+  return "No especificada";
+}
+
+
+
+
 export default function NotificationsList() {
   const { markAsRead } = useNotificaciones({ includeArchived: true });
   const navigate = useNavigate();
@@ -57,6 +70,8 @@ export default function NotificationsList() {
   useEffect(() => {
     loadNotifications();
   }, []);
+
+
 
   const handleMarkAllAsRead = async () => {
     try {
@@ -210,6 +225,7 @@ export default function NotificationsList() {
         case 'rechazado': return 'danger';
         case 'entregado': return 'primary';
         case 'devuelto': return 'info';
+        case 'cancelado': return 'secondary';
         default: return 'secondary';
       }
     };
@@ -249,10 +265,9 @@ export default function NotificationsList() {
             <Col md={6} className="mb-3">
               <strong>Aula:</strong>
               <div className="text-muted">
-                {notification.data.reserva?.aula ??
-                  notification.data.aula ??
-                  "No especificada"}
+                {getAulaNombre(notification.data.reserva?.aula ?? notification.data.aula)}
               </div>
+
             </Col>
 
             <Col md={6} className="mb-3">
@@ -303,7 +318,6 @@ export default function NotificationsList() {
                     )}
                   </div>
                 </Col>
-
                 {(notification.data.reserva?.equipos || notification.data.equipos) && (
                   <Col xs={12} className="mb-3">
                     <strong>Equipos reservados:</strong>
@@ -313,7 +327,7 @@ export default function NotificationsList() {
                           <Badge bg="primary" className="me-2">
                             {equipo.tipo_equipo ?? "Sin tipo"}
                           </Badge>
-                          {equipo.nombre}
+                          {equipo.nombre ?? equipo.modelo ?? equipo.numero_serie ?? "Sin nombre"}
                         </li>
                       ))}
                     </ul>

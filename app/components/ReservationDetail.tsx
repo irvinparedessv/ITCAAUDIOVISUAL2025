@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AulaReservacionEstadoModal from "../components/attendantadmin/RoomReservationStateModal";
 import ReservacionEstadoModal from "./ReservacionEstado";
@@ -17,9 +17,10 @@ import api from "../api/axios";
 import type { Room } from "~/types/reservationroom";
 import type { ReservationStatus } from "~/types/reservation";
 import { FaCalendarAlt, FaLongArrowAltLeft } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
 import { formatDateTimeTo12hHOURS } from "~/utils/time";
 import ReservaNoEncontrada from "./error/ReservaNoEncontrada";
+import VisualizarModal from "../components/attendantadmin/VisualizarModal";
+import { APIURL } from "~/constants/constant";
 
 // Nuevos tipos para los props del backend
 type EquipoReserva = {
@@ -30,6 +31,7 @@ type EquipoReserva = {
     nombre: string | null;
   };
   comentario?: string | null;
+  es_componente?: boolean | 0 | 1;
 };
 
 type AulaReserva = {
@@ -60,6 +62,7 @@ type Reserva = {
   isRoom: boolean;
   image_url?: string | null;
   tipoReserva?: string;
+  path_model: string;
 };
 
 export default function ReservationDetail() {
@@ -76,6 +79,9 @@ export default function ReservationDetail() {
   const [equipoObs, setEquipoObs] = useState<EquipoReserva | null>(null);
   const [comentarioObs, setComentarioObs] = useState("");
   const [loadingObs, setLoadingObs] = useState(false);
+
+  // ----------- Visualizador 3D ------------
+  const [showModelViewer, setShowModelViewer] = useState(false);
 
   const navigate = useNavigate();
 
@@ -154,7 +160,6 @@ export default function ReservationDetail() {
         equipo_id: equipoObs.id,
         comentario: comentarioObs.trim(),
       });
-      // Opcional: Actualizar comentario en el equipo en el state (refleja cambio sin recargar)
       setReserva((prev) => {
         if (!prev || !prev.equipo) return prev;
         return {
@@ -191,12 +196,21 @@ export default function ReservationDetail() {
 
   if (!reserva) return null;
 
+  // --- SEPARAR equipos e insumos ---
+  const equipos = reserva.equipo?.filter((eq) => !eq.es_componente) || [];
+  const insumos = reserva.equipo?.filter((eq) => eq.es_componente) || [];
+
+  // --- Modelo 3D prioritario ---
+  const path_modelo = !reserva.isRoom
+    ? reserva.path_model
+    : reserva.aula?.path_modelo;
+
   const qrData = reserva.isRoom
     ? `Reserva de aula para ${reserva.usuario} en ${
         reserva.espacio?.name ?? ""
       } el ${reserva.dia}`
-    : `Reserva de ${reserva.usuario} - ${reserva.equipo
-        ?.map(
+    : `Reserva de ${reserva.usuario} - ${equipos
+        .map(
           (eq) =>
             `${eq.modelo?.nombre || "Modelo desconocido"} (${eq.numero_serie})`
         )
@@ -245,12 +259,25 @@ export default function ReservationDetail() {
                       <small className="text-muted">
                         {reserva.aula?.descripcion}
                       </small>
+                      {/* Botón para visualizar modelo 3D */}
+                      {path_modelo && (
+                        <div className="mt-2">
+                          <Button
+                            size="sm"
+                            variant="dark"
+                            onClick={() => setShowModelViewer(true)}
+                          >
+                            Visualizar modelo 3D
+                          </Button>
+                        </div>
+                      )}
                     </ListGroup.Item>
+                    {/* Lista de Equipos */}
                     <ListGroup.Item>
                       <strong>Equipos:</strong>
                       <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
-                        {reserva.equipo && reserva.equipo.length > 0 ? (
-                          reserva.equipo.map((eq) => (
+                        {equipos.length > 0 ? (
+                          equipos.map((eq) => (
                             <li key={eq.id} style={{ marginBottom: "0.75em" }}>
                               <span>
                                 <strong>
@@ -283,6 +310,35 @@ export default function ReservationDetail() {
                         )}
                       </ul>
                     </ListGroup.Item>
+                    {/* Lista de Insumos */}
+                    {insumos.length > 0 && (
+                      <ListGroup.Item>
+                        <strong>Insumos / Accesorios:</strong>
+                        <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
+                          {insumos.map((insumo) => (
+                            <li
+                              key={insumo.id}
+                              style={{ marginBottom: "0.75em" }}
+                            >
+                              <span>
+                                <strong>
+                                  {insumo.modelo?.nombre ||
+                                    "Accesorio sin modelo"}
+                                </strong>{" "}
+                                ({insumo.numero_serie})
+                              </span>
+                              {insumo.comentario && (
+                                <div>
+                                  <small className="text-muted">
+                                    Observación: {insumo.comentario}
+                                  </small>
+                                </div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </ListGroup.Item>
+                    )}
                   </>
                 )}
 
@@ -290,6 +346,18 @@ export default function ReservationDetail() {
                 {reserva.isRoom && (
                   <ListGroup.Item>
                     <strong>Espacio:</strong> {reserva.espacio?.name}
+                    {/* Botón para visualizar modelo 3D */}
+                    {path_modelo && (
+                      <div className="mt-2">
+                        <Button
+                          size="sm"
+                          variant="dark"
+                          onClick={() => setShowModelViewer(true)}
+                        >
+                          Visualizar modelo 3D
+                        </Button>
+                      </div>
+                    )}
                   </ListGroup.Item>
                 )}
 
@@ -298,7 +366,7 @@ export default function ReservationDetail() {
                 </ListGroup.Item>
                 {reserva.isRoom && reserva.fechafin && (
                   <ListGroup.Item>
-                    <strong>Fecha Finalizacion:</strong>{" "}
+                    <strong>Fecha Finalización:</strong>{" "}
                     {formatDayWithDate(reserva.fechafin)}
                   </ListGroup.Item>
                 )}
@@ -406,6 +474,15 @@ export default function ReservationDetail() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Modal para visualizar modelo 3D */}
+      {path_modelo && (
+        <VisualizarModal
+          show={showModelViewer}
+          onHide={() => setShowModelViewer(false)}
+          path={APIURL + "/" + path_modelo}
+        />
+      )}
 
       {reserva.isRoom ? (
         <AulaReservacionEstadoModal

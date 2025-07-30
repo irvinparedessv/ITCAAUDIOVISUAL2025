@@ -526,7 +526,7 @@ const EquipmentDetailsModal: React.FC<Props> = ({
         <VisualizarModal
           show={showModelViewer}
           onHide={() => setShowModelViewer(false)}
-          path={APIURL + selectedReservation.path_model}
+          path={APIURL + "/" + selectedReservation.path_model}
         />
       )}
     </>

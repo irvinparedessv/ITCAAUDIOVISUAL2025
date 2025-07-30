@@ -24,6 +24,7 @@ import { FiRefreshCcw } from "react-icons/fi";
 import type { ReactNode, ElementType } from "react";
 import { useTheme } from "../../hooks/ThemeContext";
 import type {
+  AulaData,
   AulaNotification,
   Notificacion,
   ReservaNotification,
@@ -56,7 +57,7 @@ const NotificationItem = ({
     return null;
   }
 
-  const reservaData = noti.data.reserva || {};
+  const reservaData = noti.data.reserva as AulaNotification | ReservaNotification;
   const estado = reservaData?.estado?.toLowerCase() || "";
   const isPending = estado === "pendiente";
   const isAdminOrManager = [Role.Administrador, Role.Encargado].includes(
@@ -101,6 +102,10 @@ const NotificationItem = ({
     }
   };
 
+  function isAulaObject(aula: string | AulaData): aula is AulaData {
+  return typeof aula === "object" && aula !== null;
+}
+
   return (
     <Dropdown.Item
       onClick={handleClick}
@@ -128,8 +133,11 @@ const NotificationItem = ({
             <>
               <div className="d-flex align-items-center gap-1 mt-1">
                 <small className="text-dark">
-                  Aula:{" "}
-                  {(reservaData as AulaNotification).aula || "No especificada"}
+                   Aula:{" "}
+                   {isAulaObject(reservaData.aula)
+  ? reservaData.aula.name
+  : reservaData.aula || "No especificada"}
+
                 </small>
                 {userRole === Role.Prestamista && (
                   <>
@@ -154,11 +162,14 @@ const NotificationItem = ({
           ) : (
             <>
               <div className="d-flex align-items-center gap-1 mt-1">
-                <small className="text-dark">
-                  Aula:{" "}
-                  {(reservaData as ReservaNotification).aula ||
-                    "No especificada"}
-                </small>
+                
+                 <small className="text-dark">
+  Aula:{" "}
+  {isAulaObject(reservaData.aula)
+    ? reservaData.aula.name
+    : reservaData.aula || "No especificada"}
+</small>
+
                 {userRole === Role.Prestamista && (
                   <>
                     <span className="mx-1">-</span>
@@ -175,7 +186,7 @@ const NotificationItem = ({
                   Equipos:{" "}
                   {(() => {
                     const equipos = (reservaData as ReservaNotification).equipos;
-                    const nombres = equipos?.map((e) => e.nombre).join(", ") ?? "";
+                    const nombres = equipos?.map((e) => e.modelo).join(", ") ?? "";
                     return nombres.length > 55 ? `${nombres.slice(0, 55)}...` : nombres;
                   })()}
                 </small>

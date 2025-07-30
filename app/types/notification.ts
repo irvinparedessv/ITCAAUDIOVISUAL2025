@@ -9,14 +9,29 @@ export type NotificationType =
 
 // Datos de equipo dentro de una notificación
 export interface EquipoNotification {
-  nombre: string;
+  id: number;
+  numero_serie?: string;
   tipo_equipo?: string;
+  modelo?: string;
 }
 
-// Datos de aula dentro de una notificación
+// Datos de aula dentro de una notificación (como objeto completo)
+export interface AulaData {
+  id: number;
+  name: string;
+  path_modelo: string;
+  capacidad_maxima?: number;
+  descripcion?: string;
+  created_at?: string;
+  updated_at?: string;
+  deleted?: number;
+  escala?: string;
+}
+
+// Datos de aula en notificaciones específicas
 export interface AulaNotification {
   id: number;
-  aula: string;
+  aula: string | AulaData; // Puede ser string (nombre) o objeto completo
   fecha: string;
   horario: string;
   estado: string;
@@ -27,7 +42,7 @@ export interface AulaNotification {
 // Base común para notificaciones de reserva
 export interface ReservaBase {
   id: number;
-  aula: string;
+  aula: string | AulaData; // Puede ser string (nombre) o objeto completo
   fecha_reserva: string;
   fecha_entrega: string;
   estado: string;
@@ -35,6 +50,7 @@ export interface ReservaBase {
   equipos?: EquipoNotification[];
   comentario?: string;
   pagina?: number;
+  user?: string;
 }
 
 // Notificación de reserva con información del usuario

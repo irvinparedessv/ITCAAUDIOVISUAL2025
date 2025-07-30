@@ -34,30 +34,31 @@ const ModelObject = ({
 }) => {
   const { scene } = useGLTF(url);
   const [cloned] = useState(() => scene.clone(true));
-  const [baseOffset, setBaseOffset] = useState(0);
 
   useEffect(() => {
+    // Centramos el modelo en el origen y sobre el piso
     const box = new THREE.Box3().setFromObject(cloned);
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(center);
 
-    cloned.position.x -= center.x;
-    cloned.position.z -= center.z;
-    cloned.position.y += 0.1;
-    setBaseOffset(box.min.y);
+    // Centramos en X y Z, alineamos base en Y
+    cloned.position.set(-center.x, -box.min.y, -center.z);
 
+    // Reportamos dimensiones originales
     onSizeCalculated({
       x: size.x,
       y: size.y,
       z: size.z,
     });
+    // Solo una vez al montar
+    // eslint-disable-next-line
   }, []);
 
   return (
-    <group position={[0, -baseOffset * scale + 0.1, 0]}>
-      <primitive object={cloned} scale={[scale, scale, scale]} />
+    <group scale={[scale, scale, scale]}>
+      <primitive object={cloned} />
     </group>
   );
 };
@@ -213,16 +214,16 @@ export default function GestorModelos() {
         onClick={handleBack}
         title="Regresar"
         style={{
-          position: 'absolute',
-          top: '25px',
-          left: '30px',
-          cursor: isNavigating ? 'not-allowed' : 'pointer',
-          fontSize: '2rem',
+          position: "absolute",
+          top: "25px",
+          left: "30px",
+          cursor: isNavigating ? "not-allowed" : "pointer",
+          fontSize: "2rem",
           zIndex: 10,
-          opacity: isNavigating ? 0.5 : 1
+          opacity: isNavigating ? 0.5 : 1,
         }}
       />
-      
+
       <h2 className="mb-4 text-center fw-bold">
         Gestión de Imágenes para: {producto.nombre}
       </h2>
@@ -260,7 +261,9 @@ export default function GestorModelos() {
 
       {selectedType === "normal" && (
         <div className="mb-4">
-          <Form.Label className="fw-bold">Subir imagen normal (.jpg, .png)</Form.Label>
+          <Form.Label className="fw-bold">
+            Subir imagen normal (.jpg, .png)
+          </Form.Label>
           {fileImgUrl && (
             <div className="mb-3 text-center">
               <img
@@ -285,7 +288,11 @@ export default function GestorModelos() {
           >
             {loadingImg ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
                 Subiendo...
               </>
             ) : (
@@ -379,7 +386,11 @@ export default function GestorModelos() {
             >
               {loading3D || isNavigating ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                   {isNavigating ? "Redirigiendo..." : "Subiendo..."}
                 </>
               ) : (

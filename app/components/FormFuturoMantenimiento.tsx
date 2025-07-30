@@ -5,6 +5,7 @@ import { getEquipos } from "../services/equipoService";
 import { getTiposMantenimiento } from "../services/tipoMantenimientoService";
 import { toast } from "react-hot-toast";
 import { FaSave, FaTimes } from "react-icons/fa";
+import { getUsuariosM } from "~/services/userService";
 
 interface Equipo {
   id: number;
@@ -23,6 +24,7 @@ interface FormData {
   fecha_mantenimiento: string;
   hora_mantenimiento_inicio: string;
   hora_mantenimiento_final: string;
+  user_id: string;
 }
 
 const FormFuturoMantenimiento = () => {
@@ -30,6 +32,8 @@ const FormFuturoMantenimiento = () => {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [tipos, setTipos] = useState<TipoMantenimiento[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
 
   const [formData, setFormData] = useState<FormData>({
     equipo_id: "",
@@ -37,19 +41,25 @@ const FormFuturoMantenimiento = () => {
     fecha_mantenimiento: "",
     hora_mantenimiento_inicio: "",
     hora_mantenimiento_final: "",
+    user_id: "",
   });
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
-        const [equiposList, tiposList] = await Promise.all([
+        const [equiposList, tiposList, usuariosList] = await Promise.all([
           getEquipos(),
           getTiposMantenimiento(),
+          getUsuariosM(),
         ]);
         setEquipos(equiposList.data || []);
         setTipos(tiposList || []);
+        setUsuarios(usuariosList.data || []);
       } catch (error) {
         toast.error("Error al cargar los datos.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -69,13 +79,14 @@ const FormFuturoMantenimiento = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validación simple previa
+    // Validación simple previa, ahora incluye user_id
     if (
       !formData.equipo_id ||
       !formData.tipo_mantenimiento_id ||
       !formData.fecha_mantenimiento ||
       !formData.hora_mantenimiento_inicio ||
-      !formData.hora_mantenimiento_final
+      !formData.hora_mantenimiento_final ||
+      !formData.user_id
     ) {
       toast.error("Por favor complete todos los campos requeridos.");
       return;
@@ -96,6 +107,7 @@ const FormFuturoMantenimiento = () => {
           formData.hora_mantenimiento_final.length === 5
             ? formData.hora_mantenimiento_final + ":00"
             : formData.hora_mantenimiento_final,
+        user_id: Number(formData.user_id), // Se envía el user_id validado
       };
 
       await createFuturoMantenimiento(dataToSend);
@@ -114,6 +126,20 @@ const FormFuturoMantenimiento = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    // Loading principal para datos iniciales
+    return (
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ minHeight: 300 }}
+      >
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-4">
@@ -190,7 +216,26 @@ const FormFuturoMantenimiento = () => {
             required
           />
         </div>
-
+        {/* Responsable */}
+        <div className="mb-3">
+          <label>Responsable (usuario)</label>
+          <select
+            name="user_id"
+            value={formData.user_id}
+            onChange={handleChange}
+            required
+            className="form-select"
+          >
+            <option value="">Seleccione usuario</option>
+            {usuarios.map((user) => (
+              <option key={user.id} value={user.id.toString()}>
+                {(user.nombre ??
+                  `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim()) ||
+                  `Usuario #${user.id}`}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="form-actions d-flex gap-2">
           <button
             type="submit"

@@ -81,7 +81,6 @@ import FormFuturoMantenimiento from "./components/FormFuturoMantenimiento";
 import FuturoMantenimientoEdit from "./components/futuroMantenimiento/futuroMantenimientoEdit";
 import PrediccionesPorEquipoVidaUtilPage from "./components/prediction/PrediccionesPorEquipoVidaUtil";
 
-
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -334,89 +333,64 @@ const router = createBrowserRouter([
           // --- RUTAS DE MANTENIMIENTOS ---
 
           {
-
             path: "mantenimiento",
 
             element: <MantenimientoList />,
-
           },
 
           {
-
             path: "mantenimientos/nuevo",
 
             element: <FormMantenimiento />,
-
           },
-
           {
+            path: "mantenimiento/:id",
 
+            element: <FormMantenimiento />,
+          },
+          {
             path: "mantenimientos/editar/:id",
 
             element: <MantenimientoEdit />,
-
           },
-
-
 
           // RUTAS TIPO MANTENIMIENTO
 
-
-
           {
-
             path: "tipoMantenimiento",
 
             element: <TipoMantenimientoList />,
-
           },
 
           //RUTAS FUTUROS MANTENIMIENTOS
 
-
-
           {
-
             path: "futuroMantenimiento",
 
             element: <FuturoMantenimientoList />,
-
           },
 
           {
-
             path: "futuroMantenimiento/crear",
 
             element: <FormFuturoMantenimiento />,
-
           },
 
           {
-
             path: "futuroMantenimiento/editar/:id",
 
             element: <FuturoMantenimientoEdit />,
-
           },
-
         ],
-
       },
-
     ],
-
   },
 
   {
-
     path: "*",
 
     element: <NoEncontrado />,
-
   },
-
 ]);
-
-
 
 export default router;

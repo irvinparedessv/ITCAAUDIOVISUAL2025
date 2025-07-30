@@ -30,7 +30,17 @@ export const getUsuarios = async (params: UsuarioQueryParams = {}) => {
     throw error;
   }
 };
-
+export const getUsuariosM = async (params: UsuarioQueryParams = {}) => {
+  try {
+    const res = await api.get("/usersM");
+    return {
+      data: res.data,
+    };
+  } catch (error) {
+    console.error("Error al obtener los usuarios:", error);
+    throw error;
+  }
+};
 // Obtener un usuario por ID
 export const getUsuarioById = async (id: string): Promise<User> => {
   try {
@@ -144,4 +154,3 @@ export const updateProfile = async (formData: FormData): Promise<any> => {
     throw error;
   }
 };
-

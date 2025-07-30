@@ -32,7 +32,8 @@ export const getEquipoById = async (id: number): Promise<Equipo> => {
  * Obtiene una lista paginada de equipos con filtros opcionales
  */
 export const getEquipos = async (
-  filters: EquipoFilters = {}
+  filters: EquipoFilters = {},
+  equipoId?: string // <-- nuevo parámetro opcional
 ): Promise<{
   data: Equipo[];
   total: number;
@@ -41,13 +42,26 @@ export const getEquipos = async (
   last_page: number;
 }> => {
   try {
+    // Si mandan equipoId, trae SOLO ese equipo (sin paginación)
+    if (equipoId) {
+      const res = await api.get(`/equipos/${equipoId}`);
+      return {
+        data: [res.data], // metes el equipo individual como array
+        total: 1,
+        current_page: 1,
+        per_page: 1,
+        last_page: 1,
+      };
+    }
+
+    // Normal, lista paginada
     const res = await api.get("/equipos", {
       params: {
         search: filters.search ?? "",
         page: filters.page ?? 1,
-        per_page: filters.perPage ?? 5,
+        per_page: 20,
         tipo_equipo_id: filters.tipoEquipoId ?? undefined,
-        estado: filters.estado !== undefined ? filters.estado : undefined, // ✅ filtro por estado
+        estado: filters.estado !== undefined ? filters.estado : undefined,
       },
     });
 

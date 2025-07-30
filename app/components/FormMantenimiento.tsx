@@ -5,8 +5,13 @@ import { FaSave, FaTimes } from "react-icons/fa";
 
 import { getEquipos } from "../services/equipoService";
 import { getTiposMantenimiento } from "../services/tipoMantenimientoService";
-import { getUsuarios } from "../services/userService";
-import { getMantenimientoById, createMantenimiento, updateMantenimiento } from "../services/mantenimientoService";
+import { getUsuariosM } from "../services/userService";
+import {
+  getMantenimientoById,
+  createMantenimiento,
+  updateMantenimiento,
+} from "../services/mantenimientoService";
+import { useAuth } from "~/hooks/AuthContext";
 
 const FormMantenimiento = () => {
   const { id } = useParams();
@@ -28,6 +33,7 @@ const FormMantenimiento = () => {
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
   const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
 
@@ -35,9 +41,9 @@ const FormMantenimiento = () => {
     const fetchData = async () => {
       try {
         const [equiposList, tiposList, usuariosList] = await Promise.all([
-          getEquipos(),
+          getEquipos({}, id),
           getTiposMantenimiento(),
-          getUsuarios(),
+          getUsuariosM(),
         ]);
 
         setEquipos(equiposList?.data || []);
@@ -45,17 +51,12 @@ const FormMantenimiento = () => {
         setUsuarios(usuariosList?.data || []);
 
         if (id) {
-          const mantenimiento = await getMantenimientoById(Number(id));
-          setFormData({
-            equipo_id: mantenimiento.equipo_id?.toString() || "",
-            tipo_id: mantenimiento.tipo_id?.toString() || "",
-            fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
-            hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
-            hora_mantenimiento_final: mantenimiento.hora_mantenimiento_final?.slice(0, 5) || "",
-            detalles: mantenimiento.detalles || "",
-            user_id: mantenimiento.user_id?.toString() || "",
-            vida_util: mantenimiento.vida_util?.toString() || "",
-          });
+          console.log(equiposList.data);
+          console.log(id);
+          setFormData((previous) => ({
+            ...previous,
+            equipo_id: id.toString(),
+          }));
         }
       } catch (error) {
         toast.error("Error al cargar datos");
@@ -68,7 +69,9 @@ const FormMantenimiento = () => {
   }, [id]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
 
@@ -96,10 +99,6 @@ const FormMantenimiento = () => {
       toast.error("Debe seleccionar un tipo de mantenimiento.");
       return;
     }
-    if (!formData.user_id) {
-      toast.error("Debe seleccionar un responsable.");
-      return;
-    }
     if (!formData.fecha_mantenimiento) {
       toast.error("Debe ingresar la fecha de mantenimiento.");
       return;
@@ -119,7 +118,7 @@ const FormMantenimiento = () => {
       ...formData,
       equipo_id: Number(formData.equipo_id),
       tipo_id: Number(formData.tipo_id),
-      user_id: Number(formData.user_id),
+      user_id: Number(user.id),
       vida_util: formData.vida_util === "" ? null : Number(formData.vida_util),
       hora_mantenimiento_inicio:
         formData.hora_mantenimiento_inicio.length === 5
@@ -166,7 +165,7 @@ const FormMantenimiento = () => {
           >
             <option value="">Seleccione un equipo</option>
             {equipos
-              .filter((equipo) => !equipo.es_componente)  // Mostrar solo equipos que no son componentes
+              .filter((equipo) => !equipo.es_componente) // Mostrar solo equipos que no son componentes
               .map((equipo) => (
                 <option key={equipo.id} value={equipo.id.toString()}>
                   {equipo.numero_serie || `Equipo #${equipo.id}`}
@@ -245,25 +244,6 @@ const FormMantenimiento = () => {
           />
         </div>
 
-        {/* Responsable */}
-        <div className="mb-3">
-          <label>Responsable (usuario)</label>
-          <select
-            name="user_id"
-            value={formData.user_id}
-            onChange={handleChange}
-            required
-            className="form-select"
-          >
-            <option value="">Seleccione usuario</option>
-            {usuarios.map((user) => (
-              <option key={user.id} value={user.id.toString()}>
-                {(user.nombre ?? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim()) || `Usuario #${user.id}`}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* Vida útil */}
         <div className="mb-3">
           <label>Vida útil (horas)</label>
@@ -277,17 +257,26 @@ const FormMantenimiento = () => {
           />
           {showVidaUtilAlert && (
             <div className="alert alert-warning mt-2" role="alert">
-              Si agregas el mantenimiento, recuerda registrar la vida útil estimada en horas.
+              Si agregas el mantenimiento, recuerda registrar la vida útil
+              estimada en horas.
             </div>
           )}
         </div>
 
         {/* Botones */}
         <div className="d-flex gap-2">
-          <button type="submit" disabled={isSubmitting} className="btn btn-primary">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn btn-primary"
+          >
             {isSubmitting ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                />
                 Guardando...
               </>
             ) : (

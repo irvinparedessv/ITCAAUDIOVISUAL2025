@@ -239,17 +239,14 @@ export default function BitacoraPage() {
 function getActionBadgeColor(accion: string) {
   const action = accion.toLowerCase();
   switch (true) {
-    case action.includes('crear') || action.includes('creación'):
+    case action.includes('asociación'):
       return "success";
-    case action.includes('editar') || action.includes('actualizar'):
+    case action.includes('actualización'):
       return "warning";
-    case action.includes('eliminar'):
+    case action.includes('desasociación'):
       return "danger";
-    case action.includes('login'):
-      return "primary";
     case action.includes('cambio de estado'):
       return "info";
-    case action.includes('actualización'):
       return "info";
     default:
       return "secondary";

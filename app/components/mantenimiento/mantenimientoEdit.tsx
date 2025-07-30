@@ -33,9 +33,12 @@ const MantenimientoEdit = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
+
+
   useEffect(() => {
     if (!id) return;
-  
+
     const fetchData = async () => {
       try {
         const [mantenimiento, equiposList, tiposList, usuariosList, futurosList] =
@@ -46,26 +49,26 @@ const MantenimientoEdit = () => {
             getUsuarios(),
             getFuturosMantenimiento(),
           ]);
-  
+
         console.log('Mantenimiento:', mantenimiento);
         console.log('Equipos:', equiposList);
         console.log('Tipos de mantenimiento:', tiposList);
         console.log('Usuarios:', usuariosList);
         console.log('Futuros mantenimientos:', futurosList);
-  
+
         // Validación de la existencia de "data" en cada respuesta
         setFormData({
           equipo_id: mantenimiento.equipo_id?.toString() || "",
           tipo_mantenimiento_id: mantenimiento.tipo_mantenimiento_id?.toString() || "",
           fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
-          hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0,5) || "",
-          hora_mantenimiento_final: mantenimiento.hora_mantenimiento_final?.slice(0,5) || "",
+          hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
+          hora_mantenimiento_final: mantenimiento.hora_mantenimiento_final?.slice(0, 5) || "",
           detalles: mantenimiento.detalles || "",
           user_id: mantenimiento.user_id?.toString() || "",
           futuro_mantenimiento_id: mantenimiento.futuro_mantenimiento_id?.toString() || "",
           vida_util: mantenimiento.vida_util?.toString() || "",
         });
-  
+
         // Manejo de "data" en cada respuesta para asegurarse de que no esté vacío
         setEquipos(equiposList?.data || []);
         setTipos(tiposList || []);
@@ -78,29 +81,41 @@ const MantenimientoEdit = () => {
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, [id]);
-  
+
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+
+    // Mostrar alerta si se edita cualquier campo y vida útil es 0 o menor
+    if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
+      setShowVidaUtilAlert(true);
+    }
+
+    // Ocultar alerta si se corrige la vida útil
+    if (name === "vida_util" && Number(value) > 0) {
+      setShowVidaUtilAlert(false);
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
-  
+
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("token") ?? ""; // Obtener el token
-  
+
       const dataToSend = {
         ...formData,
         equipo_id: Number(formData.equipo_id),
@@ -119,7 +134,7 @@ const MantenimientoEdit = () => {
             ? formData.hora_mantenimiento_final + ":00"
             : formData.hora_mantenimiento_final,
       };
-  
+
       await updateMantenimiento(Number(id), token, dataToSend);  // Pasar el token como argumento
       toast.success("Mantenimiento actualizado");
       navigate("/mantenimiento");
@@ -130,7 +145,7 @@ const MantenimientoEdit = () => {
       setIsSubmitting(false);
     }
   };
-  
+
   if (loading) return <div className="text-center my-5">Cargando...</div>;
 
   return (
@@ -146,7 +161,7 @@ const MantenimientoEdit = () => {
             required
             className="form-select"
           >
-            <option value="">Seleccione equipo</option>
+
             {equipos.map((equipo) => (
               <option key={equipo.id} value={equipo.id.toString()}>
                 {equipo.numero_serie || equipo.nombre || `Equipo #${equipo.id}`}
@@ -164,7 +179,7 @@ const MantenimientoEdit = () => {
             required
             className="form-select"
           >
-            <option value="">Seleccione tipo</option>
+
             {tipos.map((tipo) => (
               <option key={tipo.id} value={tipo.id.toString()}>
                 {tipo.nombre}
@@ -249,16 +264,18 @@ const MantenimientoEdit = () => {
             className="form-select"
           >
             <option value="">Ninguno</option>
-            {futuros.map((fut) => (
-              <option key={fut.id} value={fut.id.toString()}>
-                {fut.nombre || `Futuro #${fut.id}`}
+            {futuros.map((futuro) => (
+              <option key={futuro.id} value={futuro.id}>
+                {`${futuro.fecha_mantenimiento} - ${futuro.equipo?.numero_serie || 'Equipo'}`}
               </option>
             ))}
+
+
           </select>
         </div>
 
         <div className="mb-3">
-          <label>Vida útil (meses)</label>
+          <label>Vida útil (horas)</label>
           <input
             type="number"
             name="vida_util"
@@ -267,7 +284,13 @@ const MantenimientoEdit = () => {
             min={0}
             className="form-control"
           />
+          {showVidaUtilAlert && (
+            <div className="alert alert-warning mt-2" role="alert">
+              Si editas el mantenimiento, recuerda registrar la vida útil estimada en horas.
+            </div>
+          )}
         </div>
+
 
         <div className="d-flex gap-2">
           <button type="submit" disabled={isSubmitting} className="btn btn-primary">

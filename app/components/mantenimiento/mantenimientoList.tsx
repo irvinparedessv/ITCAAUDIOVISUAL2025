@@ -263,7 +263,7 @@ export default function MantenimientoList() {
                           <Button
                             variant="outline-primary"
                             title="Editar mantenimiento"
-                            onClick={() => navigate(`/mantenimiento/editar/${m.id}`)}
+                            onClick={() => navigate(`/mantenimientos/editar/${m.id}`)}
                             style={{ minWidth: "44px", minHeight: "44px" }}
                             className="d-flex justify-content-center align-items-center p-0 rounded-circle"
                           >

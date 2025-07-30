@@ -29,6 +29,8 @@ const FormMantenimiento = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -66,13 +68,27 @@ const FormMantenimiento = () => {
     fetchData();
   }, [id]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const handleChange = (
+      e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    ) => {
+      const { name, value } = e.target;
+  
+      // Mostrar alerta si se edita cualquier campo y vida útil es 0 o menor
+      if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
+        setShowVidaUtilAlert(true);
+      }
+  
+      // Ocultar alerta si se corrige la vida útil
+      if (name === "vida_util" && Number(value) > 0) {
+        setShowVidaUtilAlert(false);
+      }
+  
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    };
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,7 +153,7 @@ const FormMantenimiento = () => {
             required
             className="form-select"
           >
-            <option value="">Seleccione equipo</option>
+            
             {equipos.map((equipo) => (
               <option key={equipo.id} value={equipo.id.toString()}>
                 {equipo.numero_serie || equipo.nombre || `Equipo #${equipo.id}`}
@@ -155,7 +171,7 @@ const FormMantenimiento = () => {
             required
             className="form-select"
           >
-            <option value="">Seleccione tipo</option>
+            
             {tipos.map((tipo) => (
               <option key={tipo.id} value={tipo.id.toString()}>
                 {tipo.nombre}
@@ -231,7 +247,7 @@ const FormMantenimiento = () => {
         </div>
 
         <div className="mb-3">
-          <label>Vida útil (meses)</label>
+          <label>Vida útil (horas)</label>
           <input
             type="number"
             name="vida_util"
@@ -240,6 +256,11 @@ const FormMantenimiento = () => {
             min={0}
             className="form-control"
           />
+          {showVidaUtilAlert && (
+            <div className="alert alert-warning mt-2" role="alert">
+              Si agregas el mantenimiento, recuerda registrar la vida útil estimada en horas.
+            </div>
+          )}
         </div>
 
         <div className="d-flex gap-2">

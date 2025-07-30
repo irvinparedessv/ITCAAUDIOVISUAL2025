@@ -441,6 +441,36 @@ export default function ItemForm({
     };
   }
 
+  const [loadingModelos, setLoadingModelos] = useState(false);
+
+  // Efecto para cargar modelos iniciales
+  useEffect(() => {
+    const loadModelosIniciales = async () => {
+      if (form.marca_id && form.tipo_equipo_id) {
+        setLoadingModelos(true);
+        try {
+          const modelos = await getModelosByMarcaYTipo(
+            Number(form.marca_id),
+            Number(form.tipo_equipo_id),
+            undefined,
+            true
+          );
+          setModelosIniciales(modelos);
+        } catch (error) {
+          console.error("Error al cargar modelos iniciales:", error);
+          setModelosIniciales([]);
+        } finally {
+          setLoadingModelos(false);
+        }
+      } else {
+        setModelosIniciales([]);
+      }
+    };
+
+    loadModelosIniciales();
+  }, [form.marca_id, form.tipo_equipo_id]);
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     toast.dismiss();
@@ -468,7 +498,7 @@ export default function ItemForm({
       if (!form.numero_serie?.trim()) {
         return toast.error("Ingrese el número de serie");
       }
-      if (!form.vida_util || Number(form.vida_util) <= 0) {
+      if (Number(form.vida_util) < 0) {
         return toast.error("Ingrese una vida útil válida (mayor a 0 horas)");
       }
       if (Number(form.reposo) < 0) { // Cambiado aquí
@@ -772,20 +802,27 @@ export default function ItemForm({
                 cacheOptions
                 defaultOptions={modelosIniciales}
                 loadOptions={async (inputValue) => {
-                  if (!form.marca_id || !form.tipo_equipo_id) return [];
-                  return await getModelosByMarcaYTipo(
-                    Number(form.marca_id),
-                    Number(form.tipo_equipo_id),
-                    inputValue,
-                    !inputValue // loadInitial=true cuando no hay inputValue
-                  );
+                  try {
+                    if (!form.marca_id || !form.tipo_equipo_id) return [];
+
+                    const results = await getModelosByMarcaYTipo(
+                      Number(form.marca_id),
+                      Number(form.tipo_equipo_id),
+                      inputValue,
+                      !inputValue
+                    );
+
+                    return results;
+                  } catch (error) {
+                    console.error("Error al cargar modelos:", error);
+                    return [];
+                  }
                 }}
                 value={
                   form.modelo_id
                     ? {
                       value: Number(form.modelo_id),
-                      label:
-                        filteredModelos.find((m) => m.id === Number(form.modelo_id))?.nombre || '',
+                      label: filteredModelos.find((m) => m.id === Number(form.modelo_id))?.nombre || '',
                     }
                     : null
                 }
@@ -793,20 +830,24 @@ export default function ItemForm({
                   setForm({ ...form, modelo_id: selected ? String(selected.value) : '' })
                 }
                 placeholder={
-                  !form.tipo_equipo_id
-                    ? 'Selecciona un tipo de equipo primero'
-                    : !form.marca_id
-                      ? 'Selecciona una marca primero'
-                      : 'Buscar modelo...'
+                  loadingModelos
+                    ? "Cargando modelos..."
+                    : !form.tipo_equipo_id
+                      ? 'Selecciona un tipo de equipo primero'
+                      : !form.marca_id
+                        ? 'Selecciona una marca primero'
+                        : 'Buscar modelo...'
                 }
-
-                isDisabled={!form.marca_id || !form.tipo_equipo_id || isEditing}
+                isDisabled={!form.marca_id || !form.tipo_equipo_id || isEditing || loadingModelos}
                 styles={customSelectStyles}
                 menuPortalTarget={document.body}
                 className="flex-grow-1"
-                noOptionsMessage={({ inputValue }) =>
-                  inputValue ? 'No se encontraron modelos' : 'Cargando...'
-                }
+                noOptionsMessage={({ inputValue }) => {
+                  if (loadingModelos) return "Cargando...";
+                  if (!inputValue && modelosIniciales.length === 0) return 'No hay modelos disponibles';
+                  if (inputValue) return 'No se encontraron modelos';
+                  return 'Escribe para buscar modelos';
+                }}
                 loadingMessage={() => 'Buscando modelos...'}
                 components={{
                   IndicatorSeparator: null,

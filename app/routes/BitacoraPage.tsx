@@ -249,6 +249,8 @@ function getActionBadgeColor(accion: string) {
       return "primary";
     case action.includes('cambio de estado'):
       return "info";
+    case action.includes('actualización'):
+      return "info";
     default:
       return "secondary";
   }

@@ -309,7 +309,7 @@ export default function ReservationList() {
                   toast.dismiss(t.id);
                   toast.error(
                     err?.response?.data?.message ||
-                      `Error al cancelar la reserva #${reservaId}`,
+                    `Error al cancelar la reserva #${reservaId}`,
                     {
                       id: `${toastId}-error`,
                     }
@@ -358,24 +358,24 @@ export default function ReservationList() {
         <div className="d-flex flex-column flex-md-row flex-wrap gap-2 align-self-end align-self-md-auto">
           {(user?.role === Role.Administrador ||
             user?.role === Role.Encargado) && (
-            <>
-              <Button
-                onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
-                className="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2"
-              >
-                {mostrarSoloHoy ? <FaCalendarAlt /> : <FaCalendarDay />}
-                {mostrarSoloHoy ? "Todas las reservas" : "Reservas de hoy"}
-              </Button>
+              <>
+                <Button
+                  onClick={() => setMostrarSoloHoy(!mostrarSoloHoy)}
+                  className="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2"
+                >
+                  {mostrarSoloHoy ? <FaCalendarAlt /> : <FaCalendarDay />}
+                  {mostrarSoloHoy ? "Todas las reservas" : "Reservas de hoy"}
+                </Button>
 
-              <Button
-                onClick={() => navigate("/qrScan")}
-                className="btn btn-outline-success d-flex align-items-center gap-2 px-3 py-2"
-              >
-                <FaQrcode />
-                Lector QR
-              </Button>
-            </>
-          )}
+                <Button
+                  onClick={() => navigate("/qrScan")}
+                  className="btn btn-outline-success d-flex align-items-center gap-2 px-3 py-2"
+                >
+                  <FaQrcode />
+                  Lector QR
+                </Button>
+              </>
+            )}
 
           <Button
             onClick={() => navigate("/addreservation")}
@@ -554,10 +554,10 @@ export default function ReservationList() {
                   const esPrestamista = user?.role === Role.Prestamista;
                   const esEncargado = user?.role === Role.Encargado;
                   const esPrioridad = reserva.esPrioridad;
-                  const esPendiente = reserva.estado == "Pendiente";
+                  const esPendiente = ["Pendiente", "Devuelto", "Aprobado", "Rechazado", "Cancelado"].includes(reserva.estado);
                   const mostrarBoton = esPendiente
                     ? (esAdmin && esPrioridad) ||
-                      (!esPrioridad && !esPrestamista)
+                    (!esPrioridad && !esPrestamista)
                     : true;
                   return (
                     <tr
@@ -594,7 +594,7 @@ export default function ReservationList() {
                           .join(", ")}
                         {reserva.equipos.length > 2 && "..."}
                       </td>
-                      <td>{reserva.aula.name}</td>
+                      <td>{reserva.aula?.name || 'No especificada'}</td>
                       <td>{formatDateTimeTo12h(reserva.fecha_reserva)}</td>
 
                       <td>{formatDateTimeTo12h(reserva.fecha_entrega)}</td>
@@ -666,8 +666,8 @@ export default function ReservationList() {
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform =
-                                  "scale(1.15)")
+                              (e.currentTarget.style.transform =
+                                "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")

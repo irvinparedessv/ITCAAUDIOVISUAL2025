@@ -63,7 +63,7 @@ const EquipmentDetailsModal: React.FC<Props> = ({
         selectedReservation.equipos = selectedReservation.equipos.map(
           (eq: any) =>
             eq.id === equipoObs.id
-              ? { ...eq, comentario: comentarioObs.trim() }
+              ? { ...eq, pivote: { comentario: comentarioObs.trim() } }
               : eq
         );
       }
@@ -324,82 +324,131 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                   </div>
                   <div className="ps-5">
                     <div className="list-group">
-                      {selectedReservation.equipos.map((equipo: any) => (
-                        <div key={equipo.id}>
-                          <div className="list-group-item border-0 bg-body-secondary mb-2 rounded">
-                            {/* Contenedor para nombre y número de serie */}
-                            <div className="justify-content-between align-items-start">
-                              {/* Nombre y descripción */}
-                              <div style={{ width: "100%" }} className="mb-2">
-                                <h6 className="fw-bold mb-1">
-                                  {equipo.modelo?.nombre || "Sin modelo"}
-                                </h6>
-                                <p className="small text-body-secondary mb-0">
-                                  {equipo.descripcion}
-                                </p>
-                              </div>
-                              {/* Número de serie */}
-                              <div
-                                style={{ maxWidth: "80%", fontSize: "10px" }}
-                              >
-                                <span
-                                  className="badge rounded-pill bg-body-tertiary text-body-emphasis"
-                                  style={{ minWidth: "2rem" }}
+                      {selectedReservation.equipos
+                        .filter((equipo: any) => equipo.es_componente == false)
+                        .map((equipo: any) => (
+                          <div key={equipo.id}>
+                            <div className="list-group-item border-0 bg-body-secondary mb-2 rounded">
+                              {/* Contenedor para nombre y número de serie */}
+                              <div className="justify-content-between align-items-start">
+                                {/* Nombre y descripción */}
+                                <div style={{ width: "100%" }} className="mb-2">
+                                  <h6 className="fw-bold mb-1">
+                                    {equipo.modelo?.nombre || "Sin modelo"}
+                                  </h6>
+                                  <p className="small text-body-secondary mb-0">
+                                    {equipo.descripcion}
+                                  </p>
+                                </div>
+                                {/* Número de serie */}
+                                <div
+                                  style={{ maxWidth: "80%", fontSize: "10px" }}
                                 >
-                                  {equipo.numero_serie}
-                                </span>
+                                  <span
+                                    className="badge rounded-pill bg-body-tertiary text-body-emphasis"
+                                    style={{ minWidth: "2rem" }}
+                                  >
+                                    {equipo.numero_serie}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                            {/* Observación */}
-                            {equipo.comentario && (
-                              <div className="ms-4 mt-1">
-                                <small className="text-muted">
-                                  <strong>Observación:</strong>{" "}
-                                  {equipo.comentario}
-                                </small>
-                              </div>
-                            )}
-                            {(user.role == Role.Administrador ||
-                              user.role == Role.Encargado) && (
-                              <Button
-                                size="sm"
-                                className="ms-4 mt-2"
-                                variant="outline-primary"
-                                onClick={() => handleAbrirObsModal(equipo)}
-                              >
-                                {equipo.pivot.comentario
-                                  ? "Editar observación"
-                                  : "Agregar observación"}
-                              </Button>
-                            )}
-
-                            {user.role == Role.Prestamista &&
-                              equipo.pivot.comentario && (
-                                <div>
-                                  Observación: {equipo.pivot.comentario}
+                              {/* Observación */}
+                              {equipo.comentario && (
+                                <div className="ms-4 mt-1">
+                                  <small className="text-muted">
+                                    <strong>Observación:</strong>{" "}
+                                    {equipo.comentario}
+                                  </small>
                                 </div>
                               )}
+                              {(user.role == Role.Administrador ||
+                                user.role == Role.Encargado) && (
+                                <Button
+                                  size="sm"
+                                  className="ms-4 mt-2"
+                                  variant="outline-primary"
+                                  onClick={() => handleAbrirObsModal(equipo)}
+                                >
+                                  {equipo.pivot.comentario
+                                    ? "Editar observación"
+                                    : "Agregar observación"}
+                                </Button>
+                              )}
 
-                            {/* Insumos debajo */}
-                            {equipo.insumos && equipo.insumos.length > 0 && (
-                              <div className="ms-4 mt-2">
-                                <strong>Insumos Relacionados:</strong>
-                                <ul className="list-group list-group-flush mt-1">
-                                  {equipo.insumos.map((insumo: any) => (
-                                    <li
-                                      key={insumo.id}
-                                      className="list-group-item small ps-3"
-                                    >
-                                      {insumo.modelo?.nombre ||
-                                        "Accesorio sin modelo"}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                              {user.role == Role.Prestamista &&
+                                equipo.pivot.comentario && (
+                                  <div>
+                                    Observación: {equipo.pivot.comentario}
+                                  </div>
+                                )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                    </div>
+                  </div>
+                  <div className="ps-5">
+                    <h5 className="fw-bold mb-0">Insumos</h5>
+                    <div className="list-group">
+                      {selectedReservation.equipos
+                        .filter((equipo: any) => equipo.es_componente == true)
+                        .map((equipo: any) => (
+                          <div key={equipo.id}>
+                            <div className="list-group-item border-0 bg-body-secondary mb-2 rounded">
+                              {/* Contenedor para nombre y número de serie */}
+                              <div className="justify-content-between align-items-start">
+                                {/* Nombre y descripción */}
+                                <div style={{ width: "100%" }} className="mb-2">
+                                  <h6 className="fw-bold mb-1">
+                                    {equipo.modelo?.nombre || "Sin modelo"}
+                                  </h6>
+                                  <p className="small text-body-secondary mb-0">
+                                    {equipo.descripcion}
+                                  </p>
+                                </div>
+                                {/* Número de serie */}
+                                <div
+                                  style={{ maxWidth: "80%", fontSize: "10px" }}
+                                >
+                                  <span
+                                    className="badge rounded-pill bg-body-tertiary text-body-emphasis"
+                                    style={{ minWidth: "2rem" }}
+                                  >
+                                    {equipo.numero_serie}
+                                  </span>
+                                </div>
+                              </div>
+                              {/* Observación */}
+                              {equipo.comentario && (
+                                <div className="ms-4 mt-1">
+                                  <small className="text-muted">
+                                    <strong>Observación:</strong>{" "}
+                                    {equipo.comentario}
+                                  </small>
+                                </div>
+                              )}
+                              {(user.role == Role.Administrador ||
+                                user.role == Role.Encargado) && (
+                                <Button
+                                  size="sm"
+                                  className="ms-4 mt-2"
+                                  variant="outline-primary"
+                                  onClick={() => handleAbrirObsModal(equipo)}
+                                >
+                                  {equipo.pivot.comentario
+                                    ? "Editar observación"
+                                    : "Agregar observación"}
+                                </Button>
+                              )}
+
+                              {user.role == Role.Prestamista &&
+                                equipo.pivot.comentario && (
+                                  <div>
+                                    Observación: {equipo.pivot.comentario}
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        ))}
                     </div>
                   </div>
                 </div>

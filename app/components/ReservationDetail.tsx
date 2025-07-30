@@ -6,11 +6,11 @@ import {
   Card,
   ListGroup,
   Badge,
-  Spinner,
-  Alert,
   Button,
   Row,
   Col,
+  Modal,
+  Form,
 } from "react-bootstrap";
 import { QRCodeSVG } from "qrcode.react";
 import api from "../api/axios";
@@ -21,20 +21,45 @@ import { useNavigate } from "react-router-dom";
 import { formatDateTimeTo12hHOURS } from "~/utils/time";
 import ReservaNoEncontrada from "./error/ReservaNoEncontrada";
 
+// Nuevos tipos para los props del backend
+type EquipoReserva = {
+  id: number;
+  numero_serie: string;
+  modelo: {
+    id: number | null;
+    nombre: string | null;
+  };
+  comentario?: string | null;
+};
+
+type AulaReserva = {
+  id: number;
+  name: string;
+  path_modelo: string;
+  capacidad_maxima: number;
+  descripcion: string;
+  escala: string;
+  created_at: string;
+  updated_at: string;
+  deleted: number;
+};
+
 type Reserva = {
   usuario: string;
-  equipo?: string[];
-  aula: string;
-  espacio: Room;
+  equipo?: EquipoReserva[];
+  aula: AulaReserva | null;
+  espacio?: Room; // sigue por compatibilidad con isRoom
   dia: string;
   id: number;
   horaSalida?: string;
   horaEntrada?: string;
   horario?: string;
   fechafin?: string;
-  dias: string[];
+  dias?: string[];
   estado: ReservationStatus;
   isRoom: boolean;
+  image_url?: string | null;
+  tipoReserva?: string;
 };
 
 export default function ReservationDetail() {
@@ -45,9 +70,17 @@ export default function ReservationDetail() {
   const [showModal, setShowModal] = useState(false);
   const [accion, setAccion] = useState<"Aprobar" | "Rechazar" | null>(null);
   const [comentario, setComentario] = useState("");
+
+  // ----------- Para Observaciones ----------
+  const [showObsModal, setShowObsModal] = useState(false);
+  const [equipoObs, setEquipoObs] = useState<EquipoReserva | null>(null);
+  const [comentarioObs, setComentarioObs] = useState("");
+  const [loadingObs, setLoadingObs] = useState(false);
+
   const navigate = useNavigate();
 
   function formatDayWithDate(fecha: string) {
+    if (!fecha) return "";
     const date = new Date(fecha);
     return date.toLocaleDateString("es-ES", {
       weekday: "long",
@@ -56,15 +89,6 @@ export default function ReservationDetail() {
       year: "numeric",
     });
   }
-
-  // function formatTime(fechaHora: string) {
-  //   const fechaISO = fechaHora.replace(" ", "T");
-  //   const date = new Date(fechaISO);
-  //   return date.toLocaleTimeString("es-ES", {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //   });
-  // }
 
   useEffect(() => {
     if (!idQr) return;
@@ -114,6 +138,42 @@ export default function ReservationDetail() {
     navigate("/reservations");
   };
 
+  // ----- Observación -----
+  const handleAbrirObsModal = (equipo: EquipoReserva) => {
+    setEquipoObs(equipo);
+    setComentarioObs(equipo.comentario || "");
+    setShowObsModal(true);
+  };
+
+  const handleGuardarComentario = async () => {
+    if (!equipoObs || !reserva || !comentarioObs.trim()) return;
+    setLoadingObs(true);
+    try {
+      await api.post(`/equipo-reserva/observacion`, {
+        reserva_id: reserva.id,
+        equipo_id: equipoObs.id,
+        comentario: comentarioObs.trim(),
+      });
+      // Opcional: Actualizar comentario en el equipo en el state (refleja cambio sin recargar)
+      setReserva((prev) => {
+        if (!prev || !prev.equipo) return prev;
+        return {
+          ...prev,
+          equipo: prev.equipo.map((eq) =>
+            eq.id === equipoObs.id
+              ? { ...eq, comentario: comentarioObs.trim() }
+              : eq
+          ),
+        };
+      });
+      setShowObsModal(false);
+    } catch (err) {
+      alert("Error al guardar la observación");
+    } finally {
+      setLoadingObs(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="d-flex flex-column align-items-center justify-content-center my-5">
@@ -132,10 +192,15 @@ export default function ReservationDetail() {
   if (!reserva) return null;
 
   const qrData = reserva.isRoom
-    ? `Reserva de aula para ${reserva.usuario} en ${reserva.espacio.name} el ${reserva.dia}`
-    : `Reserva de ${reserva.usuario} - ${reserva.equipo?.join(", ")} en ${
-        reserva.aula
-      } el ${reserva.dia}`;
+    ? `Reserva de aula para ${reserva.usuario} en ${
+        reserva.espacio?.name ?? ""
+      } el ${reserva.dia}`
+    : `Reserva de ${reserva.usuario} - ${reserva.equipo
+        ?.map(
+          (eq) =>
+            `${eq.modelo?.nombre || "Modelo desconocido"} (${eq.numero_serie})`
+        )
+        .join(", ")} en ${reserva.aula?.name ?? ""} el ${reserva.dia}`;
 
   const cleanEstado = reserva.estado.trim().toLowerCase();
 
@@ -171,21 +236,60 @@ export default function ReservationDetail() {
                   <strong>Usuario:</strong> {reserva.usuario}
                 </ListGroup.Item>
 
-                {!reserva.isRoom && reserva.equipo && (
-                  <ListGroup.Item>
-                    <strong>Equipos:</strong> {reserva.equipo.join(", ")}
-                  </ListGroup.Item>
+                {/* SOLO RESERVA DE EQUIPO */}
+                {!reserva.isRoom && (
+                  <>
+                    <ListGroup.Item>
+                      <strong>Aula:</strong> {reserva.aula?.name}
+                      <br />
+                      <small className="text-muted">
+                        {reserva.aula?.descripcion}
+                      </small>
+                    </ListGroup.Item>
+                    <ListGroup.Item>
+                      <strong>Equipos:</strong>
+                      <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
+                        {reserva.equipo && reserva.equipo.length > 0 ? (
+                          reserva.equipo.map((eq) => (
+                            <li key={eq.id} style={{ marginBottom: "0.75em" }}>
+                              <span>
+                                <strong>
+                                  {eq.modelo?.nombre || "Modelo desconocido"}
+                                </strong>{" "}
+                                ({eq.numero_serie})
+                              </span>
+                              {eq.comentario && (
+                                <div>
+                                  <small className="text-muted">
+                                    Observación: {eq.comentario}
+                                  </small>
+                                </div>
+                              )}
+                              <Button
+                                size="sm"
+                                className="ms-2"
+                                variant="outline-primary"
+                                onClick={() => handleAbrirObsModal(eq)}
+                                style={{ marginTop: 4 }}
+                              >
+                                {eq.comentario
+                                  ? "Editar observación"
+                                  : "Agregar observación"}
+                              </Button>
+                            </li>
+                          ))
+                        ) : (
+                          <span className="text-muted">No hay equipos</span>
+                        )}
+                      </ul>
+                    </ListGroup.Item>
+                  </>
                 )}
 
+                {/* SOLO RESERVA DE AULA */}
                 {reserva.isRoom && (
                   <ListGroup.Item>
-                    <strong>Espacio:</strong> {reserva.espacio.name}
-                  </ListGroup.Item>
-                )}
-
-                {!reserva.isRoom && (
-                  <ListGroup.Item>
-                    <strong>Aula:</strong> {reserva.aula}
+                    <strong>Espacio:</strong> {reserva.espacio?.name}
                   </ListGroup.Item>
                 )}
 
@@ -219,7 +323,7 @@ export default function ReservationDetail() {
                 )}
                 {reserva.isRoom && reserva.dias && (
                   <ListGroup.Item>
-                    <strong>Dias:</strong> {reserva.dias.join()}
+                    <strong>Dias:</strong> {reserva.dias.join(", ")}
                   </ListGroup.Item>
                 )}
                 <ListGroup.Item>
@@ -256,6 +360,52 @@ export default function ReservationDetail() {
           </div>
         </Card.Body>
       </Card>
+
+      {/* Modal para observaciones */}
+      <Modal show={showObsModal} onHide={() => setShowObsModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {equipoObs?.comentario
+              ? "Editar observación"
+              : "Agregar observación"}{" "}
+            al equipo
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            <strong>Equipo:</strong>{" "}
+            {equipoObs?.modelo?.nombre || "Modelo desconocido"} (
+            {equipoObs?.numero_serie})
+          </p>
+          <Form.Group controlId="observacionEquipo">
+            <Form.Label>Comentario:</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={comentarioObs}
+              onChange={(e) => setComentarioObs(e.target.value)}
+              disabled={loadingObs}
+              autoFocus
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowObsModal(false)}
+            disabled={loadingObs}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleGuardarComentario}
+            disabled={!comentarioObs.trim() || loadingObs}
+          >
+            {loadingObs ? "Guardando..." : "Guardar comentario"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {reserva.isRoom ? (
         <AulaReservacionEstadoModal
@@ -303,6 +453,7 @@ function getBadgeColor(estado: string) {
 }
 
 function capitalize(text: string) {
+  if (!text) return "";
   const clean = text.trim().toLowerCase();
   return clean.charAt(0).toUpperCase() + clean.slice(1);
 }

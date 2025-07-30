@@ -1,10 +1,10 @@
-// components/ReservationDetailsModal.tsx
-import React from "react";
-import { Modal, Badge } from "react-bootstrap";
+import React, { useState } from "react";
+import { Modal, Badge, Button, Form } from "react-bootstrap";
 import { FaEye } from "react-icons/fa";
 import type { HistorialItem, Reservation } from "~/types/reservation";
 import { APIURL } from "./../../constants/constant";
 import VisualizarModal from "../attendantadmin/VisualizarModal";
+import api from "../../api/axios"; // Asegúrate que esté este import
 
 interface Props {
   showModal: boolean;
@@ -29,7 +29,47 @@ const EquipmentDetailsModal: React.FC<Props> = ({
   getBadgeColor,
   qrBaseUrl,
 }) => {
-  const [showModelViewer, setShowModelViewer] = React.useState(false);
+  const [showModelViewer, setShowModelViewer] = useState(false);
+
+  // Estados para observación
+  const [showObsModal, setShowObsModal] = useState(false);
+  const [equipoObs, setEquipoObs] = useState<any>(null);
+  const [comentarioObs, setComentarioObs] = useState("");
+  const [loadingObs, setLoadingObs] = useState(false);
+
+  // Abrir modal de observación
+  const handleAbrirObsModal = (equipo: any) => {
+    setEquipoObs(equipo);
+    setComentarioObs(equipo.pivot.comentario || "");
+    setShowObsModal(true);
+  };
+
+  // Guardar comentario
+  const handleGuardarComentario = async () => {
+    if (!equipoObs || !selectedReservation || !comentarioObs.trim()) return;
+    setLoadingObs(true);
+    try {
+      await api.post(`/equipo-reserva/observacion`, {
+        reserva_id: selectedReservation.id,
+        equipo_id: equipoObs.id,
+        comentario: comentarioObs.trim(),
+      });
+      // Actualiza comentario en el equipo en el state (esto depende de cómo actualices los datos en tu app)
+      if (selectedReservation.equipos) {
+        selectedReservation.equipos = selectedReservation.equipos.map(
+          (eq: any) =>
+            eq.id === equipoObs.id
+              ? { ...eq, comentario: comentarioObs.trim() }
+              : eq
+        );
+      }
+      setShowObsModal(false);
+    } catch (err) {
+      alert("Error al guardar la observación");
+    } finally {
+      setLoadingObs(false);
+    }
+  };
 
   return (
     <>
@@ -280,12 +320,12 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                   </div>
                   <div className="ps-5">
                     <div className="list-group">
-                      {selectedReservation.equipos.map((equipo) => (
+                      {selectedReservation.equipos.map((equipo: any) => (
                         <div key={equipo.id}>
                           <div className="list-group-item border-0 bg-body-secondary mb-2 rounded">
                             {/* Contenedor para nombre y número de serie */}
                             <div className="d-flex justify-content-between align-items-start">
-                              {/* Nombre y descripción - 60% */}
+                              {/* Nombre y descripción */}
                               <div
                                 style={{ width: "50%" }}
                                 className="ms-4 mb-2"
@@ -297,8 +337,7 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                                   {equipo.descripcion}
                                 </p>
                               </div>
-
-                              {/* Número de serie - 40% */}
+                              {/* Número de serie */}
                               <div
                                 style={{ width: "50%" }}
                                 className="d-flex justify-content-end align-items-start"
@@ -311,13 +350,31 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                                 </span>
                               </div>
                             </div>
-
+                            {/* Observación */}
+                            {equipo.comentario && (
+                              <div className="ms-4 mt-1">
+                                <small className="text-muted">
+                                  <strong>Observación:</strong>{" "}
+                                  {equipo.comentario}
+                                </small>
+                              </div>
+                            )}
+                            <Button
+                              size="sm"
+                              className="ms-4 mt-2"
+                              variant="outline-primary"
+                              onClick={() => handleAbrirObsModal(equipo)}
+                            >
+                              {equipo.pivot.comentario
+                                ? "Editar observación"
+                                : "Agregar observación"}
+                            </Button>
                             {/* Insumos debajo */}
                             {equipo.insumos && equipo.insumos.length > 0 && (
                               <div className="ms-4 mt-2">
                                 <strong>Insumos Relacionados:</strong>
                                 <ul className="list-group list-group-flush mt-1">
-                                  {equipo.insumos.map((insumo) => (
+                                  {equipo.insumos.map((insumo: any) => (
                                     <li
                                       key={insumo.id}
                                       className="list-group-item small ps-3"
@@ -406,6 +463,54 @@ const EquipmentDetailsModal: React.FC<Props> = ({
           )}
         </Modal.Body>
       </Modal>
+
+      {/* MODAL PARA AGREGAR/EDITAR OBSERVACION */}
+      <Modal show={showObsModal} onHide={() => setShowObsModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {equipoObs?.comentario
+              ? "Editar observación"
+              : "Agregar observación"}{" "}
+            al equipo
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            <strong>Equipo:</strong>{" "}
+            {equipoObs?.modelo?.nombre || "Modelo desconocido"} (
+            {equipoObs?.numero_serie})
+          </p>
+          <Form.Group controlId="observacionEquipo">
+            <Form.Label>Comentario:</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={comentarioObs}
+              onChange={(e) => setComentarioObs(e.target.value)}
+              disabled={loadingObs}
+              autoFocus
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowObsModal(false)}
+            disabled={loadingObs}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleGuardarComentario}
+            disabled={!comentarioObs.trim() || loadingObs}
+          >
+            {loadingObs ? "Guardando..." : "Guardar comentario"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* VISUALIZAR MODELO 3D */}
       {selectedReservation?.path_model && (
         <VisualizarModal
           show={showModelViewer}

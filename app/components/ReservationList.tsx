@@ -224,6 +224,7 @@ export default function ReservationList() {
     setHistorial([]);
     setSelectedReservation(reservation);
     setShowModal(true);
+    console.log(reservation);
   };
 
   const handleCloseModal = () => {

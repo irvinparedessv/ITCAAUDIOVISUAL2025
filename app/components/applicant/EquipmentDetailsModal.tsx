@@ -320,7 +320,7 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                         style={{ color: "#D4A017" }}
                       ></i>
                     </div>
-                    <h5 className="fw-bold mb-0">Equipos Reservadoss</h5>
+                    <h5 className="fw-bold mb-0">Equipos Reservados</h5>
                   </div>
                   <div className="ps-5">
                     <div className="list-group">

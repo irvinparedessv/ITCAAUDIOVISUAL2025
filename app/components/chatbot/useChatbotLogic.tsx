@@ -117,6 +117,12 @@ export const useChatbotLogic = (user?: UserLogin) => {
     resetChat();
     setIsOpen(!isOpen);
   };
+  function padHora(hora) {
+    // Si ya está bien, no toca nada. Si es "9:00", lo pasa a "09:00"
+    if (!hora) return "";
+    const [h, m] = hora.split(":");
+    return `${h.padStart(2, "0")}:${m.padStart(2, "0")}`;
+  }
 
   // Enviar mensaje normal al asistente
   const enviarMensajeAsistente = async (mensaje: string) => {
@@ -306,12 +312,17 @@ export const useChatbotLogic = (user?: UserLogin) => {
         formPayload.append("startTime", formData.horaInicio);
         formPayload.append("endTime", formData.horaFin);
         formPayload.append("tipo_reserva_id", "3"); // Siempre 1 para tu lógica
-
+        let withReposo = false;
         formData.equiposSeleccionados.forEach((eq: any, idx: number) => {
+          if (eq.en_reposo) {
+            withReposo = true;
+          }
           formPayload.append(`equipo[${idx}][id]`, eq.id.toString());
           formPayload.append(`equipo[${idx}][cantidad]`, "1");
         });
-
+        formPayload.append(`en_reposo`, withReposo ? "1" : "0");
+        formData.horaInicio = padHora(formData.horaInicio);
+        formData.horaFin = padHora(formData.horaFin);
         await api.post("/reservas", formPayload, {
           headers: { "Content-Type": "multipart/form-data" },
         });

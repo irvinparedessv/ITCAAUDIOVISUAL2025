@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { checkEquiposAsociados, checkEquiposMasivo, getTipoEquipo } from "../../services/tipoEquipoService";
+import { checkEquiposMasivo, getTipoEquipo } from "../../services/tipoEquipoService";
 import type { TipoEquipo } from "app/types/tipoEquipo";
 import toast from "react-hot-toast";
-import { FaEdit, FaTrash, FaLongArrowAltLeft, FaPlus, FaFilter, FaTimes, FaSearch } from "react-icons/fa";
+import { FaEdit, FaTrash, FaLongArrowAltLeft, FaPlus, FaTimes, FaSearch } from "react-icons/fa";
 import { Button, Spinner, Form, InputGroup, Badge } from "react-bootstrap";
 import PaginationComponent from "~/utils/Pagination";
 import { useNavigate } from "react-router-dom";
@@ -18,37 +18,40 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
   const [filters, setFilters] = useState({
     search: "",
     page: 1,
-    perPage: 5,
+    perPage: 10,
   });
   const [totalPaginas, setTotalPaginas] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const [equiposAsociados, setEquiposAsociados] = useState<Record<number, boolean>>({});
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Llamar esta función cuando se cargan los tipos
+  // Usar debounce para la búsqueda
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
+    }, 500); // 500ms de delay
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  // Cargar tipos cuando cambien los filtros (página o búsqueda)
   useEffect(() => {
     cargarTipos();
-  }, [filters.page]);
+  }, [filters.page, filters.search]);
 
-
-
-  // Modificar la función cargarTipos para verificar equipos asociados
-
-  // services/tipoEquipoService.ts
-
-
-  // En tu componente
   const cargarTipos = async () => {
     setLoading(true);
     try {
-      const res = await getTipoEquipo(filters.page);
+      const res = await getTipoEquipo(filters.page, filters.search);
 
-      // Verificación MASIVA y mezcla de datos
+      // Verificación MASIVA de equipos asociados
       const ids = res.data.map(tipo => tipo.id);
       const conteoEquipos = await checkEquiposMasivo(ids);
 
+      // Actualizar tipos con la información de equipos asociados
       const tiposActualizados = res.data.map(tipo => ({
         ...tipo,
         equipos_count: conteoEquipos[tipo.id] || 0
@@ -58,11 +61,16 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
       setTotalPaginas(res.last_page);
     } catch (error) {
       console.error("Error al cargar tipos:", error);
-      toast.error("Error al cargar datos");
+      let errorMessage = "Error al cargar datos";
+      if (error.response) {
+        errorMessage += `: ${error.response.data.message || error.response.statusText}`;
+      }
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
   // Función para determinar el color según la categoría
   const getCategoryColor = (categoryName: string) => {
     if (!categoryName) return 'secondary';
@@ -70,12 +78,6 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
     return lowerName.includes('equipo') ? 'primary' :
       lowerName.includes('insumo') ? 'info' : 'light';
   };
-
-
-
-  useEffect(() => {
-    cargarTipos();
-  }, [filters.page]);
 
   const handleEdit = (tipo: TipoEquipo) => {
     onEdit(tipo);
@@ -89,7 +91,7 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      page: 1,
+      page: 1, // Resetear a primera página al cambiar filtros
     }));
   };
 
@@ -101,7 +103,7 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
     setFilters({
       search: "",
       page: 1,
-      perPage: 5,
+      perPage: 10,
     });
   };
 
@@ -145,7 +147,7 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
                     { duration: 4000 }
                   );
                   await cargarTipos();
-                  onSuccess(); // Llama a la función de éxito si existe
+                  onSuccess();
                 } catch (error) {
                   console.error("Error al eliminar:", error);
                   toast.error(
@@ -168,7 +170,7 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
         </div>
       ),
       {
-        duration: 10000, // 10 segundos para decidir
+        duration: 10000,
         id: toastId,
       }
     );
@@ -202,7 +204,7 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
         </div>
       </div>
 
-      {/* Buscador + Filtros */}
+      {/* Buscador */}
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
         <div className="d-flex flex-grow-1">
           <InputGroup className="flex-grow-1">
@@ -212,8 +214,8 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
             <Form.Control
               type="text"
               placeholder="Buscar por nombre"
-              value={filters.search}
-              onChange={(e) => handleFilterUpdate("search", e.target.value)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             {filters.search && (
               <Button
@@ -225,32 +227,7 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
             )}
           </InputGroup>
         </div>
-
-        <Button
-          variant={showFilters ? "secondary" : "outline-secondary"}
-          onClick={() => setShowFilters(!showFilters)}
-          className="d-flex align-items-center gap-2"
-        >
-          <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-        </Button>
       </div>
-
-      {showFilters && (
-        <div className="p-3 rounded mb-4 border border-secondary">
-          <div className="row g-3">
-            <div className="col-12">
-              <Button
-                variant="outline-danger"
-                onClick={resetFilters}
-                className="w-100"
-              >
-                <FaTimes className="me-2" />
-                Limpiar filtros
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {loading ? (
         <div className="text-center my-5">
@@ -337,7 +314,6 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
                               transition: "transform 0.2s ease-in-out",
                               opacity: (tipo.equipos_count || 0) > 0 ? 0.6 : 1,
                               cursor: (tipo.equipos_count || 0) > 0 ? "not-allowed" : "pointer",
-                              transform: "scale(1)" // Estado inicial
                             }}
                             onMouseEnter={(e) => {
                               if (!(tipo.equipos_count || 0)) {
@@ -353,11 +329,6 @@ export default function TipoEquipoList({ onEdit, onDelete, onSuccess }: Props) {
                               }
                             }}
                             disabled={(tipo.equipos_count || 0) > 0}
-                            aria-label={
-                              (tipo.equipos_count || 0) > 0
-                                ? "Deshabilitado: tiene equipos asociados"
-                                : "Eliminar tipo de equipo"
-                            }
                           >
                             <FaTrash />
                           </Button>

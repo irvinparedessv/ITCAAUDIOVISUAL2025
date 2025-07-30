@@ -20,10 +20,23 @@ export const getCaracteristicas = async () => {
   return res.data;
 };
 
-export const getTipoEquipo = async (page = 1): Promise<TipoEquipoResponse> => {
+export const getTipoEquipo = async (page = 1, search = ""): Promise<TipoEquipoResponse> => {
   try {
-    const res = await api.get(`/obtenerTipo?page=${page}`);
-    return res.data;
+    const res = await api.get(`/obtenerTipo`, {
+      params: {
+        page,
+        search: search || undefined
+      }
+    });
+
+    // Asegúrate que la respuesta coincida con tu interfaz
+    return {
+      data: res.data.data || res.data,
+      current_page: res.data.current_page || page,
+      last_page: res.data.last_page || 1,
+      total: res.data.total || 0,
+      per_page: res.data.per_page || 10
+    };
   } catch (error) {
     console.error("Error al obtener los tipos de equipo:", error);
     throw error;

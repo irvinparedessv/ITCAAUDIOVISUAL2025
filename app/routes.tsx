@@ -366,24 +366,6 @@ const router = createBrowserRouter([
 
           },
 
-          {
-
-            path: "tipoMantenimiento/nuevo",
-
-            element: <FormTipoMantenimiento />,
-
-          },
-
-          {
-
-            path: "tipoMantenimiento/editar/:id",
-
-            element: <TipoMantenimientoEdit />,
-
-          },
-
-
-
           //RUTAS FUTUROS MANTENIMIENTOS
 
 

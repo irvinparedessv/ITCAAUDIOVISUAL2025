@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Button, Form, Spinner } from "react-bootstrap";
+import { Button, Form, Spinner, Modal } from "react-bootstrap";
 import { toast } from "react-hot-toast";
 import {
   getTipoMantenimientoById,
@@ -8,10 +7,19 @@ import {
 } from "../../services/tipoMantenimientoService";
 import type { TipoMantenimiento } from "../../types/tipoMantenimiento";
 
-export default function TipoMantenimientoEdit() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+interface Props {
+  show: boolean;
+  onHide: () => void;
+  tipoId: number;
+  onSuccess: () => void;
+}
 
+export default function TipoMantenimientoEditModal({
+  show,
+  onHide,
+  tipoId,
+  onSuccess,
+}: Props) {
   const [tipo, setTipo] = useState<TipoMantenimiento | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -19,17 +27,13 @@ export default function TipoMantenimientoEdit() {
   // Form state
   const [nombre, setNombre] = useState("");
   const [estado, setEstado] = useState(true);
-
   const [errors, setErrors] = useState<{ nombre?: string }>({});
 
   useEffect(() => {
-    if (!id) {
-      toast.error("ID inválido");
-      navigate("/tipoMantenimiento");
-      return;
-    }
+    if (!show) return;
+
     setLoading(true);
-    getTipoMantenimientoById(Number(id))
+    getTipoMantenimientoById(tipoId)
       .then((data) => {
         setTipo(data);
         setNombre(data.nombre);
@@ -37,10 +41,10 @@ export default function TipoMantenimientoEdit() {
       })
       .catch(() => {
         toast.error("Error al cargar el tipo de mantenimiento");
-        navigate("/tipoMantenimiento");
+        onHide();
       })
       .finally(() => setLoading(false));
-  }, [id, navigate]);
+  }, [tipoId, show, onHide]);
 
   const validate = () => {
     const newErrors: typeof errors = {};
@@ -57,63 +61,87 @@ export default function TipoMantenimientoEdit() {
     }
     setSaving(true);
     try {
-      await updateTipoMantenimiento(Number(id), { nombre: nombre.trim(), estado });
+      await updateTipoMantenimiento(tipoId, { nombre: nombre.trim(), estado });
       toast.success("Tipo de mantenimiento actualizado correctamente");
-      navigate("/tipoMantenimiento");
+      onSuccess();
+      onHide();
     } catch (error: any) {
-      // Aquí puedes mejorar según la estructura de error que envíe el backend
       toast.error(error.message || "Error al actualizar");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="text-center my-5">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-3">Cargando tipo de mantenimiento...</p>
-      </div>
-    );
-  }
-
-  if (!tipo) return null;
+  const handleClose = () => {
+    setNombre("");
+    setEstado(true);
+    setErrors({});
+    onHide();
+  };
 
   return (
-    <div className="container mt-4">
-      <h2>Editar Tipo de Mantenimiento</h2>
-      <Form onSubmit={handleSubmit}>
-        <Form.Group controlId="nombre" className="mb-3">
-          <Form.Label>Nombre</Form.Label>
-          <Form.Control
-            type="text"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            isInvalid={!!errors.nombre}
-            disabled={saving}
-          />
-          <Form.Control.Feedback type="invalid">{errors.nombre}</Form.Control.Feedback>
-        </Form.Group>
+    <Modal show={show} onHide={handleClose} centered>
+      <Modal.Header className="text-white py-3" style={{ backgroundColor: "#b1291d" }} closeButton>
+        <Modal.Title>Editar Tipo de Mantenimiento</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {loading ? (
+          <div className="text-center my-3">
+            <Spinner animation="border" variant="primary" />
+            <p className="mt-2">Cargando tipo de mantenimiento...</p>
+          </div>
+        ) : (
+          <Form onSubmit={handleSubmit}>
+            <Form.Group controlId="nombre" className="mb-3">
+              <Form.Label>Nombre</Form.Label>
+              <Form.Control
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                isInvalid={!!errors.nombre}
+                disabled={saving}
+              />
+              <Form.Control.Feedback type="invalid">
+                {errors.nombre}
+              </Form.Control.Feedback>
+            </Form.Group>
 
-        <Form.Group controlId="estado" className="mb-3">
-          <Form.Check
-            type="checkbox"
-            label="Activo"
-            checked={estado}
-            onChange={(e) => setEstado(e.target.checked)}
-            disabled={saving}
-          />
-        </Form.Group>
+            <Form.Group controlId="estado" className="mb-4">
+              <Form.Check
+                type="checkbox"
+                label="Activo"
+                checked={estado}
+                onChange={(e) => setEstado(e.target.checked)}
+                disabled={saving}
+              />
+            </Form.Group>
 
-        <div className="d-flex gap-2">
-          <Button variant="primary" type="submit" disabled={saving}>
-            {saving ? "Guardando..." : "Guardar"}
-          </Button>
-          <Button variant="secondary" onClick={() => navigate("/tipoMantenimiento")} disabled={saving}>
-            Cancelar
-          </Button>
-        </div>
-      </Form>
-    </div>
+            <div className="d-flex justify-content-end gap-2">
+              <Button
+                variant="secondary"
+                onClick={handleClose}
+                disabled={saving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Guardando...
+                  </>
+                ) : (
+                  "Guardar"
+                )}
+              </Button>
+            </div>
+          </Form>
+        )}
+      </Modal.Body>
+    </Modal>
   );
 }

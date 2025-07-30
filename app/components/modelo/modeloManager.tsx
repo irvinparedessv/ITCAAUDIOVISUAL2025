@@ -112,15 +112,20 @@ export default function ModeloManager() {
     []
   );
 
-  useEffect(() => {
-    fetchModelos();
-    fetchMarcas();
-  }, [filters.page]);
 
+
+  // Con este único efecto:
   useEffect(() => {
-    debouncedFetch();
-    return () => debouncedFetch.cancel();
-  }, [filters.search]);
+    const debounced = debounce(() => {
+      fetchModelos();
+    }, 500);
+
+    debounced();
+
+    return () => {
+      debounced.cancel();
+    };
+  }, [filters.search, filters.page, filters.perPage]);
 
   const handleShow = (modelo?: Modelo) => {
     if (modelo) {

@@ -6,6 +6,7 @@ import {
   Form,
   InputGroup,
   Spinner,
+  Alert,
 } from "react-bootstrap";
 import api from "../api/axios";
 import { useAuth } from "../hooks/AuthContext";
@@ -549,6 +550,15 @@ export default function ReservationList() {
               <tbody>
                 {reservations.map((reserva) => {
                   const isHighlighted = reserva.id === highlightId;
+                  const esAdmin = user?.role === Role.Administrador;
+                  const esPrestamista = user?.role === Role.Prestamista;
+                  const esEncargado = user?.role === Role.Encargado;
+                  const esPrioridad = reserva.esPrioridad;
+                  const esPendiente = reserva.estado == "Pendiente";
+                  const mostrarBoton = esPendiente
+                    ? (esAdmin && esPrioridad) ||
+                      (!esPrioridad && !esPrestamista)
+                    : true;
                   return (
                     <tr
                       key={reserva.id}
@@ -559,7 +569,20 @@ export default function ReservationList() {
                           : ""
                       }
                     >
-                      <td className="fw-bold">{reserva.id}</td>
+                      <td className="fw-bold">
+                        {reserva.id}{" "}
+                        {esEncargado && esPrioridad && (
+                          <Alert variant="warning" className="mb-3 text-center">
+                            Esta es una reserva con equipos en reposo. Solo el
+                            gerente o administrador puede aceptarla.
+                          </Alert>
+                        )}
+                        {esAdmin && esPrioridad && (
+                          <Alert variant="warning" className="mb-3 text-center">
+                            Necesita Aprobacion.
+                          </Alert>
+                        )}
+                      </td>
                       <td className="fw-bold">
                         {reserva.user.first_name} {reserva.user.last_name}
                       </td>
@@ -603,7 +626,6 @@ export default function ReservationList() {
                           >
                             <FaEye className="fs-5" />
                           </button>
-
                           {/* BOTÓN NUEVO EDITAR */}
                           <button
                             className="btn btn-outline-warning rounded-circle btn-icon-white-hover"
@@ -630,8 +652,7 @@ export default function ReservationList() {
                           >
                             <FaEdit className="fs-5" />
                           </button>
-
-                          {user?.role !== Role.Prestamista && (
+                          {mostrarBoton && (
                             <button
                               className="btn btn-outline-success rounded-circle"
                               onClick={() => {

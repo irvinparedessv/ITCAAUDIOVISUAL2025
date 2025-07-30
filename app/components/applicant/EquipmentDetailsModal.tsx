@@ -8,6 +8,7 @@ import api from "../../api/axios"; // Asegúrate que esté este import
 import { useAuth } from "~/hooks/AuthContext";
 import { Role } from "~/types/roles";
 import { Label } from "recharts";
+import toast from "react-hot-toast";
 
 interface Props {
   showModal: boolean;
@@ -68,6 +69,7 @@ const EquipmentDetailsModal: React.FC<Props> = ({
         );
       }
       setShowObsModal(false);
+      toast.success("Observación agregada");
     } catch (err) {
       alert("Error al guardar la observación");
     } finally {

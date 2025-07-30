@@ -63,6 +63,7 @@ export type Reservation = {
   codigo_qr: CodigoQR;
   tipo_reserva: TipoReserva;
   documento_url?: string;
+  esPrioridad: boolean;
 };
 
 export type Aula = {

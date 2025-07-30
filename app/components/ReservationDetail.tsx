@@ -11,7 +11,10 @@ import {
   Col,
   Modal,
   Form,
+  Alert,
 } from "react-bootstrap";
+import { useAuth } from "../hooks/AuthContext";
+
 import { QRCodeSVG } from "qrcode.react";
 import api from "../api/axios";
 import type { Room } from "~/types/reservationroom";
@@ -21,6 +24,8 @@ import { formatDateTimeTo12hHOURS } from "~/utils/time";
 import ReservaNoEncontrada from "./error/ReservaNoEncontrada";
 import VisualizarModal from "../components/attendantadmin/VisualizarModal";
 import { APIURL } from "~/constants/constant";
+import { Role } from "~/types/roles";
+import toast from "react-hot-toast";
 
 // Nuevos tipos para los props del backend
 type EquipoReserva = {
@@ -63,6 +68,7 @@ type Reserva = {
   image_url?: string | null;
   tipoReserva?: string;
   path_model: string;
+  esPrioridad: boolean;
 };
 
 export default function ReservationDetail() {
@@ -79,6 +85,8 @@ export default function ReservationDetail() {
   const [equipoObs, setEquipoObs] = useState<EquipoReserva | null>(null);
   const [comentarioObs, setComentarioObs] = useState("");
   const [loadingObs, setLoadingObs] = useState(false);
+
+  const { user } = useAuth();
 
   // ----------- Visualizador 3D ------------
   const [showModelViewer, setShowModelViewer] = useState(false);
@@ -172,6 +180,7 @@ export default function ReservationDetail() {
         };
       });
       setShowObsModal(false);
+      toast.success("Observación agregada");
     } catch (err) {
       alert("Error al guardar la observación");
     } finally {
@@ -334,6 +343,17 @@ export default function ReservationDetail() {
                                   </small>
                                 </div>
                               )}
+                              <Button
+                                size="sm"
+                                className="ms-2"
+                                variant="outline-primary"
+                                onClick={() => handleAbrirObsModal(insumo)}
+                                style={{ marginTop: 4 }}
+                              >
+                                {insumo.comentario
+                                  ? "Editar observación"
+                                  : "Agregar observación"}
+                              </Button>
                             </li>
                           ))}
                         </ul>
@@ -418,13 +438,53 @@ export default function ReservationDetail() {
           </Row>
 
           <div className="text-center mt-4">
-            <Button
-              variant="success"
-              className="mx-2"
-              onClick={() => handleAbrirModal("Aprobar")}
-            >
-              Actualizar Estado
-            </Button>
+            {reserva.estado !== "Pendiente" && (
+              <Button
+                variant="success"
+                className="mx-2"
+                onClick={() => handleAbrirModal("Aprobar")}
+              >
+                Actualizar Estado
+              </Button>
+            )}
+
+            {reserva.estado === "Pendiente" &&
+              user.role === Role.Administrador &&
+              reserva.esPrioridad && (
+                <Button
+                  variant="success"
+                  className="mx-2"
+                  onClick={() => handleAbrirModal("Aprobar")}
+                >
+                  Actualizar Estado
+                </Button>
+              )}
+
+            {reserva.estado === "Pendiente" &&
+              user.role === Role.Encargado &&
+              reserva.esPrioridad && (
+                <Alert variant="warning" className="mx-2">
+                  NECESITA APROBACIÓN DE GERENTE. EQUIPO EN REPOSO.
+                </Alert>
+              )}
+            {reserva.estado === "Pendiente" &&
+              user.role === Role.Administrador &&
+              reserva.esPrioridad && (
+                <Alert variant="warning" className="mx-2">
+                  NECESITA APROBACIÓN EQUIPO EN REPOSO.
+                </Alert>
+              )}
+            {reserva.estado === "Pendiente" &&
+              user.role === Role.Encargado &&
+              !reserva.esPrioridad && (
+                <Button
+                  variant="success"
+                  className="mx-2"
+                  onClick={() => handleAbrirModal("Aprobar")}
+                >
+                  Actualizar Estado
+                </Button>
+              )}
           </div>
         </Card.Body>
       </Card>

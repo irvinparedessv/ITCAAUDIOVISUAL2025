@@ -4,6 +4,7 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush, Area, AreaChart,
 } from "recharts";
 import {
+    buscarEquipos,
     buscarEquiposVidaUtil,
     getPrediccionVidaUtilPorEquipo,
 } from "../../services/prediccionService";
@@ -122,9 +123,9 @@ export default function PrediccionesPorEquipoVidaUtilPage() {
         const q = inputValue.trim();
         if (!q) return [];
         try {
-            const teams = await buscarEquiposVidaUtil(q, 10);
+            const teams = await buscarEquipos(q, 10);
             return teams.map((e: any) => ({
-                label: `${e.marca} ${e.modelo} (${e.numero_serie}) - Vida útil: ${e.vida_util || 'N/A'} hrs`,
+                label: `${e.marca} ${e.modelo} (${e.numero_serie})`,
                 value: e.id.toString(),
                 originalData: e
             }));

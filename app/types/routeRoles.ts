@@ -29,6 +29,7 @@ export const routeRoles: Record<string, Role[]> = {
   "/equipolist": [Role.Administrador],
 
   // -- Espacios --
+  "/espacio/gestionar/:id": [Role.Administrador],
   "/createRoom": [Role.Administrador],
   "/reservations-room": [Role.Administrador, Role.EspacioEncargado, Role.Prestamista,],
   "/reservationsroom": [Role.Administrador, Role.EspacioEncargado, Role.Prestamista,],
@@ -38,10 +39,12 @@ export const routeRoles: Record<string, Role[]> = {
   "/roomsavailability": [Role.Administrador, Role.EspacioEncargado, Role.Prestamista,],
   "/reservas-aula/editar/:id": [Role.Administrador, Role.EspacioEncargado, Role.Prestamista,],
 
+
   // -- Prediccion --
   "/prediccion": [Role.Encargado, Role.Administrador],
   "/prediccionPorEquipoPage": [Role.Encargado, Role.Administrador],
   "/prediccionAula": [Role.EspacioEncargado, Role.Administrador],
+  "/prediccionPorEquipoVidaUtilPage": [Role.Encargado, Role.Administrador],
 
   // -- Reporte ADMIN Y ENCARGADO --
   "/reporteEquipos": [Role.Administrador, Role.Encargado],
@@ -67,6 +70,15 @@ export const routeRoles: Record<string, Role[]> = {
   "/inventarioEquipo/:modeloId": [Role.Encargado, Role.Administrador],
   "/items/edit/:id": [Role.Encargado, Role.Administrador],
 
+  // -- Mantenimiento --
+  "/mantenimiento": [Role.Encargado, Role.Administrador],
+  "/mantenimientos/nuevo": [Role.Encargado, Role.Administrador],
+  "/mantenimientos/editar/:id": [Role.Encargado, Role.Administrador],
+  "/tipoMantenimiento": [Role.Encargado, Role.Administrador],
+  "/futuroMantenimiento": [Role.Encargado, Role.Administrador],
+  "/futuroMantenimiento/crear": [Role.Encargado, Role.Administrador],
+  "/futuroMantenimiento/editar/:id": [Role.Encargado, Role.Administrador],
+  
 
   // -- Otros --
   "/aulas/encargados/:aulaId": [Role.Administrador],

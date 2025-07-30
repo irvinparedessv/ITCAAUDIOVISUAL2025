@@ -70,9 +70,9 @@ export const getPrediccionAulasGeneral = async () => {
 
 // prediccionService.ts
 
-export const getPrediccionVidaUtilPorEquipo = async (equipoId: number): Promise<EquipoVidaUtilData> => {
-  const response = await api.get(`/prediccionVidaUtil/equipos/${equipoId}`);
-  return response.data;
+export const getPrediccionVidaUtilPorEquipo = async (equipoId) => {
+  const response = await api.get(`/prediccion/vida-util/${equipoId}`);
+  return response.data.data;
 };
 
 

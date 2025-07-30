@@ -234,7 +234,6 @@ export default function useReservationFormLogic(reservaId?: string | null) {
     console.log(formData.equipment);
     let withReposo = false;
     formData.equipment.forEach((eq, index) => {
-      console.log(eq);
       if (eq.en_reposo) {
         withReposo = true;
       }

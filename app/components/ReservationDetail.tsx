@@ -367,7 +367,7 @@ export default function ReservationDetail() {
                   <ListGroup.Item>
                     <strong>Espacio:</strong> {reserva.espacio?.name}
                     {/* Botón para visualizar modelo 3D */}
-                    {path_modelo && (
+                    {reserva.espacio.path_modelo && (
                       <div className="mt-2">
                         <Button
                           size="sm"
@@ -437,20 +437,19 @@ export default function ReservationDetail() {
             </Col>
           </Row>
 
-          <div className="text-center mt-4">
-            {reserva.estado !== "Pendiente" && (
+          {reserva.isRoom ? (
+            <div className="text-center mt-4">
               <Button
                 variant="success"
                 className="mx-2"
                 onClick={() => handleAbrirModal("Aprobar")}
               >
-                Actualizar Estado
+                Actualizar Estadoss
               </Button>
-            )}
-
-            {reserva.estado === "Pendiente" &&
-              user.role === Role.Administrador &&
-              reserva.esPrioridad && (
+            </div>
+          ) : (
+            <div className="text-center mt-4">
+              {reserva.estado !== "Pendiente" && (
                 <Button
                   variant="success"
                   className="mx-2"
@@ -460,32 +459,44 @@ export default function ReservationDetail() {
                 </Button>
               )}
 
-            {reserva.estado === "Pendiente" &&
-              user.role === Role.Encargado &&
-              reserva.esPrioridad && (
-                <Alert variant="warning" className="mx-2">
-                  NECESITA APROBACIÓN DE GERENTE. EQUIPO EN REPOSO.
-                </Alert>
-              )}
-            {reserva.estado === "Pendiente" &&
-              user.role === Role.Administrador &&
-              reserva.esPrioridad && (
-                <Alert variant="warning" className="mx-2">
-                  NECESITA APROBACIÓN EQUIPO EN REPOSO.
-                </Alert>
-              )}
-            {reserva.estado === "Pendiente" &&
-              user.role === Role.Encargado &&
-              !reserva.esPrioridad && (
-                <Button
-                  variant="success"
-                  className="mx-2"
-                  onClick={() => handleAbrirModal("Aprobar")}
-                >
-                  Actualizar Estado
-                </Button>
-              )}
-          </div>
+              {reserva.estado === "Pendiente" &&
+                user.role === Role.Administrador && (
+                  <Button
+                    variant="success"
+                    className="mx-2"
+                    onClick={() => handleAbrirModal("Aprobar")}
+                  >
+                    Actualizar Estado
+                  </Button>
+                )}
+
+              {reserva.estado === "Pendiente" &&
+                user.role === Role.Encargado &&
+                reserva.esPrioridad && (
+                  <Alert variant="warning" className="mx-2">
+                    NECESITA APROBACIÓN DE GERENTE. EQUIPO EN REPOSO.
+                  </Alert>
+                )}
+              {reserva.estado === "Pendiente" &&
+                user.role === Role.Administrador &&
+                reserva.esPrioridad && (
+                  <Alert variant="warning" className="mx-2">
+                    NECESITA APROBACIÓN EQUIPO EN REPOSO.
+                  </Alert>
+                )}
+              {reserva.estado === "Pendiente" &&
+                user.role === Role.Encargado &&
+                !reserva.esPrioridad && (
+                  <Button
+                    variant="success"
+                    className="mx-2"
+                    onClick={() => handleAbrirModal("Aprobar")}
+                  >
+                    Actualizar Estado
+                  </Button>
+                )}
+            </div>
+          )}
         </Card.Body>
       </Card>
 
@@ -543,7 +554,14 @@ export default function ReservationDetail() {
           path={APIURL + "/" + path_modelo}
         />
       )}
-
+      {reserva.isRoom && reserva.espacio.path_modelo && (
+        <VisualizarModal
+          show={showModelViewer}
+          onHide={() => setShowModelViewer(false)}
+          path={APIURL + "/" + reserva.espacio.path_modelo}
+          escala={reserva.espacio.escala}
+        />
+      )}
       {reserva.isRoom ? (
         <AulaReservacionEstadoModal
           show={showModal}

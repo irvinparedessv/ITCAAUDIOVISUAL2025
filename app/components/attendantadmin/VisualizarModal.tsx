@@ -8,9 +8,10 @@ interface Props {
   show: boolean;
   onHide: () => void;
   path: string; // Cambialo si tenés un tipo
+  escala?: string; // Prop opcional
 }
 
-export default function VisualizarModal({ show, onHide, path }: Props) {
+export default function VisualizarModal({ show, onHide, path, escala }: Props) {
   return (
     <Modal
       show={show}
@@ -23,7 +24,7 @@ export default function VisualizarModal({ show, onHide, path }: Props) {
         <Modal.Title>Vista Inmersiva del Aula</Modal.Title>
       </Modal.Header>
       <Modal.Body style={{ padding: 0 }}>
-        <SceneViewer filePath={path} />
+        <SceneViewer filePath={path} escala={escala} />
       </Modal.Body>
     </Modal>
   );

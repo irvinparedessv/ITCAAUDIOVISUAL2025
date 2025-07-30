@@ -4,6 +4,8 @@ import { Spinner, Modal, Button } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../api/axios";
+import VisualizarModal from "../components/attendantadmin/VisualizarModal";
+
 import Select, { type SingleValue } from "react-select";
 import toast from "react-hot-toast";
 import {
@@ -74,6 +76,7 @@ export default function ReserveClassroom() {
     open: boolean;
     type: "3d" | "img" | null;
     src: string | null;
+    escala?;
   }>({ open: false, type: null, src: null });
 
   // Helpers
@@ -147,7 +150,7 @@ export default function ReserveClassroom() {
           user_id: reqUserId,
         });
         setAvailableClassrooms(data || []);
-        setSelectedClassroom("");
+        if (!id) setSelectedClassroom("");
       } catch {
         toast.error("Error al consultar aulas disponibles");
         setAvailableClassrooms([]);
@@ -623,22 +626,6 @@ export default function ReserveClassroom() {
                 style={{ marginLeft: 8 }}
               />
             )}
-            {/* Botón visualizar imagen */}
-            {!!selectedClassroom && selectedClassroomData?.image_path && (
-              <Button
-                variant="info"
-                size="sm"
-                onClick={() =>
-                  setViewerModal({
-                    open: true,
-                    type: "img",
-                    src: selectedClassroomData.image_path!,
-                  })
-                }
-              >
-                Visualizar Imagen
-              </Button>
-            )}
             {/* Botón visualizar modelo 3D */}
             {!!selectedClassroom && selectedClassroomData?.path_modelo && (
               <Button
@@ -648,6 +635,7 @@ export default function ReserveClassroom() {
                   setViewerModal({
                     open: true,
                     type: "3d",
+                    escala: selectedClassroomData.escala,
                     src: APIURL + "/" + selectedClassroomData.path_modelo!,
                   })
                 }
@@ -709,61 +697,15 @@ export default function ReserveClassroom() {
         </div>
       </form>
 
-      {/* Modal Visualización Imagen/3D */}
-      <Modal
-        show={viewerModal.open}
-        onHide={() => setViewerModal({ open: false, type: null, src: null })}
-        size="xl"
-        fullscreen
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>
-            Vista previa {viewerModal.type === "3d" ? "3D" : "de imagen"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="text-center" style={{ background: "#212121" }}>
-          {viewerModal.type === "img" && (
-            <img
-              src={viewerModal.src!}
-              alt="Vista previa"
-              style={{
-                maxWidth: "98vw",
-                maxHeight: "90vh",
-                objectFit: "contain",
-                borderRadius: 8,
-              }}
-            />
-          )}
-          {viewerModal.type === "3d" && (
-            //@ts-ignore
-            <model-viewer
-              src={viewerModal.src!}
-              alt="Modelo 3D"
-              style={{
-                width: "98vw",
-                height: "80vh",
-                background: "#212121",
-              }}
-              camera-controls
-              auto-rotate
-              ar
-              shadow-intensity="1"
-              exposure="1"
-            ></model-viewer>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() =>
-              setViewerModal({ open: false, type: null, src: null })
-            }
-          >
-            Cerrar
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {viewerModal.type === "3d" && (
+        //@ts-ignore
+        <VisualizarModal
+          show={viewerModal.open}
+          onHide={() => setViewerModal({ open: false, type: null, src: null })}
+          path={viewerModal.src}
+          escala={viewerModal.escala}
+        />
+      )}
     </div>
   );
 }

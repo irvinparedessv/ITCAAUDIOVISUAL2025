@@ -18,7 +18,9 @@ export interface Room {
   id: number;
   name: string;
   created_at: string; // ISO datetime
-  updated_at: string; // ISO datetime
+  updated_at: string;
+  path_modelo: string;
+  escala: string; // ISO datetime
 }
 export interface User {
   id: number;

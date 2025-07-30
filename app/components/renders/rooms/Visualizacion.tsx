@@ -5,13 +5,16 @@ import * as THREE from "three";
 
 interface ViewerProps {
   filePath: string;
+  escala?: string; // Prop opcional
 }
 
 function LoadedScene({
   filePath,
+  escala = "1",
   onLoadComplete,
 }: {
   filePath: string;
+  escala?: string;
   onLoadComplete: () => void;
 }) {
   const { scene, cameras } = useGLTF(filePath, true) as unknown as {
@@ -24,12 +27,12 @@ function LoadedScene({
   }, [onLoadComplete]);
 
   const mainCamera = cameras.find((cam) => cam.name === "MainCamera");
-
+  console.log(escala);
   if (mainCamera) {
     console.log("✅ Usando cámara embebida:", mainCamera.name);
     const pos = mainCamera.position.clone();
     pos.y += 1.5;
-    pos.z += 3; // alejamos más la cámara
+    pos.z += 3;
 
     return (
       <>
@@ -41,7 +44,11 @@ function LoadedScene({
           near={(mainCamera as THREE.PerspectiveCamera).near}
           far={(mainCamera as THREE.PerspectiveCamera).far}
         />
-        <primitive object={scene} dispose={null} />
+        <primitive
+          object={scene}
+          scale={[escala, escala, escala]}
+          dispose={null}
+        />
       </>
     );
   } else {
@@ -50,18 +57,22 @@ function LoadedScene({
       <>
         <PerspectiveCamera
           makeDefault
-          position={[0, 3, 10]} // alejamos más la cámara
+          position={[0, 3, 10]}
           fov={50}
           near={0.1}
           far={1000}
         />
-        <primitive object={scene} dispose={null} />
+        <primitive
+          object={scene}
+          scale={[escala, escala, escala]}
+          dispose={null}
+        />
       </>
     );
   }
 }
 
-export default function SceneViewer({ filePath }: ViewerProps) {
+export default function SceneViewer({ filePath, escala = "1" }: ViewerProps) {
   const [loading, setLoading] = useState(true);
 
   return (
@@ -95,6 +106,7 @@ export default function SceneViewer({ filePath }: ViewerProps) {
           {filePath && (
             <LoadedScene
               filePath={filePath}
+              escala={escala}
               onLoadComplete={() => setLoading(false)}
             />
           )}

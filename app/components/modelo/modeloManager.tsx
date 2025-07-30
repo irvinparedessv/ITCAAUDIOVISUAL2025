@@ -62,6 +62,7 @@ export default function ModeloManager() {
     try {
       const res = await api.get("/mod/marcas");
       const data = res.data;
+      console.log(data);
       if (Array.isArray(data)) {
         setMarcas(data);
       } else {
@@ -112,8 +113,6 @@ export default function ModeloManager() {
     []
   );
 
-
-
   // Con este único efecto:
   useEffect(() => {
     const debounced = debounce(() => {
@@ -126,6 +125,10 @@ export default function ModeloManager() {
       debounced.cancel();
     };
   }, [filters.search, filters.page, filters.perPage]);
+
+  useEffect(() => {
+    fetchMarcas();
+  }, []);
 
   const handleShow = (modelo?: Modelo) => {
     if (modelo) {

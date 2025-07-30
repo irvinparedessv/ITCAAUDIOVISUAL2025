@@ -5,6 +5,9 @@ import type { HistorialItem, Reservation } from "~/types/reservation";
 import { APIURL } from "./../../constants/constant";
 import VisualizarModal from "../attendantadmin/VisualizarModal";
 import api from "../../api/axios"; // Asegúrate que esté este import
+import { useAuth } from "~/hooks/AuthContext";
+import { Role } from "~/types/roles";
+import { Label } from "recharts";
 
 interface Props {
   showModal: boolean;
@@ -36,6 +39,7 @@ const EquipmentDetailsModal: React.FC<Props> = ({
   const [equipoObs, setEquipoObs] = useState<any>(null);
   const [comentarioObs, setComentarioObs] = useState("");
   const [loadingObs, setLoadingObs] = useState(false);
+  const { user } = useAuth();
 
   // Abrir modal de observación
   const handleAbrirObsModal = (equipo: any) => {
@@ -316,7 +320,7 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                         style={{ color: "#D4A017" }}
                       ></i>
                     </div>
-                    <h5 className="fw-bold mb-0">Equipos Reservados</h5>
+                    <h5 className="fw-bold mb-0">Equipos Reservadoss</h5>
                   </div>
                   <div className="ps-5">
                     <div className="list-group">
@@ -324,12 +328,9 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                         <div key={equipo.id}>
                           <div className="list-group-item border-0 bg-body-secondary mb-2 rounded">
                             {/* Contenedor para nombre y número de serie */}
-                            <div className="d-flex justify-content-between align-items-start">
+                            <div className="justify-content-between align-items-start">
                               {/* Nombre y descripción */}
-                              <div
-                                style={{ width: "50%" }}
-                                className="ms-4 mb-2"
-                              >
+                              <div style={{ width: "100%" }} className="mb-2">
                                 <h6 className="fw-bold mb-1">
                                   {equipo.modelo?.nombre || "Sin modelo"}
                                 </h6>
@@ -339,8 +340,7 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                               </div>
                               {/* Número de serie */}
                               <div
-                                style={{ width: "50%" }}
-                                className="d-flex justify-content-end align-items-start"
+                                style={{ maxWidth: "80%", fontSize: "10px" }}
                               >
                                 <span
                                   className="badge rounded-pill bg-body-tertiary text-body-emphasis"
@@ -359,16 +359,27 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                                 </small>
                               </div>
                             )}
-                            <Button
-                              size="sm"
-                              className="ms-4 mt-2"
-                              variant="outline-primary"
-                              onClick={() => handleAbrirObsModal(equipo)}
-                            >
-                              {equipo.pivot.comentario
-                                ? "Editar observación"
-                                : "Agregar observación"}
-                            </Button>
+                            {(user.role == Role.Administrador ||
+                              user.role == Role.Encargado) && (
+                              <Button
+                                size="sm"
+                                className="ms-4 mt-2"
+                                variant="outline-primary"
+                                onClick={() => handleAbrirObsModal(equipo)}
+                              >
+                                {equipo.pivot.comentario
+                                  ? "Editar observación"
+                                  : "Agregar observación"}
+                              </Button>
+                            )}
+
+                            {user.role == Role.Prestamista &&
+                              equipo.pivot.comentario && (
+                                <div>
+                                  Observación: {equipo.pivot.comentario}
+                                </div>
+                              )}
+
                             {/* Insumos debajo */}
                             {equipo.insumos && equipo.insumos.length > 0 && (
                               <div className="ms-4 mt-2">

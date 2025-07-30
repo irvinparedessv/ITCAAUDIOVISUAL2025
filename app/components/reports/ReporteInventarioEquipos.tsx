@@ -43,7 +43,7 @@ interface TipoEquipo {
 }
 
 const ReporteInventarioEquipos = () => {
- const [equipos, setEquipos] = useState<Equipo[]>([]);
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [tipos, setTipos] = useState<TipoEquipo[]>([]);
   const [filtroTipo, setFiltroTipo] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
@@ -239,10 +239,10 @@ const ReporteInventarioEquipos = () => {
                         hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true
                       });
 
-                        // Obtener nombres para los filtros aplicados
+                      // Obtener nombres para los filtros aplicados
                       const tipoSeleccionado = tipos.find(t => t.id === parseInt(filtroTipo));
                       const estadoSeleccionado = estados.find(e => e.id === parseInt(filtroEstado));
-                      
+
                       const nombreTipo = tipoSeleccionado ? tipoSeleccionado.nombre : "Todos";
                       const nombreEstado = estadoSeleccionado ? estadoSeleccionado.nombre : "Todos";
 
@@ -274,7 +274,7 @@ const ReporteInventarioEquipos = () => {
                             doc.setFontSize(16).text("Reporte de Inventario de Equipos", 60, 18);
                             doc.setFontSize(10)
                               .text(`Generado: ${fechaStr} - ${horaStr}`, 60, 25)
-                              .text(`Tipo: ${nombreTipo}`, 60, 30) 
+                              .text(`Tipo: ${nombreTipo}`, 60, 30)
                               .text(`Estado: ${nombreEstado}`, 60, 35);
                           }
 
@@ -332,7 +332,7 @@ const ReporteInventarioEquipos = () => {
     });
   };
 
-  
+
   const handleBuscarClick = () => {
     setCurrentPage(1);
     fetchEquipos(1, filtroTipo, filtroEstado, busqueda);
@@ -350,7 +350,7 @@ const ReporteInventarioEquipos = () => {
     navigate("/opcionesReportes");
   };
 
-   const getEstadoBadge = (estadoId: number) => {
+  const getEstadoBadge = (estadoId: number) => {
     switch (estadoId) {
       case 1: return "success";
       case 2: return "warning";
@@ -360,7 +360,7 @@ const ReporteInventarioEquipos = () => {
   };
 
 
- return (
+  return (
     <Container className="mt-4">
       <div className="d-flex align-items-center gap-3 mb-4">
         <FaLongArrowAltLeft
@@ -378,81 +378,78 @@ const ReporteInventarioEquipos = () => {
 
       <Card className="shadow-sm mb-4">
         <Card.Body>
-          <Row className="g-3 align-items-end">
-            <Col md={3}>
-              <Form.Group controlId="filtroTipo">
-                <Form.Label className="fw-bold">Tipo de Equipo</Form.Label>
-                <Form.Select
-                  value={filtroTipo}
-                  onChange={(e) => setFiltroTipo(e.target.value)}
+          <Container className="mt-4">
+            {/* Fila de filtros */}
+            <Row className="g-3">
+              <Col md={3}>
+                <Form.Group controlId="filtroTipo">
+                  <Form.Label className="fw-bold">Tipo de Equipo</Form.Label>
+                  <Form.Select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
+                    <option value="">Todos los tipos</option>
+                    {tipos.map((t) => (
+                      <option key={t.id} value={t.id}>{t.nombre}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+
+              <Col md={3}>
+                <Form.Group controlId="filtroEstado">
+                  <Form.Label className="fw-bold">Estado</Form.Label>
+                  <Form.Select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+                    <option value="">Todos los estados</option>
+                    {estados.map((estado) => (
+                      <option key={estado.id} value={estado.id}>{estado.nombre}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group controlId="busqueda">
+                  <Form.Label className="fw-bold">Buscar</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="N° serie, modelo, marca, etc."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleBuscarClick()}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            {/* Fila exclusiva para botones alineados a la derecha */}
+            <Row className="mt-3">
+              <Col className="d-flex justify-content-end gap-2">
+                <Button
+                  variant="primary"
+                  onClick={handleBuscarClick}
+                  disabled={loading}
+                  style={{ minWidth: '120px' }}
                 >
-                  <option value="">Todos los tipos</option>
-                  {tipos.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.nombre}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-
-            <Col md={3}>
-              <Form.Group controlId="filtroEstado">
-                <Form.Label className="fw-bold">Estado</Form.Label>
-                <Form.Select
-                  value={filtroEstado}
-                  onChange={(e) => setFiltroEstado(e.target.value)}
+                  {loading ? (
+                    <>
+                      <Spinner size="sm" animation="border" className="me-2" />
+                      Buscar
+                    </>
+                  ) : (
+                    <>
+                      <FaSearch className="me-2" /> Buscar
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  onClick={limpiarFiltros}
+                  disabled={loading}
+                  style={{ minWidth: '120px' }}
                 >
-                  <option value="">Todos los estados</option>
-                  {estados.map((estado) => (
-                    <option key={estado.id} value={estado.id}>
-                      {estado.nombre}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-
-            <Col md={4}>
-              <Form.Group controlId="busqueda">
-                <Form.Label className="fw-bold">Buscar</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="N° serie, modelo, marca, etc."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleBuscarClick()}
-                />
-              </Form.Group>
-            </Col>
-
-            <Col md={2} className="d-flex align-items-end gap-2">
-              <Button
-                variant="primary"
-                onClick={handleBuscarClick}
-                disabled={loading}
-                className="d-flex align-items-center justify-content-center gap-2 flex-grow-1"
-                style={{ height: '48px' }}
-              >
-                {loading ? (
-                  <Spinner size="sm" animation="border" />
-                ) : (
-                  <>
-                    <FaSearch /> Buscar
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline-secondary"
-                onClick={limpiarFiltros}
-                disabled={loading}
-                className="d-flex align-items-center justify-content-center gap-2 flex-grow-1"
-                style={{ height: '48px' }}
-              >
-                <FaEraser /> Limpiar
-              </Button>
-            </Col>
-          </Row>
+                  <FaEraser className="me-2" /> Limpiar
+                </Button>
+              </Col>
+            </Row>
+          </Container>
         </Card.Body>
       </Card>
       <Card className="shadow-sm mb-4">

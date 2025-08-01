@@ -17,6 +17,7 @@ interface ResumenItem {
   nombre_modelo: string;
   cantidad_total: number;
   cantidad_disponible: number;
+  cantidad_noDisponible: number;
   cantidad_mantenimiento: number;
   cantidad_eliminada: number;
   accesorios_completos: string | null;
@@ -412,6 +413,7 @@ export default function InventoryList() {
                   <th>Total</th>
                   <th>Disponibles</th>
                   <th>Mantenimiento</th>
+                  <th>No disponible</th>
                   <th>Dañados</th>
                   <th>Accesorios</th>
                   <th className="rounded-top-end">Acciones</th>
@@ -447,6 +449,11 @@ export default function InventoryList() {
                       <td>
                         <Badge bg="warning" pill>
                           {item.cantidad_mantenimiento}
+                        </Badge>
+                      </td>
+                       <td>
+                        <Badge bg="danger" pill>
+                          {item.cantidad_noDisponible}
                         </Badge>
                       </td>
                       <td>

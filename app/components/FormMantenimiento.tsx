@@ -34,6 +34,7 @@ const FormMantenimiento = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
+  const [dateError, setDateError] = useState<boolean>(false);
 
   const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
 
@@ -75,6 +76,18 @@ const FormMantenimiento = () => {
   ) => {
     const { name, value } = e.target;
 
+    if (name === "fecha_mantenimiento") {
+      if (value) {
+        const diff = compareDateOnly(value);
+        setDateError(diff < 0);
+
+        // Debug detallado
+        const [y, m, d] = value.split('-').map(Number);
+        console.log('Fecha seleccionada (local):', new Date(y, m - 1, d).toString());
+        console.log('Diferencia en ms:', diff, 'Días:', diff / (1000 * 60 * 60 * 24));
+      }
+    }
+
     if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
       setShowVidaUtilAlert(true);
     }
@@ -90,6 +103,17 @@ const FormMantenimiento = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validación de fecha mejorada
+    if (formData.fecha_mantenimiento) {
+      const diff = compareDateOnly(formData.fecha_mantenimiento);
+      if (diff < 0) {
+        toast.error("La fecha no puede ser anterior al día actual");
+        return;
+      } else if (diff === 0) {
+        console.log("Registrando mantenimiento para hoy");
+      }
+    }
 
     if (!formData.equipo_id) {
       toast.error("Debe seleccionar un equipo.");
@@ -130,16 +154,25 @@ const FormMantenimiento = () => {
           : formData.hora_mantenimiento_final,
     };
 
-    try {
-      if (id) {
-        await updateMantenimiento(Number(id), dataToSend);
-        toast.success("Mantenimiento actualizado");
+     try {
+    const result = await createMantenimiento(dataToSend);
+    
+    if (result.success) {
+      toast.success(result.message);
+      console.log('Equipo actualizado:', result.data.equipo);
+      
+      // Verificación del estado
+      if (result.data.equipo?.estado_id === 2) {
+        toast.success(`Equipo ${result.data.equipo.numero_serie} puesto en Mantenimiento`);
       } else {
-        await createMantenimiento(dataToSend);
-        toast.success("Mantenimiento creado");
+        toast.error('El estado del equipo no fue actualizado');
       }
-      navigate("/mantenimiento");
-    } catch (error: any) {
+    } else {
+      throw new Error(result.message);
+    }
+    
+    navigate("/mantenimiento");
+  } catch (error) {
       console.error("Error al procesar mantenimiento:", error);
       toast.error(error.message || "Error al procesar mantenimiento");
     } finally {
@@ -147,11 +180,37 @@ const FormMantenimiento = () => {
     }
   };
 
+  const compareDateOnly = (dateStr: string): number => {
+    // Parseamos la fecha directamente desde el string YYYY-MM-DD
+    const [year, month, day] = dateStr.split('-').map(Number);
+
+    // Creamos fechas en hora local (00:00:00)
+    const selectedDate = new Date(year, month - 1, day).setHours(0, 0, 0, 0);
+    const todayDate = new Date().setHours(0, 0, 0, 0);
+
+    return selectedDate - todayDate;
+  };
+
+  const getCurrentDate = (): string => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
   if (loading) return <div className="text-center my-5">Cargando...</div>;
 
   return (
     <div className="container mt-4">
-      <h2>{id ? "Editar Mantenimiento" : "Nuevo Mantenimiento"}</h2>
+      <h2>{id ? "Nuevo Mantenimiento" : "Editar Mantenimiento"}</h2>
+
+      {/* Alerta sobre el estado del equipo */}
+      <div className="alert alert-info mt-3" role="alert">
+        <strong>Importante:</strong> El equipo no cambiará a estado "En Mantenimiento" hasta que este registro sea guardado correctamente.
+        {!formData.vida_util && (
+          <span className="d-block mt-1">
+            Además, para completar el proceso, es necesario registrar la vida útil estimada en horas.
+          </span>
+        )}
+      </div>
       <form onSubmit={handleSubmit}>
         {/* Equipo */}
         <div className="mb-3">
@@ -160,7 +219,6 @@ const FormMantenimiento = () => {
             name="equipo_id"
             value={formData.equipo_id}
             onChange={handleChange}
-            required
             className="form-select"
           >
             <option value="">Seleccione un equipo</option>
@@ -181,7 +239,6 @@ const FormMantenimiento = () => {
             name="tipo_id"
             value={formData.tipo_id}
             onChange={handleChange}
-            required
             className="form-select"
           >
             <option value="">Seleccione un tipo de mantenimiento</option>
@@ -201,8 +258,14 @@ const FormMantenimiento = () => {
             name="fecha_mantenimiento"
             value={formData.fecha_mantenimiento}
             onChange={handleChange}
-            required
             className="form-control"
+            min={new Date().toLocaleDateString('en-CA')}
+            onInvalid={(e) => {
+              e.currentTarget.setCustomValidity(
+                "No se pueden registrar mantenimientos con fecha anterior al día actual"
+              );
+            }}
+            onInput={(e) => e.currentTarget.setCustomValidity('')}
           />
         </div>
 
@@ -215,7 +278,6 @@ const FormMantenimiento = () => {
               name="hora_mantenimiento_inicio"
               value={formData.hora_mantenimiento_inicio}
               onChange={handleChange}
-              required
               className="form-control"
             />
           </div>
@@ -226,7 +288,6 @@ const FormMantenimiento = () => {
               name="hora_mantenimiento_final"
               value={formData.hora_mantenimiento_final}
               onChange={handleChange}
-              required
               className="form-control"
             />
           </div>
@@ -255,12 +316,12 @@ const FormMantenimiento = () => {
             min={0}
             className="form-control"
           />
-          {showVidaUtilAlert && (
+          {/* {showVidaUtilAlert && (
             <div className="alert alert-warning mt-2" role="alert">
               Si agregas el mantenimiento, recuerda registrar la vida útil
               estimada en horas.
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Botones */}

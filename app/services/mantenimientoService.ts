@@ -57,8 +57,26 @@ export const getMantenimientoById = async (id: number) => {
 };
 
 export const createMantenimiento = async (mantenimientoData: Partial<Mantenimiento>) => {
-  const response = await api.post("/mantenimientos", mantenimientoData);
-  return response.data;
+  try {
+    const response = await api.post("/mantenimientos", mantenimientoData);
+    return {
+      success: true,
+      data: response.data.data, // Accede a la propiedad data anidada
+      message: response.data.message
+    };
+  } catch (error: any) {
+    if (error.response) {
+      return {
+        success: false,
+        message: error.response.data.message || "Error al crear mantenimiento",
+        error: error.response.data
+      };
+    }
+    return {
+      success: false,
+      message: "Error de conexión al crear mantenimiento"
+    };
+  }
 };
 
 export const updateMantenimiento = async (

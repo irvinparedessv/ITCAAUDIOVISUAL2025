@@ -39,6 +39,7 @@ import PaginationComponent from "~/utils/Pagination";
 import type { TipoEquipo } from "~/types/tipoEquipo";
 import ItemDetail from "./itemDetail";
 import { FaWrench } from "react-icons/fa6";
+import { EstadoEquipo } from "~/types/estados";
 
 type Item = Equipo | Insumo;
 
@@ -260,6 +261,13 @@ export default function ItemList({
     }
   };
 
+  const ESTADOS_BLOQUEADOS = [
+    EstadoEquipo.Mantenimiento,
+    EstadoEquipo.Dañado,
+    EstadoEquipo.NoDisponible,
+    EstadoEquipo.EnReposo
+  ];
+
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
       {/* Modal Detalle */}
@@ -332,8 +340,8 @@ export default function ItemList({
             <>
               <h5>Insumos asignados actualmente:</h5>
               {selectedEquipo &&
-              selectedEquipo.asignaciones &&
-              selectedEquipo.asignaciones.length > 0 ? (
+                selectedEquipo.asignaciones &&
+                selectedEquipo.asignaciones.length > 0 ? (
                 <ul className="list-group mb-3">
                   {selectedEquipo.asignaciones.map((insumo) => (
                     <li
@@ -589,18 +597,18 @@ export default function ItemList({
                         <td>
                           <Badge
                             bg={
-                              item.estado_id === 1
+                              item.estado_id === EstadoEquipo.Disponible
                                 ? "success"
-                                : item.estado_id === 2
-                                ? "warning"
-                                : "danger"
+                                : item.estado_id === EstadoEquipo.Mantenimiento
+                                  ? "warning"
+                                  : "danger"
                             }
                           >
-                            {item.estado_id === 1
+                            {item.estado_id === EstadoEquipo.Disponible
                               ? "Disponible"
-                              : item.estado_id === 2
-                              ? "Mantenimiento"
-                              : "Dañado"}
+                              : item.estado_id === EstadoEquipo.Mantenimiento
+                                ? "Mantenimiento"
+                                : "Dañado"}
                           </Badge>
                         </td>
                         <td>
@@ -686,8 +694,8 @@ export default function ItemList({
                                   transition: "transform 0.2s ease-in-out",
                                 }}
                                 onMouseEnter={(e) =>
-                                  (e.currentTarget.style.transform =
-                                    "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                                 }
                                 onMouseLeave={(e) =>
                                   (e.currentTarget.style.transform = "scale(1)")
@@ -712,8 +720,8 @@ export default function ItemList({
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform =
-                                  "scale(1.15)")
+                              (e.currentTarget.style.transform =
+                                "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -732,8 +740,8 @@ export default function ItemList({
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform =
-                                  "scale(1.15)")
+                              (e.currentTarget.style.transform =
+                                "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -753,8 +761,8 @@ export default function ItemList({
                                   transition: "transform 0.2s ease-in-out",
                                 }}
                                 onMouseEnter={(e) =>
-                                  (e.currentTarget.style.transform =
-                                    "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                                 }
                                 onMouseLeave={(e) =>
                                   (e.currentTarget.style.transform = "scale(1)")
@@ -764,34 +772,10 @@ export default function ItemList({
                                 <FaLink />
                               </Button>
                             )}
-                            {/* <Button
-                                                            variant="outline-danger"
-                                                            className="rounded-circle"
-                                                            title={`Eliminar ${item.tipo}`}
-                                                            style={{
-                                                                width: "44px",
-                                                                height: "44px",
-                                                                transition: "transform 0.2s ease-in-out",
-                                                            }}
-                                                            onMouseEnter={(e) =>
-                                                                (e.currentTarget.style.transform = "scale(1.15)")
-                                                            }
-                                                            onMouseLeave={(e) =>
-                                                                (e.currentTarget.style.transform = "scale(1)")
-                                                            }
-                                                            onClick={() => confirmarEliminacion(
-                                                                item.id,
-                                                                item.detalles || `Item #${item.id}`,
-                                                                item.tipo
-                                                            )}
-                                                        >
-                                                            <FaTrash />
-                                                        </Button> */}
-
                             {/* NUEVO BOTÓN Crear mantenimiento */}
                             <Button
                               variant="outline-warning"
-                              title="Crear mantenimiento"
+                              title={ESTADOS_BLOQUEADOS.includes(item.estado_id) ? "El equipo ya está en mantenimiento" : "Crear mantenimiento"}
                               className="rounded-circle"
                               style={{
                                 width: "44px",
@@ -799,15 +783,52 @@ export default function ItemList({
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform =
-                                  "scale(1.15)")
+                                (e.currentTarget.style.transform = "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
                               }
-                              onClick={() =>
-                                navigate(`/mantenimiento/${item.id}`)
-                              }
+                              onClick={() => {
+                                const equipo = items.find(e => e.id === item.id);
+                                if (!equipo) return;
+
+                                const toastId = `mantenimiento-equipo-${item.id}`;
+                                toast.dismiss();
+
+                                toast(
+                                  (t) => (
+                                    <div className="p-2">
+                                      <p className="mb-2">
+                                        ¿Deseas pasar el equipo <strong>{equipo.modelo?.nombre || `#${equipo.id}`}</strong> a mantenimiento?
+                                      </p>
+                                      <div className="d-flex justify-content-end gap-2 mt-3">
+                                        <Button
+                                          variant="warning"
+                                          size="sm"
+                                          onClick={() => {
+                                            toast.dismiss(t.id);
+                                            navigate(`/mantenimiento/${item.id}`);
+                                          }}
+                                        >
+                                          Sí, continuar
+                                        </Button>
+                                        <Button
+                                          variant="secondary"
+                                          size="sm"
+                                          onClick={() => toast.dismiss(t.id)}
+                                        >
+                                          Cancelar
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ),
+                                  {
+                                    duration: 10000, // 10 segundos para decidir
+                                    id: toastId,
+                                  }
+                                );
+                              }}
+                              disabled={ESTADOS_BLOQUEADOS.includes(item.estado_id)}
                             >
                               <FaWrench />
                             </Button>

@@ -261,7 +261,7 @@ function DetailItem({ icon, title, value, fullWidth = false }: {
 function getBadgeColor(estado: string) {
   const statusColors: Record<string, string> = {
     disponible: "success",
-    enreparacion: "warning",
+    mantenimiento: "warning",
     dañado: "danger",
   };
 

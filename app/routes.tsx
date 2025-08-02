@@ -338,11 +338,11 @@ const router = createBrowserRouter([
             element: <MantenimientoList />,
           },
 
-          {
-            path: "mantenimientos/nuevo",
+          // {
+          //   path: "mantenimientos/nuevo",
 
-            element: <FormMantenimiento />,
-          },
+          //   element: <FormMantenimiento />,
+          // },
           {
             path: "mantenimiento/:id",
 

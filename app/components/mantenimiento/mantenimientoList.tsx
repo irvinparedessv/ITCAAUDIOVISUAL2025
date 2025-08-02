@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { Button, Form, InputGroup, Spinner } from "react-bootstrap";
+import { Button, Form, InputGroup, Spinner, Modal } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import {
   FaEdit,
@@ -9,11 +9,16 @@ import {
   FaPlus,
   FaLongArrowAltLeft,
   FaTrash,
+  FaExchangeAlt,
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
 import type { Mantenimiento } from "../../types/mantenimiento";
 import { getMantenimientos, deleteMantenimiento } from "../../services/mantenimientoService";
 import { getTiposMantenimiento } from "~/services/tipoMantenimientoService";
+import { getEstados, updateEstadoEquipo } from "../../services/itemService";
+import { formatDate, formatTo12h } from "~/utils/time";
+import type { Estado } from "~/types/item";
+import { EstadoEquipo } from "~/types/estados";
 
 export default function MantenimientoList() {
   const [mantenimientos, setMantenimientos] = useState<Mantenimiento[]>([]);
@@ -23,11 +28,16 @@ export default function MantenimientoList() {
     per_page: 10,
     tipo_id: undefined as number | undefined,
   });
-  const [searchInput, setSearchInput] = useState(""); // Para el debounce
+  const [searchInput, setSearchInput] = useState("");
   const [lastPage, setLastPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tipos, setTipos] = useState<Record<number, string>>({});
+  const [showEstadoModal, setShowEstadoModal] = useState(false);
+  const [selectedMantenimiento, setSelectedMantenimiento] = useState<Mantenimiento | null>(null);
+  const [estados, setEstados] = useState<Estado[]>([]);
+  const [selectedEstado, setSelectedEstado] = useState<number | null>(null);
+  const [loadingEstados, setLoadingEstados] = useState(false);
   const navigate = useNavigate();
 
   const handleBack = () => navigate("/equipos");
@@ -43,6 +53,15 @@ export default function MantenimientoList() {
       setTipos(formateados);
     } catch {
       toast.error("Error al cargar tipos de mantenimiento");
+    }
+  };
+
+  const cargarEstados = async () => {
+    try {
+      const data = await getEstados();
+      setEstados(data);
+    } catch {
+      toast.error("Error al cargar estados");
     }
   };
 
@@ -76,11 +95,37 @@ export default function MantenimientoList() {
     }
   };
 
+  const handleCambiarEstado = async () => {
+    if (!selectedMantenimiento || !selectedEstado) return;
+
+    try {
+      setLoadingEstados(true);
+      const result = await updateEstadoEquipo(
+        selectedMantenimiento.equipo_id,
+        selectedEstado,
+        selectedMantenimiento.id
+      );
+
+      if (result.success) {
+        toast.success("Estado del equipo actualizado correctamente");
+        cargarMantenimientos();
+        setShowEstadoModal(false);
+      } else {
+        toast.error(result.message || "Error al actualizar estado");
+      }
+    } catch (error) {
+      toast.error("Error inesperado al actualizar estado");
+      console.error(error);
+    } finally {
+      setLoadingEstados(false);
+    }
+  };
+
   const handleFilterUpdate = (key: string, value: any) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
-      page: 1, // Reinicia la página al cambiar filtro
+      page: 1,
     }));
   };
 
@@ -98,10 +143,42 @@ export default function MantenimientoList() {
       per_page: 10,
       tipo_id: undefined,
     });
-    setSearchInput(""); // limpia también el input controlado
+    setSearchInput("");
   };
 
-  // Debounce para el buscador
+
+  const mapNombreToEstadoEquipo = (nombre: string): EstadoEquipo | undefined => {
+    const lower = nombre.toLowerCase();
+
+    if (lower.includes("no disponible")) return EstadoEquipo.NoDisponible; // primero
+    if (lower.includes("dañado") || lower.includes("averiado")) return EstadoEquipo.Dañado;
+    if (lower.includes("mantenimiento")) return EstadoEquipo.Mantenimiento;
+    if (lower.includes("reposo")) return EstadoEquipo.EnReposo;
+    if (lower.includes("disponible")) return EstadoEquipo.Disponible; // último
+
+    return undefined;
+  };
+
+
+  const estadoColorMap: Record<EstadoEquipo, string> = {
+    [EstadoEquipo.Disponible]: "success",
+    [EstadoEquipo.Mantenimiento]: "warning",
+    [EstadoEquipo.EnReposo]: "info",
+    [EstadoEquipo.Dañado]: "danger",
+    [EstadoEquipo.NoDisponible]: "danger",
+  };
+
+  const getEstadoBadgeColor = (estadoId?: number): string => {
+    if (!estadoId || !(estadoId in estadoColorMap)) return "secondary";
+    return estadoColorMap[estadoId as EstadoEquipo];
+  };
+
+  // Función para determinar el color del badge según el estado
+  const getEstadoBadgeColorByNombre = (nombre?: string): string => {
+    const estado = mapNombreToEstadoEquipo(nombre ?? "");
+    return getEstadoBadgeColor(estado);
+  };
+
   useEffect(() => {
     const delay = setTimeout(() => {
       handleFilterUpdate("search", searchInput);
@@ -112,6 +189,7 @@ export default function MantenimientoList() {
 
   useEffect(() => {
     cargarTipos();
+    cargarEstados();
   }, []);
 
   useEffect(() => {
@@ -129,17 +207,6 @@ export default function MantenimientoList() {
           />
           <h2 className="fw-bold m-0">Listado de Mantenimientos</h2>
         </div>
-
-        <Button
-          variant="primary"
-          onClick={() => navigate("/mantenimientos/nuevo")}
-          className="d-flex align-items-center gap-2"
-          style={{ transition: "transform 0.2s ease-in-out" }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-        >
-          <FaPlus /> Nuevo Mantenimiento
-        </Button>
       </div>
 
       <div className="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
@@ -218,6 +285,7 @@ export default function MantenimientoList() {
                   <th>Hora Fin</th>
                   <th>Tipo</th>
                   <th>Usuario</th>
+                  <th>Estado</th>
                   <th>Vida Útil</th>
                   <th>Acciones</th>
                 </tr>
@@ -231,14 +299,23 @@ export default function MantenimientoList() {
                           ? `${m.equipo.numero_serie} - ${m.equipo.modelo?.nombre ?? ""} (${m.equipo.modelo?.marca?.nombre ?? ""})`
                           : "Sin equipo"}
                       </td>
-                      <td>{m.fecha_mantenimiento}</td>
-                      <td>{m.hora_mantenimiento_inicio}</td>
-                      <td>{m.hora_mantenimiento_final}</td>
+                      <td>{formatDate(m.fecha_mantenimiento)}</td>
+                      <td>{formatTo12h(m.hora_mantenimiento_inicio)}</td>
+                      <td>{formatTo12h(m.hora_mantenimiento_final) || "-"}</td>
                       <td>{m.tipo_mantenimiento?.nombre ?? "-"}</td>
                       <td>
                         {m.usuario
                           ? `${m.usuario.first_name ?? ""} ${m.usuario.last_name ?? ""}`.trim()
                           : "Sin usuario"}
+                      </td>
+                      <td>
+                        {m.equipo?.estado ? (
+                          <span className={`badge bg-${getEstadoBadgeColorByNombre(m.equipo.estado.nombre)}`}>
+                            {m.equipo.estado.nombre}
+                          </span>
+                        ) : (
+                          <span className="badge bg-secondary">Desconocido</span>
+                        )}
                       </td>
                       <td>{m.vida_util ?? "-"}</td>
                       <td>
@@ -247,17 +324,63 @@ export default function MantenimientoList() {
                             variant="outline-primary"
                             title="Editar mantenimiento"
                             onClick={() => navigate(`/mantenimientos/editar/${m.id}`)}
-                            style={{ minWidth: "44px", minHeight: "44px" }}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
                             className="d-flex justify-content-center align-items-center p-0 rounded-circle"
+                            disabled={m.equipo?.estado?.id !== EstadoEquipo.Mantenimiento}
                           >
                             <FaEdit />
+                          </Button>
+                          <Button
+                            variant="outline-success"
+                            title="Cambiar estado del equipo"
+                            onClick={() => {
+                              setSelectedMantenimiento(m);
+                              setSelectedEstado(null);
+                              setShowEstadoModal(true);
+                            }}
+                            disabled={m.equipo?.estado?.id !== EstadoEquipo.Mantenimiento}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            className="d-flex justify-content-center align-items-center p-0 rounded-circle"
+                          >
+                            <FaExchangeAlt />
                           </Button>
                           <Button
                             variant="outline-danger"
                             title="Eliminar mantenimiento"
                             onClick={() => handleDelete(m.id)}
-                            style={{ minWidth: "44px", minHeight: "44px" }}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              transition: "transform 0.2s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
                             className="d-flex justify-content-center align-items-center p-0 rounded-circle"
+                            disabled={m.equipo?.estado?.id !== EstadoEquipo.Mantenimiento}
                           >
                             <FaTrash />
                           </Button>
@@ -267,7 +390,7 @@ export default function MantenimientoList() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="text-center py-4 text-muted">
+                    <td colSpan={9} className="text-center py-4 text-muted">
                       No se encontraron mantenimientos.
                     </td>
                   </tr>
@@ -283,6 +406,74 @@ export default function MantenimientoList() {
           />
         </>
       )}
+
+      <Modal show={showEstadoModal} onHide={() => setShowEstadoModal(false)}>
+        <Modal.Header
+          className="text-white py-3"
+          style={{ backgroundColor: "#b1291d" }}
+          closeButton
+        >
+          <Modal.Title>Cambiar estado del equipo</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedMantenimiento && (
+            <div>
+              <p>
+                Equipo: {selectedMantenimiento.equipo
+                  ? `${selectedMantenimiento.equipo.numero_serie} - ${selectedMantenimiento.equipo.modelo?.nombre ?? ""}`
+                  : "Sin equipo"}
+              </p>
+              <p>
+                Estado actual: {selectedMantenimiento.equipo?.estado ? (
+                  <span className={`badge bg-${getEstadoBadgeColorByNombre(selectedMantenimiento.equipo.estado.nombre)}`}>
+                    {selectedMantenimiento.equipo.estado.nombre}
+                  </span>
+                ) : "Desconocido"}
+              </p>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Nuevo estado</Form.Label>
+                <Form.Select
+                  value={selectedEstado || ""}
+                  onChange={(e) => setSelectedEstado(Number(e.target.value))}
+                >
+                  <option value="">Seleccione un estado</option>
+                  {estados
+                    .filter((estado) =>
+                      [EstadoEquipo.Disponible, EstadoEquipo.NoDisponible, EstadoEquipo.Dañado].includes(estado.id)
+                    )
+                    .map((estado) => (
+                      <option key={estado.id} value={estado.id}>
+                        {estado.nombre}
+                      </option>
+                    ))}
+
+                </Form.Select>
+
+              </Form.Group>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowEstadoModal(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleCambiarEstado}
+            disabled={!selectedEstado || loadingEstados}
+          >
+            {loadingEstados ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                Guardando...
+              </>
+            ) : (
+              "Guardar cambios"
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

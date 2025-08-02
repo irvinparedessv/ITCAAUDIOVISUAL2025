@@ -48,6 +48,7 @@ export interface ItemBase {
   updated_at?: string;
   tipo: ItemTipo;
   modelo?: Modelo;
+  estado?: Estado; // Añadido aquí
   caracteristicas?: CaracteristicaItem[];
   asignaciones?: Array<{
     id: number;

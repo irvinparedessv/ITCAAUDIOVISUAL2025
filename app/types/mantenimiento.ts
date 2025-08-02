@@ -1,3 +1,5 @@
+import type { Equipo } from "./item";
+
 export interface Marca {
   id: number;
   nombre: string;
@@ -9,11 +11,11 @@ export interface Modelo {
   marca: Marca;
 }
 
-export interface Equipo {
-  id: number;
-  numero_serie: string;
-  modelo: Modelo;
-}
+// export interface Equipo {
+//   id: number;
+//   numero_serie: string;
+//   modelo: Modelo;
+// }
 
 export interface TipoMantenimiento {
   id: number;
@@ -41,7 +43,7 @@ export interface Mantenimiento {
   updated_at: string;
 
   equipo: Equipo;
-  tipoMantenimiento?: TipoMantenimiento; // <- Nombre correcto desde backend
+  tipo_mantenimiento?: TipoMantenimiento; // <- Nombre correcto desde backend
   usuario?: Usuario;                     // <- Nombre correcto desde backend
 }
 

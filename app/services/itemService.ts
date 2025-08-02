@@ -312,3 +312,24 @@ export async function getModelosByTipo(
     label: m.nombre,
   }));
 }
+
+
+export const updateEstadoEquipo = async (
+  equipoId: number, 
+  estadoId: number,
+  mantenimientoId: number
+): Promise<{success: boolean; message?: string}> => {
+  try {
+    const response = await api.put(`/equipos/${equipoId}/estado`, {
+      estado_id: estadoId,
+      mantenimiento_id: mantenimientoId
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error al actualizar estado del equipo:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error inesperado al actualizar estado"
+    };
+  }
+};

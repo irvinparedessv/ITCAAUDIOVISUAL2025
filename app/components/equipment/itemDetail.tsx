@@ -25,6 +25,7 @@ type Caracteristica = {
 
 type EquipoDetalle = {
   equipo_id: number;
+  estado_id: number; // <== Nuevo campo necesario
   categoria: string;
   tipo_equipo: string;
   tipo_reserva: string | null;
@@ -75,7 +76,7 @@ export default function ItemDetail({ id: propId }: ItemDetailProps) {
   if (loading) {
     return (
       <Container className="d-flex flex-column align-items-center justify-content-center my-5 py-5">
-        <Spinner animation="grow" variant="primary" className="text-white py-3" style={{ backgroundColor: "#b1291d" }}  />
+        <Spinner animation="grow" variant="primary" className="text-white py-3" style={{ backgroundColor: "#b1291d" }} />
         <p className="mt-3 text-muted fs-5">Cargando detalles del equipo...</p>
       </Container>
     );
@@ -263,10 +264,13 @@ function getBadgeColor(estado: string) {
     disponible: "success",
     mantenimiento: "warning",
     dañado: "danger",
+    "no disponible": "secondary",
+    "en reposo": "info",
   };
 
   return statusColors[estado] || "dark";
 }
+
 
 function capitalize(text: string) {
   if (!text) return "";

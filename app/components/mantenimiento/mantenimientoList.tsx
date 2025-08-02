@@ -165,7 +165,7 @@ export default function MantenimientoList() {
     [EstadoEquipo.Mantenimiento]: "warning",
     [EstadoEquipo.EnReposo]: "info",
     [EstadoEquipo.Dañado]: "danger",
-    [EstadoEquipo.NoDisponible]: "danger",
+    [EstadoEquipo.NoDisponible]: "secondary",
   };
 
   const getEstadoBadgeColor = (estadoId?: number): string => {

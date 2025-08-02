@@ -266,7 +266,16 @@ const FormMantenimiento = () => {
     return today.toISOString().split('T')[0];
   };
 
-  if (loading) return <div className="text-center my-5">Cargando...</div>;
+  if (loading) {
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center my-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+        <p className="mt-3 text-muted">Cargando datos...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-4">

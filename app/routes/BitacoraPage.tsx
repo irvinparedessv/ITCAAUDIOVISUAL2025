@@ -245,8 +245,9 @@ function getActionBadgeColor(accion: string) {
       return "warning";
     case action.includes('desasociación'):
       return "danger";
-    case action.includes('cambio de estado'):
+    case action.includes('creación de mantenimiento'):
       return "info";
+      case action.includes('cambio de estado'):
       return "info";
     default:
       return "secondary";

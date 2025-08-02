@@ -268,6 +268,23 @@ export default function ItemList({
     EstadoEquipo.EnReposo
   ];
 
+  const getEstadoBadge = (estadoId) => {
+    switch (estadoId) {
+      case EstadoEquipo.Disponible:
+        return { text: "Disponible", color: "success" };
+      case EstadoEquipo.Mantenimiento:
+        return { text: "Mantenimiento", color: "warning" };
+      case EstadoEquipo.Dañado:
+        return { text: "Dañado", color: "danger" };
+      case EstadoEquipo.NoDisponible:
+        return { text: "No disponible", color: "secondary" };
+      case EstadoEquipo.EnReposo:
+        return { text: "En reposo", color: "info" };
+      default:
+        return { text: "Desconocido", color: "dark" };
+    }
+  };
+
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
       {/* Modal Detalle */}
@@ -584,6 +601,7 @@ export default function ItemList({
                     const isEquipoItem = isEquipo(item);
                     const modeloNombre = item.modelo?.nombre || "N/A";
                     const asignaciones = (item as any).asignaciones || [];
+                    const { text, color } = getEstadoBadge(item.estado_id);
 
                     return (
                       <tr key={item.id}>
@@ -595,21 +613,7 @@ export default function ItemList({
                         <td>{item.modelo?.marca?.nombre || "Sin marca"}</td>
                         <td>{modeloNombre}</td>
                         <td>
-                          <Badge
-                            bg={
-                              item.estado_id === EstadoEquipo.Disponible
-                                ? "success"
-                                : item.estado_id === EstadoEquipo.Mantenimiento
-                                  ? "warning"
-                                  : "danger"
-                            }
-                          >
-                            {item.estado_id === EstadoEquipo.Disponible
-                              ? "Disponible"
-                              : item.estado_id === EstadoEquipo.Mantenimiento
-                                ? "Mantenimiento"
-                                : "Dañado"}
-                          </Badge>
+                          <Badge bg={color}>{text}</Badge>
                         </td>
                         <td>
                           {isEquipoItem

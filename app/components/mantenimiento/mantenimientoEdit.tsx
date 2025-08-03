@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { FaSave, FaTimes } from "react-icons/fa";
-
+import { FaSave, FaTimes, FaLongArrowAltLeft } from "react-icons/fa";
 import { getEquipos } from "../../services/equipoService";
 import { getTiposMantenimiento } from "../../services/tipoMantenimientoService";
 import { getUsuarios } from "../../services/userService";
@@ -240,6 +239,7 @@ const MantenimientoEdit = () => {
     }
   };
 
+ 
   if (loading) {
     return (
       <div className="d-flex flex-column align-items-center justify-content-center my-5">
@@ -252,13 +252,20 @@ const MantenimientoEdit = () => {
   }
 
   return (
-    <div className="container mt-4">
-      <h2>Editar Mantenimiento</h2>
+    <div className="form-container">
+      <div className="d-flex align-items-center mb-3">
+        <FaLongArrowAltLeft
+          onClick={() => navigate("/mantenimiento")}
+          title="Regresar"
+          style={{ cursor: "pointer", fontSize: "2rem", marginRight: "0.5rem" }}
+        />
+        <h2 className="fw-bold">Editar Mantenimiento</h2>
+      </div>
 
       <form onSubmit={handleSubmit}>
         {/* Equipo (no editable) */}
         <div className="mb-3">
-          <label>Equipo</label>
+          <label className="form-label">Equipo</label>
           <select
             name="equipo_id"
             value={formData.equipo_id}
@@ -274,20 +281,20 @@ const MantenimientoEdit = () => {
                 </option>
               ))}
           </select>
-          <div className="form-text text-muted">
+          <small className="text-muted">
             No se puede cambiar el equipo en modo edición
-          </div>
+          </small>
         </div>
 
         {/* Tipo de Mantenimiento */}
         <div className="mb-3">
-          <label>Tipo de Mantenimiento</label>
+          <label className="form-label">Tipo de Mantenimiento</label>
           <select
             name="tipo_id"
             value={formData.tipo_id}
             onChange={handleChange}
             className="form-select"
-            required
+            disabled={isSubmitting}
           >
             <option value="">Seleccione un tipo de mantenimiento</option>
             {tipos.map((tipo) => (
@@ -300,7 +307,7 @@ const MantenimientoEdit = () => {
 
         {/* Fecha de mantenimiento (no editable) */}
         <div className="mb-3">
-          <label>Fecha de mantenimiento</label>
+          <label className="form-label">Fecha de mantenimiento</label>
           <input
             type="date"
             name="fecha_mantenimiento"
@@ -310,45 +317,44 @@ const MantenimientoEdit = () => {
             min={getCurrentDate()}
             disabled
           />
-          <div className="form-text text-muted">
+          <small className="text-muted">
             No se puede cambiar la fecha en modo edición
-          </div>
+          </small>
         </div>
 
         {/* Hora inicio */}
-        <div className="mb-3 d-flex gap-3">
-          <div className="flex-grow-1">
-            <label>Hora inicio</label>
-            <input
-              type="time"
-              name="hora_mantenimiento_inicio"
-              value={formData.hora_mantenimiento_inicio}
-              onChange={handleChange}
-              className={`form-control ${timeError || rangeError ? 'is-invalid' : ''}`}
-              min="07:00"
-              max="17:00"
-              required
-            />
-            {timeError && <div className="invalid-feedback">{timeError}</div>}
-            {rangeError && <div className="invalid-feedback">{rangeError}</div>}
-          </div>
+        <div className="mb-3">
+          <label className="form-label">Hora inicio</label>
+          <input
+            type="time"
+            name="hora_mantenimiento_inicio"
+            value={formData.hora_mantenimiento_inicio}
+            onChange={handleChange}
+            className={`form-control ${timeError || rangeError ? 'is-invalid' : ''}`}
+            min="07:00"
+            max="17:00"
+            disabled={isSubmitting}
+          />
+          {timeError && <div className="invalid-feedback">{timeError}</div>}
+          {rangeError && <div className="invalid-feedback">{rangeError}</div>}
         </div>
 
         {/* Detalles */}
         <div className="mb-3">
-          <label>Detalles</label>
+          <label className="form-label">Detalles</label>
           <textarea
             name="detalles"
             value={formData.detalles}
             onChange={handleChange}
             className="form-control"
             rows={3}
+            disabled={isSubmitting}
           />
         </div>
 
         {/* Vida útil */}
         <div className="mb-3">
-          <label>Vida útil (horas)</label>
+          <label className="form-label">Vida útil (horas)</label>
           <input
             type="number"
             name="vida_util"
@@ -356,28 +362,25 @@ const MantenimientoEdit = () => {
             onChange={handleChange}
             min={0}
             className="form-control"
+            disabled={isSubmitting}
           />
           {showVidaUtilAlert && (
-            <div className="alert alert-warning mt-2" role="alert">
+            <div className="alert alert-warning mt-2">
               Si editas el mantenimiento, recuerda registrar la vida útil estimada en horas.
             </div>
           )}
         </div>
 
         {/* Botones */}
-        <div className="d-flex gap-2">
+        <div className="form-actions d-flex gap-2 mt-4">
           <button
             type="submit"
-            disabled={isSubmitting}
             className="btn btn-primary"
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <span
-                  className="spinner-border spinner-border-sm me-2"
-                  role="status"
-                  aria-hidden="true"
-                />
+                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                 Guardando...
               </>
             ) : (
@@ -389,9 +392,9 @@ const MantenimientoEdit = () => {
           </button>
           <button
             type="button"
-            disabled={isSubmitting}
-            onClick={() => navigate("/mantenimiento")}
             className="btn btn-secondary"
+            onClick={() => navigate("/mantenimiento")}
+            disabled={isSubmitting}
           >
             <FaTimes className="me-2" />
             Cancelar

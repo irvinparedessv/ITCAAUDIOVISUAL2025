@@ -14,6 +14,7 @@ import {
 import PaginationComponent from "~/utils/Pagination";
 import { getFuturosMantenimiento, deleteFuturoMantenimiento } from "~/services/futuroMantenimientoService";
 import type { FuturoMantenimiento } from "app/types/futuroMantenimiento";
+import { formatDate, formatTo12h } from "~/utils/time";
 
 export default function FuturoMantenimientoList() {
   const [mantenimientos, setMantenimientos] = useState<FuturoMantenimiento[]>([]);
@@ -172,12 +173,11 @@ export default function FuturoMantenimientoList() {
             <table className="table table-hover align-middle text-center">
               <thead className="table-dark">
                 <tr>
-                  <th>ID</th>
+                  <th>#</th>
                   <th>Equipo</th>
                   <th>Tipo de Mantenimiento</th>
                   <th>Fecha Programada</th>
                   <th>Hora Inicio</th>
-                  <th>Hora Final</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -188,9 +188,8 @@ export default function FuturoMantenimientoList() {
                       <td>{item.id}</td>
                       <td>{item.equipo?.numero_serie || "-"}</td>
                       <td>{item.tipo_mantenimiento?.nombre || "-"}</td>
-                      <td>{item.fecha_mantenimiento}</td>
-                      <td>{item.hora_mantenimiento_inicio || "-"}</td>
-                      <td>{item.hora_mantenimiento_final || "-"}</td>
+                      <td>{formatDate(item.fecha_mantenimiento)}</td>
+                      <td>{formatTo12h(item.hora_mantenimiento_inicio || "-")}</td>
                       <td>
                         <div className="d-flex justify-content-center gap-2">
                           <Button

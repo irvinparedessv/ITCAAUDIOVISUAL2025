@@ -6,7 +6,6 @@ import {
   FaEdit,
   FaTrash,
   FaSearch,
-  FaFilter,
   FaTimes,
   FaPlus,
   FaLongArrowAltLeft,
@@ -16,22 +15,39 @@ import { getFuturosMantenimiento, deleteFuturoMantenimiento } from "~/services/f
 import type { FuturoMantenimiento } from "app/types/futuroMantenimiento";
 import { formatDate, formatTo12h } from "~/utils/time";
 
+// Extended type to include related models
+type FuturoMantenimientoWithRelations = FuturoMantenimiento & {
+  equipo?: {
+    id: number;
+    numero_serie?: string;
+    modelo?: {
+      id: number;
+      nombre?: string;
+      marca?: {
+        id: number;
+        nombre?: string;
+      };
+    };
+  };
+  tipo_mantenimiento?: {
+    id: number;
+    nombre: string;
+  };
+};
+
 export default function FuturoMantenimientoList() {
-  const [mantenimientos, setMantenimientos] = useState<FuturoMantenimiento[]>([]);
-  const [filters, setFilters] = useState<any>({
+  const [mantenimientos, setMantenimientos] = useState<FuturoMantenimientoWithRelations[]>([]);
+  const [filters, setFilters] = useState({
     search: "",
     page: 1,
     per_page: 10,
   });
-  const [searchInput, setSearchInput] = useState(""); // <-- para debounce
+  const [searchInput, setSearchInput] = useState("");
   const [lastPage, setLastPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  const handleBack = () => {
-    navigate("/equipos");
-  };
+  const handleBack = () => navigate("/equipos");
 
   const cargarMantenimientos = async () => {
     setLoading(true);
@@ -40,7 +56,7 @@ export default function FuturoMantenimientoList() {
       setMantenimientos(response?.data || []);
       setLastPage(response?.last_page || 1);
     } catch (error) {
-      toast.error("Error al cargar mantenimientos");
+      toast.error("Error al cargar mantenimientos futuros");
       setMantenimientos([]);
     } finally {
       setLoading(false);
@@ -51,10 +67,9 @@ export default function FuturoMantenimientoList() {
     cargarMantenimientos();
   }, [filters]);
 
-  // 🔁 Debounce para el campo de búsqueda
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      setFilters((prev: any) => ({
+      setFilters(prev => ({
         ...prev,
         search: searchInput,
         page: 1,
@@ -65,13 +80,25 @@ export default function FuturoMantenimientoList() {
   }, [searchInput]);
 
   const confirmarEliminacion = (id: number) => {
+    const mantenimiento = mantenimientos.find(m => m.id === id);
+    if (!mantenimiento) return;
+
+    const equipoInfo = mantenimiento.equipo
+      ? `${mantenimiento.equipo.numero_serie || 'Sin número de serie'}${
+          mantenimiento.equipo.modelo ? ` (${mantenimiento.equipo.modelo.nombre})` : ''
+        }`
+      : 'Equipo desconocido';
+
     const toastId = `delete-toast-${id}`;
     toast.dismiss();
 
     toast(
       (t) => (
         <div>
-          <p>¿Deseas eliminar este mantenimiento futuro?</p>
+          <p>
+            ¿Deseas eliminar el mantenimiento futuro programado para el equipo{' '}
+            <strong>{equipoInfo}</strong>?
+          </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
             <button
               className="btn btn-sm btn-danger"
@@ -79,30 +106,39 @@ export default function FuturoMantenimientoList() {
                 try {
                   await deleteFuturoMantenimiento(id);
                   toast.dismiss(t.id);
-                  toast.success("Mantenimiento eliminado", { id: `${toastId}-success` });
+                  toast.success(`Mantenimiento para ${equipoInfo} eliminado`, {
+                    id: `${toastId}-success`,
+                    duration: 4000,
+                  });
                   cargarMantenimientos();
                 } catch {
                   toast.dismiss(t.id);
-                  toast.error("Error al eliminar", { id: `${toastId}-error` });
+                  toast.error(`Error al eliminar mantenimiento para ${equipoInfo}`, {
+                    id: `${toastId}-error`,
+                    duration: 4000,
+                  });
                 }
               }}
             >
               Sí, eliminar
             </button>
-            <button className="btn btn-sm btn-secondary" onClick={() => toast.dismiss(t.id)}>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => toast.dismiss(t.id)}
+            >
               Cancelar
             </button>
           </div>
         </div>
       ),
-      { duration: 5000, id: toastId }
+      { duration: 10000, id: toastId }
     );
   };
 
   const handlePageChange = (page: number) => {
-    setFilters((prev: any) => ({
+    setFilters(prev => ({
       ...prev,
-      page: page,
+      page,
     }));
   };
 
@@ -135,7 +171,7 @@ export default function FuturoMantenimientoList() {
           onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
           onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
-          <FaPlus /> Crear Futuro Mantenimiento
+          <FaPlus /> Crear Mantenimiento
         </Button>
       </div>
 
@@ -158,8 +194,6 @@ export default function FuturoMantenimientoList() {
             )}
           </InputGroup>
         </div>
-
-       
       </div>
 
       {loading ? (
@@ -186,10 +220,13 @@ export default function FuturoMantenimientoList() {
                   mantenimientos.map((item) => (
                     <tr key={item.id}>
                       <td>{item.id}</td>
-                      <td>{item.equipo?.numero_serie || "-"}</td>
+                      <td>
+                        {item.equipo?.numero_serie || "Sin número de serie"}
+                        {item.equipo?.modelo && ` (${item.equipo.modelo.nombre})`}
+                      </td>
                       <td>{item.tipo_mantenimiento?.nombre || "-"}</td>
                       <td>{formatDate(item.fecha_mantenimiento)}</td>
-                      <td>{formatTo12h(item.hora_mantenimiento_inicio || "-")}</td>
+                      <td>{formatTo12h(item.hora_mantenimiento_inicio)}</td>
                       <td>
                         <div className="d-flex justify-content-center gap-2">
                           <Button
@@ -228,7 +265,7 @@ export default function FuturoMantenimientoList() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="text-center py-4 text-muted">
+                    <td colSpan={6} className="text-center py-4 text-muted">
                       No se encontraron mantenimientos futuros.
                     </td>
                   </tr>
@@ -238,7 +275,7 @@ export default function FuturoMantenimientoList() {
           </div>
 
           <PaginationComponent
-            page={filters.page || 1}
+            page={filters.page}
             totalPages={lastPage}
             onPageChange={handlePageChange}
           />

@@ -80,20 +80,62 @@ export default function MantenimientoList() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Está seguro de eliminar este mantenimiento?")) return;
-    try {
-      const result = await deleteMantenimiento(id);
-      if (result.success) {
-        toast.success("Mantenimiento eliminado correctamente");
-        cargarMantenimientos();
-      } else {
-        toast.error(result.message || "No se pudo eliminar el mantenimiento");
-      }
-    } catch (error) {
-      toast.error("Error inesperado al eliminar el mantenimiento");
-      console.error(error);
+  const confirmarEliminacion = async (id: number) => {
+    const mantenimiento = mantenimientos.find((m) => m.id === id);
+    if (!mantenimiento) {
+      toast.error("Mantenimiento no encontrado");
+      return;
     }
+
+    const toastId = `eliminar-mantenimiento-${id}`;
+    toast.dismiss();
+
+    toast(
+      (t) => (
+        <div>
+          <p>
+            ¿Seguro que deseas eliminar el mantenimiento del equipo <strong>
+              {mantenimiento.equipo ? `${mantenimiento.equipo.numero_serie} - ${mantenimiento.equipo.modelo?.nombre}` : "Sin equipo"}
+            </strong>?
+          </p>
+          <div className="d-flex justify-content-end gap-2 mt-2">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={async () => {
+                try {
+                  const result = await deleteMantenimiento(id);
+                  toast.dismiss(t.id);
+                  if (result.success) {
+                    toast.success("Mantenimiento eliminado correctamente", { duration: 4000 });
+                    cargarMantenimientos();
+                  } else {
+                    toast.error(result.message || "No se pudo eliminar el mantenimiento", { duration: 4000 });
+                  }
+                } catch (error) {
+                  toast.dismiss(t.id);
+                  toast.error("Error inesperado al eliminar el mantenimiento", { duration: 4000 });
+                  console.error(error);
+                }
+              }}
+            >
+              Sí, eliminar
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 10000,
+        id: toastId,
+      }
+    );
   };
 
   const handleCambiarEstado = async () => {
@@ -109,14 +151,14 @@ export default function MantenimientoList() {
       );
 
       if (result.success) {
-        toast.success("Estado del equipo actualizado correctamente");
+        toast.success("Estado del equipo actualizado correctamente", { duration: 4000 });
         cargarMantenimientos();
         setShowEstadoModal(false);
       } else {
-        toast.error(result.message || "Error al actualizar estado");
+        toast.error(result.message || "Error al actualizar estado", { duration: 4000 });
       }
     } catch (error) {
-      toast.error("Error inesperado al actualizar estado");
+      toast.error("Error inesperado al actualizar estado", { duration: 4000 });
       console.error(error);
     } finally {
       setLoadingEstados(false);
@@ -148,19 +190,17 @@ export default function MantenimientoList() {
     setSearchInput("");
   };
 
-
   const mapNombreToEstadoEquipo = (nombre: string): EstadoEquipo | undefined => {
     const lower = nombre.toLowerCase();
 
-    if (lower.includes("no disponible")) return EstadoEquipo.NoDisponible; // primero
+    if (lower.includes("no disponible")) return EstadoEquipo.NoDisponible;
     if (lower.includes("dañado") || lower.includes("averiado")) return EstadoEquipo.Dañado;
     if (lower.includes("mantenimiento")) return EstadoEquipo.Mantenimiento;
     if (lower.includes("reposo")) return EstadoEquipo.EnReposo;
-    if (lower.includes("disponible")) return EstadoEquipo.Disponible; // último
+    if (lower.includes("disponible")) return EstadoEquipo.Disponible;
 
     return undefined;
   };
-
 
   const estadoColorMap: Record<EstadoEquipo, string> = {
     [EstadoEquipo.Disponible]: "success",
@@ -175,7 +215,6 @@ export default function MantenimientoList() {
     return estadoColorMap[estadoId as EstadoEquipo];
   };
 
-  // Función para determinar el color del badge según el estado
   const getEstadoBadgeColorByNombre = (nombre?: string): string => {
     const estado = mapNombreToEstadoEquipo(nombre ?? "");
     return getEstadoBadgeColor(estado);
@@ -373,7 +412,7 @@ export default function MantenimientoList() {
                           <Button
                             variant="outline-danger"
                             title="Eliminar mantenimiento"
-                            onClick={() => handleDelete(m.id)}
+                            onClick={() => confirmarEliminacion(m.id)}
                             style={{
                               width: "44px",
                               height: "44px",
@@ -396,7 +435,7 @@ export default function MantenimientoList() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="text-center py-4 text-muted">
+                    <td colSpan={11} className="text-center py-4 text-muted">
                       No se encontraron mantenimientos.
                     </td>
                   </tr>
@@ -413,7 +452,7 @@ export default function MantenimientoList() {
         </>
       )}
 
-      <Modal show={showEstadoModal} onHide={() => setShowEstadoModal(false)}>
+       <Modal show={showEstadoModal} onHide={() => setShowEstadoModal(false)}>
         <Modal.Header
           className="text-white py-3"
           style={{ backgroundColor: "#b1291d" }}
@@ -436,6 +475,35 @@ export default function MantenimientoList() {
                   </span>
                 ) : "Desconocido"}
               </p>
+
+              {/* Mostrar información de vida útil */}
+              <div className="mb-3 p-3 border rounded">
+                <h6 className="fw-bold mb-3">Información de vida útil</h6>
+                <table className="table table-sm table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Concepto</th>
+                      <th className="text-end">Horas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Vida útil actual del equipo</td>
+                      <td className="text-end">{selectedMantenimiento.equipo?.vida_util || 0}</td>
+                    </tr>
+                    <tr>
+                      <td>Vida útil asignada en mantenimiento</td>
+                      <td className="text-end">{selectedMantenimiento.vida_util || 0}</td>
+                    </tr>
+                    <tr className="table-primary fw-bold">
+                      <td>Total vida útil</td>
+                      <td className="text-end">
+                        {(selectedMantenimiento.equipo?.vida_util || 0) + (selectedMantenimiento.vida_util || 0)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
               <Form.Group className="mb-3">
                 <Form.Label>Nuevo estado</Form.Label>

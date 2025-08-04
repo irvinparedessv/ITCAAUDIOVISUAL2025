@@ -317,12 +317,14 @@ export async function getModelosByTipo(
 export const updateEstadoEquipo = async (
   equipoId: number, 
   estadoId: number,
-  mantenimientoId: number
+  mantenimientoId: number,
+  comentario: string
 ): Promise<{success: boolean; message?: string}> => {
   try {
     const response = await api.put(`/equipos/${equipoId}/estado`, {
       estado_id: estadoId,
-      mantenimiento_id: mantenimientoId
+      mantenimiento_id: mantenimientoId,
+      comentario: comentario
     });
     return response.data;
   } catch (error: any) {

@@ -11,12 +11,6 @@ export interface Modelo {
   marca: Marca;
 }
 
-// export interface Equipo {
-//   id: number;
-//   numero_serie: string;
-//   modelo: Modelo;
-// }
-
 export interface TipoMantenimiento {
   id: number;
   nombre: string;
@@ -35,9 +29,11 @@ export interface Mantenimiento {
   tipo_mantenimiento_id: number;
   user_id: number;
   fecha_mantenimiento: string;
+  fecha_mantenimiento_final: string;
   hora_mantenimiento_inicio: string;
   hora_mantenimiento_final: string;
   detalles: string;
+  comentario: string;
   vida_util: number | null;
   created_at: string;
   updated_at: string;

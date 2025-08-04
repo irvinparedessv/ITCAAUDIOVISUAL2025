@@ -12,7 +12,7 @@ const getDefaultDates = () => {
   const today = new Date();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(today.getDate() - 7);
-  
+
   const format = (date: Date) => {
     const pad = (num: number) => num.toString().padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -134,7 +134,7 @@ export default function BitacoraPage() {
             <option value="Reserva Equipo">Reserva Equipo</option>
             <option value="Inventario">Inventario</option>
           </Form.Select>
-          
+
           <div className="d-flex gap-2">
             <Form.Control
               type="date"
@@ -246,9 +246,11 @@ function getActionBadgeColor(accion: string) {
     case action.includes('desasociación'):
       return "danger";
     case action.includes('creación de mantenimiento'):
+      return "success";
+    case action.includes('cambio de estado'):
       return "info";
-      case action.includes('cambio de estado'):
-      return "info";
+    case action.includes('eliminación de mantenimiento'):
+      return "danger";
     default:
       return "secondary";
   }

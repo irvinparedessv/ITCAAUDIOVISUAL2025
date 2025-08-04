@@ -38,6 +38,7 @@ export default function MantenimientoList() {
   const [estados, setEstados] = useState<Estado[]>([]);
   const [selectedEstado, setSelectedEstado] = useState<number | null>(null);
   const [loadingEstados, setLoadingEstados] = useState(false);
+  const [comentarioEstado, setComentarioEstado] = useState("");
   const navigate = useNavigate();
 
   const handleBack = () => navigate("/equipos");
@@ -103,7 +104,8 @@ export default function MantenimientoList() {
       const result = await updateEstadoEquipo(
         selectedMantenimiento.equipo_id,
         selectedEstado,
-        selectedMantenimiento.id
+        selectedMantenimiento.id,
+        selectedMantenimiento.comentario || ''
       );
 
       if (result.success) {
@@ -280,13 +282,15 @@ export default function MantenimientoList() {
               <thead className="table-dark">
                 <tr>
                   <th>Equipo</th>
-                  <th>Fecha</th>
+                  <th>Fecha Inicio</th>
                   <th>Hora Inicio</th>
+                  <th>Fecha Fin</th>
                   <th>Hora Fin</th>
                   <th>Tipo</th>
                   <th>Usuario</th>
                   <th>Estado</th>
                   <th>Vida Útil</th>
+                  <th>Comentarios</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -301,6 +305,7 @@ export default function MantenimientoList() {
                       </td>
                       <td>{formatDate(m.fecha_mantenimiento)}</td>
                       <td>{formatTo12h(m.hora_mantenimiento_inicio)}</td>
+                      <td>{formatDate(m.fecha_mantenimiento_final) || "-"}</td>
                       <td>{formatTo12h(m.hora_mantenimiento_final) || "-"}</td>
                       <td>{m.tipo_mantenimiento?.nombre ?? "-"}</td>
                       <td>
@@ -318,6 +323,7 @@ export default function MantenimientoList() {
                         )}
                       </td>
                       <td>{m.vida_util ?? "-"}</td>
+                      <td>{m.comentario ?? "-"}</td>
                       <td>
                         <div className="d-flex justify-content-center gap-2">
                           <Button
@@ -447,9 +453,24 @@ export default function MantenimientoList() {
                         {estado.nombre}
                       </option>
                     ))}
-
                 </Form.Select>
-
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Comentario (opcional)</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={selectedMantenimiento?.comentario || ''}
+                  onChange={(e) => {
+                    if (selectedMantenimiento) {
+                      setSelectedMantenimiento({
+                        ...selectedMantenimiento,
+                        comentario: e.target.value
+                      });
+                    }
+                  }}
+                  placeholder="Agregue un comentario sobre el cambio de estado..."
+                />
               </Form.Group>
             </div>
           )}

@@ -22,11 +22,18 @@ const FormMantenimiento = () => {
     return `${year}-${month}-${day}`;
   };
 
+  const getCurrentTime = (): string => {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const [formData, setFormData] = useState({
     equipo_id: id ? id.toString() : "",
     tipo_id: "",
     fecha_mantenimiento: getCurrentDate(),
-    hora_mantenimiento_inicio: "",
+    hora_mantenimiento_inicio: getCurrentTime(),
     detalles: "",
     user_id: user?.id.toString() || "",
     vida_util: "",
@@ -66,29 +73,11 @@ const FormMantenimiento = () => {
 
   const validateTimeRange = (time: string): boolean => {
     if (!time) return true;
-    
+
     const [hours, minutes] = time.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes;
-    
-    return totalMinutes >= 420 && totalMinutes <= 1020; // 7:00 AM a 5:00 PM
-  };
 
-  const validateCurrentTime = (time: string, date: string): boolean => {
-    if (!time || !date) return true;
-    
-    const today = new Date().toISOString().split('T')[0];
-    if (date !== today) return true;
-    
-    const now = new Date();
-    const currentHours = now.getHours();
-    const currentMinutes = now.getMinutes();
-    
-    const [hours, minutes] = time.split(':').map(Number);
-    
-    if (hours < currentHours) return false;
-    if (hours === currentHours && minutes < currentMinutes) return false;
-    
-    return true;
+    return totalMinutes >= 420 && totalMinutes <= 1020; // 7:00 AM a 5:00 PM
   };
 
   const handleChange = (
@@ -107,12 +96,6 @@ const FormMantenimiento = () => {
       if (value) {
         if (!validateTimeRange(value)) {
           setRangeError('El horario debe estar entre 7:00 AM y 5:00 PM');
-        }
-        
-        if (formData.fecha_mantenimiento === new Date().toISOString().split('T')[0]) {
-          if (!validateCurrentTime(value, formData.fecha_mantenimiento)) {
-            setTimeError('La hora no puede ser anterior a la hora actual');
-          }
         }
       }
     }
@@ -136,13 +119,6 @@ const FormMantenimiento = () => {
     if (!validateTimeRange(formData.hora_mantenimiento_inicio)) {
       toast.error("La hora de inicio debe estar entre 7:00 AM y 5:00 PM");
       return;
-    }
-
-    if (formData.fecha_mantenimiento === new Date().toISOString().split('T')[0]) {
-      if (!validateCurrentTime(formData.hora_mantenimiento_inicio, formData.fecha_mantenimiento)) {
-        toast.error("La hora de inicio no puede ser anterior a la hora actual");
-        return;
-      }
     }
 
     if (!formData.equipo_id) {
@@ -174,10 +150,10 @@ const FormMantenimiento = () => {
 
     try {
       const result = await createMantenimiento(dataToSend);
-      
+
       if (result.success) {
         toast.success(result.message);
-        
+
         if (result.data.equipo?.estado_id === EstadoEquipo.Mantenimiento) {
           toast.success(`Equipo ${result.data.equipo.numero_serie} puesto en Mantenimiento`);
         } else {
@@ -186,7 +162,7 @@ const FormMantenimiento = () => {
       } else {
         throw new Error(result.message);
       }
-      
+
       navigate("/mantenimiento");
     } catch (error) {
       console.error("Error al procesar mantenimiento:", error);
@@ -226,11 +202,6 @@ const FormMantenimiento = () => {
 
       <div className="alert alert-info mt-3" role="alert">
         <strong>Importante:</strong> El equipo no cambiará a estado "En Mantenimiento" hasta que este registro sea guardado correctamente.
-        {!formData.vida_util && (
-          <span className="d-block mt-1">
-            Además, para completar el proceso, es necesario registrar la vida útil estimada en horas.
-          </span>
-        )}
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -299,7 +270,7 @@ const FormMantenimiento = () => {
             className={`form-control ${timeError || rangeError ? 'is-invalid' : ''}`}
             min="07:00"
             max="17:00"
-            disabled={isSubmitting}
+            disabled
           />
           {timeError && <div className="invalid-feedback">{timeError}</div>}
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
@@ -330,11 +301,6 @@ const FormMantenimiento = () => {
             className="form-control"
             disabled={isSubmitting}
           />
-          {showVidaUtilAlert && (
-            <div className="alert alert-warning mt-2">
-              Por favor ingrese la vida útil estimada del equipo
-            </div>
-          )}
         </div>
 
         {/* Botones */}

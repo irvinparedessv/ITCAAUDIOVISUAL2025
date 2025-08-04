@@ -19,7 +19,8 @@ const FuturoMantenimientoEdit = () => {
     tipo_mantenimiento_id: "",
     fecha_mantenimiento: "",
     hora_mantenimiento_inicio: "",
-    user_id: ""
+    user_id: "",
+    vida_util: "",
   });
 
   const [equipos, setEquipos] = useState<any[]>([]);
@@ -30,6 +31,8 @@ const FuturoMantenimientoEdit = () => {
   const [dateError, setDateError] = useState<boolean>(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
+  const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
+
 
   // Función para validar el rango horario (7:00 AM a 5:00 PM)
   const validateTimeRange = (time: string): boolean => {
@@ -76,27 +79,28 @@ const FuturoMantenimientoEdit = () => {
 
     const fetchData = async () => {
       try {
-       const [mantenimiento, equiposList, tiposList, usuariosList] = await Promise.all([
-  getFuturoMantenimientoById(Number(id)),
-  getEquipos(),
-  getTiposMantenimiento(),
-  getUsuariosM()
-]);
+        const [mantenimiento, equiposList, tiposList, usuariosList] = await Promise.all([
+          getFuturoMantenimientoById(Number(id)),
+          getEquipos(),
+          getTiposMantenimiento(),
+          getUsuariosM()
+        ]);
 
-// Asegúrate de cargar la relación user si existe
-const usuarioAsignado = mantenimiento.user 
-  ? mantenimiento.user 
-  : usuariosList.data.find(u => u.id === mantenimiento.user_id);
+        // Asegúrate de cargar la relación user si existe
+        const usuarioAsignado = mantenimiento.user
+          ? mantenimiento.user
+          : usuariosList.data.find(u => u.id === mantenimiento.user_id);
 
-setFormData({
-  equipo_id: mantenimiento.equipo_id?.toString() || "",
-  tipo_mantenimiento_id: mantenimiento.tipo_mantenimiento_id?.toString() || "",
-  fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
-  hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
-  user_id: mantenimiento.user_id?.toString() || ""
-});
+        setFormData({
+          equipo_id: mantenimiento.equipo_id?.toString() || "",
+          tipo_mantenimiento_id: mantenimiento.tipo_mantenimiento_id?.toString() || "",
+          fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
+          hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
+          user_id: mantenimiento.user_id?.toString() || "",
+          vida_util: mantenimiento.vida_util?.toString() || "",
+        });
 
-setUsuarios(usuariosList?.data || []);
+        setUsuarios(usuariosList?.data || []);
 
         setEquipos(equiposList?.data || []);
         setTipos(tiposList?.data || tiposList || []);
@@ -127,6 +131,13 @@ setUsuarios(usuariosList?.data || []);
         const diff = compareDateOnly(value);
         setDateError(diff < 0);
       }
+    }
+
+    if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
+      setShowVidaUtilAlert(true);
+    }
+    if (name === "vida_util" && Number(value) > 0) {
+      setShowVidaUtilAlert(false);
     }
 
     if (name === "hora_mantenimiento_inicio") {
@@ -209,6 +220,8 @@ setUsuarios(usuariosList?.data || []);
             ? formData.hora_mantenimiento_inicio
             : formData.hora_mantenimiento_inicio,
         user_id: Number(formData.user_id),
+        vida_util:
+          formData.vida_util === "" ? null : Number(formData.vida_util),
       };
 
       await updateFuturoMantenimiento(Number(id), dataToSend);
@@ -317,24 +330,38 @@ setUsuarios(usuariosList?.data || []);
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
         </div>
 
-<div className="mb-3">
-  <label className="form-label">Responsable</label>
-  <select
-    name="user_id"
-    value={formData.user_id}
-    onChange={handleChange}
-    className="form-select"
-    disabled={isSubmitting}
-    required
-  >
-    <option value="">Seleccione un responsable</option>
-    {usuarios.map((user) => (
-      <option key={user.id} value={user.id.toString()}>
-        {`${user.first_name} ${user.last_name}`.trim()} ({user.email})
-      </option>
-    ))}
-  </select>
-</div>
+        {/* Vida útil */}
+        <div className="mb-3">
+          <label className="form-label">Vida útil (horas)</label>
+          <input
+            type="number"
+            name="vida_util"
+            value={formData.vida_util}
+            onChange={handleChange}
+            min={0}
+            className="form-control"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Responsable</label>
+          <select
+            name="user_id"
+            value={formData.user_id}
+            onChange={handleChange}
+            className="form-select"
+            disabled={isSubmitting}
+            required
+          >
+            <option value="">Seleccione un responsable</option>
+            {usuarios.map((user) => (
+              <option key={user.id} value={user.id.toString()}>
+                {`${user.first_name} ${user.last_name}`.trim()} ({user.email})
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Botones */}
         <div className="form-actions d-flex gap-2 mt-4">

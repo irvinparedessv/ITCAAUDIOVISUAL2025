@@ -24,6 +24,7 @@ interface FormData {
   fecha_mantenimiento: string;
   hora_mantenimiento_inicio: string;
   user_id: string;
+  vida_util: number | null;
 }
 
 const FormFuturoMantenimiento = () => {
@@ -36,6 +37,7 @@ const FormFuturoMantenimiento = () => {
   const [dateError, setDateError] = useState<boolean>(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
+  const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     equipo_id: "",
@@ -43,6 +45,7 @@ const FormFuturoMantenimiento = () => {
     fecha_mantenimiento: "",
     hora_mantenimiento_inicio: "",
     user_id: "",
+    vida_util: 0,
   });
 
   useEffect(() => {
@@ -70,10 +73,10 @@ const FormFuturoMantenimiento = () => {
   // Función para validar el rango horario (7:00 AM a 5:00 PM)
   const validateTimeRange = (time: string): boolean => {
     if (!time) return true;
-    
+
     const [hours, minutes] = time.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes;
-    
+
     // 7:00 AM = 420 minutos, 5:00 PM = 1020 minutos
     return totalMinutes >= 420 && totalMinutes <= 1020;
   };
@@ -81,19 +84,19 @@ const FormFuturoMantenimiento = () => {
   // Función para validar si la hora es mayor a la actual (solo si la fecha es hoy)
   const validateCurrentTime = (time: string, date: string): boolean => {
     if (!time || !date) return true;
-    
+
     const today = new Date().toISOString().split('T')[0];
     if (date !== today) return true;
-    
+
     const now = new Date();
     const currentHours = now.getHours();
     const currentMinutes = now.getMinutes();
-    
+
     const [hours, minutes] = time.split(':').map(Number);
-    
+
     if (hours < currentHours) return false;
     if (hours === currentHours && minutes < currentMinutes) return false;
-    
+
     return true;
   };
 
@@ -114,6 +117,12 @@ const FormFuturoMantenimiento = () => {
         setDateError(diff < 0);
       }
     }
+    if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
+      setShowVidaUtilAlert(true);
+    }
+    if (name === "vida_util" && Number(value) > 0) {
+      setShowVidaUtilAlert(false);
+    }
 
     // Validaciones de tiempo cuando cambian los campos relevantes
     if (name === "hora_mantenimiento_inicio") {
@@ -122,7 +131,7 @@ const FormFuturoMantenimiento = () => {
         if (!validateTimeRange(value)) {
           setRangeError('El horario debe estar entre 7:00 AM y 5:00 PM');
         }
-        
+
         // Validar hora actual solo para la fecha de hoy
         if (formData.fecha_mantenimiento === new Date().toISOString().split('T')[0]) {
           if (!validateCurrentTime(value, formData.fecha_mantenimiento)) {
@@ -198,6 +207,7 @@ const FormFuturoMantenimiento = () => {
             ? formData.hora_mantenimiento_inicio
             : formData.hora_mantenimiento_inicio,
         user_id: Number(formData.user_id),
+        vida_util: formData.vida_util === 0 ? null : Number(formData.vida_util),
       };
 
       await createFuturoMantenimiento(dataToSend);
@@ -211,7 +221,15 @@ const FormFuturoMantenimiento = () => {
       navigate("/futuroMantenimiento");
     } catch (error) {
       console.error("Error al crear mantenimiento:", error);
-      toast.error("Error al crear el mantenimiento.");
+      // Verificar si es el error de duplicado
+      if (error.response && error.response.data && error.response.data.message &&
+        error.response.data.message.includes('Ya existe un mantenimiento programado')) {
+        toast.error(error.response.data.message, {
+          duration: 5000, // Más tiempo para que el usuario pueda leerlo
+        });
+      } else {
+        toast.error("Error al crear el mantenimiento.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -326,6 +344,20 @@ const FormFuturoMantenimiento = () => {
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
         </div>
 
+        {/* Vida útil */}
+        <div className="mb-3">
+          <label className="form-label">Vida útil (horas)</label>
+          <input
+            type="number"
+            name="vida_util"
+            value={formData.vida_util}
+            onChange={handleChange}
+            min={0}
+            className="form-control"
+            disabled={isSubmitting}
+          />
+        </div>
+
         {/* Responsable */}
         <div className="mb-3">
           <label className="form-label">Responsable</label>
@@ -346,7 +378,7 @@ const FormFuturoMantenimiento = () => {
             ))}
           </select>
         </div>
-        
+
         {/* Botones */}
         <div className="form-actions d-flex gap-2 mt-4">
           <button

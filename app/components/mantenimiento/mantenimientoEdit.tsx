@@ -50,23 +50,23 @@ const MantenimientoEdit = () => {
   };
 
   // Función para validar si la hora es mayor a la actual (solo si la fecha es hoy)
-  const validateCurrentTime = (time: string, date: string): boolean => {
-    if (!time || !date) return true;
+  // const validateCurrentTime = (time: string, date: string): boolean => {
+  //   if (!time) return true;
     
-    const today = new Date().toISOString().split('T')[0];
-    if (date !== today) return true;
+  //   const today = new Date().toISOString().split('T')[0];
+  //   //if (date !== today) return true;
     
-    const now = new Date();
-    const currentHours = now.getHours();
-    const currentMinutes = now.getMinutes();
+  //   const now = new Date();
+  //   const currentHours = now.getHours();
+  //   const currentMinutes = now.getMinutes();
     
-    const [hours, minutes] = time.split(':').map(Number);
+  //   const [hours, minutes] = time.split(':').map(Number);
     
-    if (hours < currentHours) return false;
-    if (hours === currentHours && minutes < currentMinutes) return false;
+  //   if (hours < currentHours) return false;
+  //   if (hours === currentHours && minutes < currentMinutes) return false;
     
-    return true;
-  };
+  //   return true;
+  // };
 
   const compareDateOnly = (dateStr: string): number => {
     const [year, month, day] = dateStr.split('-').map(Number);
@@ -152,13 +152,6 @@ const MantenimientoEdit = () => {
         if (!validateTimeRange(value)) {
           setRangeError('El horario debe estar entre 7:00 AM y 5:00 PM');
         }
-        
-        // Validar hora actual solo para la fecha de hoy
-        if (formData.fecha_mantenimiento === new Date().toISOString().split('T')[0]) {
-          if (!validateCurrentTime(value, formData.fecha_mantenimiento)) {
-            setTimeError('La hora no puede ser anterior a la hora actual');
-          }
-        }
       }
     }
 
@@ -186,12 +179,12 @@ const MantenimientoEdit = () => {
     }
 
     // Validación de hora actual
-    if (formData.fecha_mantenimiento === new Date().toISOString().split('T')[0]) {
-      if (!validateCurrentTime(formData.hora_mantenimiento_inicio, formData.fecha_mantenimiento)) {
-        toast.error("La hora de inicio no puede ser anterior a la hora actual");
-        return;
-      }
-    }
+    // if (formData.fecha_mantenimiento === new Date().toISOString().split('T')[0]) {
+    //   if (!validateCurrentTime(formData.hora_mantenimiento_inicio, formData.fecha_mantenimiento)) {
+    //     toast.error("La hora de inicio no puede ser anterior a la hora actual");
+    //     return;
+    //   }
+    // }
 
     // Validaciones básicas
     if (!formData.equipo_id) {
@@ -333,7 +326,7 @@ const MantenimientoEdit = () => {
             className={`form-control ${timeError || rangeError ? 'is-invalid' : ''}`}
             min="07:00"
             max="17:00"
-            disabled={isSubmitting}
+            disabled
           />
           {timeError && <div className="invalid-feedback">{timeError}</div>}
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
@@ -364,11 +357,6 @@ const MantenimientoEdit = () => {
             className="form-control"
             disabled={isSubmitting}
           />
-          {showVidaUtilAlert && (
-            <div className="alert alert-warning mt-2">
-              Si editas el mantenimiento, recuerda registrar la vida útil estimada en horas.
-            </div>
-          )}
         </div>
 
         {/* Botones */}

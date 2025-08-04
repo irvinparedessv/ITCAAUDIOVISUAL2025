@@ -249,9 +249,12 @@ function getActionBadgeColor(accion: string) {
       return "success";
     case action.includes('cambio de estado'):
       return "info";
+    case action.includes('automatización de mantenimientos'):
+      return "info";
     case action.includes('eliminación de mantenimiento'):
       return "danger";
     default:
       return "secondary";
+      
   }
 }

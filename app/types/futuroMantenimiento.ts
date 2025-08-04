@@ -4,7 +4,7 @@ export interface FuturoMantenimiento {
   tipo_mantenimiento_id: number;
   fecha_mantenimiento: string;
   hora_mantenimiento_inicio: string;
-
+  vida_util: number | null;
   equipo?: {
     id: number;
     numero_serie?: string;

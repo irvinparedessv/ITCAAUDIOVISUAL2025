@@ -84,9 +84,8 @@ export default function FuturoMantenimientoList() {
     if (!mantenimiento) return;
 
     const equipoInfo = mantenimiento.equipo
-      ? `${mantenimiento.equipo.numero_serie || 'Sin número de serie'}${
-          mantenimiento.equipo.modelo ? ` (${mantenimiento.equipo.modelo.nombre})` : ''
-        }`
+      ? `${mantenimiento.equipo.numero_serie || 'Sin número de serie'}${mantenimiento.equipo.modelo ? ` (${mantenimiento.equipo.modelo.nombre})` : ''
+      }`
       : 'Equipo desconocido';
 
     const toastId = `delete-toast-${id}`;
@@ -150,6 +149,13 @@ export default function FuturoMantenimientoList() {
       per_page: 10,
     });
   };
+
+  const yaPasoFechaYHora = (fecha: string, hora: string) => {
+    const fechaHora = new Date(`${fecha}T${hora}`);
+    const ahora = new Date();
+    return fechaHora < ahora;
+  };
+
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
@@ -232,8 +238,13 @@ export default function FuturoMantenimientoList() {
                           <Button
                             variant="outline-primary"
                             className="rounded-circle"
-                            title="Editar"
+                            title={
+                              yaPasoFechaYHora(item.fecha_mantenimiento, item.hora_mantenimiento_inicio)
+                                ? "Ya no se puede editar un mantenimiento pasado"
+                                : "Editar"
+                            }
                             onClick={() => navigate(`/futuroMantenimiento/editar/${item.id}`)}
+                            disabled={yaPasoFechaYHora(item.fecha_mantenimiento, item.hora_mantenimiento_inicio)}
                             style={{
                               width: "44px",
                               height: "44px",
@@ -249,6 +260,7 @@ export default function FuturoMantenimientoList() {
                             className="rounded-circle"
                             title="Eliminar"
                             onClick={() => confirmarEliminacion(item.id)}
+                            disabled={yaPasoFechaYHora(item.fecha_mantenimiento, item.hora_mantenimiento_inicio)}
                             style={{
                               width: "44px",
                               height: "44px",

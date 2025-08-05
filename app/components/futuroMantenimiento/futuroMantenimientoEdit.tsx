@@ -47,7 +47,7 @@ const FuturoMantenimientoEdit = () => {
   const validateCurrentTime = (time: string, date: string): boolean => {
     if (!time || !date) return true;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA');
     if (date !== today) return true;
 
     const now = new Date();
@@ -146,7 +146,7 @@ const FuturoMantenimientoEdit = () => {
           setRangeError('El horario debe estar entre 7:00 AM y 5:00 PM');
         }
 
-        if (formData.fecha_mantenimiento === new Date().toISOString().split('T')[0]) {
+        if (formData.fecha_mantenimiento === new Date().toLocaleDateString('en-CA')) {
           if (!validateCurrentTime(value, formData.fecha_mantenimiento)) {
             setTimeError('La hora no puede ser anterior a la hora actual');
           }

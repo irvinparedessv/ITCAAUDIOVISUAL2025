@@ -24,7 +24,6 @@ const FuturoMantenimientoEdit = () => {
     fecha_mantenimiento: "",
     hora_mantenimiento_inicio: "",
     user_id: "",
-    vida_util: "",
   });
 
     const [equipo, setEquipo] = useState<Equipo | null>(null);
@@ -36,7 +35,6 @@ const FuturoMantenimientoEdit = () => {
   const [dateError, setDateError] = useState<boolean>(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
-  const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
 
   // Función para validar el rango horario (7:00 AM a 5:00 PM)
   const validateTimeRange = (time: string): boolean => {
@@ -111,7 +109,6 @@ const FuturoMantenimientoEdit = () => {
           fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
           hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
           user_id: mantenimiento.user_id?.toString() || "",
-          vida_util: mantenimiento.vida_util?.toString() || "",
         });
 
         setUsuarios(usuariosList?.data || []);
@@ -143,13 +140,6 @@ const FuturoMantenimientoEdit = () => {
         const diff = compareDateOnly(value);
         setDateError(diff < 0);
       }
-    }
-
-    if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
-      setShowVidaUtilAlert(true);
-    }
-    if (name === "vida_util" && Number(value) > 0) {
-      setShowVidaUtilAlert(false);
     }
 
     if (name === "hora_mantenimiento_inicio") {
@@ -232,8 +222,6 @@ const FuturoMantenimientoEdit = () => {
             ? formData.hora_mantenimiento_inicio
             : formData.hora_mantenimiento_inicio,
         user_id: Number(formData.user_id),
-        vida_util:
-          formData.vida_util === "" ? null : Number(formData.vida_util),
       };
 
       await updateFuturoMantenimiento(Number(id), dataToSend);
@@ -359,25 +347,6 @@ const FuturoMantenimientoEdit = () => {
           />
           {timeError && <div className="invalid-feedback">{timeError}</div>}
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
-        </div>
-
-        {/* Vida útil */}
-        <div className="mb-3">
-          <label className="form-label">Vida útil (horas)</label>
-          <input
-            type="number"
-            name="vida_util"
-            value={formData.vida_util}
-            onChange={handleChange}
-            min={0}
-            className="form-control"
-            disabled={isSubmitting}
-            style={{
-              backgroundColor: darkMode ? "#2d2d2d" : "#fff",
-              color: darkMode ? "#f8f9fa" : "#212529",
-              borderColor: darkMode ? "#444" : "#ccc",
-            }}
-          />
         </div>
 
         <div className="mb-3">

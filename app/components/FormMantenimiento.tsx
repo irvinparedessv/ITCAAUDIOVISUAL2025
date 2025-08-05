@@ -36,7 +36,6 @@ const FormMantenimiento = () => {
     hora_mantenimiento_inicio: getCurrentTime(),
     detalles: "",
     user_id: user?.id.toString() || "",
-    vida_util: "",
   });
 
   const [equipos, setEquipos] = useState<any[]>([]);
@@ -46,7 +45,6 @@ const FormMantenimiento = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
-  const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,13 +98,6 @@ const FormMantenimiento = () => {
       }
     }
 
-    if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
-      setShowVidaUtilAlert(true);
-    }
-    if (name === "vida_util" && Number(value) > 0) {
-      setShowVidaUtilAlert(false);
-    }
-
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -141,7 +132,6 @@ const FormMantenimiento = () => {
       equipo_id: Number(formData.equipo_id),
       tipo_id: Number(formData.tipo_id),
       user_id: Number(user.id),
-      vida_util: formData.vida_util === "" ? null : Number(formData.vida_util),
       hora_mantenimiento_inicio:
         formData.hora_mantenimiento_inicio.length === 5
           ? formData.hora_mantenimiento_inicio
@@ -270,7 +260,6 @@ const FormMantenimiento = () => {
             className={`form-control ${timeError || rangeError ? 'is-invalid' : ''}`}
             min="07:00"
             max="17:00"
-            disabled
           />
           {timeError && <div className="invalid-feedback">{timeError}</div>}
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
@@ -285,20 +274,6 @@ const FormMantenimiento = () => {
             onChange={handleChange}
             className="form-control"
             rows={3}
-            disabled={isSubmitting}
-          />
-        </div>
-
-        {/* Vida útil */}
-        <div className="mb-3">
-          <label className="form-label">Vida útil (horas)</label>
-          <input
-            type="number"
-            name="vida_util"
-            value={formData.vida_util}
-            onChange={handleChange}
-            min={0}
-            className="form-control"
             disabled={isSubmitting}
           />
         </div>

@@ -111,3 +111,15 @@ export const deleteMantenimiento = async (id: number) => {
     return { success: false, message: "Error inesperado al eliminar mantenimiento" };
   }
 };
+
+export const updateVidaUtilMantenimiento = async (id: number, vidaUtil: number, comentario?: string) => {
+  try {
+    const response = await api.put(`/mantenimientos/${id}/vida-util`, { 
+      vida_util: vidaUtil,
+      comentario: comentario 
+    });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Error al actualizar vida útil');
+  }
+};

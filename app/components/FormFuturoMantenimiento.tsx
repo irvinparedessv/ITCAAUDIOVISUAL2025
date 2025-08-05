@@ -28,7 +28,6 @@ interface FormData {
   fecha_mantenimiento: string;
   hora_mantenimiento_inicio: string;
   user_id: string;
-  vida_util: number | null;
 }
 
 const FormFuturoMantenimiento = () => {
@@ -42,7 +41,6 @@ const FormFuturoMantenimiento = () => {
   const [dateError, setDateError] = useState<boolean>(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
-  const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     equipo_id: "",
@@ -50,7 +48,6 @@ const FormFuturoMantenimiento = () => {
     fecha_mantenimiento: "",
     hora_mantenimiento_inicio: "",
     user_id: "",
-    vida_util: 0,
   });
 
   // Estilos para el AsyncSelect
@@ -159,14 +156,7 @@ const FormFuturoMantenimiento = () => {
       }
       setTimeError(null);
       setRangeError(null);
-    }
-
-    if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
-      setShowVidaUtilAlert(true);
-    }
-    if (name === "vida_util" && Number(value) > 0) {
-      setShowVidaUtilAlert(false);
-    }
+    } 
 
     if (name === "hora_mantenimiento_inicio") {
       if (value) {
@@ -242,7 +232,6 @@ const FormFuturoMantenimiento = () => {
             ? formData.hora_mantenimiento_inicio
             : formData.hora_mantenimiento_inicio,
         user_id: Number(formData.user_id),
-        vida_util: formData.vida_util === 0 ? null : Number(formData.vida_util),
       };
 
       await createFuturoMantenimiento(dataToSend);
@@ -395,20 +384,6 @@ const FormFuturoMantenimiento = () => {
           />
           {timeError && <div className="invalid-feedback">{timeError}</div>}
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
-        </div>
-
-        {/* Vida útil */}
-        <div className="mb-3">
-          <label className="form-label">Vida útil (horas)</label>
-          <input
-            type="number"
-            name="vida_util"
-            value={formData.vida_util}
-            onChange={handleChange}
-            min={0}
-            className="form-control"
-            disabled={isSubmitting}
-          />
         </div>
 
         {/* Responsable */}

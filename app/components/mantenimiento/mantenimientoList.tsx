@@ -13,7 +13,7 @@ import {
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
 import type { Mantenimiento } from "../../types/mantenimiento";
-import { getMantenimientos, deleteMantenimiento } from "../../services/mantenimientoService";
+import { getMantenimientos, deleteMantenimiento, updateVidaUtilMantenimiento } from "../../services/mantenimientoService";
 import { getTiposMantenimiento } from "~/services/tipoMantenimientoService";
 import { getEstados, updateEstadoEquipo } from "../../services/itemService";
 import { formatDate, formatTo12h } from "~/utils/time";
@@ -139,26 +139,45 @@ export default function MantenimientoList() {
   };
 
   const handleCambiarEstado = async () => {
-    if (!selectedMantenimiento || !selectedEstado) return;
+    if (!selectedMantenimiento) return;
 
     try {
       setLoadingEstados(true);
-      const result = await updateEstadoEquipo(
-        selectedMantenimiento.equipo_id,
-        selectedEstado,
-        selectedMantenimiento.id,
-        selectedMantenimiento.comentario || ''
-      );
 
-      if (result.success) {
-        toast.success("Estado del equipo actualizado correctamente", { duration: 4000 });
-        cargarMantenimientos();
-        setShowEstadoModal(false);
+      if (selectedMantenimiento.fecha_mantenimiento_final) {
+        const result = await updateVidaUtilMantenimiento(
+          selectedMantenimiento.id,
+          selectedMantenimiento.vida_util || 0,
+          selectedMantenimiento.comentario || ''
+        );
+
+        if (result.success) {
+          toast.success("Vida útil actualizada correctamente", { duration: 4000 });
+          cargarMantenimientos();
+          setShowEstadoModal(false);
+        } else {
+          toast.error(result.message || "Error al actualizar vida útil", { duration: 4000 });
+        }
       } else {
-        toast.error(result.message || "Error al actualizar estado", { duration: 4000 });
+        // Lógica original para mantenimientos no completados
+        const result = await updateEstadoEquipo(
+          selectedMantenimiento.equipo_id,
+          selectedEstado,
+          selectedMantenimiento.id,
+          selectedMantenimiento.comentario || '',
+          selectedMantenimiento.vida_util || 0
+        );
+
+        if (result.success) {
+          toast.success("Mantenimiento finalizado correctamente", { duration: 4000 });
+          cargarMantenimientos();
+          setShowEstadoModal(false);
+        } else {
+          toast.error(result.message || "Error al finalizar mantenimiento", { duration: 4000 });
+        }
       }
     } catch (error) {
-      toast.error("Error inesperado al actualizar estado", { duration: 4000 });
+      toast.error("Error inesperado al realizar la operación", { duration: 4000 });
       console.error(error);
     } finally {
       setLoadingEstados(false);
@@ -393,7 +412,7 @@ export default function MantenimientoList() {
                               setSelectedEstado(null);
                               setShowEstadoModal(true);
                             }}
-                            disabled={m.equipo?.estado?.id !== EstadoEquipo.Mantenimiento}
+
                             style={{
                               width: "44px",
                               height: "44px",
@@ -452,113 +471,205 @@ export default function MantenimientoList() {
         </>
       )}
 
-       <Modal show={showEstadoModal} onHide={() => setShowEstadoModal(false)}>
+      <Modal show={showEstadoModal} onHide={() => setShowEstadoModal(false)}>
         <Modal.Header
           className="text-white py-3"
           style={{ backgroundColor: "#b1291d" }}
           closeButton
         >
-          <Modal.Title>Cambiar estado del equipo</Modal.Title>
+          <Modal.Title>
+            {selectedMantenimiento?.fecha_mantenimiento_final
+              ? "Ajustar Mantenimiento"
+              : "Cambiar estado del equipo"}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedMantenimiento && (
             <div>
-              <p>
-                Equipo: {selectedMantenimiento.equipo
-                  ? `${selectedMantenimiento.equipo.numero_serie} - ${selectedMantenimiento.equipo.modelo?.nombre ?? ""}`
-                  : "Sin equipo"}
-              </p>
-              <p>
-                Estado actual: {selectedMantenimiento.equipo?.estado ? (
-                  <span className={`badge bg-${getEstadoBadgeColorByNombre(selectedMantenimiento.equipo.estado.nombre)}`}>
-                    {selectedMantenimiento.equipo.estado.nombre}
-                  </span>
-                ) : "Desconocido"}
-              </p>
-
-              {/* Mostrar información de vida útil */}
-              <div className="mb-3 p-3 border rounded">
-                <h6 className="fw-bold mb-3">Información de vida útil</h6>
-                <table className="table table-sm table-bordered">
-                  <thead>
-                    <tr>
-                      <th>Concepto</th>
-                      <th className="text-end">Horas</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Vida útil actual del equipo</td>
-                      <td className="text-end">{selectedMantenimiento.equipo?.vida_util || 0}</td>
-                    </tr>
-                    <tr>
-                      <td>Vida útil asignada en mantenimiento</td>
-                      <td className="text-end">{selectedMantenimiento.vida_util || 0}</td>
-                    </tr>
-                    <tr className="table-primary fw-bold">
-                      <td>Total vida útil</td>
-                      <td className="text-end">
-                        {(selectedMantenimiento.equipo?.vida_util || 0) + (selectedMantenimiento.vida_util || 0)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              {/* Sección de información básica */}
+              <div className="mb-4 p-3 border-bottom">
+                <h5 className="fw-bold mb-3">Información del Equipo</h5>
+                <div className="row">
+                  <div className="col-md-6 mb-2">
+                    <p className="mb-1 text-muted small">Equipo:</p>
+                    <p className="fw-semibold">
+                      {selectedMantenimiento.equipo
+                        ? `${selectedMantenimiento.equipo.numero_serie} - ${selectedMantenimiento.equipo.modelo?.nombre ?? ""}`
+                        : "Sin equipo"}
+                    </p>
+                  </div>
+                  <div className="col-md-6 mb-2">
+                    <p className="mb-1 text-muted small">Estado actual:</p>
+                    {selectedMantenimiento.equipo?.estado ? (
+                      <span className={`badge bg-${getEstadoBadgeColorByNombre(selectedMantenimiento.equipo.estado.nombre)}`}>
+                        {selectedMantenimiento.equipo.estado.nombre}
+                      </span>
+                    ) : (
+                      <span className="badge bg-secondary">Desconocido</span>
+                    )}
+                  </div>
+                </div>
               </div>
 
+              {/* Sección de vida útil */}
+              <div className="mb-4 p-3 border rounded">
+                <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
+                  <span>Vida Útil del Equipo</span>
+                  {selectedMantenimiento.fecha_mantenimiento_final && (
+                    <span className="badge bg-success">Completado</span>
+                  )}
+                </h5>
+
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <Form.Group>
+                      <Form.Label className="text-muted small">Vida Útil Actual</Form.Label>
+                      <InputGroup>
+                        <Form.Control
+                          type="number"
+                          value={selectedMantenimiento.equipo?.vida_util || 0}
+                          readOnly
+                        />
+                        <InputGroup.Text>horas</InputGroup.Text>
+                      </InputGroup>
+                    </Form.Group>
+                  </div>
+
+                  <div className="col-md-6">
+                    <Form.Group>
+                      <Form.Label className="text-muted small">Vida Útil a Añadir</Form.Label>
+                      <InputGroup>
+                        <Form.Control
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={selectedMantenimiento.vida_util || 0}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 0;
+                            setSelectedMantenimiento({
+                              ...selectedMantenimiento,
+                              vida_util: value
+                            });
+                          }}
+                          disabled={selectedMantenimiento.fecha_mantenimiento_final &&
+                            selectedMantenimiento.equipo?.estado?.id !== EstadoEquipo.Disponible}
+                        />
+                        <InputGroup.Text>horas</InputGroup.Text>
+                      </InputGroup>
+                    </Form.Group>
+                  </div>
+                </div>
+
+                <div className="mt-3 p-3 rounded"
+                  style={{
+                    backgroundColor: '#5cbaf8ff',
+                    borderLeft: '4px solid #0d6efd'
+                  }}>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span className="fw-bold">Nueva Vida Útil Total:</span>
+                    <span className="fs-5 fw-bold">
+                      {(selectedMantenimiento.equipo?.vida_util || 0) + (selectedMantenimiento.vida_util || 0)} horas
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sección de estado */}
+              {selectedMantenimiento.fecha_mantenimiento_final ? (
+                <div className="mb-3 p-3 border rounded">
+                  <h5 className="fw-bold mb-3">Estado del Equipo</h5>
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="text-muted">Estado actual:</span>
+                    {selectedMantenimiento.equipo?.estado ? (
+                      <span className={`badge bg-${getEstadoBadgeColorByNombre(selectedMantenimiento.equipo.estado.nombre)}`}>
+                        {selectedMantenimiento.equipo.estado.nombre}
+                      </span>
+                    ) : (
+                      <span className="badge bg-secondary">Desconocido</span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <Form.Group className="mb-3">
+                  <Form.Label>Nuevo estado</Form.Label>
+                  <Form.Select
+                    value={selectedEstado || ""}
+                    onChange={(e) => setSelectedEstado(Number(e.target.value))}
+                  >
+                    <option value="">Seleccione un estado</option>
+                    {estados
+                      .filter((estado) =>
+                        [EstadoEquipo.Disponible, EstadoEquipo.NoDisponible, EstadoEquipo.Dañado].includes(estado.id)
+                      )
+                      .map((estado) => (
+                        <option key={estado.id} value={estado.id}>
+                          {estado.nombre}
+                        </option>
+                      ))}
+                  </Form.Select>
+                </Form.Group>
+              )}
+
+              {/* Sección de comentarios */}
               <Form.Group className="mb-3">
-                <Form.Label>Nuevo estado</Form.Label>
-                <Form.Select
-                  value={selectedEstado || ""}
-                  onChange={(e) => setSelectedEstado(Number(e.target.value))}
-                >
-                  <option value="">Seleccione un estado</option>
-                  {estados
-                    .filter((estado) =>
-                      [EstadoEquipo.Disponible, EstadoEquipo.NoDisponible, EstadoEquipo.Dañado].includes(estado.id)
-                    )
-                    .map((estado) => (
-                      <option key={estado.id} value={estado.id}>
-                        {estado.nombre}
-                      </option>
-                    ))}
-                </Form.Select>
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Comentario (opcional)</Form.Label>
+                <Form.Label>Comentarios</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
-                  value={selectedMantenimiento?.comentario || ''}
+                  value={selectedMantenimiento.comentario || ''}
                   onChange={(e) => {
-                    if (selectedMantenimiento) {
-                      setSelectedMantenimiento({
-                        ...selectedMantenimiento,
-                        comentario: e.target.value
-                      });
-                    }
+                    setSelectedMantenimiento({
+                      ...selectedMantenimiento,
+                      comentario: e.target.value
+                    });
                   }}
                   placeholder="Agregue un comentario sobre el cambio de estado..."
+                  disabled={selectedMantenimiento.fecha_mantenimiento_final &&
+                    selectedMantenimiento.equipo?.estado?.id !== EstadoEquipo.Disponible}
                 />
               </Form.Group>
+
+              {/* Información de fechas si ya está completado */}
+              {selectedMantenimiento.fecha_mantenimiento_final && (
+                <div className="mt-3 p-3 border rounded">
+                  <h5 className="fw-bold mb-3">Información de Finalización</h5>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <p className="mb-1 text-muted small">Fecha de finalización:</p>
+                      <p>{formatDate(selectedMantenimiento.fecha_mantenimiento_final)}</p>
+                    </div>
+                    <div className="col-md-6">
+                      <p className="mb-1 text-muted small">Hora de finalización:</p>
+                      <p>{formatTo12h(selectedMantenimiento.hora_mantenimiento_final)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowEstadoModal(false)}>
-            Cancelar
+            Cerrar
           </Button>
           <Button
             variant="primary"
             onClick={handleCambiarEstado}
-            disabled={!selectedEstado || loadingEstados}
+            disabled={
+              (selectedMantenimiento?.fecha_mantenimiento_final
+                ? selectedMantenimiento.equipo?.estado?.id !== EstadoEquipo.Disponible
+                : !selectedEstado) || loadingEstados
+            }
           >
             {loadingEstados ? (
               <>
                 <Spinner animation="border" size="sm" className="me-2" />
                 Guardando...
               </>
+            ) : selectedMantenimiento?.fecha_mantenimiento_final ? (
+              "Actualizar Mantenimiento"
             ) : (
-              "Guardar cambios"
+              "Finalizar Mantenimiento"
             )}
           </Button>
         </Modal.Footer>

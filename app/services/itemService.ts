@@ -318,13 +318,15 @@ export const updateEstadoEquipo = async (
   equipoId: number, 
   estadoId: number,
   mantenimientoId: number,
-  comentario: string
+  comentario: string,
+  vida_util: number,
 ): Promise<{success: boolean; message?: string}> => {
   try {
     const response = await api.put(`/equipos/${equipoId}/estado`, {
       estado_id: estadoId,
       mantenimiento_id: mantenimientoId,
-      comentario: comentario
+      comentario: comentario,
+      vida_util: vida_util,
     });
     return response.data;
   } catch (error: any) {

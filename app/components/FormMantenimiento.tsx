@@ -260,6 +260,7 @@ const FormMantenimiento = () => {
             className={`form-control ${timeError || rangeError ? 'is-invalid' : ''}`}
             min="07:00"
             max="17:00"
+            disabled
           />
           {timeError && <div className="invalid-feedback">{timeError}</div>}
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}

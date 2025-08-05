@@ -5,6 +5,7 @@ import { useChatbotLogic } from "./useChatbotLogic";
 import EquiposSelect from "./Equipos";
 import "./chatbot.css";
 import { useAuth } from "~/hooks/AuthContext";
+import { Button } from "react-bootstrap";
 
 const Chatbot = () => {
   const { user } = useAuth();
@@ -39,24 +40,6 @@ const Chatbot = () => {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, showFullScreen, mostrarEquipos]);
-
-  // Cierra chatbot al click fuera
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, setIsOpen]);
 
   // Enter = enviar mensaje
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -113,75 +96,113 @@ const Chatbot = () => {
               {/* --- Selección de AULA (cards cuadradas) --- */}
               {showFullScreen && (
                 <div>
-                  <h4
-                    style={{ textAlign: "center", margin: "1.5rem 0 1.1rem" }}
-                  >
-                    Selecciona un espacio sugerido
-                  </h4>
-                  <div className="cards-cuadradas-grid">
-                    {espaciosParaSeleccionar.map((sugerencia) => {
-                      const aula = getAulaCompleta(sugerencia);
-                      return (
-                        <div key={aula.id} className="card-cuadrada">
-                          <div className="card-cuadrada-titulo">
-                            {aula.nombre || `Espacio #${aula.id}`}
-                          </div>
-                          <div className="card-cuadrada-img">
-                            {aula.path_modelo ? (
-                              //@ts-ignore
-                              <model-viewer
-                                src={APIURL + "/" + aula.path_modelo}
-                                alt={aula.nombre}
-                                camera-controls
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  background: "#f4f6fa",
-                                  borderRadius: 12,
-                                }}
-                                auto-rotate
-                                shadow-intensity="1"
-                              />
-                            ) : aula.imagen_normal ? (
-                              <img
-                                src={APIURL + "/" + aula.imagen_normal}
-                                alt={aula.nombre}
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                  borderRadius: 12,
-                                }}
-                              />
-                            ) : (
-                              <div
-                                className="bg-secondary text-white d-flex align-items-center justify-content-center"
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  borderRadius: 12,
-                                  fontSize: 15,
-                                }}
-                              >
-                                Sin imagen
-                              </div>
-                            )}
-                          </div>
-                          <div className="card-cuadrada-sugerencia">
-                            {sugerencia.recomendacion}
-                          </div>
-                          <button
-                            className="card-cuadrada-boton"
-                            onClick={() =>
-                              handleSeleccionarEspacio(aula, sugerencia)
+                  {espaciosParaSeleccionar.length === 0 ? (
+                    // No hay aulas disponibles, muestra opciones de editar/cancelar
+                    <div className="text-center my-4">
+                      <div className="alert alert-warning">
+                        No se encontraron aulas disponibles para los filtros
+                        seleccionados.
+                      </div>
+                      <div className="d-flex flex-wrap gap-3 justify-content-center mt-4">
+                        <Button
+                          variant="outline-danger"
+                          onClick={() => {
+                            onCancelarReserva && onCancelarReserva();
+                          }}
+                        >
+                          Cancelar Reserva
+                        </Button>
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => {
+                            if (onModificarReserva) {
+                              onModificarReserva(
+                                "Quiero cambiar algunos datos de mi reserva"
+                              );
                             }
-                          >
-                            Seleccionar
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                          }}
+                        >
+                          Modificar Reserva
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h4
+                        style={{
+                          textAlign: "center",
+                          margin: "1.5rem 0 1.1rem",
+                        }}
+                      >
+                        Selecciona un espacio sugerido
+                      </h4>
+                      <div className="cards-cuadradas-grid">
+                        {espaciosParaSeleccionar.map((sugerencia) => {
+                          const aula = getAulaCompleta(sugerencia);
+                          return (
+                            <div key={aula.id} className="card-cuadrada">
+                              {/* ...tu código para la card... */}
+                              <div className="card-cuadrada-titulo">
+                                {aula.nombre || `Espacio #${aula.id}`}
+                              </div>
+                              <div className="card-cuadrada-img">
+                                {aula.path_modelo ? (
+                                  //@ts-ignore
+                                  <model-viewer
+                                    src={APIURL + "/" + aula.path_modelo}
+                                    alt={aula.nombre}
+                                    camera-controls
+                                    style={{
+                                      width: "100%",
+                                      height: "100%",
+                                      background: "#f4f6fa",
+                                      borderRadius: 12,
+                                    }}
+                                    auto-rotate
+                                    shadow-intensity="1"
+                                  />
+                                ) : aula.imagen_normal ? (
+                                  <img
+                                    src={APIURL + "/" + aula.imagen_normal}
+                                    alt={aula.nombre}
+                                    style={{
+                                      width: "100%",
+                                      height: "100%",
+                                      objectFit: "cover",
+                                      borderRadius: 12,
+                                    }}
+                                  />
+                                ) : (
+                                  <div
+                                    className="bg-secondary text-white d-flex align-items-center justify-content-center"
+                                    style={{
+                                      width: "100%",
+                                      height: "100%",
+                                      borderRadius: 12,
+                                      fontSize: 15,
+                                    }}
+                                  >
+                                    Sin imagen
+                                  </div>
+                                )}
+                              </div>
+                              <div className="card-cuadrada-sugerencia">
+                                {sugerencia.recomendacion}
+                              </div>
+                              <button
+                                className="card-cuadrada-boton"
+                                onClick={() =>
+                                  handleSeleccionarEspacio(aula, sugerencia)
+                                }
+                              >
+                                Seleccionar
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 

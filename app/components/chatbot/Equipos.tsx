@@ -6,6 +6,7 @@ import Slider from "react-slick";
 import Button from "react-bootstrap/Button";
 import { APIURL } from "~/constants/constant";
 import { Spinner } from "react-bootstrap";
+import EquipoDetalleModalListo from "./EquipoDetalleModal";
 
 interface EquipoIndividual {
   equipo_id: number;
@@ -60,6 +61,10 @@ export default function EquiposSelect({
   const [loadingSearch, setLoadingSearch] = useState(false);
   const pagesLoaded = useRef<Set<number>>(new Set());
   const [loadingSave, setLoadingSave] = useState(false);
+  const [showDetalleModal, setShowDetalleModal] = useState(false);
+  const [grupoSeleccionado, setGrupoSeleccionado] =
+    useState<GrupoEquiposPorModelo | null>(null);
+  const [modalEquipos, setModalEquipos] = useState<EquipoIndividual[]>([]);
 
   // Debounce de búsqueda
   useEffect(() => {
@@ -221,233 +226,270 @@ export default function EquiposSelect({
     puedeBuscarEquipos;
 
   return (
-    <div className="mb-4">
-      <label className="form-label d-flex align-items-center justify-content-between">
-        <div className="d-flex align-items-center">
-          <FaBoxes className="me-2" />
-          Equipos Disponibles
-          {checkingAvailability && (
-            <span className="ms-2 spinner-border spinner-border-sm"></span>
-          )}
-        </div>
-      </label>
-      <input
-        type="text"
-        className="form-control mb-3"
-        placeholder="Buscar modelo..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-      {loadingSearch && (
-        <div className="text-center my-4">
-          <div className="spinner-border text-primary" role="status" />
-          <div className="mt-2">Buscando equipos...</div>
-        </div>
-      )}
-      {noResults && (
-        <div className="alert alert-warning text-center my-4" role="alert">
-          No se encontraron equipos con esos filtros.
-        </div>
-      )}
+    <>
+      <div className="mb-4">
+        <label className="form-label d-flex align-items-center justify-content-between">
+          <div className="d-flex align-items-center">
+            <FaBoxes className="me-2" />
+            Equipos Disponibles
+            {checkingAvailability && (
+              <span className="ms-2 spinner-border spinner-border-sm"></span>
+            )}
+          </div>
+        </label>
+        <input
+          type="text"
+          className="form-control mb-3"
+          placeholder="Buscar modelo..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        {loadingSearch && (
+          <div className="text-center my-4">
+            <div className="spinner-border text-primary" role="status" />
+            <div className="mt-2">Buscando equipos...</div>
+          </div>
+        )}
+        {noResults && (
+          <div className="alert alert-warning text-center my-4" role="alert">
+            No se encontraron equipos con esos filtros.
+          </div>
+        )}
 
-      {formData.equiposSeleccionados?.length > 0 && (
-        <div className="mb-4 border rounded p-3">
-          <h5>Equipos seleccionados:</h5>
-          <ul className="list-group mb-3">
-            {formData.equiposSeleccionados.map((eq: any) => (
-              <li
-                key={eq.id}
-                className="list-group-item d-flex justify-content-between align-items-center"
-              >
-                <div>
-                  Modelo: {eq.nombre_modelo}
-                  <span className="badge bg-primary ms-2">
-                    Serie: {eq.numero_serie}
-                  </span>
-                </div>
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  title="Eliminar equipo"
-                  onClick={() => eliminarEquipo(eq)}
+        {formData.equiposSeleccionados?.length > 0 && (
+          <div className="mb-4 border rounded p-3">
+            <h5>Equipos seleccionados:</h5>
+            <ul className="list-group mb-3">
+              {formData.equiposSeleccionados.map((eq: any) => (
+                <li
+                  key={eq.id}
+                  className="list-group-item d-flex justify-content-between align-items-center"
                 >
-                  <FaTrash />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+                  <div>
+                    Modelo: {eq.nombre_modelo}
+                    <span className="badge bg-primary ms-2">
+                      Serie: {eq.numero_serie}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    title="Eliminar equipo"
+                    onClick={() => eliminarEquipo(eq)}
+                  >
+                    <FaTrash />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-      {!loadingSearch && availableEquipmentSlides.length > 0 && (
-        <Slider {...sliderSettings}>
-          {availableEquipmentSlides.map((grupo, index) => {
-            const equiposNoAgregados = grupo.equipos.filter(
-              (eq) =>
-                !formData.equiposSeleccionados?.some(
-                  (sel: any) => sel.id === eq.equipo_id
-                )
-            );
-            if (equiposNoAgregados.length === 0) return null;
-            const max = equiposNoAgregados.length;
+        {!loadingSearch && availableEquipmentSlides.length > 0 && (
+          <Slider {...sliderSettings}>
+            {availableEquipmentSlides.map((grupo, index) => {
+              const equiposNoAgregados = grupo.equipos.filter(
+                (eq) =>
+                  !formData.equiposSeleccionados?.some(
+                    (sel: any) => sel.id === eq.equipo_id
+                  )
+              );
+              if (equiposNoAgregados.length === 0) return null;
+              const max = equiposNoAgregados.length;
 
-            return (
-              <div
-                key={`${grupo.modelo_id}_${index}`}
-                className="px-2"
-                style={{ width: 300 }}
-              >
-                <div className="card h-100 shadow-sm border-0">
-                  {grupo.imagen_normal ? (
-                    <img
-                      src={grupo.imagen_normal}
-                      alt={grupo.nombre_modelo}
-                      className="card-img-top"
-                      style={{
-                        height: "180px",
-                        objectFit: "contain",
-                        backgroundColor: "#f8f9fa",
-                      }}
-                    />
-                  ) : grupo.imagen_glb ? (
-                    // Si tienes model-viewer aquí
-                    <div
-                      style={{
-                        height: "180px",
-                        width: "100%",
-                        backgroundColor: "#f8f9fa",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {/* @ts-ignore */}
-                      <model-viewer
-                        src={APIURL + "/" + grupo.imagen_glb}
+              return (
+                <div
+                  key={`${grupo.modelo_id}_${index}`}
+                  className="px-2"
+                  style={{ width: 300 }}
+                >
+                  <div className="card h-100 shadow-sm border-0">
+                    {grupo.imagen_normal ? (
+                      <img
+                        src={grupo.imagen_normal}
                         alt={grupo.nombre_modelo}
-                        camera-controls
+                        className="card-img-top"
                         style={{
-                          width: 120,
-                          height: 100,
-                          background: "#f4f6fa",
-                          borderRadius: 12,
+                          height: "180px",
+                          objectFit: "contain",
+                          backgroundColor: "#f8f9fa",
                         }}
-                        auto-rotate
-                        shadow-intensity="1"
                       />
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        height: "180px",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        backgroundColor: "#f8f9fa",
-                        fontSize: "1.5rem",
-                        color: "#999",
-                      }}
-                    >
-                      <FaEyeSlash className="me-2" />
-                      Sin imagen
-                    </div>
-                  )}
-                  <div className="card-body">
-                    <h5 className="card-title text-capitalize mb-1">
-                      {grupo.nombre_modelo}
-                    </h5>
-                    <p className="mb-1 text-muted">
-                      Marca: {grupo.nombre_marca}
-                    </p>
-                    <p className="mb-2 fw-bold">{max} disponibles</p>
-                    <div className="d-flex align-items-center">
-                      <input
-                        type="number"
-                        className="form-control form-control-sm me-2"
-                        style={{ width: "80px" }}
-                        min={0}
-                        max={max}
-                        value={cantidadInputs[grupo.modelo_id] || ""}
-                        placeholder="0"
-                        onChange={(e) =>
-                          handleCantidadChange(
-                            grupo.modelo_id,
-                            parseInt(e.target.value) || 0
-                          )
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-success"
-                        onClick={() => agregarEquipo(grupo)}
-                        disabled={max <= 0}
+                    ) : grupo.imagen_glb ? (
+                      // Si tienes model-viewer aquí
+                      <div
+                        style={{
+                          height: "180px",
+                          width: "100%",
+                          backgroundColor: "#f8f9fa",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
                       >
-                        Agregar
-                      </button>
+                        {/* @ts-ignore */}
+                        <model-viewer
+                          src={APIURL + "/" + grupo.imagen_glb}
+                          alt={grupo.nombre_modelo}
+                          camera-controls
+                          style={{
+                            width: 120,
+                            height: 100,
+                            background: "#f4f6fa",
+                            borderRadius: 12,
+                          }}
+                          auto-rotate
+                          shadow-intensity="1"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          height: "180px",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          backgroundColor: "#f8f9fa",
+                          fontSize: "1.5rem",
+                          color: "#999",
+                        }}
+                      >
+                        <FaEyeSlash className="me-2" />
+                        Sin imagen
+                      </div>
+                    )}
+                    <div className="card-body">
+                      <h5 className="card-title text-capitalize mb-1">
+                        {grupo.nombre_modelo}
+                      </h5>
+                      <p className="mb-1 text-muted">
+                        Marca: {grupo.nombre_marca}
+                      </p>
+                      <p className="mb-2 fw-bold">{max} disponibles</p>
+                      <div className="d-flex align-items-center">
+                        <input
+                          type="number"
+                          className="form-control form-control-sm me-2"
+                          style={{ width: "80px" }}
+                          min={0}
+                          max={max}
+                          value={cantidadInputs[grupo.modelo_id] || ""}
+                          placeholder="0"
+                          onChange={(e) =>
+                            handleCantidadChange(
+                              grupo.modelo_id,
+                              parseInt(e.target.value) || 0
+                            )
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-success"
+                          onClick={() => agregarEquipo(grupo)}
+                          disabled={max <= 0}
+                        >
+                          Agregar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-info btn-sm ms-2"
+                          onClick={() => {
+                            setModalEquipos(
+                              grupo.equipos.filter(
+                                (eq) =>
+                                  !formData.equiposSeleccionados?.some(
+                                    (sel: any) => sel.id === eq.equipo_id
+                                  )
+                              )
+                            );
+                            setGrupoSeleccionado(grupo);
+                            setShowDetalleModal(true);
+                          }}
+                          disabled={max === 0}
+                        >
+                          Detalles
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
+              );
+            })}
+            {loadingNextPage && (
+              <div className="px-2" style={{ width: 300 }}>
+                <div className="card h-100 border-0 bg-light d-flex align-items-center justify-content-center">
+                  <div
+                    className="spinner-border text-secondary"
+                    role="status"
+                  />
+                </div>
               </div>
-            );
-          })}
-          {loadingNextPage && (
-            <div className="px-2" style={{ width: 300 }}>
-              <div className="card h-100 border-0 bg-light d-flex align-items-center justify-content-center">
-                <div className="spinner-border text-secondary" role="status" />
-              </div>
-            </div>
-          )}
-        </Slider>
-      )}
+            )}
+          </Slider>
+        )}
 
-      <div className="d-flex flex-wrap gap-3 justify-content-end mt-4">
-        {/* @ts-ignore */}
-        <Button
-          variant="primary"
-          onClick={() => {
-            // Debes pasar la función que guarde la reserva de equipos
-            // Puedes enviar formData, por ejemplo:
-            onGuardarReserva && onGuardarReserva(formData);
-            setLoadingSave(true);
-          }}
-          disabled={
-            !formData.equiposSeleccionados ||
-            formData.equiposSeleccionados?.length === 0
-          }
-        >
-          Guardar Reserva
-          {loadingSave && (
-            <Spinner
-              as="span"
-              animation="border"
-              size="sm"
-              role="status"
-              aria-hidden="true"
-              className="me-2"
-            />
-          )}
-        </Button>
-        <Button
-          variant="outline-danger"
-          onClick={() => {
-            // Debes pasar tu función para resetear el chat
-            onCancelarReserva && onCancelarReserva();
-          }}
-        >
-          Cancelar Reserva
-        </Button>
-        <Button
-          variant="outline-secondary"
-          onClick={() => {
-            // Envía el mensaje al chatbot para modificar
-            if (onModificarReserva) {
-              onModificarReserva("Quiero cambiar algunos datos de mi reserva");
+        <div className="d-flex flex-wrap gap-3 justify-content-end mt-4">
+          {/* @ts-ignore */}
+          <Button
+            variant="primary"
+            onClick={() => {
+              // Debes pasar la función que guarde la reserva de equipos
+              // Puedes enviar formData, por ejemplo:
+              onGuardarReserva && onGuardarReserva(formData);
+              setLoadingSave(true);
+            }}
+            disabled={
+              !formData.equiposSeleccionados ||
+              formData.equiposSeleccionados?.length === 0
             }
-          }}
-        >
-          Modificar Reserva
-        </Button>
+          >
+            Guardar Reserva
+            {loadingSave && (
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+                className="me-2"
+              />
+            )}
+          </Button>
+          <Button
+            variant="outline-danger"
+            onClick={() => {
+              // Debes pasar tu función para resetear el chat
+              onCancelarReserva && onCancelarReserva();
+            }}
+          >
+            Cancelar Reserva
+          </Button>
+          <Button
+            variant="outline-secondary"
+            onClick={() => {
+              // Envía el mensaje al chatbot para modificar
+              if (onModificarReserva) {
+                onModificarReserva(
+                  "Quiero cambiar algunos datos de mi reserva"
+                );
+              }
+            }}
+          >
+            Modificar Reserva
+          </Button>
+        </div>
       </div>
-    </div>
+      {showDetalleModal && grupoSeleccionado && modalEquipos.length > 0 && (
+        <EquipoDetalleModalListo
+          show={showDetalleModal}
+          onHide={() => setShowDetalleModal(false)}
+          equipoIds={modalEquipos.map((eq) => eq.equipo_id)} // <-- CORRECTO
+          formData={formData}
+          setFormData={setFormData}
+          grupoEquipos={grupoSeleccionado}
+          initialIndex={0}
+        />
+      )}
+    </>
   );
 }

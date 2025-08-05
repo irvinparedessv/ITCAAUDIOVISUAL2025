@@ -213,7 +213,7 @@ export default function MantenimientoList() {
     const lower = nombre.toLowerCase();
 
     if (lower.includes("no disponible")) return EstadoEquipo.NoDisponible;
-    if (lower.includes("dañado") || lower.includes("averiado")) return EstadoEquipo.Dañado;
+    if (lower.includes("dañado")) return EstadoEquipo.Dañado;
     if (lower.includes("mantenimiento")) return EstadoEquipo.Mantenimiento;
     if (lower.includes("reposo")) return EstadoEquipo.EnReposo;
     if (lower.includes("disponible")) return EstadoEquipo.Disponible;

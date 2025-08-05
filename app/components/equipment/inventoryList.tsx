@@ -7,7 +7,8 @@ import PaginationComponent from "~/utils/Pagination";
 import toast from "react-hot-toast";
 import AsyncSelect from "react-select/async";
 import { useTheme } from "~/hooks/ThemeContext";
-import ModeloAccesoriosModal from "./Modelo/ModeloAccesoriosForm"; // Asegúrate de que la ruta sea correcta
+import ModeloAccesoriosModal from "./Modelo/ModeloAccesoriosForm";
+import { EstadoEquipo } from "~/types/estados";
 
 interface ResumenItem {
   modelo_id: number;
@@ -17,9 +18,9 @@ interface ResumenItem {
   nombre_modelo: string;
   cantidad_total: number;
   cantidad_disponible: number;
-  cantidad_noDisponible: number;
   cantidad_mantenimiento: number;
   cantidad_eliminada: number;
+  cantidad_noDisponible: number;
   accesorios_completos: string | null;
 }
 
@@ -27,6 +28,18 @@ interface SelectOption {
   value: string;
   label: string;
   originalId: number;
+}
+
+interface Filters {
+  search: string;
+  categoria: string;
+  tipo_equipo: string;
+  marca: string;
+  estado_id: string;
+  page: number;
+  perPage: number;
+  marca_id: string;
+  tipo_equipo_id: string;
 }
 
 const getCategoryColor = (category: string) => {
@@ -37,13 +50,24 @@ const getCategoryColor = (category: string) => {
   return colors[category] || 'light';
 };
 
+const getEstadoColor = (estado: EstadoEquipo) => {
+  const colors: Record<EstadoEquipo, string> = {
+    [EstadoEquipo.Disponible]: 'success',
+    [EstadoEquipo.Mantenimiento]: 'warning',
+    [EstadoEquipo.EnReposo]: 'info',
+    [EstadoEquipo.Dañado]: 'danger',
+    [EstadoEquipo.NoDisponible]: 'secondary'
+  };
+  return colors[estado] || 'light';
+};
+
 const searchMarcasForFilter = async (
   inputValue: string
 ): Promise<Array<{ value: string; label: string; originalId: number }>> => {
   try {
     const response = await api.get('/marcas', {
-      params: { 
-        search: inputValue, 
+      params: {
+        search: inputValue,
         limit: 10,
         fields: 'id,nombre'
       }
@@ -65,8 +89,8 @@ const searchTiposEquipoForFilter = async (
 ): Promise<Array<{ value: string; label: string; originalId: number }>> => {
   try {
     const response = await api.get('/tipoEquipos', {
-      params: { 
-        search: inputValue, 
+      params: {
+        search: inputValue,
         limit: 10,
         fields: 'id,nombre,categoria_id'
       }
@@ -94,11 +118,12 @@ export default function InventoryList() {
   const [showAccesoriosModal, setShowAccesoriosModal] = useState(false);
   const [selectedModeloId, setSelectedModeloId] = useState<number | null>(null);
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     search: "",
     categoria: "",
     tipo_equipo: "",
     marca: "",
+    estado_id: "",
     page: 1,
     perPage: 10,
     marca_id: "",
@@ -243,6 +268,7 @@ export default function InventoryList() {
       categoria: "",
       tipo_equipo: "",
       marca: "",
+      estado_id: "",
       page: 1,
       perPage: 10,
       marca_id: "",
@@ -263,14 +289,13 @@ export default function InventoryList() {
           <h2 className="fw-bold m-0"> <FaBoxes className="me-2" />Inventario</h2>
         </div>
         <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
-          <Button
-            variant="primary"
+          <button
             onClick={() => navigate('/crearItem')}
-            className="d-inline-flex align-items-center gap-2"
+            className="btn btn-primary d-inline-flex align-items-center gap-2"
           >
             <FaPlus />
             Agregar Equipo
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -287,23 +312,22 @@ export default function InventoryList() {
               onChange={(e) => setSearchInput(e.target.value)}
             />
             {searchInput && (
-              <Button
-                variant="outline-secondary"
+              <button
                 onClick={() => setSearchInput("")}
+                className="btn btn-outline-secondary"
               >
                 <FaTimes />
-              </Button>
+              </button>
             )}
           </InputGroup>
         </div>
 
-        <Button
-          variant={showFilters ? "secondary" : "outline-secondary"}
+        <button
           onClick={() => setShowFilters(!showFilters)}
-          className="d-flex align-items-center gap-2 flex-shrink-0 text-nowrap"
+          className={`btn ${showFilters ? 'btn-secondary' : 'btn-outline-secondary'} d-flex align-items-center gap-2 flex-shrink-0 text-nowrap`}
         >
           <FaFilter /> {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-        </Button>
+        </button>
       </div>
 
       {showFilters && (
@@ -332,11 +356,11 @@ export default function InventoryList() {
                   loadOptions={searchTiposEquipoForFilter}
                   value={
                     filters.tipo_equipo
-                      ? { 
-                          value: filters.tipo_equipo, 
-                          label: filters.tipo_equipo,
-                          originalId: Number(filters.tipo_equipo_id)
-                        }
+                      ? {
+                        value: filters.tipo_equipo,
+                        label: filters.tipo_equipo,
+                        originalId: Number(filters.tipo_equipo_id)
+                      }
                       : null
                   }
                   onChange={handleTipoEquipoChange}
@@ -361,11 +385,11 @@ export default function InventoryList() {
                   loadOptions={searchMarcasForFilter}
                   value={
                     filters.marca
-                      ? { 
-                          value: filters.marca, 
-                          label: filters.marca,
-                          originalId: Number(filters.marca_id)
-                        }
+                      ? {
+                        value: filters.marca,
+                        label: filters.marca,
+                        originalId: Number(filters.marca_id)
+                      }
                       : null
                   }
                   onChange={handleMarcaChange}
@@ -381,15 +405,30 @@ export default function InventoryList() {
               </Form.Group>
             </div>
 
+            <div className="col-md-4">
+              <Form.Group>
+                <Form.Label>Estado</Form.Label>
+                <Form.Select
+                  value={filters.estado_id}
+                  onChange={(e) => handleFilterChange("estado_id", e.target.value)}
+                >
+                  <option value="null">Todos los estados</option>
+                  <option value="1">Disponible</option>
+                  <option value="2">Mantenimiento</option>
+                  <option value="4">Dañado</option>
+                  <option value="5">No disponible</option>
+                </Form.Select>
+              </Form.Group>
+            </div>
+
             <div className="col-12">
-              <Button
-                variant="outline-danger"
+              <button
                 onClick={resetFilters}
-                className="w-100 d-flex align-items-center justify-content-center gap-2"
+                className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2"
               >
                 <FaTimes />
                 Limpiar todos los filtros
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -413,8 +452,8 @@ export default function InventoryList() {
                   <th>Total</th>
                   <th>Disponibles</th>
                   <th>Mantenimiento</th>
-                  <th>No disponible</th>
                   <th>Dañados</th>
+                  <th>No disponibles</th>
                   <th>Accesorios</th>
                   <th className="rounded-top-end">Acciones</th>
                 </tr>
@@ -442,23 +481,23 @@ export default function InventoryList() {
                         </Badge>
                       </td>
                       <td>
-                        <Badge bg="success" pill>
+                        <Badge bg={getEstadoColor(EstadoEquipo.Disponible)} pill>
                           {item.cantidad_disponible}
                         </Badge>
                       </td>
                       <td>
-                        <Badge bg="warning" pill>
+                        <Badge bg={getEstadoColor(EstadoEquipo.Mantenimiento)} pill>
                           {item.cantidad_mantenimiento}
                         </Badge>
                       </td>
-                       <td>
-                        <Badge bg="danger" pill>
-                          {item.cantidad_noDisponible}
+                      <td>
+                        <Badge bg={getEstadoColor(EstadoEquipo.Dañado)} pill>
+                          {item.cantidad_eliminada}
                         </Badge>
                       </td>
                       <td>
-                        <Badge bg="danger" pill>
-                          {item.cantidad_eliminada}
+                        <Badge bg={getEstadoColor(EstadoEquipo.NoDisponible)} pill>
+                          {item.cantidad_noDisponible}
                         </Badge>
                       </td>
                       <td style={{ fontSize: "0.9rem", textAlign: "left" }}>
@@ -466,9 +505,8 @@ export default function InventoryList() {
                       </td>
                       <td>
                         <div className="d-flex justify-content-center gap-2">
-                          <Button
-                            variant="outline-primary"
-                            className="rounded-circle"
+                          <button
+                            className="btn btn-outline-primary rounded-circle"
                             title="Ver equipos"
                             onClick={() => handleViewEquipment(item.modelo_id)}
                             style={{
@@ -476,18 +514,14 @@ export default function InventoryList() {
                               height: "44px",
                               transition: "transform 0.2s ease-in-out",
                             }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
+                            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                           >
                             <FaEye />
-                          </Button>
-                          <Button
-                            variant="outline-secondary"
-                            className="rounded-circle"
+                          </button>
+
+                          <button
+                            className="btn btn-outline-secondary rounded-circle"
                             title="Asociar accesorios"
                             onClick={() => {
                               setSelectedModeloId(item.modelo_id);
@@ -498,23 +532,20 @@ export default function InventoryList() {
                               height: "44px",
                               transition: "transform 0.2s ease-in-out",
                             }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
-                            disabled={item.nombre_categoria === "Insumo"} 
+                            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                            disabled={item.nombre_categoria === "Insumo"}
                           >
                             <FaToolbox />
-                          </Button>
+                          </button>
+
                         </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={10} className="text-muted">
+                    <td colSpan={12} className="text-muted">
                       No se encontraron registros con los filtros aplicados.
                     </td>
                   </tr>
@@ -531,13 +562,12 @@ export default function InventoryList() {
         </>
       )}
 
-      {/* Modal para asociar accesorios */}
       <ModeloAccesoriosModal
         show={showAccesoriosModal}
         onHide={() => setShowAccesoriosModal(false)}
         modeloId={selectedModeloId?.toString()}
         onSuccess={() => {
-          fetchDatos(); // Para refrescar los datos si es necesario
+          fetchDatos();
         }}
       />
     </div>

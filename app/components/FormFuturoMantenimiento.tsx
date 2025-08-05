@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createFuturoMantenimiento } from "../services/futuroMantenimientoService";
-import { getEquipos } from "../services/equipoService";
 import { getTiposMantenimiento } from "../services/tipoMantenimientoService";
 import { toast } from "react-hot-toast";
 import { FaSave, FaTimes, FaLongArrowAltLeft } from "react-icons/fa";
 import { getUsuariosM } from "~/services/userService";
+import AsyncSelect from "react-select/async";
+import { useTheme } from "~/hooks/ThemeContext";
+import { buscarEquipos } from "~/services/prediccionService";
 
 interface Equipo {
   id: number;
   numero_serie?: string;
-  // Puedes agregar más campos si los necesitas
+  nombre?: string;
+  marca?: string;
+  modelo?: string;
 }
 
 interface TipoMantenimiento {
@@ -29,6 +33,7 @@ interface FormData {
 
 const FormFuturoMantenimiento = () => {
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [tipos, setTipos] = useState<TipoMantenimiento[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,16 +53,78 @@ const FormFuturoMantenimiento = () => {
     vida_util: 0,
   });
 
+  // Estilos para el AsyncSelect
+  const customSelectStyles = {
+    control: (base: any) => ({
+      ...base,
+      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+      borderColor: darkMode ? "#444" : "#ccc",
+      color: darkMode ? "#f8f9fa" : "#212529",
+      minHeight: '38px',
+    }),
+    menu: (base: any) => ({
+      ...base,
+      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+      color: darkMode ? "#f8f9fa" : "#212529",
+    }),
+    input: (base: any) => ({
+      ...base,
+      color: darkMode ? "#f8f9fa" : "#212529",
+    }),
+    placeholder: (base: any) => ({
+      ...base,
+      color: darkMode ? "#bbb" : "#666",
+    }),
+    singleValue: (base: any) => ({
+      ...base,
+      color: darkMode ? "#f8f9fa" : "#212529",
+    }),
+    option: (base: any, { isFocused, isSelected }: any) => ({
+      ...base,
+      backgroundColor: isSelected
+        ? (darkMode ? "#555" : "#d3d3d3")
+        : isFocused
+          ? (darkMode ? "#444" : "#e6e6e6")
+          : "transparent",
+      color: darkMode ? "#f8f9fa" : "#212529",
+      cursor: "pointer",
+    }),
+  };
+
+  // Función para cargar opciones de equipos
+  const loadOptions = async (inputValue: string) => {
+    const q = inputValue.trim();
+    if (!q) return [];
+    try {
+      const equipos = await buscarEquipos(q, 10);
+      return equipos.map((e: any) => ({
+        label: `${e.marca || ''} ${e.modelo || ''} (${e.numero_serie || 'Sin serie'})`.trim(),
+        value: e.id.toString(),
+        originalData: e
+      }));
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al buscar equipos");
+      return [];
+    }
+  };
+
+  // Manejar cambio en el AsyncSelect
+  const handleEquipoChange = (selectedOption: any) => {
+    setFormData({
+      ...formData,
+      equipo_id: selectedOption ? selectedOption.value : ""
+    });
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [equiposList, tiposList, usuariosList] = await Promise.all([
-          getEquipos(),
+        const [tiposList, usuariosList] = await Promise.all([
           getTiposMantenimiento(),
           getUsuariosM(),
         ]);
-        setEquipos(equiposList.data || []);
         setTipos(tiposList || []);
         setUsuarios(usuariosList.data || []);
       } catch (error) {
@@ -70,67 +137,30 @@ const FormFuturoMantenimiento = () => {
     fetchData();
   }, []);
 
-  // Función para validar el rango horario (7:00 AM a 5:00 PM)
-  const validateTimeRange = (time: string): boolean => {
-    if (!time) return true;
-
-    const [hours, minutes] = time.split(':').map(Number);
-    const totalMinutes = hours * 60 + minutes;
-
-    // 7:00 AM = 420 minutos, 5:00 PM = 1020 minutos
-    return totalMinutes >= 420 && totalMinutes <= 1020;
-  };
-
-  // Función para validar si la hora es mayor a la actual (solo si la fecha es hoy)
-  const validateCurrentTime = (time: string, date: string): boolean => {
-    if (!time || !date) return true;
-
-   const today = new Date().toLocaleDateString('en-CA');
-
-    if (date !== today) return true;
-
-    const now = new Date();
-    const currentHours = now.getHours();
-    const currentMinutes = now.getMinutes();
-
-    const [hours, minutes] = time.split(':').map(Number);
-
-    if (hours < currentHours) return false;
-    if (hours === currentHours && minutes < currentMinutes) return false;
-
-    return true;
-  };
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
 
-    // Preparar el nuevo estado actualizado antes de validaciones
     const newFormData = {
       ...formData,
       [name]: value,
     };
 
-    // Limpiar errores previos
     if (name === 'hora_mantenimiento_inicio') {
       setTimeError(null);
       setRangeError(null);
     }
 
-    // Validación de fecha
     if (name === "fecha_mantenimiento") {
       if (value) {
         const diff = compareDateOnly(value);
         setDateError(diff < 0);
       }
-
-      // Limpiar errores relacionados al cambiar la fecha
       setTimeError(null);
       setRangeError(null);
     }
 
-    // Validación vida útil
     if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
       setShowVidaUtilAlert(true);
     }
@@ -138,17 +168,13 @@ const FormFuturoMantenimiento = () => {
       setShowVidaUtilAlert(false);
     }
 
-    // Validaciones de tiempo
     if (name === "hora_mantenimiento_inicio") {
       if (value) {
-        // Validar rango laboral
         if (!validateTimeRange(value)) {
           setRangeError('El horario debe estar entre 7:00 AM y 5:00 PM');
         }
 
-        // Validar hora actual solo si la fecha es hoy
         const today = new Date().toLocaleDateString('en-CA');
-
         if (newFormData.fecha_mantenimiento === today) {
           if (!validateCurrentTime(value, newFormData.fecha_mantenimiento)) {
             setTimeError('La hora no puede ser anterior a la hora actual');
@@ -157,15 +183,12 @@ const FormFuturoMantenimiento = () => {
       }
     }
 
-    // Finalmente actualizar el estado
     setFormData(newFormData);
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validación de campos requeridos
     if (!formData.equipo_id) {
       toast.error("Debe seleccionar un equipo.");
       return;
@@ -187,7 +210,6 @@ const FormFuturoMantenimiento = () => {
       return;
     }
 
-    // Validación de fecha
     if (formData.fecha_mantenimiento) {
       const diff = compareDateOnly(formData.fecha_mantenimiento);
       if (diff < 0) {
@@ -196,13 +218,11 @@ const FormFuturoMantenimiento = () => {
       }
     }
 
-    // Validación de rango horario
     if (!validateTimeRange(formData.hora_mantenimiento_inicio)) {
       toast.error("La hora de inicio debe estar entre 7:00 AM y 5:00 PM");
       return;
     }
 
-    // Validación de hora actual
     if (formData.fecha_mantenimiento === new Date().toLocaleDateString('en-CA')) {
       if (!validateCurrentTime(formData.hora_mantenimiento_inicio, formData.fecha_mantenimiento)) {
         toast.error("La hora de inicio no puede ser anterior a la hora actual");
@@ -236,11 +256,10 @@ const FormFuturoMantenimiento = () => {
       navigate("/futuroMantenimiento");
     } catch (error) {
       console.error("Error al crear mantenimiento:", error);
-      // Verificar si es el error de duplicado
       if (error.response && error.response.data && error.response.data.message &&
         error.response.data.message.includes('Ya existe un mantenimiento programado')) {
         toast.error(error.response.data.message, {
-          duration: 5000, // Más tiempo para que el usuario pueda leerlo
+          duration: 5000,
         });
       } else {
         toast.error("Error al crear el mantenimiento.");
@@ -260,6 +279,28 @@ const FormFuturoMantenimiento = () => {
   const getCurrentDate = (): string => {
     const today = new Date();
     return today.toISOString().split('T')[0];
+  };
+
+  const validateTimeRange = (time: string): boolean => {
+    if (!time) return true;
+    const [hours, minutes] = time.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes;
+    return totalMinutes >= 420 && totalMinutes <= 1020;
+  };
+
+  const validateCurrentTime = (time: string, date: string): boolean => {
+    if (!time || !date) return true;
+    const today = new Date().toLocaleDateString('en-CA');
+    if (date !== today) return true;
+
+    const now = new Date();
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const [hours, minutes] = time.split(':').map(Number);
+
+    if (hours < currentHours) return false;
+    if (hours === currentHours && minutes < currentMinutes) return false;
+    return true;
   };
 
   if (isLoading) {
@@ -285,23 +326,20 @@ const FormFuturoMantenimiento = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Equipo */}
+        {/* Equipo - Ahora con AsyncSelect */}
         <div className="mb-3">
           <label className="form-label">Equipo</label>
-          <select
-            name="equipo_id"
-            className="form-select"
-            value={formData.equipo_id}
-            onChange={handleChange}
-            disabled={isSubmitting}
-          >
-            <option value="">Seleccione equipo</option>
-            {equipos.map((equipo) => (
-              <option key={equipo.id} value={equipo.id}>
-                {equipo.numero_serie || `Equipo ${equipo.id}`}
-              </option>
-            ))}
-          </select>
+          <AsyncSelect
+            cacheOptions
+            loadOptions={loadOptions}
+            defaultOptions
+            styles={customSelectStyles}
+            placeholder="Buscar equipo..."
+            noOptionsMessage={() => "Escriba para buscar equipos"}
+            loadingMessage={() => "Buscando..."}
+            onChange={handleEquipoChange}
+            isDisabled={isSubmitting}
+          />
         </div>
 
         {/* Tipo de Mantenimiento */}

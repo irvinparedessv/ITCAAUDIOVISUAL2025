@@ -1,3 +1,5 @@
+import type { Equipo } from "./item";
+
 export interface FuturoMantenimiento {
   id: number;
   equipo_id: number;
@@ -5,13 +7,7 @@ export interface FuturoMantenimiento {
   fecha_mantenimiento: string;
   hora_mantenimiento_inicio: string;
   vida_util: number | null;
-  equipo?: {
-    id: number;
-    numero_serie?: string;
-    detalles?: string;
-    modelo_id?: number;
-    tipo_equipo_id?: number;
-  };
+  equipo: Equipo;
 
   tipo_mantenimiento?: {
     id: number;

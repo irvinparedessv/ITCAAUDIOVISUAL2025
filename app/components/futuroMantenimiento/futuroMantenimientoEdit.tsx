@@ -9,10 +9,14 @@ import { getEquipos } from "../../services/equipoService";
 import { getTiposMantenimiento } from "../../services/tipoMantenimientoService";
 import { FaSave, FaTimes, FaLongArrowAltLeft } from "react-icons/fa";
 import { getUsuariosM } from "~/services/userService";
+import { useTheme } from "~/hooks/ThemeContext";
+import { getModelosByMarca } from "~/services/itemService";
+import type { Equipo } from "~/types/item";
 
 const FuturoMantenimientoEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
 
   const [formData, setFormData] = useState({
     equipo_id: "",
@@ -23,7 +27,8 @@ const FuturoMantenimientoEdit = () => {
     vida_util: "",
   });
 
-  const [equipos, setEquipos] = useState<any[]>([]);
+    const [equipo, setEquipo] = useState<Equipo | null>(null);
+  const [modelos, setModelos] = useState<any[]>([]);
   const [tipos, setTipos] = useState<any[]>([]);
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +37,6 @@ const FuturoMantenimientoEdit = () => {
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
   const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
-
 
   // Función para validar el rango horario (7:00 AM a 5:00 PM)
   const validateTimeRange = (time: string): boolean => {
@@ -74,22 +78,32 @@ const FuturoMantenimientoEdit = () => {
     return today.toISOString().split('T')[0];
   };
 
-  useEffect(() => {
+   useEffect(() => {
     if (!id) return;
 
     const fetchData = async () => {
       try {
-        const [mantenimiento, equiposList, tiposList, usuariosList] = await Promise.all([
+        const [mantenimiento, tiposList, usuariosList] = await Promise.all([
           getFuturoMantenimientoById(Number(id)),
-          getEquipos(),
           getTiposMantenimiento(),
           getUsuariosM()
         ]);
 
-        // Asegúrate de cargar la relación user si existe
-        const usuarioAsignado = mantenimiento.user
-          ? mantenimiento.user
-          : usuariosList.data.find(u => u.id === mantenimiento.user_id);
+        // Obtener datos del equipo del mantenimiento
+        const equipoData = mantenimiento.equipo || {
+          id: mantenimiento.equipo_id,
+          marca_id: mantenimiento.equipo?.marca_id,
+          modelo_id: mantenimiento.equipo?.modelo_id,
+          numero_serie: mantenimiento.equipo?.numero_serie,
+        };
+
+        setEquipo(equipoData);
+
+        // Si tenemos marca_id, cargamos los modelos
+        if (equipoData.marca_id) {
+          const modelosList = await getModelosByMarca(equipoData.marca_id);
+          setModelos(modelosList);
+        }
 
         setFormData({
           equipo_id: mantenimiento.equipo_id?.toString() || "",
@@ -101,8 +115,6 @@ const FuturoMantenimientoEdit = () => {
         });
 
         setUsuarios(usuariosList?.data || []);
-
-        setEquipos(equiposList?.data || []);
         setTipos(tiposList?.data || tiposList || []);
       } catch (error) {
         console.error("Error al cargar datos:", error);
@@ -259,23 +271,27 @@ const FuturoMantenimientoEdit = () => {
 
       <form onSubmit={handleSubmit}>
         {/* Equipo (no editable) */}
-        <div className="mb-3">
+         <div className="mb-3">
           <label className="form-label">Equipo</label>
-          <select
-            name="equipo_id"
-            value={formData.equipo_id}
-            onChange={handleChange}
-            className="form-select"
-            disabled
-          >
-            {equipos
-              .filter((equipo) => !equipo.es_componente)
-              .map((equipo) => (
-                <option key={equipo.id} value={equipo.id.toString()}>
-                  {equipo.numero_serie || `Equipo #${equipo.id}`}
-                </option>
-              ))}
-          </select>
+          <div className="form-control" style={{
+            backgroundColor: darkMode ? "#2d2d2d" : "#f8f9fa",
+            color: darkMode ? "#f8f9fa" : "#212529",
+            borderColor: darkMode ? "#444" : "#ced4da",
+            padding: "0.375rem 0.75rem",
+            minHeight: "38px",
+            display: "flex",
+            alignItems: "center"
+          }}>
+            {equipo ? (
+              <>
+                {/* {equipo.marca?.nombre || 'Marca no disponible'} {' '} */}
+                {equipo.modelo?.nombre || 'Modelo no disponible'} {' '}
+                ({equipo.numero_serie || 'Sin serie'})
+              </>
+            ) : (
+              'Equipo no disponible'
+            )}
+          </div>
           <small className="text-muted">
             No se puede cambiar el equipo en modo edición
           </small>
@@ -290,6 +306,11 @@ const FuturoMantenimientoEdit = () => {
             onChange={handleChange}
             className="form-select"
             disabled={isSubmitting}
+            style={{
+              backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+              color: darkMode ? "#f8f9fa" : "#212529",
+              borderColor: darkMode ? "#444" : "#ccc",
+            }}
           >
             <option value="">Seleccione un tipo de mantenimiento</option>
             {tipos.map((tipo) => (
@@ -310,6 +331,11 @@ const FuturoMantenimientoEdit = () => {
             onChange={handleChange}
             className={`form-control ${dateError ? 'is-invalid' : ''}`}
             min={getCurrentDate()}
+            style={{
+              backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+              color: darkMode ? "#f8f9fa" : "#212529",
+              borderColor: darkMode ? "#444" : "#ccc",
+            }}
           />
         </div>
 
@@ -325,6 +351,11 @@ const FuturoMantenimientoEdit = () => {
             min="07:00"
             max="17:00"
             disabled={isSubmitting}
+            style={{
+              backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+              color: darkMode ? "#f8f9fa" : "#212529",
+              borderColor: darkMode ? "#444" : "#ccc",
+            }}
           />
           {timeError && <div className="invalid-feedback">{timeError}</div>}
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
@@ -341,6 +372,11 @@ const FuturoMantenimientoEdit = () => {
             min={0}
             className="form-control"
             disabled={isSubmitting}
+            style={{
+              backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+              color: darkMode ? "#f8f9fa" : "#212529",
+              borderColor: darkMode ? "#444" : "#ccc",
+            }}
           />
         </div>
 
@@ -353,6 +389,11 @@ const FuturoMantenimientoEdit = () => {
             className="form-select"
             disabled={isSubmitting}
             required
+            style={{
+              backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+              color: darkMode ? "#f8f9fa" : "#212529",
+              borderColor: darkMode ? "#444" : "#ccc",
+            }}
           >
             <option value="">Seleccione un responsable</option>
             {usuarios.map((user) => (

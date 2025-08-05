@@ -15,28 +15,8 @@ import { getFuturosMantenimiento, deleteFuturoMantenimiento } from "~/services/f
 import type { FuturoMantenimiento } from "app/types/futuroMantenimiento";
 import { formatDate, formatTo12h } from "~/utils/time";
 
-// Extended type to include related models
-type FuturoMantenimientoWithRelations = FuturoMantenimiento & {
-  equipo?: {
-    id: number;
-    numero_serie?: string;
-    modelo?: {
-      id: number;
-      nombre?: string;
-      marca?: {
-        id: number;
-        nombre?: string;
-      };
-    };
-  };
-  tipo_mantenimiento?: {
-    id: number;
-    nombre: string;
-  };
-};
-
 export default function FuturoMantenimientoList() {
-  const [mantenimientos, setMantenimientos] = useState<FuturoMantenimientoWithRelations[]>([]);
+  const [mantenimientos, setMantenimientos] = useState<FuturoMantenimiento[]>([]);
   const [filters, setFilters] = useState({
     search: "",
     page: 1,
@@ -227,8 +207,9 @@ export default function FuturoMantenimientoList() {
                     <tr key={item.id}>
                       <td>{item.id}</td>
                       <td>
-                        {item.equipo?.numero_serie || "Sin número de serie"}
-                        {item.equipo?.modelo && ` (${item.equipo.modelo.nombre})`}
+                        {item.equipo
+                          ? `${item.equipo.numero_serie} - ${item.equipo.modelo?.nombre ?? ""} (${item.equipo.modelo?.marca?.nombre ?? ""})`
+                          : "Sin equipo"}
                       </td>
                       <td>{item.tipo_mantenimiento?.nombre || "-"}</td>
                       <td>{formatDate(item.fecha_mantenimiento)}</td>

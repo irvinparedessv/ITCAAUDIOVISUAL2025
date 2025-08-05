@@ -16,6 +16,7 @@ import { Role } from "~/types/roles";
 import VisualizarModal from "../attendantadmin/VisualizarModal";
 import { useNavigate } from "react-router-dom";
 import SugerenciasModelosModal from "./SugerenciasModal";
+import EquipoDetalleModal from "./DetailModal";
 
 interface Props {
   formData: FormDataType;
@@ -71,9 +72,13 @@ export default function EquiposSelect({
   const [loadingNextPage, setLoadingNextPage] = useState(false);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const pagesLoaded = useRef<Set<number>>(new Set());
+  const [showDetalleModal, setShowDetalleModal] = useState(false);
+  const [equipoDetalleIds, setEquipoDetalleIds] = useState<number[]>([]);
   const [totalItems, setTotalItems] = useState<number>(0);
   const [equipoAEditar, setEquipoAEditar] =
     useState<EquipmentSeleccionado | null>(null);
+  const [grupoSeleccionado, setGrupoSeleccionado] =
+    useState<GrupoEquiposPorModelo | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [equiposDisponiblesMismoModelo, setEquiposDisponiblesMismoModelo] =
     useState<EquipoIndividual[]>([]);
@@ -699,6 +704,19 @@ export default function EquiposSelect({
                       >
                         Agregar
                       </button>
+                      <button
+                        className="btn btn-info btn-sm ms-2"
+                        type="button"
+                        onClick={() => {
+                          setEquipoDetalleIds(
+                            grupo.equipos.map((e) => e.equipo_id)
+                          );
+                          setGrupoSeleccionado(grupo);
+                          setShowDetalleModal(true);
+                        }}
+                      >
+                        Detalles
+                      </button>
                     </div>
 
                     {/* Mostrar equipos en reposo */}
@@ -877,6 +895,15 @@ export default function EquiposSelect({
         onHide={() => setShowSugerencias(false)}
         sugerencias={sugerencias}
         handleCopy={handleCopy}
+      />
+      <EquipoDetalleModal
+        show={showDetalleModal}
+        onHide={() => setShowDetalleModal(false)}
+        equipoIds={equipoDetalleIds}
+        initialIndex={0}
+        grupoEquipos={grupoSeleccionado} // el grupo del que abres los detalles
+        formData={formData}
+        setFormData={setFormData}
       />
     </div>
   );

@@ -29,22 +29,28 @@ export const getTiposMantenimiento = async () => {
   return response.data;
 };
 
-export const getMantenimientos = async (
-  filters: {
-    page?: number;
-    per_page?: number;
-    tipo_id?: number;
-    equipo_id?: number;
-    search?: string; // ✅ añade esto
-  }
-): Promise<PaginatedResponse<Mantenimiento>> => {
+export const getMantenimientos = async (filters: {
+  search?: string;
+  page?: number;
+  per_page?: number;
+  tipo_id?: number;
+  estado_id?: number;
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  vida_util_min?: number;
+  vida_util_max?: number;
+}) => {
   const params = new URLSearchParams();
 
-  if (filters.page) params.append("page", filters.page.toString());
-  if (filters.per_page) params.append("perPage", filters.per_page.toString());
-  if (filters.tipo_id) params.append("tipo_id", filters.tipo_id.toString());
-  if (filters.equipo_id) params.append("equipo_id", filters.equipo_id.toString());
-  if (filters.search) params.append("search", filters.search); // ✅ aquí se envía el filtro
+  if (filters.search) params.append('search', filters.search);
+  if (filters.page) params.append('page', filters.page.toString());
+  if (filters.per_page) params.append('per_page', filters.per_page.toString());
+  if (filters.tipo_id) params.append('tipo_id', filters.tipo_id.toString());
+  if (filters.estado_id) params.append('estado_id', filters.estado_id.toString());
+  if (filters.fecha_inicio) params.append('fecha_inicio', filters.fecha_inicio);
+  if (filters.fecha_fin) params.append('fecha_fin', filters.fecha_fin);
+  if (filters.vida_util_min) params.append('vida_util_min', filters.vida_util_min.toString());
+  if (filters.vida_util_max) params.append('vida_util_max', filters.vida_util_max.toString());
 
   const response = await api.get(`/mantenimientos?${params.toString()}`);
   return response.data;
@@ -114,9 +120,9 @@ export const deleteMantenimiento = async (id: number) => {
 
 export const updateVidaUtilMantenimiento = async (id: number, vidaUtil: number, comentario?: string) => {
   try {
-    const response = await api.put(`/mantenimientos/${id}/vida-util`, { 
+    const response = await api.put(`/mantenimientos/${id}/vida-util`, {
       vida_util: vidaUtil,
-      comentario: comentario 
+      comentario: comentario
     });
     return response.data;
   } catch (error: any) {

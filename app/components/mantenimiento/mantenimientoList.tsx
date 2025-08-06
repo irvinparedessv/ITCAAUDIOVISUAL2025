@@ -10,23 +10,41 @@ import {
   FaLongArrowAltLeft,
   FaTrash,
   FaExchangeAlt,
+  FaFilter,
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
 import type { Mantenimiento } from "../../types/mantenimiento";
-import { getMantenimientos, deleteMantenimiento, updateVidaUtilMantenimiento } from "../../services/mantenimientoService";
-import { getTiposMantenimiento } from "~/services/tipoMantenimientoService";
+import { getMantenimientos, deleteMantenimiento, updateVidaUtilMantenimiento, getTiposMantenimiento } from "../../services/mantenimientoService";
+//import { getTiposMantenimiento } from "~/services/tipoMantenimientoService";
 import { getEstados, updateEstadoEquipo } from "../../services/itemService";
 import { formatDate, formatTo12h } from "~/utils/time";
 import type { Estado } from "~/types/item";
 import { EstadoEquipo } from "~/types/estados";
 
+interface Filters {
+  search: string;
+  page: number;
+  per_page: number;
+  tipo_id?: number;
+  estado_id?: number;
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  vida_util_min?: number;
+  vida_util_max?: number;
+}
+
 export default function MantenimientoList() {
   const [mantenimientos, setMantenimientos] = useState<Mantenimiento[]>([]);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     search: "",
     page: 1,
     per_page: 10,
-    tipo_id: undefined as number | undefined,
+    tipo_id: undefined,
+    estado_id: undefined,
+    fecha_inicio: undefined,
+    fecha_fin: undefined,
+    vida_util_min: undefined,
+    vida_util_max: undefined,
   });
   const [searchInput, setSearchInput] = useState("");
   const [lastPage, setLastPage] = useState(1);
@@ -45,15 +63,17 @@ export default function MantenimientoList() {
 
   const cargarTipos = async () => {
     try {
-      const data = await getTiposMantenimiento();
-      const activos = data.filter((t: any) => t.estado === true);
-      const formateados: Record<number, string> = {};
-      activos.forEach((t: any) => {
-        formateados[t.id] = t.nombre;
-      });
-      setTipos(formateados);
-    } catch {
-      toast.error("Error al cargar tipos de mantenimiento");
+      const { data: tipos = [] } = await getTiposMantenimiento();
+
+      const tiposActivos = tipos
+        .filter(tipo => tipo.estado === true || tipo.estado === 1)
+        .reduce((acc, tipo) => ({ ...acc, [tipo.id]: tipo.nombre }), {});
+
+      setTipos(tiposActivos);
+    } catch (error) {
+      console.error('Error al cargar tipos:', error);
+      toast.error("No se pudieron cargar los tipos de mantenimiento");
+      setTipos({});
     }
   };
 
@@ -159,7 +179,6 @@ export default function MantenimientoList() {
           toast.error(result.message || "Error al actualizar vida útil", { duration: 4000 });
         }
       } else {
-        // Lógica original para mantenimientos no completados
         const result = await updateEstadoEquipo(
           selectedMantenimiento.equipo_id,
           selectedEstado,
@@ -205,6 +224,11 @@ export default function MantenimientoList() {
       page: 1,
       per_page: 10,
       tipo_id: undefined,
+      estado_id: undefined,
+      fecha_inicio: undefined,
+      fecha_fin: undefined,
+      vida_util_min: undefined,
+      vida_util_max: undefined,
     });
     setSearchInput("");
   };
@@ -277,7 +301,7 @@ export default function MantenimientoList() {
             </InputGroup.Text>
             <Form.Control
               type="text"
-              placeholder="Buscar por equipo, tipo o usuario"
+              placeholder="Buscar por equipo, tipo, usuario, comentarios o vida útil"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
@@ -294,12 +318,37 @@ export default function MantenimientoList() {
             )}
           </InputGroup>
         </div>
+        <Button
+          variant={showFilters ? "primary" : "outline-secondary"}
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex-shrink-0"
+        >
+          {showFilters ? (
+            <>
+              <FaTimes className="me-2" />
+              Ocultar Filtros
+            </>
+          ) : (
+            <>
+              <FaFilter className="me-2" />
+              Mostrar Filtros
+            </>
+          )}
+          {Object.values(filters).some(
+            (val) => val !== undefined && val !== "" && val !== 1 && val !== 10
+          ) && (
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                !
+                <span className="visually-hidden">Filtros activos</span>
+              </span>
+            )}
+        </Button>
       </div>
 
       {showFilters && (
         <div className="border p-3 rounded mb-3">
           <div className="row g-3">
-            <div className="col-md-6">
+            <div className="col-md-4">
               <Form.Label>Tipo de Mantenimiento</Form.Label>
               <Form.Select
                 value={filters.tipo_id || ""}
@@ -318,8 +367,85 @@ export default function MantenimientoList() {
                 ))}
               </Form.Select>
             </div>
-            <div className="col-md-6 d-flex align-items-end">
-              <Button variant="outline-danger" onClick={resetFilters} className="w-100">
+
+            <div className="col-md-4">
+              <Form.Label>Estado del Equipo</Form.Label>
+              <Form.Select
+                value={filters.estado_id || ""}
+                onChange={(e) =>
+                  handleFilterUpdate(
+                    "estado_id",
+                    e.target.value ? Number(e.target.value) : undefined
+                  )
+                }
+              >
+                <option value="">Todos</option>
+                {estados.map((estado) => (
+                  <option key={estado.id} value={estado.id}>
+                    {estado.nombre}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+
+            <div className="col-md-4">
+              <Form.Label>Rango de Vida Útil</Form.Label>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  type="number"
+                  placeholder="Mínimo"
+                  value={filters.vida_util_min ?? ""}
+                  onChange={(e) =>
+                    handleFilterUpdate(
+                      "vida_util_min",
+                      e.target.value ? Number(e.target.value) : undefined
+                    )
+                  }
+                  min="0"
+                />
+                <Form.Control
+                  type="number"
+                  placeholder="Máximo"
+                  value={filters.vida_util_max ?? ""}
+                  onChange={(e) =>
+                    handleFilterUpdate(
+                      "vida_util_max",
+                      e.target.value ? Number(e.target.value) : undefined
+                    )
+                  }
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div className="col-md-6">
+              <Form.Label>Fecha desde</Form.Label>
+              <Form.Control
+                type="date"
+                value={filters.fecha_inicio ?? ""}
+                onChange={(e) =>
+                  handleFilterUpdate("fecha_inicio", e.target.value || undefined)
+                }
+              />
+            </div>
+
+            <div className="col-md-6">
+              <Form.Label>Fecha hasta</Form.Label>
+              <Form.Control
+                type="date"
+                value={filters.fecha_fin ?? ""}
+                onChange={(e) =>
+                  handleFilterUpdate("fecha_fin", e.target.value || undefined)
+                }
+                min={filters.fecha_inicio}
+              />
+            </div>
+
+            <div className="col-12 d-flex justify-content-end gap-2">
+              <Button variant="outline-secondary" onClick={() => setShowFilters(false)}>
+                Ocultar Filtros
+              </Button>
+              <Button variant="outline-danger" onClick={resetFilters}>
                 <FaTimes className="me-2" />
                 Limpiar filtros
               </Button>
@@ -412,7 +538,6 @@ export default function MantenimientoList() {
                               setSelectedEstado(null);
                               setShowEstadoModal(true);
                             }}
-
                             style={{
                               width: "44px",
                               height: "44px",
@@ -486,7 +611,6 @@ export default function MantenimientoList() {
         <Modal.Body>
           {selectedMantenimiento && (
             <div>
-              {/* Sección de información básica */}
               <div className="mb-4 p-3 border-bottom">
                 <h5 className="fw-bold mb-3">Información del Equipo</h5>
                 <div className="row">
@@ -511,7 +635,6 @@ export default function MantenimientoList() {
                 </div>
               </div>
 
-              {/* Sección de vida útil */}
               <div className="mb-4 p-3 border rounded">
                 <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
                   <span>Vida Útil del Equipo</span>
@@ -574,7 +697,6 @@ export default function MantenimientoList() {
                 </div>
               </div>
 
-              {/* Sección de estado */}
               {selectedMantenimiento.fecha_mantenimiento_final ? (
                 <div className="mb-3 p-3 border rounded">
                   <h5 className="fw-bold mb-3">Estado del Equipo</h5>
@@ -610,7 +732,6 @@ export default function MantenimientoList() {
                 </Form.Group>
               )}
 
-              {/* Sección de comentarios */}
               <Form.Group className="mb-3">
                 <Form.Label>Comentarios</Form.Label>
                 <Form.Control
@@ -629,7 +750,6 @@ export default function MantenimientoList() {
                 />
               </Form.Group>
 
-              {/* Información de fechas si ya está completado */}
               {selectedMantenimiento.fecha_mantenimiento_final && (
                 <div className="mt-3 p-3 border rounded">
                   <h5 className="fw-bold mb-3">Información de Finalización</h5>

@@ -49,24 +49,6 @@ const MantenimientoEdit = () => {
     return totalMinutes >= 420 && totalMinutes <= 1020;
   };
 
-  // Función para validar si la hora es mayor a la actual (solo si la fecha es hoy)
-  // const validateCurrentTime = (time: string, date: string): boolean => {
-  //   if (!time) return true;
-    
-  //   const today = new Date().toISOString().split('T')[0];
-  //   //if (date !== today) return true;
-    
-  //   const now = new Date();
-  //   const currentHours = now.getHours();
-  //   const currentMinutes = now.getMinutes();
-    
-  //   const [hours, minutes] = time.split(':').map(Number);
-    
-  //   if (hours < currentHours) return false;
-  //   if (hours === currentHours && minutes < currentMinutes) return false;
-    
-  //   return true;
-  // };
 
   const compareDateOnly = (dateStr: string): number => {
     const [year, month, day] = dateStr.split('-').map(Number);

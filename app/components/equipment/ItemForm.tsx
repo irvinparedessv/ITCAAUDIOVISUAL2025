@@ -13,6 +13,7 @@ import AsyncSelect from "react-select/async";
 import Select from "react-select";
 import { useTheme } from "~/hooks/ThemeContext";
 import { getModelosByMarca, getModelosByMarcaYTipo, getModelosByTipo, searchMarcas, searchTipoEquipo } from "~/services/itemService";
+import { EstadoEquipo } from "~/types/estados";
 
 interface CaracteristicaForm {
   id: number;
@@ -75,7 +76,8 @@ export default function ItemForm({
   })();
 
   // Filtrar los estados para mostrar solo Disponible (1) y Daniado (2)
-  const filteredEstados = estados.filter(e => e.id === 1 || e.id === 4);
+  const filteredEstados = estados.filter(e => e.id === EstadoEquipo.Disponible ||  e.id === EstadoEquipo.Mantenimiento 
+    ||  e.id === EstadoEquipo.Dañado ||  e.id === EstadoEquipo.NoDisponible);
 
   // 1. Estado para controlar el bloqueo - inicializado como true si estamos en modo creación
   const [bloquearEstado, setBloquearEstado] = useState(true);

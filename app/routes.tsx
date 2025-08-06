@@ -80,6 +80,7 @@ import FuturoMantenimientoList from "./components/futuroMantenimiento/futuroMant
 import FormFuturoMantenimiento from "./components/FormFuturoMantenimiento";
 import FuturoMantenimientoEdit from "./components/futuroMantenimiento/futuroMantenimientoEdit";
 import PrediccionesPorEquipoVidaUtilPage from "./components/prediction/PrediccionesPorEquipoVidaUtil";
+import ReporteMantenimiento from "./components/reports/ReporteMantenimiento";
 
 const router = createBrowserRouter([
   {
@@ -325,6 +326,10 @@ const router = createBrowserRouter([
           {
             path: "reporteReservasAulas",
             element: <ReporteReservasPorAula />,
+          },
+           {
+            path: "reporteMantenimientos",
+            element: <ReporteMantenimiento />,
           },
           {
             path: "prediccionAula",

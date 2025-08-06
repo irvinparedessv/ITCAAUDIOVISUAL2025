@@ -108,7 +108,7 @@ const OpcionesEquipos = () => {
           <div style={{ flexGrow: 1, minWidth: 0 }}>
             <h1 className={"welcomeHeader"}>Gestión Equipos</h1>
             <p className={"welcomeText"}>
-              Administracion de Tipos,Modelos,Marcas,Equipo e Imagenes
+              Administracion de Tipos, Modelos, Marcas, Equipo y Mantenimiento
             </p>
           </div>
         </div>

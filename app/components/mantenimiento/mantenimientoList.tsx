@@ -660,13 +660,18 @@ export default function MantenimientoList() {
 
                   <div className="col-md-6">
                     <Form.Group>
-                      <Form.Label className="text-muted small">Vida Útil a Añadir</Form.Label>
+                      <Form.Label className="text-muted small">
+                        {selectedMantenimiento.fecha_mantenimiento_final
+                          ? "Modificación de Vida Útil "
+                          : "Vida Útil a Añadir"}
+                      </Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="number"
                           min="0"
                           step="1"
                           value={selectedMantenimiento.vida_util || 0}
+
                           onChange={(e) => {
                             const value = parseInt(e.target.value) || 0;
                             setSelectedMantenimiento({
@@ -691,8 +696,12 @@ export default function MantenimientoList() {
                   <div className="d-flex justify-content-between align-items-center">
                     <span className="fw-bold">Nueva Vida Útil Total:</span>
                     <span className="fs-5 fw-bold">
-                      {(selectedMantenimiento.equipo?.vida_util || 0) + (selectedMantenimiento.vida_util || 0)} horas
+                      {selectedMantenimiento.fecha_mantenimiento_final
+                        ? selectedMantenimiento.equipo?.vida_util || 0
+                        : (selectedMantenimiento.equipo?.vida_util || 0) + (selectedMantenimiento.vida_util || 0)
+                      } horas
                     </span>
+
                   </div>
                 </div>
               </div>

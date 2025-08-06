@@ -370,7 +370,8 @@ export default function MarcaManager() {
       )}
 
       <Modal show={showModal} onHide={handleClose}>
-        <Modal.Header closeButton>
+        <Modal.Header className="text-white py-3"
+          style={{ backgroundColor: "#b1291d" }} closeButton>
           <Modal.Title>
             {editing ? "Editar Marca" : "Agregar Marca"}
           </Modal.Title>

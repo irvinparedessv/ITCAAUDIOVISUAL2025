@@ -470,7 +470,8 @@ export default function ModeloManager() {
 
       {/* Modal para crear/editar */}
       <Modal show={showModal} onHide={handleClose}>
-        <Modal.Header closeButton>
+        <Modal.Header className="text-white py-3"
+          style={{ backgroundColor: "#b1291d" }} closeButton>
           <Modal.Title>
             {editing ? "Editar Modelo" : "Agregar Modelo"}
           </Modal.Title>

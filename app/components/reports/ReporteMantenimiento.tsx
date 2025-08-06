@@ -61,7 +61,7 @@ interface FuturoMantenimiento {
       nombre?: string;
     };
   };
-  tipo_mantenimiento?: {  // Cambiado de tipoMantenimiento a tipo_mantenimiento
+  tipo_mantenimiento?: {
     nombre?: string;
   };
   usuario?: {
@@ -101,7 +101,6 @@ const ReporteMantenimiento = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [perPage] = useState(20);
 
-  // Funciones helper para manejar datos anidados
   const getEquipoNombre = (item: Mantenimiento | FuturoMantenimiento) => {
     if (!item.equipo?.modelo) return 'Equipo desconocido';
     const marca = item.equipo.modelo.marca?.nombre || 'Marca desconocida';
@@ -115,24 +114,35 @@ const ReporteMantenimiento = () => {
   };
 
   const getTipoMantenimiento = (item: Mantenimiento | FuturoMantenimiento) => {
-    // Intenta con ambas posibles propiedades (tipoMantenimiento o tipo_mantenimiento)
-    return (item as any).tipo_mantenimiento?.nombre || 'Tipo desconocido';
+    return (item as any).tipoMantenimiento?.nombre || 
+           (item as any).tipo_mantenimiento?.nombre || 
+           'Tipo desconocido';
   };
 
   const getNumeroSerie = (item: Mantenimiento | FuturoMantenimiento) => {
     return item.equipo?.numero_serie || 'N/A';
   };
 
-  // Función para obtener el estado correctamente
   const getEstado = (item: Mantenimiento | FuturoMantenimiento) => {
-    // Prioriza el estado del mantenimiento si existe
     if ('estado' in item && item.estado) {
       return item.estado;
     }
-    // Si no, usa el estado del equipo
     return item.equipo?.estado?.nombre || 'Desconocido';
   };
 
+  const getEstadoBadge = (estado: string) => {
+    if (!estado) return "secondary";
+
+    const estadoLower = estado.toLowerCase();
+    
+    if (estadoLower.includes('completado') || estadoLower.includes('disponible')) return "success";
+    if (estadoLower.includes('progreso') || estadoLower.includes('en uso')) return "warning";
+    if (estadoLower.includes('cancelado') || estadoLower.includes('dañado')) return "danger";
+    if (estadoLower.includes('pendiente') || estadoLower.includes('mantenimiento')) return "info";
+    if (estadoLower.includes('reservado')) return "primary";
+    
+    return "secondary";
+  };
 
   const fetchMantenimientos = async (
     page = 1,
@@ -199,7 +209,6 @@ const ReporteMantenimiento = () => {
   const fetchTiposMantenimiento = async () => {
     try {
       const res = await getTiposMantenimiento();
-      // Asegurarse de que siempre sea un array
       const tipos = Array.isArray(res) ? res : (res.data || []);
       setTiposMantenimiento(tipos);
     } catch {
@@ -560,18 +569,6 @@ const ReporteMantenimiento = () => {
     navigate("/opcionesReportes");
   };
 
-  const getEstadoBadge = (estado: string) => {
-    if (!estado) return "secondary";
-
-    switch (estado.toLowerCase()) {
-      case "completado": return "success";
-      case "en progreso": return "warning";
-      case "cancelado": return "danger";
-      case "pendiente": return "info";
-      default: return "secondary";
-    }
-  };
-
   const handleTabChange = (tab: "mantenimientos" | "futuros") => {
     setActiveTab(tab);
     setCurrentPage(1);
@@ -597,14 +594,14 @@ const ReporteMantenimiento = () => {
         <Card.Body>
           <div className="d-flex mb-3 border-bottom">
             <Button
-              variant={activeTab === "mantenimientos" ? "primary" : "outline-primary"}
+              variant={activeTab === "mantenimientos" ? "primary" : "outline-secondary"}
               onClick={() => handleTabChange("mantenimientos")}
               className="me-2 rounded-0"
             >
               <FaTools className="me-2" /> Mantenimientos
             </Button>
             <Button
-              variant={activeTab === "futuros" ? "primary" : "outline-primary"}
+              variant={activeTab === "futuros" ? "primary" : "outline-secondary"}
               onClick={() => handleTabChange("futuros")}
               className="rounded-0"
             >
@@ -765,15 +762,20 @@ const ReporteMantenimiento = () => {
                 )}
               </thead>
               <tbody>
-                {activeTab === "mantenimientos" ? (
+                {loading ? (
+                  <tr>
+                    <td 
+                      colSpan={activeTab === "mantenimientos" ? 11 : 7} 
+                      className="text-center py-4"
+                    >
+                      <Spinner animation="border" variant="primary" />
+                    </td>
+                  </tr>
+                ) : activeTab === "mantenimientos" ? (
                   mantenimientos.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="text-center py-4">
-                        {loading ? (
-                          <Spinner animation="border" variant="primary" />
-                        ) : (
-                          "No hay resultados para mostrar. Realiza una búsqueda para ver los datos."
-                        )}
+                      <td colSpan={11} className="text-center py-4">
+                        No hay resultados para mostrar. Realiza una búsqueda para ver los datos.
                       </td>
                     </tr>
                   ) : (
@@ -782,14 +784,14 @@ const ReporteMantenimiento = () => {
                         <td>{i + 1}</td>
                         <td>{getEquipoNombre(m)}</td>
                         <td>{getNumeroSerie(m)}</td>
-                        <td>{getTipoMantenimiento(m)}</td> {/* Usa la función helper */}
+                        <td>{getTipoMantenimiento(m)}</td>
                         <td>{getTecnicoNombre(m)}</td>
                         <td>{formatDate(m.fecha_mantenimiento) || 'N/A'}</td>
                         <td>{formatTo12h(m.hora_mantenimiento_inicio) || 'N/A'}</td>
                         <td>{formatDate(m.fecha_mantenimiento_final) || 'N/A'}</td>
                         <td>{formatTo12h(m.hora_mantenimiento_final) || 'N/A'}</td>
                         <td>
-                          <Badge bg={getEstadoBadge(getEstado(m))}> {/* Usa getEstado */}
+                          <Badge bg={getEstadoBadge(getEstado(m))}>
                             {getEstado(m)}
                           </Badge>
                         </td>
@@ -797,30 +799,24 @@ const ReporteMantenimiento = () => {
                       </tr>
                     ))
                   )
+                ) : futurosMantenimientos.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-4">
+                      No hay resultados para mostrar. Realiza una búsqueda para ver los datos.
+                    </td>
+                  </tr>
                 ) : (
-                  futurosMantenimientos.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="text-center py-4">
-                        {loading ? (
-                          <Spinner animation="border" variant="primary" />
-                        ) : (
-                          "No hay resultados para mostrar. Realiza una búsqueda para ver los datos."
-                        )}
-                      </td>
+                  futurosMantenimientos.map((fm, i) => (
+                    <tr key={fm.id}>
+                      <td>{i + 1}</td>
+                      <td>{getEquipoNombre(fm)}</td>
+                      <td>{getNumeroSerie(fm)}</td>
+                      <td>{getTipoMantenimiento(fm)}</td>
+                      <td>{getTecnicoNombre(fm)}</td>
+                      <td>{formatDate(fm.fecha_mantenimiento) || 'N/A'}</td>
+                      <td>{formatTo12h(fm.hora_mantenimiento_inicio) || 'N/A'}</td>
                     </tr>
-                  ) : (
-                    futurosMantenimientos.map((fm, i) => (
-                      <tr key={fm.id}>
-                        <td>{i + 1}</td>
-                        <td>{getEquipoNombre(fm)}</td>
-                        <td>{getNumeroSerie(fm)}</td>
-                        <td>{getTipoMantenimiento(fm)}</td>
-                        <td>{getTecnicoNombre(fm)}</td>
-                        <td>{formatDate(fm.fecha_mantenimiento) || 'N/A'}</td>
-                        <td>{formatTo12h(fm.hora_mantenimiento_inicio) || 'N/A'}</td>
-                      </tr>
-                    ))
-                  )
+                  ))
                 )}
               </tbody>
             </Table>

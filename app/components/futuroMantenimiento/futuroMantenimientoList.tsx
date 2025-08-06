@@ -39,45 +39,41 @@ export default function FuturoMantenimientoList() {
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tipos, setTipos] = useState<Record<number, string>>({});
+  const [hasLoaded, setHasLoaded] = useState(false); // Nuevo estado para controlar la carga inicial
   const navigate = useNavigate();
 
   const handleBack = () => navigate("/equipos");
 
   const cargarTipos = async () => {
-  setLoading(true);
-  try {
-    const response = await getTiposMantenimiento();
-    
-    // Verifica la estructura de la respuesta
-    console.log('Respuesta completa:', response);
-    
-    // Maneja diferentes estructuras de respuesta
-    let tiposData = [];
-    if (Array.isArray(response)) {
-      tiposData = response;
-    } else if (response && Array.isArray(response.data)) {
-      tiposData = response.data;
-    } else {
-      throw new Error('Formato de respuesta inesperado');
+    setLoading(true);
+    try {
+      const response = await getTiposMantenimiento();
+      
+      let tiposData = [];
+      if (Array.isArray(response)) {
+        tiposData = response;
+      } else if (response && Array.isArray(response.data)) {
+        tiposData = response.data;
+      } else {
+        throw new Error('Formato de respuesta inesperado');
+      }
+
+      const tiposActivos = tiposData
+        .filter(tipo => tipo.estado === true || tipo.estado === 1)
+        .reduce((acc: Record<number, string>, tipo) => {
+          acc[tipo.id] = tipo.nombre;
+          return acc;
+        }, {});
+
+      setTipos(tiposActivos);
+    } catch (error) {
+      console.error('Error al cargar tipos:', error);
+      toast.error("No se pudieron cargar los tipos de mantenimiento");
+      setTipos({});
+    } finally {
+      setLoading(false);
     }
-
-    const tiposActivos = tiposData
-      .filter(tipo => tipo.estado === true || tipo.estado === 1)
-      .reduce((acc: Record<number, string>, tipo) => {
-        acc[tipo.id] = tipo.nombre;
-        return acc;
-      }, {});
-
-    console.log('Tipos activos:', tiposActivos);
-    setTipos(tiposActivos);
-  } catch (error) {
-    console.error('Error al cargar tipos:', error);
-    toast.error("No se pudieron cargar los tipos de mantenimiento");
-    setTipos({});
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const cargarMantenimientos = async () => {
     setLoading(true);
@@ -90,16 +86,22 @@ export default function FuturoMantenimientoList() {
       setMantenimientos([]);
     } finally {
       setLoading(false);
+      setHasLoaded(true); // Marcamos que la carga ha terminado
     }
   };
 
   useEffect(() => {
-    cargarTipos();
-    cargarMantenimientos();
+    const loadData = async () => {
+      await cargarTipos();
+      await cargarMantenimientos();
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
-    cargarMantenimientos();
+    if (hasLoaded) { // Solo recargamos si ya se cargó inicialmente
+      cargarMantenimientos();
+    }
   }, [filters]);
 
   useEffect(() => {
@@ -275,7 +277,7 @@ export default function FuturoMantenimientoList() {
       {showFilters && (
         <div className="border p-3 rounded mb-3">
           <div className="row g-3">
-             <div className="col-md-4">
+            <div className="col-md-4">
               <Form.Label>Tipo de Mantenimiento</Form.Label>
               <Form.Select
                 value={filters.tipo_id || ""}
@@ -328,7 +330,7 @@ export default function FuturoMantenimientoList() {
         </div>
       )}
 
-      {loading ? (
+      {!hasLoaded ? (
         <div className="text-center my-5">
           <Spinner animation="border" variant="primary" />
           <p className="mt-3">Cargando datos...</p>
@@ -419,11 +421,13 @@ export default function FuturoMantenimientoList() {
             </table>
           </div>
 
-          <PaginationComponent
-            page={filters.page}
-            totalPages={lastPage}
-            onPageChange={handlePageChange}
-          />
+          {mantenimientos.length > 0 && (
+            <PaginationComponent
+              page={filters.page}
+              totalPages={lastPage}
+              onPageChange={handlePageChange}
+            />
+          )}
         </>
       )}
     </div>

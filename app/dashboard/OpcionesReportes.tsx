@@ -54,6 +54,13 @@ const opciones = [
     icono: <FaRegFileAlt size={24} />,
     roles: [Role.Administrador, Role.Encargado]
   },
+  {
+    nombre: 'Reporte de mantenimiento',
+    descripcion: 'Reporte de mantenimineto de equipos',
+    ruta: '/reporteMantenimientos',
+    icono: <FaRegFileAlt size={24} />,
+    roles: [Role.Administrador, Role.Encargado]
+  },
 ];
 
 const OpcionesReporte = () => {

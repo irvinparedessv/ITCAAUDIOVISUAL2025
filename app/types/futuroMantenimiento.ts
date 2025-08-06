@@ -1,4 +1,5 @@
 import type { Equipo } from "./item";
+import type { Usuario } from "./mantenimiento";
 
 export interface FuturoMantenimiento {
   id: number;
@@ -7,7 +8,7 @@ export interface FuturoMantenimiento {
   fecha_mantenimiento: string;
   hora_mantenimiento_inicio: string;
   equipo: Equipo;
-
+  usuario?: Usuario;  
   tipo_mantenimiento?: {
     id: number;
     nombre: string;

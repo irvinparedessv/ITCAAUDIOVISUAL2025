@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Form, InputGroup, Spinner } from "react-bootstrap";
+import { Button, Form, InputGroup, Spinner, Modal } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import {
@@ -9,25 +9,75 @@ import {
   FaTimes,
   FaPlus,
   FaLongArrowAltLeft,
+  FaFilter,
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
 import { getFuturosMantenimiento, deleteFuturoMantenimiento } from "~/services/futuroMantenimientoService";
-import type { FuturoMantenimiento } from "app/types/futuroMantenimiento";
+import { getTiposMantenimiento } from "~/services/tipoMantenimientoService";
+import type { FuturoMantenimiento } from "~/types/futuroMantenimiento";
 import { formatDate, formatTo12h } from "~/utils/time";
+
+interface Filters {
+  search: string;
+  page: number;
+  per_page: number;
+  tipo_id?: number;
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  futuro_id?: number;
+}
 
 export default function FuturoMantenimientoList() {
   const [mantenimientos, setMantenimientos] = useState<FuturoMantenimiento[]>([]);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     search: "",
     page: 1,
     per_page: 10,
   });
   const [searchInput, setSearchInput] = useState("");
   const [lastPage, setLastPage] = useState(1);
-  const navigate = useNavigate();
+  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [tipos, setTipos] = useState<Record<number, string>>({});
+  const navigate = useNavigate();
 
   const handleBack = () => navigate("/equipos");
+
+  const cargarTipos = async () => {
+  setLoading(true);
+  try {
+    const response = await getTiposMantenimiento();
+    
+    // Verifica la estructura de la respuesta
+    console.log('Respuesta completa:', response);
+    
+    // Maneja diferentes estructuras de respuesta
+    let tiposData = [];
+    if (Array.isArray(response)) {
+      tiposData = response;
+    } else if (response && Array.isArray(response.data)) {
+      tiposData = response.data;
+    } else {
+      throw new Error('Formato de respuesta inesperado');
+    }
+
+    const tiposActivos = tiposData
+      .filter(tipo => tipo.estado === true || tipo.estado === 1)
+      .reduce((acc: Record<number, string>, tipo) => {
+        acc[tipo.id] = tipo.nombre;
+        return acc;
+      }, {});
+
+    console.log('Tipos activos:', tiposActivos);
+    setTipos(tiposActivos);
+  } catch (error) {
+    console.error('Error al cargar tipos:', error);
+    toast.error("No se pudieron cargar los tipos de mantenimiento");
+    setTipos({});
+  } finally {
+    setLoading(false);
+  }
+};
 
   const cargarMantenimientos = async () => {
     setLoading(true);
@@ -42,6 +92,11 @@ export default function FuturoMantenimientoList() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    cargarTipos();
+    cargarMantenimientos();
+  }, []);
 
   useEffect(() => {
     cargarMantenimientos();
@@ -64,8 +119,7 @@ export default function FuturoMantenimientoList() {
     if (!mantenimiento) return;
 
     const equipoInfo = mantenimiento.equipo
-      ? `${mantenimiento.equipo.numero_serie || 'Sin número de serie'}${mantenimiento.equipo.modelo ? ` (${mantenimiento.equipo.modelo.nombre})` : ''
-      }`
+      ? `${mantenimiento.equipo.numero_serie || 'Sin número de serie'}${mantenimiento.equipo.modelo ? ` (${mantenimiento.equipo.modelo.nombre})` : ''}`
       : 'Equipo desconocido';
 
     const toastId = `delete-toast-${id}`;
@@ -114,6 +168,14 @@ export default function FuturoMantenimientoList() {
     );
   };
 
+  const handleFilterUpdate = (key: string, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value,
+      page: 1,
+    }));
+  };
+
   const handlePageChange = (page: number) => {
     setFilters(prev => ({
       ...prev,
@@ -127,6 +189,10 @@ export default function FuturoMantenimientoList() {
       search: "",
       page: 1,
       per_page: 10,
+      tipo_id: undefined,
+      fecha_inicio: undefined,
+      fecha_fin: undefined,
+      futuro_id: undefined,
     });
   };
 
@@ -135,7 +201,6 @@ export default function FuturoMantenimientoList() {
     const ahora = new Date();
     return fechaHora < ahora;
   };
-
 
   return (
     <div className="table-responsive rounded shadow p-3 mt-4">
@@ -169,7 +234,7 @@ export default function FuturoMantenimientoList() {
             </InputGroup.Text>
             <Form.Control
               type="text"
-              placeholder="Buscar por equipo o tipo"
+              placeholder="Buscar por equipo, usuario o tipo"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
@@ -180,7 +245,88 @@ export default function FuturoMantenimientoList() {
             )}
           </InputGroup>
         </div>
+        <Button
+          variant={showFilters ? "primary" : "outline-secondary"}
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex-shrink-0 position-relative"
+        >
+          {showFilters ? (
+            <>
+              <FaTimes className="me-2" />
+              Ocultar Filtros
+            </>
+          ) : (
+            <>
+              <FaFilter className="me-2" />
+              Mostrar Filtros
+            </>
+          )}
+          {Object.values(filters).some(
+            (val) => val !== undefined && val !== "" && val !== 1 && val !== 10
+          ) && (
+            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              !
+              <span className="visually-hidden">Filtros activos</span>
+            </span>
+          )}
+        </Button>
       </div>
+
+      {showFilters && (
+        <div className="border p-3 rounded mb-3">
+          <div className="row g-3">
+             <div className="col-md-4">
+              <Form.Label>Tipo de Mantenimiento</Form.Label>
+              <Form.Select
+                value={filters.tipo_id || ""}
+                onChange={(e) =>
+                  handleFilterUpdate(
+                    "tipo_id",
+                    e.target.value ? Number(e.target.value) : undefined
+                  )
+                }
+              >
+                <option value="">Todos</option>
+                {Object.entries(tipos).map(([id, nombre]) => (
+                  <option key={id} value={id}>
+                    {nombre}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+
+            <div className="col-md-4">
+              <Form.Label>Rango de Fechas</Form.Label>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  type="date"
+                  placeholder="Desde"
+                  value={filters.fecha_inicio || ""}
+                  onChange={(e) =>
+                    handleFilterUpdate("fecha_inicio", e.target.value || undefined)
+                  }
+                />
+                <Form.Control
+                  type="date"
+                  placeholder="Hasta"
+                  value={filters.fecha_fin || ""}
+                  onChange={(e) =>
+                    handleFilterUpdate("fecha_fin", e.target.value || undefined)
+                  }
+                  min={filters.fecha_inicio}
+                />
+              </div>
+            </div>
+
+            <div className="col-12 d-flex justify-content-end gap-2">
+              <Button variant="outline-danger" onClick={resetFilters}>
+                <FaTimes className="me-2" />
+                Limpiar filtros
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center my-5">
@@ -198,6 +344,7 @@ export default function FuturoMantenimientoList() {
                   <th>Tipo de Mantenimiento</th>
                   <th>Fecha Programada</th>
                   <th>Hora Inicio</th>
+                  <th>Usuario</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -214,6 +361,11 @@ export default function FuturoMantenimientoList() {
                       <td>{item.tipo_mantenimiento?.nombre || "-"}</td>
                       <td>{formatDate(item.fecha_mantenimiento)}</td>
                       <td>{formatTo12h(item.hora_mantenimiento_inicio)}</td>
+                      <td>
+                        {item.usuario
+                          ? `${item.usuario.first_name ?? ""} ${item.usuario.last_name ?? ""}`.trim()
+                          : "Sin usuario"}
+                      </td>
                       <td>
                         <div className="d-flex justify-content-center gap-2">
                           <Button
@@ -258,7 +410,7 @@ export default function FuturoMantenimientoList() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="text-center py-4 text-muted">
+                    <td colSpan={7} className="text-center py-4 text-muted">
                       No se encontraron mantenimientos futuros.
                     </td>
                   </tr>

@@ -9,18 +9,28 @@ import api from "../api/axios";
 
 // Listar todos los futuros mantenimientos (respuesta paginada)
 
-export const getFuturosMantenimiento = async (filters?: any) => {
-  try {
-    const res = await api.get("/futuroMantenimiento", {
-      params: filters,  // Aquí pasamos los filtros como query params
-    });
-    return res.data;
-  } catch (error) {
-    console.error("Error al obtener mantenimientos futuros:", error);
-    throw error;
-  }
-};
+export const getFuturosMantenimiento = async (filters: {
+  search?: string;
+  page?: number;
+  per_page?: number;
+  tipo_id?: number;
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  futuro_id?: number;
+}) => {
+  const params = new URLSearchParams();
+  
+  if (filters.search) params.append('search', filters.search);
+  if (filters.page) params.append('page', filters.page.toString());
+  if (filters.per_page) params.append('per_page', filters.per_page.toString());
+  if (filters.tipo_id) params.append('tipo_id', filters.tipo_id.toString());
+  if (filters.fecha_inicio) params.append('fecha_inicio', filters.fecha_inicio);
+  if (filters.fecha_fin) params.append('fecha_fin', filters.fecha_fin);
+  if (filters.futuro_id) params.append('futuro_id', filters.futuro_id.toString());
 
+  const response = await api.get(`/futuroMantenimiento?${params.toString()}`);
+  return response.data;
+};
 
 // Obtener un futuro mantenimiento por su ID
 export const getFuturoMantenimientoById = async (

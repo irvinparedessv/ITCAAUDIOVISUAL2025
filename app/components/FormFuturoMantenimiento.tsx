@@ -8,6 +8,8 @@ import { getUsuariosM } from "~/services/userService";
 import AsyncSelect from "react-select/async";
 import { useTheme } from "~/hooks/ThemeContext";
 import { buscarEquipos } from "~/services/prediccionService";
+import { useAuth } from "~/hooks/AuthContext";
+import { Role } from "~/types/roles";
 
 interface Equipo {
   id: number;
@@ -41,6 +43,8 @@ const FormFuturoMantenimiento = () => {
   const [dateError, setDateError] = useState<boolean>(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const esEncargado = user?.role === Role.Encargado;
 
   const [formData, setFormData] = useState<FormData>({
     equipo_id: "",
@@ -115,24 +119,43 @@ const FormFuturoMantenimiento = () => {
   };
 
   useEffect(() => {
+    if (user && esEncargado) {
+      setFormData(prev => ({ ...prev, user_id: user.id.toString() }));
+    }
+  }, [user]);
+
+
+  useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [tiposList, usuariosList] = await Promise.all([
-          getTiposMantenimiento(),
-          getUsuariosM(),
-        ]);
+        const tiposList = await getTiposMantenimiento();
         setTipos(tiposList || []);
-        setUsuarios(usuariosList.data || []);
+
+        // Si el usuario no es Encargado, entonces cargar usuarios
+        if (user?.role !== Role.Encargado) {
+          const usuariosList = await getUsuariosM();
+          setUsuarios(usuariosList.data || []);
+        } else {
+          // Si es Encargado, establecer su propio ID como user_id por defecto
+          setFormData(prev => ({
+            ...prev,
+            user_id: user.id.toString(),
+          }));
+        }
       } catch (error) {
+        console.error("Error al cargar los datos:", error);
         toast.error("Error al cargar los datos.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -156,7 +179,7 @@ const FormFuturoMantenimiento = () => {
       }
       setTimeError(null);
       setRangeError(null);
-    } 
+    }
 
     if (name === "hora_mantenimiento_inicio") {
       if (value) {
@@ -387,25 +410,30 @@ const FormFuturoMantenimiento = () => {
         </div>
 
         {/* Responsable */}
-        <div className="mb-3">
-          <label className="form-label">Responsable</label>
-          <select
-            name="user_id"
-            value={formData.user_id}
-            onChange={handleChange}
-            className="form-select"
-            disabled={isSubmitting}
-          >
-            <option value="">Seleccione usuario</option>
-            {usuarios.map((user) => (
-              <option key={user.id} value={user.id.toString()}>
-                {(user.nombre ??
-                  `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim()) ||
-                  `Usuario #${user.id}`}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!esEncargado ? (
+          <div className="mb-3">
+            <label className="form-label">Responsable</label>
+            <select
+              name="user_id"
+              value={formData.user_id}
+              onChange={handleChange}
+              className="form-select"
+              disabled={isSubmitting}
+            >
+              <option value="">Seleccione usuario</option>
+              {usuarios.map((user) => (
+                <option key={user.id} value={user.id.toString()}>
+                  {(user.nombre ??
+                    `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim()) ||
+                    `Usuario #${user.id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <input type="hidden" name="user_id" value={formData.user_id} />
+        )}
+
 
         {/* Botones */}
         <div className="form-actions d-flex gap-2 mt-4">

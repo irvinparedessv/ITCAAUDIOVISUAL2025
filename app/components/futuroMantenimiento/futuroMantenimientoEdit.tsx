@@ -5,13 +5,14 @@ import {
   getFuturoMantenimientoById,
   updateFuturoMantenimiento,
 } from "../../services/futuroMantenimientoService";
-import { getEquipos } from "../../services/equipoService";
 import { getTiposMantenimiento } from "../../services/tipoMantenimientoService";
 import { FaSave, FaTimes, FaLongArrowAltLeft } from "react-icons/fa";
 import { getUsuariosM } from "~/services/userService";
 import { useTheme } from "~/hooks/ThemeContext";
 import { getModelosByMarca } from "~/services/itemService";
 import type { Equipo } from "~/types/item";
+import { useAuth } from "~/hooks/AuthContext";
+import { Role } from "~/types/roles";
 
 const FuturoMantenimientoEdit = () => {
   const { id } = useParams();
@@ -26,7 +27,7 @@ const FuturoMantenimientoEdit = () => {
     user_id: "",
   });
 
-    const [equipo, setEquipo] = useState<Equipo | null>(null);
+  const [equipo, setEquipo] = useState<Equipo | null>(null);
   const [modelos, setModelos] = useState<any[]>([]);
   const [tipos, setTipos] = useState<any[]>([]);
   const [usuarios, setUsuarios] = useState<any[]>([]);
@@ -35,6 +36,8 @@ const FuturoMantenimientoEdit = () => {
   const [dateError, setDateError] = useState<boolean>(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const esEncargado = user?.role === Role.Encargado;
 
   // Función para validar el rango horario (7:00 AM a 5:00 PM)
   const validateTimeRange = (time: string): boolean => {
@@ -76,16 +79,21 @@ const FuturoMantenimientoEdit = () => {
     return today.toISOString().split('T')[0];
   };
 
-   useEffect(() => {
+  useEffect(() => {
     if (!id) return;
 
     const fetchData = async () => {
       try {
-        const [mantenimiento, tiposList, usuariosList] = await Promise.all([
+        const promesas = [
           getFuturoMantenimientoById(Number(id)),
-          getTiposMantenimiento(),
-          getUsuariosM()
-        ]);
+          getTiposMantenimiento()
+        ];
+
+        if (!esEncargado) {
+          promesas.push(getUsuariosM());
+        }
+
+        const [mantenimiento, tiposList, usuariosList = { data: [] }] = await Promise.all(promesas);
 
         // Obtener datos del equipo del mantenimiento
         const equipoData = mantenimiento.equipo || {
@@ -97,7 +105,6 @@ const FuturoMantenimientoEdit = () => {
 
         setEquipo(equipoData);
 
-        // Si tenemos marca_id, cargamos los modelos
         if (equipoData.marca_id) {
           const modelosList = await getModelosByMarca(equipoData.marca_id);
           setModelos(modelosList);
@@ -120,6 +127,7 @@ const FuturoMantenimientoEdit = () => {
         setLoading(false);
       }
     };
+
 
     fetchData();
   }, [id]);
@@ -259,7 +267,7 @@ const FuturoMantenimientoEdit = () => {
 
       <form onSubmit={handleSubmit}>
         {/* Equipo (no editable) */}
-         <div className="mb-3">
+        <div className="mb-3">
           <label className="form-label">Equipo</label>
           <div className="form-control" style={{
             backgroundColor: darkMode ? "#2d2d2d" : "#f8f9fa",
@@ -348,30 +356,33 @@ const FuturoMantenimientoEdit = () => {
           {timeError && <div className="invalid-feedback">{timeError}</div>}
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
         </div>
-
-        <div className="mb-3">
-          <label className="form-label">Responsable</label>
-          <select
-            name="user_id"
-            value={formData.user_id}
-            onChange={handleChange}
-            className="form-select"
-            disabled={isSubmitting}
-            required
-            style={{
-              backgroundColor: darkMode ? "#2d2d2d" : "#fff",
-              color: darkMode ? "#f8f9fa" : "#212529",
-              borderColor: darkMode ? "#444" : "#ccc",
-            }}
-          >
-            <option value="">Seleccione un responsable</option>
-            {usuarios.map((user) => (
-              <option key={user.id} value={user.id.toString()}>
-                {`${user.first_name} ${user.last_name}`.trim()} ({user.email})
-              </option>
-            ))}
-          </select>
-        </div>
+        {!esEncargado ? (
+          <div className="mb-3">
+            <label className="form-label">Responsable</label>
+            <select
+              name="user_id"
+              value={formData.user_id}
+              onChange={handleChange}
+              className="form-select"
+              disabled={isSubmitting}
+              required
+              style={{
+                backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+                color: darkMode ? "#f8f9fa" : "#212529",
+                borderColor: darkMode ? "#444" : "#ccc",
+              }}
+            >
+              <option value="">Seleccione un responsable</option>
+              {usuarios.map((user) => (
+                <option key={user.id} value={user.id.toString()}>
+                  {`${user.first_name} ${user.last_name}`.trim()} ({user.email})
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <input type="hidden" name="user_id" value={formData.user_id} />
+        )}
 
         {/* Botones */}
         <div className="form-actions d-flex gap-2 mt-4">

@@ -4,10 +4,14 @@ import type { TipoMantenimiento } from "app/types/tipoMantenimiento";
 import api from "../api/axios";
 
 // Obtener todos los tipos de mantenimiento
-export const getTiposMantenimiento = async (token?: string) => {
-  const response = await api.get("/tipoMantenimiento");
-  return response.data.data;
+export const getTiposMantenimiento = async (search?: string) => {
+  const params = new URLSearchParams();
+  if (search) params.append('search', search);
+  
+  const response = await api.get(`/tipoMantenimiento?${params.toString()}`);
+  return response.data.data || [];
 };
+
 
 // Obtener tipo mantenimiento por ID
 export const getTipoMantenimientoById = async (id: number): Promise<TipoMantenimiento> => {

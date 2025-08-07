@@ -5,7 +5,6 @@ import { FaSave, FaTimes, FaLongArrowAltLeft } from "react-icons/fa";
 import { getEquipos } from "../../services/equipoService";
 import { getTiposMantenimiento } from "../../services/tipoMantenimientoService";
 import { getUsuarios } from "../../services/userService";
-import { getFuturosMantenimiento } from "../../services/futuroMantenimientoService";
 import {
   getMantenimientoById,
   updateMantenimiento,
@@ -24,27 +23,24 @@ const MantenimientoEdit = () => {
     hora_mantenimiento_inicio: "",
     detalles: "",
     user_id: "",
-    vida_util: "",
   });
 
   const [equipos, setEquipos] = useState<any[]>([]);
   const [tipos, setTipos] = useState<any[]>([]);
   const [usuarios, setUsuarios] = useState<any[]>([]);
-  const [futuros, setFuturos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dateError, setDateError] = useState<boolean>(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
-  const [showVidaUtilAlert, setShowVidaUtilAlert] = useState(false);
 
   // Función para validar el rango horario (7:00 AM a 5:00 PM)
   const validateTimeRange = (time: string): boolean => {
     if (!time) return true;
-    
+
     const [hours, minutes] = time.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes;
-    
+
     // 7:00 AM = 420 minutos, 5:00 PM = 1020 minutos
     return totalMinutes >= 420 && totalMinutes <= 1020;
   };
@@ -67,45 +63,45 @@ const MantenimientoEdit = () => {
 
     const fetchData = async () => {
       try {
-        const [
-          mantenimiento,
-          equiposList,
-          tiposList,
-          usuariosList,
-          futurosList,
-        ] = await Promise.all([
-          getMantenimientoById(Number(id)),
-          getEquipos(),
+        setLoading(true);
+
+        // 1. Cargar el mantenimiento primero
+        const mantenimiento = await getMantenimientoById(Number(id));
+
+        // 2. Cargar el equipo específico usando el equipo_id del mantenimiento
+        const equipoResponse = await getEquipos({}, mantenimiento.equipo_id?.toString());
+
+        // 3. Cargar los demás datos en paralelo
+        const [tiposList, usuariosList] = await Promise.all([
           getTiposMantenimiento(),
           getUsuarios(),
-          getFuturosMantenimiento(),
         ]);
 
         setFormData({
           equipo_id: mantenimiento.equipo_id?.toString() || "",
           tipo_id: mantenimiento.tipo_id?.toString() || "",
           fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
-          hora_mantenimiento_inicio:
-            mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
+          hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
           detalles: mantenimiento.detalles || "",
           user_id: mantenimiento.user_id?.toString() || "",
-          vida_util: mantenimiento.vida_util?.toString() || "",
         });
 
-        setEquipos(equiposList?.data || []);
+        // El equipo viene en equipoResponse.data[0] porque getEquipos con ID devuelve un array con un solo elemento
+        setEquipos(equipoResponse.data || []);
         setTipos(tiposList || []);
         setUsuarios(usuariosList?.data || []);
-        setFuturos(futurosList?.data || []);
+
       } catch (error) {
-        toast.error("Error al cargar datos");
-        console.error(error);
+        console.error("Error loading data:", error);
+        toast.error("Error al cargar datos del mantenimiento");
+        navigate("/mantenimiento");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [id]);
+  }, [id, navigate]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -135,13 +131,6 @@ const MantenimientoEdit = () => {
           setRangeError('El horario debe estar entre 7:00 AM y 5:00 PM');
         }
       }
-    }
-
-    if (name !== "vida_util" && Number(formData.vida_util) <= 0) {
-      setShowVidaUtilAlert(true);
-    }
-    if (name === "vida_util" && Number(value) > 0) {
-      setShowVidaUtilAlert(false);
     }
 
     setFormData((prev) => ({
@@ -189,9 +178,6 @@ const MantenimientoEdit = () => {
         equipo_id: Number(formData.equipo_id),
         tipo_id: Number(formData.tipo_id),
         user_id: Number(user.id),
-
-        vida_util:
-          formData.vida_util === "" ? null : Number(formData.vida_util),
         hora_mantenimiento_inicio:
           formData.hora_mantenimiento_inicio.length === 5
             ? formData.hora_mantenimiento_inicio
@@ -214,7 +200,7 @@ const MantenimientoEdit = () => {
     }
   };
 
- 
+
   if (loading) {
     return (
       <div className="d-flex flex-column align-items-center justify-content-center my-5">
@@ -241,26 +227,30 @@ const MantenimientoEdit = () => {
         {/* Equipo (no editable) */}
         <div className="mb-3">
           <label className="form-label">Equipo</label>
-          <select
-            name="equipo_id"
-            value={formData.equipo_id}
-            onChange={handleChange}
-            className="form-select"
+          <input
+            type="text"
+            className="form-control"
+            value={
+              equipos.length > 0
+                ? (() => {
+                  const equipo = equipos[0]; // Como se cargó un solo equipo, está en la posición 0
+                  if (!equipo) return "Equipo no encontrado";
+
+                  const numeroSerie = equipo.numero_serie || `Equipo #${equipo.id}`;
+                  const modeloNombre = equipo.modelo?.nombre || "";
+                  const marcaNombre = equipo.modelo?.marca?.nombre || "";
+
+                  return `${numeroSerie} - ${modeloNombre}${marcaNombre ? ` (${marcaNombre})` : ""}`;
+                })()
+                : "Cargando información del equipo..."
+            }
+            readOnly
             disabled
-          >
-            {equipos
-              .filter((equipo) => !equipo.es_componente)
-              .map((equipo) => (
-                <option key={equipo.id} value={equipo.id.toString()}>
-                  {equipo.numero_serie || `Equipo #${equipo.id}`}
-                </option>
-              ))}
-          </select>
+          />
           <small className="text-muted">
             No se puede cambiar el equipo en modo edición
           </small>
         </div>
-
         {/* Tipo de Mantenimiento */}
         <div className="mb-3">
           <label className="form-label">Tipo de Mantenimiento</label>
@@ -327,19 +317,6 @@ const MantenimientoEdit = () => {
           />
         </div>
 
-        {/* Vida útil */}
-        <div className="mb-3">
-          <label className="form-label">Vida útil (horas)</label>
-          <input
-            type="number"
-            name="vida_util"
-            value={formData.vida_util}
-            onChange={handleChange}
-            min={0}
-            className="form-control"
-            disabled={isSubmitting}
-          />
-        </div>
 
         {/* Botones */}
         <div className="form-actions d-flex gap-2 mt-4">

@@ -210,7 +210,8 @@ const FormMantenimiento = () => {
               .filter((equipo) => !equipo.es_componente)
               .map((equipo) => (
                 <option key={equipo.id} value={equipo.id.toString()}>
-                  {equipo.numero_serie || `Equipo #${equipo.id}`}
+                  {equipo.numero_serie || `Equipo #${equipo.id}`} - {equipo.modelo?.nombre || ""}
+                  {equipo.modelo?.marca?.nombre ? ` (${equipo.modelo.marca.nombre})` : ""}
                 </option>
               ))}
           </select>

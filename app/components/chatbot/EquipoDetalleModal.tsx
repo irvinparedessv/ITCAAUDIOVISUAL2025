@@ -208,7 +208,7 @@ export default function EquipoDetalleModal({
                 <ul>
                   {detalle.caracteristicas?.map((carac, i) => (
                     <li key={i}>
-                      {carac.nombre}: {carac.valor} ({carac.tipo_dato})
+                      {carac.nombre}: {carac.valor}
                     </li>
                   ))}
                 </ul>

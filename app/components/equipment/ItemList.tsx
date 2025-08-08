@@ -263,9 +263,9 @@ export default function ItemList({
 
   const ESTADOS_BLOQUEADOS = [
     EstadoEquipo.Mantenimiento,
-    EstadoEquipo.Dañado,
-    EstadoEquipo.NoDisponible,
-    EstadoEquipo.EnReposo
+    // EstadoEquipo.Dañado,
+    // EstadoEquipo.NoDisponible,
+    // EstadoEquipo.EnReposo
   ];
 
   const getEstadoBadge = (estadoId) => {

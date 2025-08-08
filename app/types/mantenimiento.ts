@@ -29,17 +29,19 @@ export interface Mantenimiento {
   tipo_mantenimiento_id: number;
   user_id: number;
   fecha_mantenimiento: string;
-  fecha_mantenimiento_final: string;
+  fecha_mantenimiento_final: string | null;
   hora_mantenimiento_inicio: string;
-  hora_mantenimiento_final: string;
+  hora_mantenimiento_final: string | null;
   detalles: string;
   comentario: string;
   vida_util: number | null;
+  estado_equipo_inicial: number | null;
+  estado_equipo_final: number | null;
   created_at: string;
   updated_at: string;
 
   equipo: Equipo;
-  tipo_mantenimiento?: TipoMantenimiento; // <- Nombre correcto desde backend
-  usuario?: Usuario;                     // <- Nombre correcto desde backend
+  tipo_mantenimiento?: TipoMantenimiento;
+  usuario?: Usuario;
 }
 

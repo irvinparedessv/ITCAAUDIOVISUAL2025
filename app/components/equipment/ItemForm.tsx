@@ -76,8 +76,8 @@ export default function ItemForm({
   })();
 
   // Filtrar los estados para mostrar solo Disponible (1) y Daniado (2)
-  const filteredEstados = estados.filter(e => e.id === EstadoEquipo.Disponible ||  e.id === EstadoEquipo.Mantenimiento 
-    ||  e.id === EstadoEquipo.Dañado ||  e.id === EstadoEquipo.NoDisponible);
+  const filteredEstados = estados.filter(e => e.id === EstadoEquipo.Disponible || e.id === EstadoEquipo.Mantenimiento
+    || e.id === EstadoEquipo.Dañado || e.id === EstadoEquipo.NoDisponible);
 
   // 1. Estado para controlar el bloqueo - inicializado como true si estamos en modo creación
   const [bloquearEstado, setBloquearEstado] = useState(true);
@@ -888,17 +888,16 @@ export default function ItemForm({
                 }
               }}
               placeholder={isEditing ? (bloquearEstado ? "Cargando..." : "Seleccionar estado...") : "Disponible"}
-              isDisabled={loading || bloquearEstado || !isEditing} // Bloqueado si: loading, bloquearEstado, o no es edición
+              isDisabled={loading || bloquearEstado || isEditing} // Bloqueado si: loading, bloquearEstado, o no es edición
               styles={customSelectStyles}
               menuPortalTarget={document.body}
             />
-            {isEditing && bloquearEstado && (
-              <small className="text-muted d-block mt-1">Cargando opciones, espere...</small>
-            )}
+            {isEditing && renderNotEditableMessage()}
             {!isEditing && (
               <small className="text-muted d-block mt-1">Este campo no se puede modificar</small>
             )}
           </div>
+         
         </div>
 
         <div className="mb-4">

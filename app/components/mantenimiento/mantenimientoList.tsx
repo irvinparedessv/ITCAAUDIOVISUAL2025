@@ -165,6 +165,7 @@ export default function MantenimientoList() {
       setLoadingEstados(true);
 
       if (selectedMantenimiento.fecha_mantenimiento_final) {
+        // Actualización de mantenimiento ya finalizado
         const result = await updateVidaUtilMantenimiento(
           selectedMantenimiento.id,
           selectedMantenimiento.vida_util || 0,
@@ -179,6 +180,7 @@ export default function MantenimientoList() {
           toast.error(result.message || "Error al actualizar vida útil", { duration: 4000 });
         }
       } else {
+        // Finalización de mantenimiento
         const result = await updateEstadoEquipo(
           selectedMantenimiento.equipo_id,
           selectedEstado,
@@ -498,12 +500,12 @@ export default function MantenimientoList() {
                           : "Sin usuario"}
                       </td>
                       <td>
-                        {m.equipo?.estado ? (
-                          <span className={`badge bg-${getEstadoBadgeColorByNombre(m.equipo.estado.nombre)}`}>
-                            {m.equipo.estado.nombre}
+                        {m.estado_equipo_final ? (
+                          <span className={`badge bg-${getEstadoBadgeColor(m.estado_equipo_final)}`}>
+                            {estados.find(e => e.id === m.estado_equipo_final)?.nombre || 'Finalizado'}
                           </span>
                         ) : (
-                          <span className="badge bg-secondary">Desconocido</span>
+                          <span className="badge bg-warning">En Progreso</span>
                         )}
                       </td>
                       <td>{m.vida_util ?? "-"}</td>

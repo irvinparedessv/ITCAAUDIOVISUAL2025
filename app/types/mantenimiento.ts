@@ -39,7 +39,7 @@ export interface Mantenimiento {
   estado_equipo_final: number | null;
   created_at: string;
   updated_at: string;
-
+  futuro_mantenimiento_id: number;
   equipo: Equipo;
   tipo_mantenimiento?: TipoMantenimiento;
   usuario?: Usuario;

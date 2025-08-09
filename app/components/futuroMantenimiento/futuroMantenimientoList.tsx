@@ -10,10 +10,12 @@ import {
   FaPlus,
   FaLongArrowAltLeft,
   FaFilter,
+  FaEye
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
 import { getFuturosMantenimiento, deleteFuturoMantenimiento } from "~/services/futuroMantenimientoService";
 import { getTiposMantenimiento } from "~/services/tipoMantenimientoService";
+import { getMantenimientos } from "~/services/mantenimientoService";
 import type { FuturoMantenimiento } from "~/types/futuroMantenimiento";
 import { formatDate, formatTo12h } from "~/utils/time";
 
@@ -24,11 +26,17 @@ interface Filters {
   tipo_id?: number;
   fecha_inicio?: string;
   fecha_fin?: string;
-  futuro_id?: number;
+}
+
+interface MantenimientoRelacionado {
+  id: number;
+  equipo_id: number;
+  fecha_mantenimiento: string;
 }
 
 export default function FuturoMantenimientoList() {
   const [mantenimientos, setMantenimientos] = useState<FuturoMantenimiento[]>([]);
+  const [mantenimientosRelacionados, setMantenimientosRelacionados] = useState<Record<number, MantenimientoRelacionado>>({});
   const [filters, setFilters] = useState<Filters>({
     search: "",
     page: 1,
@@ -39,7 +47,7 @@ export default function FuturoMantenimientoList() {
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tipos, setTipos] = useState<Record<number, string>>({});
-  const [hasLoaded, setHasLoaded] = useState(false); // Nuevo estado para controlar la carga inicial
+  const [hasLoaded, setHasLoaded] = useState(false);
   const navigate = useNavigate();
 
   const handleBack = () => navigate("/equipos");
@@ -48,7 +56,7 @@ export default function FuturoMantenimientoList() {
     setLoading(true);
     try {
       const response = await getTiposMantenimiento();
-      
+
       let tiposData = [];
       if (Array.isArray(response)) {
         tiposData = response;
@@ -75,18 +83,37 @@ export default function FuturoMantenimientoList() {
     }
   };
 
+  const cargarMantenimientosRelacionados = async (futuroIds: number[]) => {
+    try {
+      const response = await getMantenimientos({ futuro_id: futuroIds });
+      const relacionados = response.data.reduce((acc, m) => {
+        if (m.futuro_mantenimiento_id) {
+          acc[m.futuro_mantenimiento_id] = m;
+        }
+        return acc;
+      }, {} as Record<number, MantenimientoRelacionado>);
+      setMantenimientosRelacionados(relacionados);
+    } catch (error) {
+      console.error('Error al cargar mantenimientos relacionados:', error);
+    }
+  };
+
   const cargarMantenimientos = async () => {
     setLoading(true);
     try {
       const response = await getFuturosMantenimiento(filters);
       setMantenimientos(response?.data || []);
       setLastPage(response?.last_page || 1);
+
+      if (response?.data?.length > 0) {
+        await cargarMantenimientosRelacionados(response.data.map(m => m.id));
+      }
     } catch (error) {
       toast.error("Error al cargar mantenimientos futuros");
       setMantenimientos([]);
     } finally {
       setLoading(false);
-      setHasLoaded(true); // Marcamos que la carga ha terminado
+      setHasLoaded(true);
     }
   };
 
@@ -99,7 +126,7 @@ export default function FuturoMantenimientoList() {
   }, []);
 
   useEffect(() => {
-    if (hasLoaded) { // Solo recargamos si ya se cargó inicialmente
+    if (hasLoaded) {
       cargarMantenimientos();
     }
   }, [filters]);
@@ -194,7 +221,6 @@ export default function FuturoMantenimientoList() {
       tipo_id: undefined,
       fecha_inicio: undefined,
       fecha_fin: undefined,
-      futuro_id: undefined,
     });
   };
 
@@ -266,11 +292,11 @@ export default function FuturoMantenimientoList() {
           {Object.values(filters).some(
             (val) => val !== undefined && val !== "" && val !== 1 && val !== 10
           ) && (
-            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-              !
-              <span className="visually-hidden">Filtros activos</span>
-            </span>
-          )}
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                !
+                <span className="visually-hidden">Filtros activos</span>
+              </span>
+            )}
         </Button>
       </div>
 
@@ -352,64 +378,92 @@ export default function FuturoMantenimientoList() {
               </thead>
               <tbody>
                 {mantenimientos.length > 0 ? (
-                  mantenimientos.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.id}</td>
-                      <td>
-                        {item.equipo
-                          ? `${item.equipo.numero_serie} - ${item.equipo.modelo?.nombre ?? ""} (${item.equipo.modelo?.marca?.nombre ?? ""})`
-                          : "Sin equipo"}
-                      </td>
-                      <td>{item.tipo_mantenimiento?.nombre || "-"}</td>
-                      <td>{formatDate(item.fecha_mantenimiento)}</td>
-                      <td>{formatTo12h(item.hora_mantenimiento_inicio)}</td>
-                      <td>
-                        {item.usuario
-                          ? `${item.usuario.first_name ?? ""} ${item.usuario.last_name ?? ""}`.trim()
-                          : "Sin usuario"}
-                      </td>
-                      <td>
-                        <div className="d-flex justify-content-center gap-2">
-                          <Button
-                            variant="outline-primary"
-                            className="rounded-circle"
-                            title={
-                              yaPasoFechaYHora(item.fecha_mantenimiento, item.hora_mantenimiento_inicio)
-                                ? "Ya no se puede editar un mantenimiento pasado"
-                                : "Editar"
-                            }
-                            onClick={() => navigate(`/futuroMantenimiento/editar/${item.id}`)}
-                            disabled={yaPasoFechaYHora(item.fecha_mantenimiento, item.hora_mantenimiento_inicio)}
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              transition: "transform 0.2s ease-in-out",
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
-                            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                          >
-                            <FaEdit />
-                          </Button>
-                          <Button
-                            variant="outline-danger"
-                            className="rounded-circle"
-                            title="Eliminar"
-                            onClick={() => confirmarEliminacion(item.id)}
-                            disabled={yaPasoFechaYHora(item.fecha_mantenimiento, item.hora_mantenimiento_inicio)}
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              transition: "transform 0.2s ease-in-out",
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
-                            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                          >
-                            <FaTrash />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  mantenimientos.map((item) => {
+                    const mantenimientoRelacionado = mantenimientosRelacionados[item.id];
+                    const tieneRelacion = !!mantenimientoRelacionado;
+                    const yaPasado = yaPasoFechaYHora(item.fecha_mantenimiento, item.hora_mantenimiento_inicio);
+
+                    return (
+                      <tr key={item.id}>
+                        <td>{item.id}</td>
+                        <td>
+                          {item.equipo
+                            ? `${item.equipo.numero_serie} - ${item.equipo.modelo?.nombre ?? ""} (${item.equipo.modelo?.marca?.nombre ?? ""})`
+                            : "Sin equipo"}
+                        </td>
+                        <td>{item.tipo_mantenimiento?.nombre || "-"}</td>
+                        <td>{formatDate(item.fecha_mantenimiento)}</td>
+                        <td>{formatTo12h(item.hora_mantenimiento_inicio)}</td>
+                        <td>
+                          {item.usuario
+                            ? `${item.usuario.first_name ?? ""} ${item.usuario.last_name ?? ""}`.trim()
+                            : "Sin usuario"}
+                        </td>
+                        <td>
+                          <div className="d-flex justify-content-center gap-2">
+                            {tieneRelacion && (
+                              <Button
+                                variant="outline-info"
+                                className="rounded-circle"
+                                title="Ver mantenimiento relacionado"
+                                onClick={() => navigate('/mantenimiento', {
+                                  state: {
+                                    highlightId: mantenimientoRelacionado.id,
+                                    fromFuturo: true
+                                  }
+                                })}
+                                style={{
+                                  width: "44px",
+                                  height: "44px",
+                                  transition: "transform 0.2s ease-in-out",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
+                                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                              >
+                                <FaEye />
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline-primary"
+                              className="rounded-circle"
+                              title={
+                                yaPasado
+                                  ? "Ya no se puede editar un mantenimiento pasado"
+                                  : "Editar"
+                              }
+                              onClick={() => navigate(`/futuroMantenimiento/editar/${item.id}`)}
+                              disabled={yaPasado}
+                              style={{
+                                width: "44px",
+                                height: "44px",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
+                              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                            >
+                              <FaEdit />
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              className="rounded-circle"
+                              title="Eliminar"
+                              onClick={() => confirmarEliminacion(item.id)}
+                              disabled={yaPasado}
+                              style={{
+                                width: "44px",
+                                height: "44px",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
+                              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                            >
+                              <FaTrash />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={7} className="text-center py-4 text-muted">

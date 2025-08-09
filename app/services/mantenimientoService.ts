@@ -39,6 +39,7 @@ export const getMantenimientos = async (filters: {
   fecha_fin?: string;
   vida_util_min?: number;
   vida_util_max?: number;
+  futuro_id?: number | number[];
 }) => {
   const params = new URLSearchParams();
 

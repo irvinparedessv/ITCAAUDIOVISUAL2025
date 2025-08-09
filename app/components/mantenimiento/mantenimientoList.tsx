@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { Button, Form, InputGroup, Spinner, Modal } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
 import {
   FaEdit,
   FaSearch,
@@ -11,15 +11,17 @@ import {
   FaTrash,
   FaExchangeAlt,
   FaFilter,
+  FaEye
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
 import type { Mantenimiento } from "../../types/mantenimiento";
-import { getMantenimientos, deleteMantenimiento, updateVidaUtilMantenimiento, getTiposMantenimiento } from "../../services/mantenimientoService";
-//import { getTiposMantenimiento } from "~/services/tipoMantenimientoService";
+import { getMantenimientos, deleteMantenimiento, updateVidaUtilMantenimiento } from "../../services/mantenimientoService";
+import { getTiposMantenimiento } from "~/services/tipoMantenimientoService";
 import { getEstados, updateEstadoEquipo } from "../../services/itemService";
 import { formatDate, formatTo12h } from "~/utils/time";
 import type { Estado } from "~/types/item";
 import { EstadoEquipo } from "~/types/estados";
+import "animate.css";
 
 interface Filters {
   search: string;
@@ -34,17 +36,15 @@ interface Filters {
 }
 
 export default function MantenimientoList() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const highlightRef = useRef<HTMLTableRowElement>(null);
+  const [highlightedId, setHighlightedId] = useState<number | null>(null);
   const [mantenimientos, setMantenimientos] = useState<Mantenimiento[]>([]);
   const [filters, setFilters] = useState<Filters>({
     search: "",
     page: 1,
     per_page: 10,
-    tipo_id: undefined,
-    estado_id: undefined,
-    fecha_inicio: undefined,
-    fecha_fin: undefined,
-    vida_util_min: undefined,
-    vida_util_max: undefined,
   });
   const [searchInput, setSearchInput] = useState("");
   const [lastPage, setLastPage] = useState(1);
@@ -57,7 +57,35 @@ export default function MantenimientoList() {
   const [selectedEstado, setSelectedEstado] = useState<number | null>(null);
   const [loadingEstados, setLoadingEstados] = useState(false);
   const [comentarioEstado, setComentarioEstado] = useState("");
-  const navigate = useNavigate();
+
+  // Efecto para el highlight al venir desde futuro mantenimiento
+  useEffect(() => {
+    if (location.state?.highlightId) {
+      setHighlightedId(location.state.highlightId);
+      
+      // Limpiar el resaltado después de 7 segundos
+      const timer = setTimeout(() => {
+        setHighlightedId(null);
+        navigate(location.pathname, { replace: true, state: {} });
+      }, 7000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location.state, navigate, location.pathname]);
+
+  useEffect(() => {
+    if (highlightedId !== null && mantenimientos.length > 0) {
+      // Verificar que el ID existe en los mantenimientos
+      const existeMantenimiento = mantenimientos.some(m => m.id === highlightedId);
+      
+      if (existeMantenimiento && highlightRef.current) {
+        highlightRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }
+  }, [highlightedId, mantenimientos]);
 
   const handleBack = () => navigate("/equipos");
 
@@ -165,7 +193,6 @@ export default function MantenimientoList() {
       setLoadingEstados(true);
 
       if (selectedMantenimiento.fecha_mantenimiento_final) {
-        // Actualización de mantenimiento ya finalizado
         const result = await updateVidaUtilMantenimiento(
           selectedMantenimiento.id,
           selectedMantenimiento.vida_util || 0,
@@ -180,7 +207,6 @@ export default function MantenimientoList() {
           toast.error(result.message || "Error al actualizar vida útil", { duration: 4000 });
         }
       } else {
-        // Finalización de mantenimiento
         const result = await updateEstadoEquipo(
           selectedMantenimiento.equipo_id,
           selectedEstado,
@@ -483,7 +509,16 @@ export default function MantenimientoList() {
               <tbody>
                 {mantenimientos.length > 0 ? (
                   mantenimientos.map((m) => (
-                    <tr key={m.id}>
+                    <tr 
+                      key={m.id}
+                      id={`mantenimiento-${m.id}`}
+                      ref={highlightedId === m.id ? highlightRef : null}
+                      className={
+                        highlightedId === m.id 
+                          ? "table-warning animate__animated animate__flash" 
+                          : ""
+                      }
+                    >
                       <td>
                         {m.equipo
                           ? `${m.equipo.numero_serie} - ${m.equipo.modelo?.nombre ?? ""} (${m.equipo.modelo?.marca?.nombre ?? ""})`
@@ -505,7 +540,7 @@ export default function MantenimientoList() {
                             {estados.find(e => e.id === m.estado_equipo_final)?.nombre || 'Finalizado'}
                           </span>
                         ) : (
-                          <span className="badge bg-warning">En Progreso</span>
+                          <span className="badge bg-warning">{m.equipo.estado.nombre}</span>
                         )}
                       </td>
                       <td>{m.vida_util ?? "-"}</td>
@@ -625,13 +660,13 @@ export default function MantenimientoList() {
                     </p>
                   </div>
                   <div className="col-md-6 mb-2">
-                    <p className="mb-1 text-muted small">Estado actual:</p>
-                    {selectedMantenimiento.equipo?.estado ? (
-                      <span className={`badge bg-${getEstadoBadgeColorByNombre(selectedMantenimiento.equipo.estado.nombre)}`}>
-                        {selectedMantenimiento.equipo.estado.nombre}
+                    <p className="mb-1 text-muted small">Estado del equipo:</p>
+                    {selectedMantenimiento.estado_equipo_final ? (
+                      <span className={`badge bg-${getEstadoBadgeColor(selectedMantenimiento.estado_equipo_final)}`}>
+                        {estados.find(e => e.id === selectedMantenimiento.estado_equipo_final)?.nombre || 'Finalizado'}
                       </span>
                     ) : (
-                      <span className="badge bg-secondary">Desconocido</span>
+                      <span className="badge bg-warning">{selectedMantenimiento.equipo.estado.nombre}</span>
                     )}
                   </div>
                 </div>
@@ -707,15 +742,14 @@ export default function MantenimientoList() {
                   </div>
                 </div>
               </div>
-
               {selectedMantenimiento.fecha_mantenimiento_final ? (
                 <div className="mb-3 p-3 border rounded">
                   <h5 className="fw-bold mb-3">Estado del Equipo</h5>
                   <div className="d-flex align-items-center gap-2">
-                    <span className="text-muted">Estado actual:</span>
-                    {selectedMantenimiento.equipo?.estado ? (
-                      <span className={`badge bg-${getEstadoBadgeColorByNombre(selectedMantenimiento.equipo.estado.nombre)}`}>
-                        {selectedMantenimiento.equipo.estado.nombre}
+                    <span className="text-muted">Estado:</span>
+                    {selectedMantenimiento.estado_equipo_final ? (
+                      <span className={`badge bg-${getEstadoBadgeColor(selectedMantenimiento.estado_equipo_final)}`}>
+                        {estados.find(e => e.id === selectedMantenimiento.estado_equipo_final)?.nombre || 'Finalizado'}
                       </span>
                     ) : (
                       <span className="badge bg-secondary">Desconocido</span>

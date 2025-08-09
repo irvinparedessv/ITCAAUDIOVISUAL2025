@@ -15,8 +15,7 @@ import {
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
 import type { Mantenimiento } from "../../types/mantenimiento";
-import { getMantenimientos, deleteMantenimiento, updateVidaUtilMantenimiento } from "../../services/mantenimientoService";
-import { getTiposMantenimiento } from "~/services/tipoMantenimientoService";
+import { getMantenimientos, deleteMantenimiento, updateVidaUtilMantenimiento, getTiposMantenimiento } from "../../services/mantenimientoService";
 import { getEstados, updateEstadoEquipo } from "../../services/itemService";
 import { formatDate, formatTo12h } from "~/utils/time";
 import type { Estado } from "~/types/item";

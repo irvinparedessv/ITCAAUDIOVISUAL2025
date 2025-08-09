@@ -73,6 +73,7 @@ export default function ItemList({
     imageUrl: string;
     name: string;
   } | null>(null);
+  const [filterLoading, setFilterLoading] = useState(false);
 
   // Estados para modal asignar insumo
   const [showAccesorioModal, setShowAccesorioModal] = useState(false);
@@ -129,6 +130,7 @@ export default function ItemList({
       return;
     }
     try {
+      setFilterLoading(true);
       const res = await getItems({
         ...filters,
         tipo: "todos",
@@ -142,6 +144,8 @@ export default function ItemList({
     } catch (error) {
       console.error("Error fetching items:", error);
       toast.error("Error al cargar los items");
+    } finally {
+      setFilterLoading(false);
     }
   };
   const getTipoNombre = (id: number) => {
@@ -529,13 +533,6 @@ export default function ItemList({
         </Button>
       </div>
 
-      {loading && (
-        <div className="text-center my-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3">Cargando datos...</p>
-        </div>
-      )}
-
       {showFilters && (
         <div className="p-3 rounded mb-4 border border-secondary">
           <div className="row g-3">
@@ -573,9 +570,15 @@ export default function ItemList({
         </div>
       )}
 
-      {/* Tabla de items */}
-      {!loading && (
+      {/* Contenido principal - Spinner o Tabla */}
+      {loading || filterLoading ? (
+        <div className="text-center my-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Cargando datos...</p>
+        </div>
+      ) : (
         <>
+          {/* Tabla de items */}
           <div className="table-responsive">
             <table className="table table-hover align-middle text-center">
               <thead className="table-dark">
@@ -698,8 +701,8 @@ export default function ItemList({
                                   transition: "transform 0.2s ease-in-out",
                                 }}
                                 onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform =
-                                  "scale(1.15)")
+                                  (e.currentTarget.style.transform =
+                                    "scale(1.15)")
                                 }
                                 onMouseLeave={(e) =>
                                   (e.currentTarget.style.transform = "scale(1)")
@@ -724,8 +727,8 @@ export default function ItemList({
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform =
-                                "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -744,8 +747,8 @@ export default function ItemList({
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform =
-                                "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -765,8 +768,8 @@ export default function ItemList({
                                   transition: "transform 0.2s ease-in-out",
                                 }}
                                 onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform =
-                                  "scale(1.15)")
+                                  (e.currentTarget.style.transform =
+                                    "scale(1.15)")
                                 }
                                 onMouseLeave={(e) =>
                                   (e.currentTarget.style.transform = "scale(1)")
@@ -843,7 +846,7 @@ export default function ItemList({
                   })
                 ) : (
                   <tr>
-                    <td colSpan={11} className="text-muted text-center">
+                    <td colSpan={13} className="text-muted text-center py-4">
                       No se encontraron items.
                     </td>
                   </tr>
@@ -851,11 +854,13 @@ export default function ItemList({
               </tbody>
             </table>
           </div>
-          <PaginationComponent
-            page={filters.page || 1}
-            totalPages={lastPage}
-            onPageChange={handlePageChange}
-          />
+          {items.length > 0 && (
+            <PaginationComponent
+              page={filters.page || 1}
+              totalPages={lastPage}
+              onPageChange={handlePageChange}
+            />
+          )}
         </>
       )}
     </div>

@@ -12,6 +12,7 @@ export default function TipoMantenimientoList() {
   const [tipos, setTipos] = useState<TipoMantenimiento[]>([]);
   const [filteredTipos, setFilteredTipos] = useState<TipoMantenimiento[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTipoId, setSelectedTipoId] = useState<number | null>(null);
@@ -36,15 +37,31 @@ export default function TipoMantenimientoList() {
   }, []);
 
   useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredTipos(tipos);
-    } else {
+    const search = async () => {
+      if (searchTerm.trim() === "") {
+        setFilteredTipos(tipos);
+        setSearchLoading(false);
+        return;
+      }
+
+      setSearchLoading(true);
+      
+      // Simulamos un pequeño retraso para que se vea el spinner
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const filtered = tipos.filter(tipo =>
         tipo.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tipo.id.toString().includes(searchTerm)
       );
       setFilteredTipos(filtered);
-    }
+      setSearchLoading(false);
+    };
+
+    const timer = setTimeout(() => {
+      search();
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [searchTerm, tipos]);
 
   const handleDelete = async (id: number) => {
@@ -165,15 +182,13 @@ export default function TipoMantenimientoList() {
         </InputGroup>
       </div>
 
-      {loading ? (
+      {loading || searchLoading ? (
         <div className="text-center my-5">
           <Spinner animation="border" variant="primary" />
-          <p className="mt-3">Cargando tipos de mantenimiento...</p>
+          <p className="mt-3">
+            {loading ? "Cargando tipos de mantenimiento..." : "Cargando datos..."}
+          </p>
         </div>
-      ) : filteredTipos.length === 0 ? (
-        <p className="text-center text-muted py-4">
-          {searchTerm ? "No se encontraron resultados" : "No hay tipos de mantenimiento registrados"}
-        </p>
       ) : (
         <div className="table-responsive">
           <table className="table table-hover align-middle text-center">
@@ -186,56 +201,63 @@ export default function TipoMantenimientoList() {
               </tr>
             </thead>
             <tbody>
-              {filteredTipos.map((tipo) => (
-                <tr key={tipo.id}>
-                  <td>{tipo.id}</td>
-                  <td>{tipo.nombre}</td>
-                  <td>
-                    <span className={`badge bg-${tipo.estado ? "success" : "secondary"}`}>
-                      {tipo.estado ? "Activo" : "Inactivo"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="d-flex justify-content-center gap-2">
-                      <Button
-                        variant="outline-primary"
-                        title="Editar"
-                        onClick={() => handleEditClick(tipo.id)}
-                        style={{
-                          width: "44px",
-                          height: "44px",
-                          transition: "transform 0.2s ease-in-out",
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        className="d-flex justify-content-center align-items-center p-0 rounded-circle"
-                      >
-                        <FaEdit />
-                      </Button>
-                      <Button
-                        variant="outline-danger"
-                        title="Eliminar"
-                        onClick={() => handleDelete(tipo.id)}
-                        style={{
-                          width: "44px",
-                          height: "44px",
-                          transition: "transform 0.2s ease-in-out",
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        className="d-flex justify-content-center align-items-center p-0 rounded-circle"
-                      >
-                        <FaTrash />
-                      </Button>
-                    </div>
+              {filteredTipos.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-muted py-4">
+                    {searchTerm ? "No se encontraron resultados" : "No hay tipos de mantenimiento registrados"}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredTipos.map((tipo) => (
+                  <tr key={tipo.id}>
+                    <td>{tipo.id}</td>
+                    <td>{tipo.nombre}</td>
+                    <td>
+                      <span className={`badge bg-${tipo.estado ? "success" : "secondary"}`}>
+                        {tipo.estado ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="d-flex justify-content-center gap-2">
+                        <Button
+                          variant="outline-primary"
+                          title="Editar"
+                          onClick={() => handleEditClick(tipo.id)}
+                          style={{
+                            width: "44px",
+                            height: "44px",
+                            transition: "transform 0.2s ease-in-out",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                          className="d-flex justify-content-center align-items-center p-0 rounded-circle"
+                        >
+                          <FaEdit />
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          title="Eliminar"
+                          onClick={() => handleDelete(tipo.id)}
+                          style={{
+                            width: "44px",
+                            height: "44px",
+                            transition: "transform 0.2s ease-in-out",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                          className="d-flex justify-content-center align-items-center p-0 rounded-circle"
+                        >
+                          <FaTrash />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       )}
-
 
       <FormTipoMantenimientoModal
         show={showCreateModal}

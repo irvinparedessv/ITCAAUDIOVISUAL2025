@@ -46,7 +46,7 @@ export default function ModeloManager() {
     perPage: 5,
   });
   const [totalPaginas, setTotalPaginas] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Cambiado a true inicialmente
   const [loadingMarcas, setLoadingMarcas] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formValidated, setFormValidated] = useState(false);
@@ -113,7 +113,6 @@ export default function ModeloManager() {
     []
   );
 
-  // Con este único efecto:
   useEffect(() => {
     const debounced = debounce(() => {
       fetchModelos();
@@ -339,6 +338,7 @@ export default function ModeloManager() {
         </div>
       )}
 
+      {/* Mostrar spinner si está cargando */}
       {loading ? (
         <div className="text-center my-5">
           <Spinner animation="border" variant="primary" />
@@ -460,11 +460,13 @@ export default function ModeloManager() {
             </table>
           </div>
 
-          <PaginationComponent
-            page={filters.page}
-            totalPages={totalPaginas}
-            onPageChange={handlePageChange}
-          />
+          {!loading && modelos.length > 0 && (
+            <PaginationComponent
+              page={filters.page}
+              totalPages={totalPaginas}
+              onPageChange={handlePageChange}
+            />
+          )}
         </>
       )}
 

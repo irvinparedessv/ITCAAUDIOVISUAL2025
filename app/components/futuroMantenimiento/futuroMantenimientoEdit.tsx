@@ -24,6 +24,9 @@ const FuturoMantenimientoEdit = () => {
     tipo_mantenimiento_id: "",
     fecha_mantenimiento: "",
     hora_mantenimiento_inicio: "",
+    fecha_mantenimiento_final: "",
+    hora_mantenimiento_final: "",
+    detalles: "",
     user_id: "",
   });
 
@@ -36,6 +39,9 @@ const FuturoMantenimientoEdit = () => {
   const [dateError, setDateError] = useState<boolean>(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
+  const [finalDateError, setFinalDateError] = useState<boolean>(false);
+  const [finalTimeError, setFinalTimeError] = useState<string | null>(null);
+  const [finalRangeError, setFinalRangeError] = useState<string | null>(null);
   const { user } = useAuth();
   const esEncargado = user?.role === Role.Encargado;
 
@@ -115,6 +121,9 @@ const FuturoMantenimientoEdit = () => {
           tipo_mantenimiento_id: mantenimiento.tipo_mantenimiento_id?.toString() || "",
           fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
           hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
+          fecha_mantenimiento_final: mantenimiento.fecha_mantenimiento_final || "",
+          hora_mantenimiento_final: mantenimiento.hora_mantenimiento_final?.slice(0, 5) || "",
+          detalles: mantenimiento.detalles || "",
           user_id: mantenimiento.user_id?.toString() || "",
         });
 
@@ -128,12 +137,11 @@ const FuturoMantenimientoEdit = () => {
       }
     };
 
-
     fetchData();
   }, [id]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
 
@@ -161,6 +169,53 @@ const FuturoMantenimientoEdit = () => {
             setTimeError('La hora no puede ser anterior a la hora actual');
           }
         }
+      }
+    }
+
+    // Validaciones para fecha y hora final (solo si están presentes)
+    if (name === 'fecha_mantenimiento_final') {
+      if (value) {
+        // Validar que no sea anterior a la fecha actual
+        const diff = compareDateOnly(value);
+        setFinalDateError(diff < 0);
+        
+        // Validar que no sea anterior a la fecha de inicio si está presente
+        if (formData.fecha_mantenimiento && value < formData.fecha_mantenimiento) {
+          setFinalDateError(true);
+        }
+      } else {
+        setFinalDateError(false);
+      }
+    }
+
+    if (name === 'hora_mantenimiento_final') {
+      if (value) {
+        // Validar rango horario
+        if (!validateTimeRange(value)) {
+          setFinalRangeError('El horario debe estar entre 7:00 AM y 5:00 PM');
+        } else {
+          setFinalRangeError(null);
+        }
+
+        // Validar que no sea anterior a la hora actual si es hoy
+        const today = new Date().toLocaleDateString('en-CA');
+        if (formData.fecha_mantenimiento_final === today) {
+          if (!validateCurrentTime(value, formData.fecha_mantenimiento_final)) {
+            setFinalTimeError('La hora no puede ser anterior a la hora actual');
+          } else {
+            setFinalTimeError(null);
+          }
+        }
+
+        // Validar que no sea anterior a la hora de inicio si es el mismo día
+        if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final && 
+            formData.hora_mantenimiento_inicio && 
+            value < formData.hora_mantenimiento_inicio) {
+          setFinalTimeError('La hora final no puede ser anterior a la hora de inicio');
+        }
+      } else {
+        setFinalTimeError(null);
+        setFinalRangeError(null);
       }
     }
 
@@ -219,16 +274,52 @@ const FuturoMantenimientoEdit = () => {
       }
     }
 
+    // Validaciones para fecha y hora final (solo si están presentes)
+    if (formData.fecha_mantenimiento_final) {
+      const diff = compareDateOnly(formData.fecha_mantenimiento_final);
+      if (diff < 0) {
+        toast.error("La fecha final no puede ser anterior al día actual");
+        return;
+      }
+
+      if (formData.fecha_mantenimiento && 
+          formData.fecha_mantenimiento_final < formData.fecha_mantenimiento) {
+        toast.error("La fecha final no puede ser anterior a la fecha de inicio");
+        return;
+      }
+    }
+
+    if (formData.hora_mantenimiento_final) {
+      if (!validateTimeRange(formData.hora_mantenimiento_final)) {
+        toast.error("La hora final debe estar entre 7:00 AM y 5:00 PM");
+        return;
+      }
+
+      if (formData.fecha_mantenimiento_final === new Date().toLocaleDateString('en-CA')) {
+        if (!validateCurrentTime(formData.hora_mantenimiento_final, formData.fecha_mantenimiento_final)) {
+          toast.error("La hora final no puede ser anterior a la hora actual");
+          return;
+        }
+      }
+
+      if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final && 
+          formData.hora_mantenimiento_inicio && 
+          formData.hora_mantenimiento_final < formData.hora_mantenimiento_inicio) {
+        toast.error("La hora final no puede ser anterior a la hora de inicio");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const dataToSend = {
-        ...formData,
         equipo_id: Number(formData.equipo_id),
         tipo_mantenimiento_id: Number(formData.tipo_mantenimiento_id),
-        hora_mantenimiento_inicio:
-          formData.hora_mantenimiento_inicio.length === 5
-            ? formData.hora_mantenimiento_inicio
-            : formData.hora_mantenimiento_inicio,
+        fecha_mantenimiento: formData.fecha_mantenimiento,
+        hora_mantenimiento_inicio: formData.hora_mantenimiento_inicio,
+        fecha_mantenimiento_final: formData.fecha_mantenimiento_final || null,
+        hora_mantenimiento_final: formData.hora_mantenimiento_final || null,
+        detalles: formData.detalles || null,
         user_id: Number(formData.user_id),
       };
 
@@ -280,7 +371,6 @@ const FuturoMantenimientoEdit = () => {
           }}>
             {equipo ? (
               <>
-                {/* {equipo.marca?.nombre || 'Marca no disponible'} {' '} */}
                 {equipo.modelo?.nombre || 'Modelo no disponible'} {' '}
                 ({equipo.numero_serie || 'Sin serie'})
               </>
@@ -356,6 +446,69 @@ const FuturoMantenimientoEdit = () => {
           {timeError && <div className="invalid-feedback">{timeError}</div>}
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
         </div>
+
+        {/* Fecha Final (Opcional) */}
+        <div className="mb-3">
+          <label className="form-label">Fecha Final (Opcional)</label>
+          <input
+            type="date"
+            name="fecha_mantenimiento_final"
+            value={formData.fecha_mantenimiento_final}
+            onChange={handleChange}
+            className={`form-control ${finalDateError ? 'is-invalid' : ''}`}
+            min={formData.fecha_mantenimiento || getCurrentDate()}
+            style={{
+              backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+              color: darkMode ? "#f8f9fa" : "#212529",
+              borderColor: darkMode ? "#444" : "#ccc",
+            }}
+          />
+          {finalDateError && (
+            <div className="invalid-feedback">
+              La fecha final no puede ser anterior a la fecha actual o a la fecha de inicio
+            </div>
+          )}
+        </div>
+
+        {/* Hora Final (Opcional) */}
+        <div className="mb-3">
+          <label className="form-label">Hora Final (Opcional)</label>
+          <input
+            type="time"
+            name="hora_mantenimiento_final"
+            value={formData.hora_mantenimiento_final}
+            onChange={handleChange}
+            className={`form-control ${finalTimeError || finalRangeError ? 'is-invalid' : ''}`}
+            min="07:00"
+            max="17:00"
+            style={{
+              backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+              color: darkMode ? "#f8f9fa" : "#212529",
+              borderColor: darkMode ? "#444" : "#ccc",
+            }}
+          />
+          {finalTimeError && <div className="invalid-feedback">{finalTimeError}</div>}
+          {finalRangeError && <div className="invalid-feedback">{finalRangeError}</div>}
+        </div>
+
+        {/* Detalles (Opcional) */}
+        <div className="mb-3">
+          <label className="form-label">Detalles (Opcional)</label>
+          <textarea
+            name="detalles"
+            value={formData.detalles}
+            onChange={handleChange}
+            className="form-control"
+            rows={3}
+            style={{
+              backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+              color: darkMode ? "#f8f9fa" : "#212529",
+              borderColor: darkMode ? "#444" : "#ccc",
+            }}
+          />
+        </div>
+
+        {/* Responsable */}
         {!esEncargado ? (
           <div className="mb-3">
             <label className="form-label">Responsable</label>

@@ -13,13 +13,19 @@ export interface FuturoMantenimiento {
     id: number;
     nombre: string;
   };
+  fecha_mantenimiento_final: string | null;
+  hora_mantenimiento_final: string | null;
+  detalles: string; 
 }
 
 export interface FuturoMantenimientoCreateDTO {
   equipo_id: number;
   tipo_mantenimiento_id: number;
   fecha_mantenimiento: string;            
-  hora_mantenimiento_inicio: string;     
+  hora_mantenimiento_inicio: string;   
+  fecha_mantenimiento_final: string | null;
+  hora_mantenimiento_final: string | null;
+  detalles: string;  
 }
 
 export interface FuturoMantenimientoUpdateDTO {
@@ -27,4 +33,7 @@ export interface FuturoMantenimientoUpdateDTO {
   tipo_mantenimiento_id?: number;
   fecha_mantenimiento?: string;
   hora_mantenimiento_inicio?: string;
+  fecha_mantenimiento_final: string | null;
+  hora_mantenimiento_final: string | null;
+  detalles: string;
 }

@@ -29,6 +29,9 @@ interface FormData {
   tipo_mantenimiento_id: string;
   fecha_mantenimiento: string;
   hora_mantenimiento_inicio: string;
+  fecha_mantenimiento_final: string;
+  hora_mantenimiento_final: string;
+  detalles: string;
   user_id: string;
 }
 
@@ -43,6 +46,9 @@ const FormFuturoMantenimiento = () => {
   const [dateError, setDateError] = useState<boolean>(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
+  const [finalDateError, setFinalDateError] = useState<boolean>(false);
+  const [finalTimeError, setFinalTimeError] = useState<string | null>(null);
+  const [finalRangeError, setFinalRangeError] = useState<string | null>(null);
   const { user } = useAuth();
   const esEncargado = user?.role === Role.Encargado;
 
@@ -51,6 +57,9 @@ const FormFuturoMantenimiento = () => {
     tipo_mantenimiento_id: "",
     fecha_mantenimiento: "",
     hora_mantenimiento_inicio: "",
+    fecha_mantenimiento_final: "",
+    hora_mantenimiento_final: "",
+    detalles: "",
     user_id: "",
   });
 
@@ -124,7 +133,6 @@ const FormFuturoMantenimiento = () => {
     }
   }, [user]);
 
-
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -132,12 +140,10 @@ const FormFuturoMantenimiento = () => {
         const tiposList = await getTiposMantenimiento();
         setTipos(tiposList || []);
 
-        // Si el usuario no es Encargado, entonces cargar usuarios
         if (user?.role !== Role.Encargado) {
           const usuariosList = await getUsuariosM();
           setUsuarios(usuariosList.data || []);
         } else {
-          // Si es Encargado, establecer su propio ID como user_id por defecto
           setFormData(prev => ({
             ...prev,
             user_id: user.id.toString(),
@@ -156,9 +162,8 @@ const FormFuturoMantenimiento = () => {
     }
   }, [user]);
 
-
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
 
@@ -167,12 +172,8 @@ const FormFuturoMantenimiento = () => {
       [name]: value,
     };
 
-    if (name === 'hora_mantenimiento_inicio') {
-      setTimeError(null);
-      setRangeError(null);
-    }
-
-    if (name === "fecha_mantenimiento") {
+    // Validaciones para fecha y hora de inicio
+    if (name === 'fecha_mantenimiento') {
       if (value) {
         const diff = compareDateOnly(value);
         setDateError(diff < 0);
@@ -181,18 +182,69 @@ const FormFuturoMantenimiento = () => {
       setRangeError(null);
     }
 
-    if (name === "hora_mantenimiento_inicio") {
+    if (name === 'hora_mantenimiento_inicio') {
       if (value) {
         if (!validateTimeRange(value)) {
           setRangeError('El horario debe estar entre 7:00 AM y 5:00 PM');
+        } else {
+          setRangeError(null);
         }
 
         const today = new Date().toLocaleDateString('en-CA');
         if (newFormData.fecha_mantenimiento === today) {
           if (!validateCurrentTime(value, newFormData.fecha_mantenimiento)) {
             setTimeError('La hora no puede ser anterior a la hora actual');
+          } else {
+            setTimeError(null);
           }
         }
+      }
+    }
+
+    // Validaciones para fecha y hora final (solo si están presentes)
+    if (name === 'fecha_mantenimiento_final') {
+      if (value) {
+        // Validar que no sea anterior a la fecha actual
+        const diff = compareDateOnly(value);
+        setFinalDateError(diff < 0);
+        
+        // Validar que no sea anterior a la fecha de inicio si está presente
+        if (formData.fecha_mantenimiento && value < formData.fecha_mantenimiento) {
+          setFinalDateError(true);
+        }
+      } else {
+        setFinalDateError(false);
+      }
+    }
+
+    if (name === 'hora_mantenimiento_final') {
+      if (value) {
+        // Validar rango horario
+        if (!validateTimeRange(value)) {
+          setFinalRangeError('El horario debe estar entre 7:00 AM y 5:00 PM');
+        } else {
+          setFinalRangeError(null);
+        }
+
+        // Validar que no sea anterior a la hora actual si es hoy
+        const today = new Date().toLocaleDateString('en-CA');
+        if (newFormData.fecha_mantenimiento_final === today) {
+          if (!validateCurrentTime(value, newFormData.fecha_mantenimiento_final)) {
+            setFinalTimeError('La hora no puede ser anterior a la hora actual');
+          } else {
+            setFinalTimeError(null);
+          }
+        }
+
+        // Validar que no sea anterior a la hora de inicio si es el mismo día
+        if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final && 
+            formData.hora_mantenimiento_inicio && 
+            value < formData.hora_mantenimiento_inicio) {
+          setFinalTimeError('La hora final no puede ser anterior a la hora de inicio');
+        }
+      } else {
+        setFinalTimeError(null);
+        setFinalRangeError(null);
       }
     }
 
@@ -243,6 +295,42 @@ const FormFuturoMantenimiento = () => {
       }
     }
 
+    // Validaciones para fecha y hora final (solo si están presentes)
+    if (formData.fecha_mantenimiento_final) {
+      const diff = compareDateOnly(formData.fecha_mantenimiento_final);
+      if (diff < 0) {
+        toast.error("La fecha final no puede ser anterior al día actual");
+        return;
+      }
+
+      if (formData.fecha_mantenimiento && 
+          formData.fecha_mantenimiento_final < formData.fecha_mantenimiento) {
+        toast.error("La fecha final no puede ser anterior a la fecha de inicio");
+        return;
+      }
+    }
+
+    if (formData.hora_mantenimiento_final) {
+      if (!validateTimeRange(formData.hora_mantenimiento_final)) {
+        toast.error("La hora final debe estar entre 7:00 AM y 5:00 PM");
+        return;
+      }
+
+      if (formData.fecha_mantenimiento_final === new Date().toLocaleDateString('en-CA')) {
+        if (!validateCurrentTime(formData.hora_mantenimiento_final, formData.fecha_mantenimiento_final)) {
+          toast.error("La hora final no puede ser anterior a la hora actual");
+          return;
+        }
+      }
+
+      if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final && 
+          formData.hora_mantenimiento_inicio && 
+          formData.hora_mantenimiento_final < formData.hora_mantenimiento_inicio) {
+        toast.error("La hora final no puede ser anterior a la hora de inicio");
+        return;
+      }
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -250,10 +338,10 @@ const FormFuturoMantenimiento = () => {
         equipo_id: Number(formData.equipo_id),
         tipo_mantenimiento_id: Number(formData.tipo_mantenimiento_id),
         fecha_mantenimiento: formData.fecha_mantenimiento,
-        hora_mantenimiento_inicio:
-          formData.hora_mantenimiento_inicio.length === 5
-            ? formData.hora_mantenimiento_inicio
-            : formData.hora_mantenimiento_inicio,
+        hora_mantenimiento_inicio: formData.hora_mantenimiento_inicio,
+        fecha_mantenimiento_final: formData.fecha_mantenimiento_final || null,
+        hora_mantenimiento_final: formData.hora_mantenimiento_final || null,
+        detalles: formData.detalles || null,
         user_id: Number(formData.user_id),
       };
 
@@ -297,7 +385,7 @@ const FormFuturoMantenimiento = () => {
     if (!time) return true;
     const [hours, minutes] = time.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes;
-    return totalMinutes >= 420 && totalMinutes <= 1020;
+    return totalMinutes >= 420 && totalMinutes <= 1020; // 7:00 AM (420 min) to 5:00 PM (1020 min)
   };
 
   const validateCurrentTime = (time: string, date: string): boolean => {
@@ -373,9 +461,9 @@ const FormFuturoMantenimiento = () => {
           </select>
         </div>
 
-        {/* Fecha */}
+        {/* Fecha Inicio */}
         <div className="mb-3">
-          <label className="form-label">Fecha</label>
+          <label className="form-label">Fecha Inicio</label>
           <input
             type="date"
             name="fecha_mantenimiento"
@@ -409,6 +497,55 @@ const FormFuturoMantenimiento = () => {
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
         </div>
 
+        {/* Fecha Final (Opcional) */}
+        <div className="mb-3">
+          <label className="form-label">Fecha Final (Opcional)</label>
+          <input
+            type="date"
+            name="fecha_mantenimiento_final"
+            className={`form-control ${finalDateError ? 'is-invalid' : ''}`}
+            value={formData.fecha_mantenimiento_final}
+            onChange={handleChange}
+            min={formData.fecha_mantenimiento || getCurrentDate()}
+            disabled={isSubmitting}
+          />
+          {finalDateError && (
+            <div className="invalid-feedback">
+              La fecha final no puede ser anterior a la fecha actual o a la fecha de inicio
+            </div>
+          )}
+        </div>
+
+        {/* Hora Final (Opcional) */}
+        <div className="mb-3">
+          <label className="form-label">Hora Final (Opcional)</label>
+          <input
+            type="time"
+            name="hora_mantenimiento_final"
+            className={`form-control ${finalTimeError || finalRangeError ? 'is-invalid' : ''}`}
+            value={formData.hora_mantenimiento_final}
+            onChange={handleChange}
+            min="07:00"
+            max="17:00"
+            disabled={isSubmitting}
+          />
+          {finalTimeError && <div className="invalid-feedback">{finalTimeError}</div>}
+          {finalRangeError && <div className="invalid-feedback">{finalRangeError}</div>}
+        </div>
+
+        {/* Detalles (Opcional) */}
+        <div className="mb-3">
+          <label className="form-label">Detalles (Opcional)</label>
+          <textarea
+            name="detalles"
+            className="form-control"
+            value={formData.detalles}
+            onChange={handleChange}
+            rows={3}
+            disabled={isSubmitting}
+          />
+        </div>
+
         {/* Responsable */}
         {!esEncargado ? (
           <div className="mb-3">
@@ -433,7 +570,6 @@ const FormFuturoMantenimiento = () => {
         ) : (
           <input type="hidden" name="user_id" value={formData.user_id} />
         )}
-
 
         {/* Botones */}
         <div className="form-actions d-flex gap-2 mt-4">

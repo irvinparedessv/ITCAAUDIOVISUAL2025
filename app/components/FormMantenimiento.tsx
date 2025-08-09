@@ -17,15 +17,15 @@ const FormMantenimiento = () => {
   const getCurrentDate = (): string => {
     const today = new Date();
     const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
 
   const getCurrentTime = (): string => {
     const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
     return `${hours}:${minutes}`;
   };
 
@@ -58,7 +58,6 @@ const FormMantenimiento = () => {
         setEquipos(equiposList?.data || []);
         setTipos(tiposList || []);
         setUsuarios(usuariosList?.data || []);
-
       } catch (error) {
         toast.error("Error al cargar datos");
         console.error("Error:", error);
@@ -72,7 +71,7 @@ const FormMantenimiento = () => {
   const validateTimeRange = (time: string): boolean => {
     if (!time) return true;
 
-    const [hours, minutes] = time.split(':').map(Number);
+    const [hours, minutes] = time.split(":").map(Number);
     const totalMinutes = hours * 60 + minutes;
 
     return totalMinutes >= 420 && totalMinutes <= 1020; // 7:00 AM a 5:00 PM
@@ -85,7 +84,7 @@ const FormMantenimiento = () => {
   ) => {
     const { name, value } = e.target;
 
-    if (name.includes('hora_')) {
+    if (name.includes("hora_")) {
       setTimeError(null);
       setRangeError(null);
     }
@@ -93,7 +92,7 @@ const FormMantenimiento = () => {
     if (name === "hora_mantenimiento_inicio") {
       if (value) {
         if (!validateTimeRange(value)) {
-          setRangeError('El horario debe estar entre 7:00 AM y 5:00 PM');
+          setRangeError("El horario debe estar entre 7:00 AM y 5:00 PM");
         }
       }
     }
@@ -145,9 +144,11 @@ const FormMantenimiento = () => {
         toast.success(result.message);
 
         if (result.data.equipo?.estado_id === EstadoEquipo.Mantenimiento) {
-          toast.success(`Equipo ${result.data.equipo.numero_serie} puesto en Mantenimiento`);
+          toast.success(
+            `Equipo ${result.data.equipo.numero_serie} puesto en Mantenimiento`
+          );
         } else {
-          toast.error('El estado del equipo no fue actualizado');
+          toast.error("El estado del equipo no fue actualizado");
         }
       } else {
         throw new Error(result.message);
@@ -186,12 +187,18 @@ const FormMantenimiento = () => {
           style={{ cursor: "pointer", fontSize: "2rem", marginRight: "0.5rem" }}
         />
         <h2 className="fw-bold">
-          {id ? "Nuevo Mantenimiento" : "Editar Mantenimiento"}
+          {id ? "Confirmación de Mantenimiento" : "Editar Mantenimiento"}
         </h2>
       </div>
 
       <div className="alert alert-info mt-3" role="alert">
-        <strong>Importante:</strong> El equipo no cambiará a estado "En Mantenimiento" hasta que este registro sea guardado correctamente.
+        <strong>
+          Importante: Actualmente te encuentras en la vista de confirmación de
+          mantenimiento:
+        </strong>{" "}
+        El equipo no cambiará a estado "En Mantenimiento" hasta que confirmes y
+        guardes este registro. Solo debes especificar el tipo de mantenimiento
+        que se realizará y algun comentario.
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -210,8 +217,11 @@ const FormMantenimiento = () => {
               .filter((equipo) => !equipo.es_componente)
               .map((equipo) => (
                 <option key={equipo.id} value={equipo.id.toString()}>
-                  {equipo.numero_serie || `Equipo #${equipo.id}`} - {equipo.modelo?.nombre || ""}
-                  {equipo.modelo?.marca?.nombre ? ` (${equipo.modelo.marca.nombre})` : ""}
+                  {equipo.numero_serie || `Equipo #${equipo.id}`} -{" "}
+                  {equipo.modelo?.nombre || ""}
+                  {equipo.modelo?.marca?.nombre
+                    ? ` (${equipo.modelo.marca.nombre})`
+                    : ""}
                 </option>
               ))}
           </select>
@@ -258,7 +268,9 @@ const FormMantenimiento = () => {
             name="hora_mantenimiento_inicio"
             value={formData.hora_mantenimiento_inicio}
             onChange={handleChange}
-            className={`form-control ${timeError || rangeError ? 'is-invalid' : ''}`}
+            className={`form-control ${
+              timeError || rangeError ? "is-invalid" : ""
+            }`}
             min="07:00"
             max="17:00"
             disabled
@@ -269,7 +281,7 @@ const FormMantenimiento = () => {
 
         {/* Detalles */}
         <div className="mb-3">
-          <label className="form-label">Detalles</label>
+          <label className="form-label">Comentario</label>
           <textarea
             name="detalles"
             value={formData.detalles}
@@ -289,7 +301,11 @@ const FormMantenimiento = () => {
           >
             {isSubmitting ? (
               <>
-                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span
+                  className="spinner-border spinner-border-sm me-1"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
                 Guardando...
               </>
             ) : (

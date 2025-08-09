@@ -1,13 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Badge,
-  Button,
-  Container,
-  Form,
-  Alert,
-  Spinner,
-  Modal,
-} from "react-bootstrap";
+import { Badge, Button, Form, Alert, Spinner, Modal } from "react-bootstrap";
 import Select from "react-select";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -26,6 +18,9 @@ export default function EquipmentAvailabilityList() {
     imagen_glb: string | null;
     imagen_normal: string | null;
     estado: string;
+    // nuevos flags por equipo (si el backend los devuelve en este listado)
+    en_reposo?: boolean;
+    futuro_mantenimiento?: boolean;
   }
 
   interface Modelo {
@@ -35,8 +30,12 @@ export default function EquipmentAvailabilityList() {
     imagen_normal: string | null;
     imagen_glb: string | null;
     disponibles: number;
-    mantenimiento: number;
     reservados: number;
+    // nuevos campos
+    en_reposo: number;
+    mantenimiento: number; // total (actual + programado) — sigue existiendo
+    mantenimiento_actual?: number;
+    futuro_mantenimiento?: number;
     equipos: Equipo[];
   }
 
@@ -262,13 +261,13 @@ export default function EquipmentAvailabilityList() {
                       fontSize: "1rem",
                       fontWeight: 400,
                       padding: "0.4rem",
-                      backgroundColor: "transparent !important", // ← fondo del input
+                      backgroundColor: "transparent !important",
                     }),
                     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                     multiValue: (base) => ({
                       ...base,
-                      backgroundColor: "transparent", // ← fondo del chip
-                      border: "1px solid #ced4da",     // ← borde sutil (puedes quitarlo)
+                      backgroundColor: "transparent",
+                      border: "1px solid #ced4da",
                       borderRadius: "0.25rem",
                       padding: "0 2px",
                     }),
@@ -281,14 +280,12 @@ export default function EquipmentAvailabilityList() {
                       color: "#495057",
                       cursor: "pointer",
                       ":hover": {
-                        backgroundColor: "#f8f9fa", // ← hover sutil, o pon "transparent"
+                        backgroundColor: "#f8f9fa",
                         color: "#212529",
                       },
                     }),
                   }}
                 />
-
-
               </div>
             </Form.Group>
           </div>
@@ -300,21 +297,21 @@ export default function EquipmentAvailabilityList() {
                 selected={
                   filtros.fecha
                     ? (() => {
-                      const [year, month, day] = filtros.fecha
-                        .split("-")
-                        .map(Number);
-                      const date = new Date();
-                      date.setFullYear(year, month - 1, day);
-                      date.setHours(0, 0, 0, 0);
-                      return date;
-                    })()
+                        const [year, month, day] = filtros.fecha
+                          .split("-")
+                          .map(Number);
+                        const date = new Date();
+                        date.setFullYear(year, month - 1, day);
+                        date.setHours(0, 0, 0, 0);
+                        return date;
+                      })()
                     : null
                 }
                 onChange={(date: Date | null) => {
                   const formatted = date
                     ? `${date.getFullYear()}-${(date.getMonth() + 1)
-                      .toString()
-                      .padStart(2, "0")}-${date
+                        .toString()
+                        .padStart(2, "0")}-${date
                         .getDate()
                         .toString()
                         .padStart(2, "0")}`
@@ -390,13 +387,15 @@ export default function EquipmentAvailabilityList() {
                   <th>Imagen</th>
                   <th>Disponible</th>
                   <th>Reservado</th>
-                  <th>Mantenimiento</th>
+                  <th>Mant. actual</th>
+                  <th>Futuro mant.</th>
+                  <th>En reposo</th>
                 </tr>
               </thead>
               <tbody>
                 {equipmentList.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center text-muted py-4">
+                    <td colSpan={8} className="text-center text-muted py-4">
                       No se encontraron equipos.
                     </td>
                   </tr>
@@ -423,9 +422,29 @@ export default function EquipmentAvailabilityList() {
                           <span className="text-muted">Sin imagen</span>
                         )}
                       </td>
-                      <td>{modelo.disponibles}</td>
-                      <td>{modelo.reservados}</td>
-                      <td>{modelo.mantenimiento}</td>
+                      <td>
+                        <Badge bg="success">{modelo.disponibles}</Badge>
+                      </td>
+                      <td>
+                        <Badge bg="warning" text="dark">
+                          {modelo.reservados}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Badge bg="danger">
+                          {modelo.mantenimiento_actual ?? 0}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Badge bg="secondary">
+                          {modelo.futuro_mantenimiento ?? 0}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Badge bg="info" text="dark">
+                          {modelo.en_reposo}
+                        </Badge>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -451,7 +470,7 @@ export default function EquipmentAvailabilityList() {
         </Modal.Header>
         <Modal.Body className="text-center">
           {selectedEquipment?.isGLB ? (
-            //@ts-ignore
+            // @ts-ignore
             <model-viewer
               src={selectedEquipment.imageUrl}
               alt="Modelo 3D"

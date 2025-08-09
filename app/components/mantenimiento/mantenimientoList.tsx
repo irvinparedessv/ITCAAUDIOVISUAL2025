@@ -11,7 +11,8 @@ import {
   FaTrash,
   FaExchangeAlt,
   FaFilter,
-  FaEye
+  FaEye,
+  FaClipboardCheck
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
 import type { Mantenimiento } from "../../types/mantenimiento";
@@ -568,7 +569,7 @@ export default function MantenimientoList() {
                           </Button>
                           <Button
                             variant="outline-success"
-                            title="Cambiar estado del equipo"
+                            title="Detalle del mantenimiento"
                             onClick={() => {
                               setSelectedMantenimiento(m);
                               setSelectedEstado(null);
@@ -587,7 +588,7 @@ export default function MantenimientoList() {
                             }
                             className="d-flex justify-content-center align-items-center p-0 rounded-circle"
                           >
-                            <FaExchangeAlt />
+                            <FaClipboardCheck />
                           </Button>
                           <Button
                             variant="outline-danger"
@@ -640,8 +641,8 @@ export default function MantenimientoList() {
         >
           <Modal.Title>
             {selectedMantenimiento?.fecha_mantenimiento_final
-              ? "Ajustar Mantenimiento"
-              : "Cambiar estado del equipo"}
+              ? "Detalles del Mantenimiento"
+              : "Finalizar Mantenimiento"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>

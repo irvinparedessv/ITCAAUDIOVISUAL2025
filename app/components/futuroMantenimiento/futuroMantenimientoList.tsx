@@ -46,6 +46,7 @@ export default function FuturoMantenimientoList() {
   const [lastPage, setLastPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [filterLoading, setFilterLoading] = useState(false); // Nuevo estado para carga de filtros
   const [tipos, setTipos] = useState<Record<number, string>>({});
   const [hasLoaded, setHasLoaded] = useState(false);
   const navigate = useNavigate();
@@ -99,7 +100,6 @@ export default function FuturoMantenimientoList() {
   };
 
   const cargarMantenimientos = async () => {
-    setLoading(true);
     try {
       const response = await getFuturosMantenimiento(filters);
       setMantenimientos(response?.data || []);
@@ -113,12 +113,14 @@ export default function FuturoMantenimientoList() {
       setMantenimientos([]);
     } finally {
       setLoading(false);
+      setFilterLoading(false); // Asegurarse de desactivar el loading de filtros
       setHasLoaded(true);
     }
   };
 
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
       await cargarTipos();
       await cargarMantenimientos();
     };
@@ -127,11 +129,17 @@ export default function FuturoMantenimientoList() {
 
   useEffect(() => {
     if (hasLoaded) {
-      cargarMantenimientos();
+      setFilterLoading(true); // Activar loading cuando cambian los filtros
+      const timer = setTimeout(() => {
+        cargarMantenimientos();
+      }, 300); // Pequeño delay para evitar parpadeos en cambios rápidos
+
+      return () => clearTimeout(timer);
     }
   }, [filters]);
 
   useEffect(() => {
+    setFilterLoading(true); // Activar loading cuando se escribe en el search
     const delayDebounce = setTimeout(() => {
       setFilters(prev => ({
         ...prev,
@@ -198,6 +206,7 @@ export default function FuturoMantenimientoList() {
   };
 
   const handleFilterUpdate = (key: string, value: any) => {
+    setFilterLoading(true); // Activar loading al cambiar filtros
     setFilters(prev => ({
       ...prev,
       [key]: value,
@@ -206,6 +215,7 @@ export default function FuturoMantenimientoList() {
   };
 
   const handlePageChange = (page: number) => {
+    setFilterLoading(true); // Activar loading al cambiar página
     setFilters(prev => ({
       ...prev,
       page,
@@ -213,6 +223,7 @@ export default function FuturoMantenimientoList() {
   };
 
   const resetFilters = () => {
+    setFilterLoading(true); // Activar loading al resetear filtros
     setSearchInput("");
     setFilters({
       search: "",
@@ -250,7 +261,7 @@ export default function FuturoMantenimientoList() {
           onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
           onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
-          <FaPlus /> Crear Mantenimiento
+          <FaPlus /> Crear Mantenimiento Futuro
         </Button>
       </div>
 
@@ -313,6 +324,7 @@ export default function FuturoMantenimientoList() {
                     e.target.value ? Number(e.target.value) : undefined
                   )
                 }
+                disabled={filterLoading}
               >
                 <option value="">Todos</option>
                 {Object.entries(tipos).map(([id, nombre]) => (
@@ -333,6 +345,7 @@ export default function FuturoMantenimientoList() {
                   onChange={(e) =>
                     handleFilterUpdate("fecha_inicio", e.target.value || undefined)
                   }
+                  disabled={filterLoading}
                 />
                 <Form.Control
                   type="date"
@@ -342,12 +355,17 @@ export default function FuturoMantenimientoList() {
                     handleFilterUpdate("fecha_fin", e.target.value || undefined)
                   }
                   min={filters.fecha_inicio}
+                  disabled={filterLoading}
                 />
               </div>
             </div>
 
             <div className="col-12 d-flex justify-content-end gap-2">
-              <Button variant="outline-danger" onClick={resetFilters}>
+              <Button 
+                variant="outline-danger" 
+                onClick={resetFilters}
+                disabled={filterLoading}
+              >
                 <FaTimes className="me-2" />
                 Limpiar filtros
               </Button>
@@ -356,7 +374,7 @@ export default function FuturoMantenimientoList() {
         </div>
       )}
 
-      {!hasLoaded ? (
+      {(loading || filterLoading) ? (
         <div className="text-center my-5">
           <Spinner animation="border" variant="primary" />
           <p className="mt-3">Cargando datos...</p>
@@ -472,7 +490,7 @@ export default function FuturoMantenimientoList() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={7} className="text-center py-4 text-muted">
+                    <td colSpan={10} className="text-center py-4 text-muted">
                       No se encontraron mantenimientos futuros.
                     </td>
                   </tr>

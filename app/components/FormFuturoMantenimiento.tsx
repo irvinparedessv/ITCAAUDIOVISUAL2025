@@ -107,6 +107,13 @@ const FormFuturoMantenimiento = () => {
     if (!q) return [];
     try {
       const equipos = await buscarEquipos(q, 10);
+      if (equipos.length === 0) {
+        return [{
+          label: "No se ha encontrado el equipo buscado",
+          value: "",
+          isDisabled: true
+        }];
+      }
       return equipos.map((e: any) => ({
         label: `${e.marca || ''} ${e.modelo || ''} (${e.numero_serie || 'Sin serie'})`.trim(),
         value: e.id.toString(),
@@ -121,10 +128,12 @@ const FormFuturoMantenimiento = () => {
 
   // Manejar cambio en el AsyncSelect
   const handleEquipoChange = (selectedOption: any) => {
-    setFormData({
-      ...formData,
-      equipo_id: selectedOption ? selectedOption.value : ""
-    });
+    if (selectedOption && !selectedOption.isDisabled) {
+      setFormData({
+        ...formData,
+        equipo_id: selectedOption ? selectedOption.value : ""
+      });
+    }
   };
 
   useEffect(() => {
@@ -425,6 +434,15 @@ const FormFuturoMantenimiento = () => {
         <h2 className="fw-bold">Nuevo Futuro Mantenimiento</h2>
       </div>
 
+      <div className="alert alert-warning mt-3" role="alert">
+        <strong>
+          Importante:
+        </strong>{" "}
+        Si no se especifica una hora de finalización, el equipo permanecerá en estado 
+        "En Mantenimiento" hasta que se actualice manualmente su estado. Asegúrese de 
+        proporcionar una hora de finalización si el mantenimiento tendrá una duración definida.
+      </div>
+
       <form onSubmit={handleSubmit}>
         {/* Equipo - Ahora con AsyncSelect */}
         <div className="mb-3">
@@ -439,6 +457,29 @@ const FormFuturoMantenimiento = () => {
             loadingMessage={() => "Buscando..."}
             onChange={handleEquipoChange}
             isDisabled={isSubmitting}
+            components={{
+              Option: (props) => {
+                return (
+                  <div
+                    {...props.innerProps}
+                    style={{
+                      ...props.innerProps.style,
+                      opacity: props.data.isDisabled ? 0.5 : 1,
+                      cursor: props.data.isDisabled ? 'not-allowed' : 'pointer',
+                      backgroundColor: props.isSelected 
+                        ? (darkMode ? "#555" : "#d3d3d3") 
+                        : props.isFocused 
+                          ? (darkMode ? "#444" : "#e6e6e6") 
+                          : "transparent",
+                      color: darkMode ? "#f8f9fa" : "#212529",
+                      padding: '8px 12px',
+                    }}
+                  >
+                    {props.data.label}
+                  </div>
+                );
+              }
+            }}
           />
         </div>
 

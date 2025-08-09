@@ -198,7 +198,7 @@ const FormMantenimiento = () => {
         </strong>{" "}
         El equipo no cambiará a estado "En Mantenimiento" hasta que confirmes y
         guardes este registro. Solo debes especificar el tipo de mantenimiento
-        que se realizará y algun comentario.
+        que se realizará y la descripción de mantenimiento a realizar.
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -281,7 +281,7 @@ const FormMantenimiento = () => {
 
         {/* Detalles */}
         <div className="mb-3">
-          <label className="form-label">Comentario</label>
+          <label className="form-label">Descripción de mantenimiento a realizar</label>
           <textarea
             name="detalles"
             value={formData.detalles}

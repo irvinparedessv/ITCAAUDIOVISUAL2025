@@ -502,7 +502,8 @@ export default function MantenimientoList() {
                   <th>Usuario</th>
                   <th>Estado</th>
                   <th>Vida Útil</th>
-                  <th>Comentarios</th>
+                  <th>Descripción</th>
+                  <th>Informe</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -544,6 +545,7 @@ export default function MantenimientoList() {
                         )}
                       </td>
                       <td>{m.vida_util ?? "-"}</td>
+                      <td>{m.detalles ?? "-"}</td>
                       <td>{m.comentario ?? "-"}</td>
                       <td>
                         <div className="d-flex justify-content-center gap-2">
@@ -778,7 +780,7 @@ export default function MantenimientoList() {
               )}
 
               <Form.Group className="mb-3">
-                <Form.Label>Comentarios</Form.Label>
+                <Form.Label>Informe(Comentarios del trabajo realizado)</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
@@ -789,7 +791,7 @@ export default function MantenimientoList() {
                       comentario: e.target.value
                     });
                   }}
-                  placeholder="Agregue un comentario sobre el cambio de estado..."
+                  placeholder="Agregue un informe sobre el mantenimiento..."
                   disabled={selectedMantenimiento.fecha_mantenimiento_final &&
                     selectedMantenimiento.equipo?.estado?.id !== EstadoEquipo.Disponible}
                 />

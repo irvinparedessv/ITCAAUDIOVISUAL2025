@@ -1,4 +1,3 @@
-// src/components/reservas/EquipmentReservationForm.tsx
 import React, { useState } from "react";
 import { FaLongArrowAltLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -19,12 +18,16 @@ import toast from "react-hot-toast";
 import { useEffect } from "react";
 import api from "../../api/axios";
 import { Spinner } from "react-bootstrap";
+import ReservaNoEncontrada from "../error/ReservaNoEncontrada";
+
 export default function EquipmentReservationForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loadingReserva, setLoadingReserva] = useState(false);
+  const [reservaNotFound, setReservaNotFound] = useState(false);
   const { id } = useParams(); // `id` será undefined si es creación
   const isEditing = !!id;
+
   const {
     formData,
     setFormData,
@@ -47,10 +50,12 @@ export default function EquipmentReservationForm() {
   } = useReservationFormLogic(id);
 
   const handleBack = () => navigate("/reservations");
+
   useEffect(() => {
     const fetchReserva = async () => {
       if (!id) return;
-      setLoadingReserva(true); // Inicia loading
+      setLoadingReserva(true);
+      setReservaNotFound(false); // Resetear estado antes de hacer la petición
 
       try {
         const { data } = await api.get(`/detail/${id}`);
@@ -77,17 +82,26 @@ export default function EquipmentReservationForm() {
             modelo_path: eq.modelo_path ?? eq.imagen_gbl ?? "",
             numero_serie: eq.numero_serie,
           })),
-          modelFile: null, // opcional
+          modelFile: null,
         });
-      } catch {
-        toast.error("Error al cargar los datos de la reserva");
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          setReservaNotFound(true);
+        } else {
+          toast.error("Error al cargar los datos de la reserva");
+        }
       } finally {
-        setLoadingReserva(false); // Inicia loading
+        setLoadingReserva(false);
       }
     };
 
     fetchReserva();
   }, [id]);
+
+  if (reservaNotFound) {
+    return <ReservaNoEncontrada tipo="equipo" />;
+  }
+
   if (loadingReserva) {
     return (
       <div
@@ -125,13 +139,13 @@ export default function EquipmentReservationForm() {
         />
         {(user?.role === Role.Administrador ||
           user?.role === Role.Encargado) && (
-          <PrestamistaSelect
-            isDateTimeComplete={isDateTimeComplete}
-            selectedPrestamista={selectedPrestamista}
-            setSelectedPrestamista={setSelectedPrestamista}
-            prestamistaOptions={prestamistaOptions}
-          />
-        )}
+            <PrestamistaSelect
+              isDateTimeComplete={isDateTimeComplete}
+              selectedPrestamista={selectedPrestamista}
+              setSelectedPrestamista={setSelectedPrestamista}
+              prestamistaOptions={prestamistaOptions}
+            />
+          )}
         <TipoReservaSelect
           formData={formData}
           setFormData={setFormData}

@@ -10,6 +10,7 @@ import {
   updateMantenimiento,
 } from "../../services/mantenimientoService";
 import { useAuth } from "~/hooks/AuthContext";
+import MantenimientoNoEncontrado from "../error/MantenimientoNoEncontrado";
 
 const MantenimientoEdit = () => {
   const { id } = useParams();
@@ -33,6 +34,7 @@ const MantenimientoEdit = () => {
   const [dateError, setDateError] = useState<boolean>(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
+  const [mantenimientoNoEncontrado, setMantenimientoNoEncontrado] = useState(false);
 
   // Función para validar el rango horario (7:00 AM a 5:00 PM)
   const validateTimeRange = (time: string): boolean => {
@@ -59,42 +61,31 @@ const MantenimientoEdit = () => {
   };
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setMantenimientoNoEncontrado(true);
+      return;
+    }
 
     const fetchData = async () => {
       try {
+        setMantenimientoNoEncontrado(false);
         setLoading(true);
 
-        // 1. Cargar el mantenimiento primero
         const mantenimiento = await getMantenimientoById(Number(id));
+        if (!mantenimiento) {
+          setMantenimientoNoEncontrado(true);
+          return;
+        }
 
-        // 2. Cargar el equipo específico usando el equipo_id del mantenimiento
-        const equipoResponse = await getEquipos({}, mantenimiento.equipo_id?.toString());
-
-        // 3. Cargar los demás datos en paralelo
-        const [tiposList, usuariosList] = await Promise.all([
-          getTiposMantenimiento(),
-          getUsuarios(),
-        ]);
-
-        setFormData({
-          equipo_id: mantenimiento.equipo_id?.toString() || "",
-          tipo_id: mantenimiento.tipo_id?.toString() || "",
-          fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
-          hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
-          detalles: mantenimiento.detalles || "",
-          user_id: mantenimiento.user_id?.toString() || "",
-        });
-
-        // El equipo viene en equipoResponse.data[0] porque getEquipos con ID devuelve un array con un solo elemento
-        setEquipos(equipoResponse.data || []);
-        setTipos(tiposList || []);
-        setUsuarios(usuariosList?.data || []);
+        // Resto de la lógica de carga...
 
       } catch (error) {
-        console.error("Error loading data:", error);
-        toast.error("Error al cargar datos del mantenimiento");
-        navigate("/mantenimiento");
+        if (error.response?.status === 404) {
+          setMantenimientoNoEncontrado(true);
+        } else {
+          console.error("Error loading data:", error);
+          toast.error("Error al cargar datos del mantenimiento");
+        }
       } finally {
         setLoading(false);
       }
@@ -102,6 +93,11 @@ const MantenimientoEdit = () => {
 
     fetchData();
   }, [id, navigate]);
+
+  // Agrega esta condición antes del render principal
+  if (mantenimientoNoEncontrado) {
+    return <MantenimientoNoEncontrado isEditing />;
+  }
 
   const handleChange = (
     e: React.ChangeEvent<

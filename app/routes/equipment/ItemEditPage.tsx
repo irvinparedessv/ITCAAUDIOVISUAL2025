@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-
 import ItemEditForm from "~/components/equipment/ItemEditForm";
 import {
   getItemById,
@@ -17,6 +16,7 @@ import type { TipoReserva } from "~/types/tipoReserva";
 import { getTipoEquipos } from "~/services/tipoEquipoService";
 import { getTipoReservas } from "~/services/tipoReservaService";
 import type { TipoEquipo, CaracteristicaConValor } from "~/types/tipoEquipo";
+import EquipoNoEncontrado from "~/components/error/EquipoNoEncontrado";
 
 export default function ItemEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +24,7 @@ export default function ItemEditPage() {
 
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false); // Nuevo estado
   const [tiposEquipo, setTiposEquipo] = useState<TipoEquipo[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [modelos, setModelos] = useState<Modelo[]>([]);
@@ -63,16 +64,28 @@ export default function ItemEditPage() {
     const fetchItem = async () => {
       try {
         setLoading(true);
+        setNotFound(false); // Resetear estado antes de buscar
         const tipo = await detectTipoItem(Number(id));
         const fetchedItem = await getItemById(Number(id), tipo);
+        
+        if (!fetchedItem) {
+          setNotFound(true);
+          return;
+        }
+        
         setItem(fetchedItem);
 
         if (tipo === "equipo") {
           const valores = await getValoresCaracteristicasPorEquipo(Number(id));
-          setCaracteristicas(valores); // Pasamos directamente los valores de la API
+          setCaracteristicas(valores);
         }
-      } catch {
-        toast.error("No se pudo cargar el ítem.");
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          setNotFound(true);
+        } else {
+          toast.error("No se pudo cargar el ítem.");
+          console.error("Error loading item:", error);
+        }
       } finally {
         setLoading(false);
       }
@@ -81,30 +94,9 @@ export default function ItemEditPage() {
     fetchItem();
   }, [id]);
 
-  const handleUpdate = async (formData: FormData) => {
-  try {
-    setLoading(true);
-    const tipo: "equipo" | "insumo" = item?.tipo || "equipo";
-    
-    // 1. Actualizar datos básicos del item
-    const response = await updateItem(Number(id), formData, tipo);
-
-    // 2. Actualizar características si es equipo y vienen en formData
-    if (tipo === "equipo" && formData.get('caracteristicas')) {
-      await actualizarValoresCaracteristicasPorEquipo(Number(id), JSON.parse(formData.get('caracteristicas') as string));
-    }
-
-    // 3. Retornar la respuesta para que ItemForm maneje el feedback al usuario
-    return response;
-
-  } catch (error: any) {
-    console.error('Error en la actualización:', error.response?.data);
-    throw error; // Relanzar el error para que ItemForm lo maneje
-  } finally {
-    setLoading(false);
+  if (notFound) {
+    return <EquipoNoEncontrado />;
   }
-};
-
 
   if (!item) {
     return (
@@ -117,21 +109,45 @@ export default function ItemEditPage() {
     );
   }
 
+  const handleUpdate = async (formData: FormData) => {
+    try {
+      setLoading(true);
+      const tipo: "equipo" | "insumo" = item?.tipo || "equipo";
+      
+      // 1. Actualizar datos básicos del item
+      const response = await updateItem(Number(id), formData, tipo);
+
+      // 2. Actualizar características si es equipo y vienen en formData
+      if (tipo === "equipo" && formData.get('caracteristicas')) {
+        await actualizarValoresCaracteristicasPorEquipo(Number(id), JSON.parse(formData.get('caracteristicas') as string));
+      }
+
+      // 3. Retornar la respuesta para que ItemForm maneje el feedback al usuario
+      return response;
+
+    } catch (error: any) {
+      console.error('Error en la actualización:', error.response?.data);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container mt-4">
-  <ItemEditForm
-    item={item}
-    tiposEquipo={tiposEquipo}
-    tipoReservas={tipoReservas}
-    marcas={marcas}
-    modelos={modelos}
-    estados={estados}
-    caracteristicas={caracteristicas}
-    loading={loading}
-    onSubmit={handleUpdate}
-    isEditing={true}
-  />
-</div>
+      <ItemEditForm
+        item={item}
+        tiposEquipo={tiposEquipo}
+        tipoReservas={tipoReservas}
+        marcas={marcas}
+        modelos={modelos}
+        estados={estados}
+        caracteristicas={caracteristicas}
+        loading={loading}
+        onSubmit={handleUpdate}
+        isEditing={true}
+      />
+    </div>
   );
 }
 

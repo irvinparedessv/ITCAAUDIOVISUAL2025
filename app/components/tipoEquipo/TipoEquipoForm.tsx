@@ -93,7 +93,7 @@ export default function TipoEquipoForm({
         setTieneEquiposAsociados(false);
         return;
       }
-      
+
       try {
         const tieneEquipos = await checkEquiposAsociados(tipoEditado.id);
         setTieneEquiposAsociados(tieneEquipos);
@@ -169,58 +169,58 @@ export default function TipoEquipoForm({
   };
 
   const submitForm = async () => {
-  setIsSubmitting(true);
-  try {
-    const payload = {
-      nombre,
-      categoria_id: categoriaId,
-      caracteristicas: caracteristicas
-        .filter(c => caracSeleccionadas.includes(c.id))
-        .map(c => ({
-          id: c.esNueva ? undefined : c.id,
-          nombre: c.esNueva ? c.nombre : undefined,
-          tipo_dato: c.esNueva ? c.tipo_dato : undefined
-        }))
-    };
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        nombre,
+        categoria_id: categoriaId,
+        caracteristicas: caracteristicas
+          .filter(c => caracSeleccionadas.includes(c.id))
+          .map(c => ({
+            id: c.esNueva ? undefined : c.id,
+            nombre: c.esNueva ? c.nombre : undefined,
+            tipo_dato: c.esNueva ? c.tipo_dato : undefined
+          }))
+      };
 
-    const tieneNuevas = caracteristicas.some(c => c.esNueva && caracSeleccionadas.includes(c.id));
-    if (tieneNuevas) {
-      localStorage.removeItem('caracteristicasLocales');
-    }
+      const tieneNuevas = caracteristicas.some(c => c.esNueva && caracSeleccionadas.includes(c.id));
+      if (tieneNuevas) {
+        localStorage.removeItem('caracteristicasLocales');
+      }
 
-    if (tipoEditado) {
-      await updateTipoEquipo(tipoEditado.id, payload);
-      toast.success("Tipo de equipo actualizado");
-      onSuccess?.(); // Esto ejecutará cualquier callback proporcionado
-    } else {
-      await createTipoEquipo(payload);
-      toast.success("Tipo de equipo creado");
-      navigate("/tipoEquipo"); // Redirigir después de crear
-    }
+      if (tipoEditado) {
+        await updateTipoEquipo(tipoEditado.id, payload);
+        toast.success("Tipo de equipo actualizado");
+        onSuccess?.(); // Esto ejecutará cualquier callback proporcionado
+      } else {
+        await createTipoEquipo(payload);
+        toast.success("Tipo de equipo creado");
+        navigate("/tipoEquipo"); // Redirigir después de crear
+      }
 
-    setNombre("");
-    setCategoriaId(null);
-    setCaracSeleccionadas([]);
+      setNombre("");
+      setCategoriaId(null);
+      setCaracSeleccionadas([]);
 
-  } catch (error) {
-    console.error("Error al guardar el tipo de equipo:", error);
-    if (error.response?.status === 422) {
-      const mensaje = error.response.data.message || "Datos inválidos.";
-      if (mensaje.includes("nombre ya existe") || mensaje.includes("nombre")) {
+    } catch (error) {
+      console.error("Error al guardar el tipo de equipo:", error);
+      if (error.response?.status === 422) {
+        const mensaje = error.response.data.message || "Datos inválidos.";
+        if (mensaje.includes("nombre ya existe") || mensaje.includes("nombre")) {
+          toast.error("Ya existe un tipo de equipo con ese nombre.");
+        } else {
+          toast.error(mensaje);
+        }
+      } else if (error.response?.data?.error?.includes("Duplicate entry") ||
+        error.response?.data?.message?.includes("Duplicate entry")) {
         toast.error("Ya existe un tipo de equipo con ese nombre.");
       } else {
-        toast.error(mensaje);
+        toast.error("Error al guardar el tipo de equipo.");
       }
-    } else if (error.response?.data?.error?.includes("Duplicate entry") || 
-               error.response?.data?.message?.includes("Duplicate entry")) {
-      toast.error("Ya existe un tipo de equipo con ese nombre.");
-    } else {
-      toast.error("Error al guardar el tipo de equipo.");
+    } finally {
+      setIsSubmitting(false);
     }
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   const handleBack = () => {
     if (!isSubmitting) navigate("/tipoEquipo");
@@ -358,8 +358,8 @@ export default function TipoEquipoForm({
               }
             }}
             placeholder={
-              isLoading 
-                ? "Cargando características..." 
+              isLoading
+                ? "Cargando características..."
                 : tipoEditado && tieneEquiposAsociados
                   ? "No se pueden quitar características existentes"
                   : "Selecciona características..."
@@ -470,8 +470,8 @@ export default function TipoEquipoForm({
                       }}
                       disabled={isSubmitting || (tipoEditado && tieneEquiposAsociados && !carac.esNueva)}
                       title={
-                        tipoEditado && tieneEquiposAsociados && !carac.esNueva 
-                          ? "No se puede eliminar esta característica porque hay equipos asociados" 
+                        tipoEditado && tieneEquiposAsociados && !carac.esNueva
+                          ? "No se puede eliminar esta característica porque hay equipos asociados"
                           : ""
                       }
                     >

@@ -8,6 +8,7 @@ import { getUsuariosM } from "../services/userService";
 import { createMantenimiento } from "../services/mantenimientoService";
 import { useAuth } from "~/hooks/AuthContext";
 import { EstadoEquipo } from "~/types/estados";
+import MantenimientoNoEncontrado from "./error/MantenimientoNoEncontrado";
 
 const FormMantenimiento = () => {
   const { id } = useParams();
@@ -51,28 +52,46 @@ const FormMantenimiento = () => {
   const [finalDateError, setFinalDateError] = useState<boolean>(false);
   const [finalTimeError, setFinalTimeError] = useState<string | null>(null);
   const [finalRangeError, setFinalRangeError] = useState<string | null>(null);
+  const [equipoNoEncontrado, setEquipoNoEncontrado] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [equiposList, tiposList, usuariosList] = await Promise.all([
-          getEquipos({}, id),
-          getTiposMantenimiento(),
-          getUsuariosM(),
-        ]);
+  // Modifica el useEffect que carga los datos
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setEquipoNoEncontrado(false);
+      const [equiposList, tiposList, usuariosList] = await Promise.all([
+        getEquipos({}, id),
+        getTiposMantenimiento(),
+        getUsuariosM(),
+      ]);
 
-        setEquipos(equiposList?.data || []);
-        setTipos(tiposList || []);
-        setUsuarios(usuariosList?.data || []);
-      } catch (error) {
+      // Verificar si se encontró el equipo
+      if (id && (!equiposList?.data || equiposList.data.length === 0)) {
+        setEquipoNoEncontrado(true);
+        return;
+      }
+
+      setEquipos(equiposList?.data || []);
+      setTipos(tiposList || []);
+      setUsuarios(usuariosList?.data || []);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setEquipoNoEncontrado(true);
+      } else {
         toast.error("Error al cargar datos");
         console.error("Error:", error);
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchData();
-  }, [id]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchData();
+}, [id]);
+
+// Agrega esta condición antes del render principal
+if (equipoNoEncontrado) {
+  return <MantenimientoNoEncontrado />;
+}
 
   const validateTimeRange = (time: string): boolean => {
     if (!time) return true;

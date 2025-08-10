@@ -13,6 +13,7 @@ import { getModelosByMarca } from "~/services/itemService";
 import type { Equipo } from "~/types/item";
 import { useAuth } from "~/hooks/AuthContext";
 import { Role } from "~/types/roles";
+import FuturoMantenimientoNoEncontrado from "../error/FuturoMantenimientoNoEncontrado";
 
 const FuturoMantenimientoEdit = () => {
   const { id } = useParams();
@@ -44,6 +45,8 @@ const FuturoMantenimientoEdit = () => {
   const [finalRangeError, setFinalRangeError] = useState<string | null>(null);
   const { user } = useAuth();
   const esEncargado = user?.role === Role.Encargado;
+  const [mantenimientoNoEncontrado, setMantenimientoNoEncontrado] = useState(false);
+
 
   // Función para validar el rango horario (7:00 AM a 5:00 PM)
   const validateTimeRange = (time: string): boolean => {
@@ -130,8 +133,12 @@ const FuturoMantenimientoEdit = () => {
         setUsuarios(usuariosList?.data || []);
         setTipos(tiposList?.data || tiposList || []);
       } catch (error) {
-        console.error("Error al cargar datos:", error);
-        toast.error("Error al cargar datos");
+        if (error.response?.status === 404) {
+          setMantenimientoNoEncontrado(true);
+        } else {
+          console.error("Error al cargar datos:", error);
+          toast.error("Error al cargar datos del mantenimiento programado");
+        }
       } finally {
         setLoading(false);
       }
@@ -139,6 +146,10 @@ const FuturoMantenimientoEdit = () => {
 
     fetchData();
   }, [id]);
+
+  if (mantenimientoNoEncontrado) {
+    return <FuturoMantenimientoNoEncontrado />;
+  }
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -178,7 +189,7 @@ const FuturoMantenimientoEdit = () => {
         // Validar que no sea anterior a la fecha actual
         const diff = compareDateOnly(value);
         setFinalDateError(diff < 0);
-        
+
         // Validar que no sea anterior a la fecha de inicio si está presente
         if (formData.fecha_mantenimiento && value < formData.fecha_mantenimiento) {
           setFinalDateError(true);
@@ -208,9 +219,9 @@ const FuturoMantenimientoEdit = () => {
         }
 
         // Validar que no sea anterior a la hora de inicio si es el mismo día
-        if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final && 
-            formData.hora_mantenimiento_inicio && 
-            value < formData.hora_mantenimiento_inicio) {
+        if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final &&
+          formData.hora_mantenimiento_inicio &&
+          value < formData.hora_mantenimiento_inicio) {
           setFinalTimeError('La hora final no puede ser anterior a la hora de inicio');
         }
       } else {
@@ -282,8 +293,8 @@ const FuturoMantenimientoEdit = () => {
         return;
       }
 
-      if (formData.fecha_mantenimiento && 
-          formData.fecha_mantenimiento_final < formData.fecha_mantenimiento) {
+      if (formData.fecha_mantenimiento &&
+        formData.fecha_mantenimiento_final < formData.fecha_mantenimiento) {
         toast.error("La fecha final no puede ser anterior a la fecha de inicio");
         return;
       }
@@ -302,9 +313,9 @@ const FuturoMantenimientoEdit = () => {
         }
       }
 
-      if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final && 
-          formData.hora_mantenimiento_inicio && 
-          formData.hora_mantenimiento_final < formData.hora_mantenimiento_inicio) {
+      if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final &&
+        formData.hora_mantenimiento_inicio &&
+        formData.hora_mantenimiento_final < formData.hora_mantenimiento_inicio) {
         toast.error("La hora final no puede ser anterior a la hora de inicio");
         return;
       }

@@ -20,6 +20,7 @@ import {
 import { useAuth } from "app/hooks/AuthContext";
 import { Role } from "~/types/roles";
 import { APIURL } from "~/constants/constant";
+import ReservaNoEncontrada from "./error/ReservaNoEncontrada";
 
 type Aula = {
   id: number;
@@ -70,6 +71,7 @@ export default function ReserveClassroom() {
   const [loadingAulas, setLoadingAulas] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [reservaNotFound, setReservaNotFound] = useState(false);
 
   // Modal para visualizar
   const [viewerModal, setViewerModal] = useState<{
@@ -192,14 +194,22 @@ export default function ReserveClassroom() {
         setDiasSeleccionados(data.dias || []);
         setEndDate(data.fecha_fin ? new Date(data.fecha_fin) : null);
         setSelectedClassroom(data.aula.id);
-      } catch {
-        toast.error("Error al cargar datos de la reserva");
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          setReservaNotFound(true);
+        } else {
+          toast.error("Error al cargar los datos de la reserva");
+        }
       } finally {
         setLoading(false);
       }
     };
     loadReserva();
   }, [id]);
+
+  if (reservaNotFound) {
+    return <ReservaNoEncontrada tipo="aula" />;
+  }
 
   // Días disponibles (hardcode, ajusta si tienes lógica de horarios)
   const diasDisponibles = [

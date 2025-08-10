@@ -5,52 +5,64 @@ import { getTipoEquipos } from "../../services/tipoEquipoService";
 import type { Item, ItemTipo } from "app/types/item";
 import type { TipoEquipo } from "app/types/tipoEquipo";
 import ItemList from "~/components/equipment/ItemList";
+import EquipoNoEncontrado from "~/components/error/EquipoNoEncontrado";
 
 export default function ItemListPage() {
-  const { modeloId } = useParams<{ modeloId?: string }>();
+  const { modeloId } = useParams<{ modeloId: string }>(); 
   const navigate = useNavigate();
 
   const [items, setItems] = useState<Item[]>([]);
   const [tipos, setTipos] = useState<TipoEquipo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<ItemTipo | 'todos'>('todos');
+  const [modeloNoEncontrado, setModeloNoEncontrado] = useState(false);
 
-  // Si no hay modeloId, redirige o muestra mensaje (evitar llamadas sin modeloId)
   useEffect(() => {
     console.log("modeloId desde URL:", modeloId);
     if (!modeloId) {
-      // Puedes redirigir o mostrar una página 404
-
       navigate('/inventario');
       return;
     }
+    
+    const fetchData = async () => {
+      setLoading(true);
+      setModeloNoEncontrado(false);
+
+      try {
+        const [itemsData, tiposData] = await Promise.all([
+          getItems({
+            tipo: selectedType === 'todos' ? 'todos' : `${selectedType}s`,
+            page: 1,
+            perPage: 10,
+            modeloId: Number(modeloId),
+          }),
+          getTipoEquipos(),
+        ]);
+
+        if (Array.isArray(itemsData.data) && itemsData.data.length === 0) {
+          setModeloNoEncontrado(true);
+        } else {
+          setItems(itemsData.data || []);
+        }
+        
+        setTipos(tiposData);
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          setModeloNoEncontrado(true);
+        } else {
+          console.error("Error cargando datos:", error);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
-  }, [modeloId, selectedType]);
+  }, [modeloId, selectedType, navigate]);
 
-  const fetchData = async () => {
-    if (!modeloId) return; // seguridad adicional
-
-    setLoading(true);
-
-    try {
-      const [itemsData, tiposData] = await Promise.all([
-        getItems({
-          tipo: selectedType === 'todos' ? 'todos' : `${selectedType}s`,
-          page: 1,
-          perPage: 10,
-          modeloId: Number(modeloId), // modeloId siempre definido aquí
-        }),
-        getTipoEquipos(),
-      ]);
-
-      setItems(Array.isArray(itemsData.data) ? itemsData.data : []);
-      setTipos(tiposData);
-    } catch (error) {
-      console.error("Error cargando datos:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (modeloNoEncontrado) {
+    return <EquipoNoEncontrado />;
+  }
 
   const handleEdit = (item: Item) => {
     navigate(`/items/edit/${item.id}`, { state: { tipo: item.tipo } });
@@ -59,15 +71,25 @@ export default function ItemListPage() {
   const handleDelete = async (id: number, tipo: ItemTipo) => {
     try {
       await deleteItem(id, tipo);
-      fetchData();
+      // Recargar los datos después de eliminar
+      setLoading(true);
+      setModeloNoEncontrado(false);
+      const itemsData = await getItems({
+        tipo: selectedType === 'todos' ? 'todos' : `${selectedType}s`,
+        page: 1,
+        perPage: 10,
+        modeloId: Number(modeloId),
+      });
+      setItems(itemsData.data || []);
     } catch (error) {
       console.error("Error eliminando item:", error);
+    } finally {
+      setLoading(false);
     }
   };
-  console.log("Pasando modeloId al hijo:", modeloId ? Number(modeloId) : undefined);
+
   return (
     <div className="container mt-4">
-
       <ItemList
         tipos={tipos}
         loading={loading}

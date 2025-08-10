@@ -40,6 +40,7 @@ import type { TipoEquipo } from "~/types/tipoEquipo";
 import ItemDetail from "./itemDetail";
 import { FaWrench } from "react-icons/fa6";
 import { EstadoEquipo } from "~/types/estados";
+import EquipoNoEncontrado from "../error/EquipoNoEncontrado";
 
 type Item = Equipo | Insumo;
 
@@ -94,6 +95,7 @@ export default function ItemList({
   // Estados para el modal de asignaciones
   const [showAsignacionesModal, setShowAsignacionesModal] = useState(false);
   const [currentAsignaciones, setCurrentAsignaciones] = useState<any[]>([]);
+  const [modeloNoEncontrado, setModeloNoEncontrado] = useState(false);
 
   // Función para mostrar el detalle
   const handleShowDetail = (equipoId: number) => {
@@ -123,31 +125,37 @@ export default function ItemList({
   }, [filters, modeloId]);
 
   const fetchItems = async () => {
-    if (modeloId === undefined) {
-      setItems([]);
-      setTotal(0);
-      setLastPage(1);
-      return;
-    }
     try {
       setFilterLoading(true);
+      setModeloNoEncontrado(false);
+
       const res = await getItems({
         ...filters,
         tipo: "todos",
-        modeloId,
+        modeloId: Number(modeloId), // Convertimos a número
         search: filters.search || undefined,
         estadoId: filters.estadoId || undefined,
       });
-      setItems(Array.isArray(res.data) ? res.data : []);
-      setTotal(res.total);
-      setLastPage(res.last_page);
-    } catch (error) {
-      console.error("Error fetching items:", error);
-      toast.error("Error al cargar los items");
+
+      if (res.data.length === 0) {
+        setModeloNoEncontrado(true);
+      } else {
+        setItems(res.data);
+        setTotal(res.total);
+        setLastPage(res.last_page);
+      }
+    } catch (error: any) {
+      if (error.response?.status === 404 || error.message.includes("modeloId es requerido")) {
+        setModeloNoEncontrado(true);
+      } else {
+        console.error("Error fetching items:", error);
+        toast.error("Error al cargar los items");
+      }
     } finally {
       setFilterLoading(false);
     }
   };
+
   const getTipoNombre = (id: number) => {
     const tipo = tipos.find((t) => t.id === id);
     return tipo ? tipo.nombre : "Desconocido";
@@ -170,6 +178,14 @@ export default function ItemList({
       page: page,
     }));
   };
+
+  if (modeloNoEncontrado) {
+    return (
+      <div className="container mt-4">
+        <EquipoNoEncontrado />
+      </div>
+    );
+  }
 
   const resetFilters = () => {
     setFilters({
@@ -701,8 +717,8 @@ export default function ItemList({
                                   transition: "transform 0.2s ease-in-out",
                                 }}
                                 onMouseEnter={(e) =>
-                                  (e.currentTarget.style.transform =
-                                    "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                                 }
                                 onMouseLeave={(e) =>
                                   (e.currentTarget.style.transform = "scale(1)")
@@ -727,8 +743,8 @@ export default function ItemList({
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform =
-                                  "scale(1.15)")
+                              (e.currentTarget.style.transform =
+                                "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -747,8 +763,8 @@ export default function ItemList({
                                 transition: "transform 0.2s ease-in-out",
                               }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.transform =
-                                  "scale(1.15)")
+                              (e.currentTarget.style.transform =
+                                "scale(1.15)")
                               }
                               onMouseLeave={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -768,8 +784,8 @@ export default function ItemList({
                                   transition: "transform 0.2s ease-in-out",
                                 }}
                                 onMouseEnter={(e) =>
-                                  (e.currentTarget.style.transform =
-                                    "scale(1.15)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.15)")
                                 }
                                 onMouseLeave={(e) =>
                                   (e.currentTarget.style.transform = "scale(1)")

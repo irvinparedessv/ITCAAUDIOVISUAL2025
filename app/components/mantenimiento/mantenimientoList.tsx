@@ -62,13 +62,13 @@ export default function MantenimientoList() {
   useEffect(() => {
     if (location.state?.highlightId) {
       setHighlightedId(location.state.highlightId);
-      
+
       // Limpiar el resaltado después de 7 segundos
       const timer = setTimeout(() => {
         setHighlightedId(null);
         navigate(location.pathname, { replace: true, state: {} });
       }, 7000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [location.state, navigate, location.pathname]);
@@ -77,7 +77,7 @@ export default function MantenimientoList() {
     if (highlightedId !== null && mantenimientos.length > 0) {
       // Verificar que el ID existe en los mantenimientos
       const existeMantenimiento = mantenimientos.some(m => m.id === highlightedId);
-      
+
       if (existeMantenimiento && highlightRef.current) {
         highlightRef.current.scrollIntoView({
           behavior: 'smooth',
@@ -192,7 +192,7 @@ export default function MantenimientoList() {
     try {
       setLoadingEstados(true);
 
-      if (selectedMantenimiento.fecha_mantenimiento_final) {
+      if ([EstadoEquipo.Disponible, EstadoEquipo.NoDisponible, EstadoEquipo.Dañado].includes(selectedMantenimiento.estado_equipo_final)) {
         const result = await updateVidaUtilMantenimiento(
           selectedMantenimiento.id,
           selectedMantenimiento.vida_util || 0,
@@ -510,13 +510,13 @@ export default function MantenimientoList() {
               <tbody>
                 {mantenimientos.length > 0 ? (
                   mantenimientos.map((m) => (
-                    <tr 
+                    <tr
                       key={m.id}
                       id={`mantenimiento-${m.id}`}
                       ref={highlightedId === m.id ? highlightRef : null}
                       className={
-                        highlightedId === m.id 
-                          ? "table-warning animate__animated animate__flash" 
+                        highlightedId === m.id
+                          ? "table-warning animate__animated animate__flash"
                           : ""
                       }
                     >
@@ -642,9 +642,9 @@ export default function MantenimientoList() {
           closeButton
         >
           <Modal.Title>
-            {selectedMantenimiento?.fecha_mantenimiento_final
-              ? "Detalles del Mantenimiento"
-              : "Finalizar Mantenimiento"}
+            {![EstadoEquipo.NoDisponible, EstadoEquipo.Disponible, EstadoEquipo.Dañado].includes(selectedMantenimiento?.estado_equipo_final)
+              ? "Finalizar Mantenimiento"
+              : "Detalles del Mantenimiento"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -677,7 +677,7 @@ export default function MantenimientoList() {
               <div className="mb-4 p-3 border rounded">
                 <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
                   <span>Vida Útil del Equipo</span>
-                  {selectedMantenimiento.fecha_mantenimiento_final && (
+                  {[EstadoEquipo.Disponible, EstadoEquipo.NoDisponible, EstadoEquipo.Dañado].includes(selectedMantenimiento.estado_equipo_final) && (
                     <span className="badge bg-success">Completado</span>
                   )}
                 </h5>
@@ -700,7 +700,7 @@ export default function MantenimientoList() {
                   <div className="col-md-6">
                     <Form.Group>
                       <Form.Label className="text-muted small">
-                        {selectedMantenimiento.fecha_mantenimiento_final
+                        {[EstadoEquipo.Disponible, EstadoEquipo.NoDisponible, EstadoEquipo.Dañado].includes(selectedMantenimiento.estado_equipo_final)
                           ? "Modificación de Vida Útil "
                           : "Vida Útil a Añadir"}
                       </Form.Label>
@@ -718,8 +718,8 @@ export default function MantenimientoList() {
                               vida_util: value
                             });
                           }}
-                          disabled={selectedMantenimiento.fecha_mantenimiento_final &&
-                            selectedMantenimiento.equipo?.estado?.id !== EstadoEquipo.Disponible}
+                        disabled={
+                          [EstadoEquipo.NoDisponible, EstadoEquipo.Dañado].includes(selectedMantenimiento?.estado_equipo_final)}
                         />
                         <InputGroup.Text>horas</InputGroup.Text>
                       </InputGroup>
@@ -735,7 +735,7 @@ export default function MantenimientoList() {
                   <div className="d-flex justify-content-between align-items-center">
                     <span className="fw-bold">Nueva Vida Útil Total:</span>
                     <span className="fs-5 fw-bold">
-                      {selectedMantenimiento.fecha_mantenimiento_final
+                      {[EstadoEquipo.Disponible, EstadoEquipo.NoDisponible, EstadoEquipo.Dañado].includes(selectedMantenimiento.estado_equipo_final)
                         ? selectedMantenimiento.equipo?.vida_util || 0
                         : (selectedMantenimiento.equipo?.vida_util || 0) + (selectedMantenimiento.vida_util || 0)
                       } horas
@@ -744,7 +744,7 @@ export default function MantenimientoList() {
                   </div>
                 </div>
               </div>
-              {selectedMantenimiento.fecha_mantenimiento_final ? (
+              {[EstadoEquipo.Disponible, EstadoEquipo.NoDisponible, EstadoEquipo.Dañado].includes(selectedMantenimiento.estado_equipo_final) ? (
                 <div className="mb-3 p-3 border rounded">
                   <h5 className="fw-bold mb-3">Estado del Equipo</h5>
                   <div className="d-flex align-items-center gap-2">
@@ -792,26 +792,33 @@ export default function MantenimientoList() {
                     });
                   }}
                   placeholder="Agregue un informe sobre el mantenimiento..."
-                  disabled={selectedMantenimiento.fecha_mantenimiento_final &&
-                    selectedMantenimiento.equipo?.estado?.id !== EstadoEquipo.Disponible}
+                // disabled={
+                //   selectedMantenimiento.equipo?.estado?.id !== EstadoEquipo.Disponible}
                 />
               </Form.Group>
 
-              {selectedMantenimiento.fecha_mantenimiento_final && (
-                <div className="mt-3 p-3 border rounded">
-                  <h5 className="fw-bold mb-3">Información de Finalización</h5>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p className="mb-1 text-muted small">Fecha de finalización:</p>
-                      <p>{formatDate(selectedMantenimiento.fecha_mantenimiento_final)}</p>
-                    </div>
-                    <div className="col-md-6">
-                      <p className="mb-1 text-muted small">Hora de finalización:</p>
-                      <p>{formatTo12h(selectedMantenimiento.hora_mantenimiento_final)}</p>
-                    </div>
+              <div className="mt-3 p-3 border rounded">
+                <h5 className="fw-bold mb-3">
+
+                  {![EstadoEquipo.NoDisponible, EstadoEquipo.Disponible, EstadoEquipo.Dañado].includes(selectedMantenimiento?.estado_equipo_final)
+                    ? "Información de Finalización Prevista"
+                    : "Información de Finalización"}</h5>
+                <div className="row">
+                  <div className="col-md-6">
+                    <p className="mb-1 text-muted small">Fecha de finalización:</p>
+                    <p>
+                      {formatDate(selectedMantenimiento.fecha_mantenimiento_final) || '-'}
+                    </p>
+                  </div>
+                  <div className="col-md-6">
+                    <p className="mb-1 text-muted small">Hora de finalización:</p>
+                    <p>
+                        {formatTo12h(selectedMantenimiento.hora_mantenimiento_final)}
+                        
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </Modal.Body>
@@ -822,10 +829,10 @@ export default function MantenimientoList() {
           <Button
             variant="primary"
             onClick={handleCambiarEstado}
-            disabled={
-              (selectedMantenimiento?.fecha_mantenimiento_final
-                ? selectedMantenimiento.equipo?.estado?.id !== EstadoEquipo.Disponible
-                : !selectedEstado) || loadingEstados
+            disabled={ 
+              (![EstadoEquipo.NoDisponible, EstadoEquipo.Disponible, EstadoEquipo.Dañado].includes(selectedMantenimiento?.estado_equipo_final)
+                ? [EstadoEquipo.NoDisponible, EstadoEquipo.Disponible, EstadoEquipo.Dañado].includes(selectedMantenimiento?.estado_equipo_final)
+                : loadingEstados) || loadingEstados
             }
           >
             {loadingEstados ? (
@@ -833,10 +840,11 @@ export default function MantenimientoList() {
                 <Spinner animation="border" size="sm" className="me-2" />
                 Guardando...
               </>
-            ) : selectedMantenimiento?.fecha_mantenimiento_final ? (
-              "Actualizar Mantenimiento"
-            ) : (
+            ) : ![EstadoEquipo.NoDisponible, EstadoEquipo.Disponible, EstadoEquipo.Dañado].includes(selectedMantenimiento?.estado_equipo_final) ? (
               "Finalizar Mantenimiento"
+            ) : (
+              
+              "Actualizar Mantenimiento"
             )}
           </Button>
         </Modal.Footer>

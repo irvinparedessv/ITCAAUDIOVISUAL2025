@@ -226,7 +226,8 @@ const ReporteInventarioEquipos = () => {
                   return;
                 }
 
-                const doc = new jsPDF();
+                // Configuración del documento en orientación horizontal (landscape)
+                const doc = new jsPDF('landscape');
                 const logo = new Image();
                 logo.src = "/images/logo.png";
 
@@ -246,9 +247,21 @@ const ReporteInventarioEquipos = () => {
                       const nombreTipo = tipoSeleccionado ? tipoSeleccionado.nombre : "Todos";
                       const nombreEstado = estadoSeleccionado ? estadoSeleccionado.nombre : "Todos";
 
+                      // Definición de anchos de columna personalizados
+                      const columnStyles = {
+                        0: { cellWidth: 8 },   // #
+                        1: { cellWidth: 45 },  // N° Serie
+                        2: { cellWidth: 25 },  // Tipo
+                        3: { cellWidth: 20 },  // Categoría
+                        4: { cellWidth: 45 },  // Modelo
+                        5: { cellWidth: 25 },  // Marca
+                        6: { cellWidth: 20 },  // Estado
+                        7: { cellWidth: 50 },  // Características (más ancho)
+                        8: { cellWidth: 20 }   // Fecha Registro
+                      };
 
                       const body = all.map((e, i) => [
-                        i + 1,
+                        (i + 1).toString(),
                         e.numero_serie,
                         e.tipo_nombre,
                         e.categoria_nombre,
@@ -265,8 +278,19 @@ const ReporteInventarioEquipos = () => {
                         head: [["#", "N° Serie", "Tipo", "Categoría", "Modelo", "Marca", "Estado", "Características", "Fecha Registro"]],
                         body,
                         startY: startY,
-                        styles: { fontSize: 7, cellPadding: 2 },
-                        headStyles: { fillColor: [107, 0, 0], textColor: 255, fontStyle: "bold" },
+                        styles: { 
+                          fontSize: 7, 
+                          cellPadding: 2,
+                          overflow: 'linebreak',
+                          valign: 'middle'
+                        },
+                        columnStyles: columnStyles,
+                        headStyles: { 
+                          fillColor: [107, 0, 0], 
+                          textColor: 255, 
+                          fontStyle: "bold",
+                          cellPadding: 3
+                        },
                         margin: { top: 10 },
                         didDrawPage: (data) => {
                           if (data.pageNumber === 1) {
@@ -276,10 +300,6 @@ const ReporteInventarioEquipos = () => {
                               .text(`Generado: ${fechaStr} - ${horaStr}`, 60, 25)
                               .text(`Tipo: ${nombreTipo}`, 60, 30)
                               .text(`Estado: ${nombreEstado}`, 60, 35);
-                          }
-
-                          if (data.pageNumber > 1) {
-                            startY = 20;
                           }
 
                           const pageSize = doc.internal.pageSize;
@@ -331,7 +351,6 @@ const ReporteInventarioEquipos = () => {
       id: toastId,
     });
   };
-
 
   const handleBuscarClick = () => {
     setCurrentPage(1);

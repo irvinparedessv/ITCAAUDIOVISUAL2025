@@ -339,30 +339,36 @@ const ReporteMantenimiento = () => {
                   }
 
                   const datos = all.map((item) => {
-                    const baseData = {
-                      "Equipo": getEquipoNombre(item),
-                      "N° Serie": getNumeroSerie(item),
-                      "Tipo Mantenimiento": getTipoMantenimiento(item),
-                      "Técnico": getTecnicoNombre(item),
-                      "Fecha Programada": item.fecha_mantenimiento ? new Date(item.fecha_mantenimiento).toLocaleDateString('es-ES') : 'N/A',
-                      "Hora Inicio": item.hora_mantenimiento_inicio || 'N/A',
-                    };
+  const baseData = {
+    "ID": item.id, // Añadido campo ID
+    "Equipo": getEquipoNombre(item),
+    "N° Serie": getNumeroSerie(item),
+    "Tipo Mantenimiento": getTipoMantenimiento(item),
+    "Técnico": getTecnicoNombre(item),
+    "Fecha Programada": item.fecha_mantenimiento ? new Date(item.fecha_mantenimiento).toLocaleDateString('es-ES') : 'N/A',
+    "Hora Inicio": item.hora_mantenimiento_inicio || 'N/A',
+  };
 
-                    if (activeTab === "mantenimientos") {
-                      const mItem = item as Mantenimiento;
-                      return {
-                        ...baseData,
-                        "Estado": getEstado(mItem),
-                        "Fecha Finalización": mItem.fecha_mantenimiento_final ? new Date(mItem.fecha_mantenimiento_final).toLocaleDateString('es-ES') : "Pendiente",
-                        "Hora Final": mItem.hora_mantenimiento_final || "Pendiente",
-                        "Vida Útil (horas)": mItem.vida_util || 0,
-                        "Comentarios": mItem.comentario || "Ninguno",
-                        "Detalles": mItem.detalles || "Ninguno",
-                      };
-                    } else {
-                      return baseData;
-                    }
-                  });
+  if (activeTab === "mantenimientos") {
+    const mItem = item as Mantenimiento;
+    return {
+      ...baseData,
+      "Fecha Finalización": mItem.fecha_mantenimiento_final ? new Date(mItem.fecha_mantenimiento_final).toLocaleDateString('es-ES') : "Pendiente",
+      "Hora Final": mItem.hora_mantenimiento_final || "Pendiente",
+      "Estado": getEstado(mItem),
+      "Vida Útil (horas)": mItem.vida_util || 0,
+      "Comentarios": mItem.comentario || "Ninguno",
+      "Detalles": mItem.detalles || "Ninguno",
+    };
+  } else {
+    return {
+      ...baseData,
+      "Fecha Programada Final": item.fecha_mantenimiento_final ? new Date(item.fecha_mantenimiento_final).toLocaleDateString('es-ES') : 'N/A',
+      "Hora Final": item.hora_mantenimiento_final || 'N/A',
+      "Descripción": item.detalles || '-'
+    };
+  }
+});
 
                   const ws = XLSX.utils.json_to_sheet(datos);
                   const wb = XLSX.utils.book_new();
@@ -430,7 +436,7 @@ const ReporteMantenimiento = () => {
                   return;
                 }
 
-                const doc = new jsPDF();
+                const doc = new jsPDF("landscape"); // Cambiado a horizontal para mejor espacio
                 const logo = new Image();
                 logo.src = "/images/logo.png";
 
@@ -449,13 +455,54 @@ const ReporteMantenimiento = () => {
                       const nombreTipo = tipoSeleccionado ? tipoSeleccionado.nombre : "Todos";
                       const nombreEstado = estadoSeleccionado ? estadoSeleccionado.nombre : "Todos";
 
-                      const headers = activeTab === "mantenimientos"
-                        ? ["#", "Equipo", "N° Serie", "Tipo", "Técnico", "Fecha", "Hora Inicio", "Estado", "Vida Útil"]
-                        : ["#", "Equipo", "N° Serie", "Tipo", "Técnico", "Fecha Programada", "Hora Inicio"];
+                      // Definición de columnas con anchos personalizados
+                      const columnStyles: any = {
+                        0: { cellWidth: 10 },  // ID
+                        1: { cellWidth: 50 },  // Equipo
+                        2: { cellWidth: 50 },  // N° Serie
+                        3: { cellWidth: 25 },  // Tipo
+                        4: { cellWidth: 25 },  // Técnico
+                        5: { cellWidth: 20 },  // Fecha Inicio
+                        6: { cellWidth: 15 },  // Hora Inicio
+                        7: { cellWidth: 20 },  // Fecha Final
+                        8: { cellWidth: 15 },  // Hora Final
+                        9: { cellWidth: 25 },  // Estado o Descripción
+                      };
 
-                      const body = all.map((item, i) => {
+                      if (activeTab === "mantenimientos") {
+                        columnStyles[10] = { cellWidth: 15 };  // Vida Útil
+                      }
+
+                      const headers = activeTab === "mantenimientos"
+                        ? [
+                            "ID", 
+                            "Equipo", 
+                            "N° Serie", 
+                            "Tipo", 
+                            "Técnico", 
+                            "Fecha Inicio", 
+                            "Hora Inicio", 
+                            "Fecha Final", 
+                            "Hora Final", 
+                            "Estado", 
+                            "Vida Útil"
+                          ]
+                        : [
+                            "ID", 
+                            "Equipo", 
+                            "N° Serie", 
+                            "Tipo", 
+                            "Técnico", 
+                            "Fecha Prog.", 
+                            "Hora Inicio", 
+                            "Fecha Prog. Final", 
+                            "Hora Final", 
+                            "Descripción"
+                          ];
+
+                      const body = all.map((item) => {
                         const baseData = [
-                          i + 1,
+                          item.id.toString(),
                           getEquipoNombre(item),
                           getNumeroSerie(item),
                           getTipoMantenimiento(item),
@@ -468,11 +515,19 @@ const ReporteMantenimiento = () => {
                           const mItem = item as Mantenimiento;
                           return [
                             ...baseData,
+                            mItem.fecha_mantenimiento_final ? new Date(mItem.fecha_mantenimiento_final).toLocaleDateString('es-ES') : 'N/A',
+                            mItem.hora_mantenimiento_final || 'N/A',
                             getEstado(mItem),
-                            (mItem.vida_util || 0) + " horas"
+                            (mItem.vida_util || 0) + " h" // Acortado a "h" para ahorrar espacio
                           ];
                         } else {
-                          return baseData;
+                          const fmItem = item as FuturoMantenimiento;
+                          return [
+                            ...baseData,
+                            fmItem.fecha_mantenimiento_final ? new Date(fmItem.fecha_mantenimiento_final).toLocaleDateString('es-ES') : 'N/A',
+                            fmItem.hora_mantenimiento_final || 'N/A',
+                            fmItem.detalles || '-'
+                          ];
                         }
                       });
 
@@ -480,10 +535,21 @@ const ReporteMantenimiento = () => {
 
                       autoTable(doc, {
                         head: [headers],
-                        body,
+                        body: body,
                         startY: startY,
-                        styles: { fontSize: 7, cellPadding: 2 },
-                        headStyles: { fillColor: [107, 0, 0], textColor: 255, fontStyle: "bold" },
+                        styles: { 
+                          fontSize: 7, 
+                          cellPadding: 2,
+                          overflow: 'linebreak',
+                          valign: 'middle'
+                        },
+                        columnStyles: columnStyles,
+                        headStyles: { 
+                          fillColor: [107, 0, 0], 
+                          textColor: 255, 
+                          fontStyle: "bold",
+                          cellPadding: 3
+                        },
                         margin: { top: 10 },
                         didDrawPage: (data) => {
                           if (data.pageNumber === 1) {
@@ -491,12 +557,11 @@ const ReporteMantenimiento = () => {
                             doc.setFontSize(16).text(title, 60, 18);
                             doc.setFontSize(10)
                               .text(`Generado: ${fechaStr} - ${horaStr}`, 60, 25)
-                              .text(`Tipo: ${nombreTipo}`, 60, 30)
-                              .text(`Estado: ${nombreEstado}`, 60, 35);
-                          }
-
-                          if (data.pageNumber > 1) {
-                            startY = 20;
+                              .text(`Tipo: ${nombreTipo}`, 60, 30);
+                            
+                            if (activeTab === "mantenimientos") {
+                              doc.text(`Estado: ${nombreEstado}`, 60, 35);
+                            }
                           }
 
                           const pageSize = doc.internal.pageSize;

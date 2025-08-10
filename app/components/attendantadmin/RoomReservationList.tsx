@@ -546,17 +546,13 @@ const RoomReservationList = () => {
                           )}
                         </td>
                         <td className="text-center">
-                          <td className="text-center">
-                            {res.path_model ? (
-                              <Button
-                                onClick={() => handleVisualizarClick(res)}
-                              >
-                                Visualizar
-                              </Button>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
+                          {res.path_model ? (
+                            <Button onClick={() => handleVisualizarClick(res)}>
+                              Visualizar
+                            </Button>
+                          ) : (
+                            "-"
+                          )}
                         </td>
                         <td>
                           <div className="d-flex justify-content-center gap-2">

@@ -39,6 +39,7 @@ interface Mantenimiento {
   fecha_mantenimiento_final: string | null;
   hora_mantenimiento_inicio: string;
   hora_mantenimiento_final: string | null;
+  estado_equipo_final: number | null;
   estado: string;
   vida_util: number;
   comentario: string;
@@ -69,7 +70,10 @@ interface FuturoMantenimiento {
     last_name?: string;
   };
   fecha_mantenimiento: string;
-  hora_mantenimiento_inicio: string;
+  hora_mantenimiento_inicio: string;   
+  fecha_mantenimiento_final: string | null;
+  hora_mantenimiento_final: string | null;
+  detalles: string;  
   created_at: string;
 }
 
@@ -123,26 +127,29 @@ const ReporteMantenimiento = () => {
     return item.equipo?.numero_serie || 'N/A';
   };
 
-  const getEstado = (item: Mantenimiento | FuturoMantenimiento) => {
-    if ('estado' in item && item.estado) {
-      return item.estado;
-    }
-    return item.equipo?.estado?.nombre || 'Desconocido';
-  };
+  const getEstado = (item: Mantenimiento | FuturoMantenimiento): string => {
+  if ('estado_equipo_final' in item && item.estado_equipo_final) {
+    // Convertir el número a string o buscar el nombre del estado correspondiente
+    const estadoEncontrado = estados.find(e => e.id === item.estado_equipo_final);
+    return estadoEncontrado?.nombre || item.estado_equipo_final?.toString() || 'Desconocido';
+  }
+  return item.equipo?.estado?.nombre || 'Desconocido';
+};
 
-  const getEstadoBadge = (estado: string) => {
-    if (!estado) return "secondary";
+  const getEstadoBadge = (estado: string | number) => {
+  const estadoStr = typeof estado === 'number' ? estado.toString() : estado;
+  if (!estadoStr) return "secondary";
 
-    const estadoLower = estado.toLowerCase();
-    
-    if (estadoLower.includes('completado') || estadoLower.includes('disponible')) return "success";
-    if (estadoLower.includes('progreso') || estadoLower.includes('en uso')) return "warning";
-    if (estadoLower.includes('cancelado') || estadoLower.includes('dañado')) return "danger";
-    if (estadoLower.includes('pendiente') || estadoLower.includes('mantenimiento')) return "info";
-    if (estadoLower.includes('reservado')) return "primary";
-    
-    return "secondary";
-  };
+  const estadoLower = estadoStr.toLowerCase();
+  
+  if (estadoLower.includes('no disponible')) return "secondary";
+  if (estadoLower.includes('disponible')) return "success";
+  if (estadoLower.includes('dañado')) return "danger";
+  if (estadoLower.includes('mantenimiento')) return "warning";
+  if (estadoLower.includes('reservado')) return "primary";
+  
+  return "secondary";
+};
 
   const fetchMantenimientos = async (
     page = 1,
@@ -756,8 +763,11 @@ const ReporteMantenimiento = () => {
                     <th>N° Serie</th>
                     <th>Tipo</th>
                     <th>Técnico</th>
-                    <th>Fecha Programada</th>
+                    <th>Fecha Programada Inicial</th>
                     <th>Hora Inicio</th>
+                    <th>Fecha Programada Final</th>
+                    <th>Hora Final</th>
+                    <th>Descripción</th>
                   </tr>
                 )}
               </thead>
@@ -815,6 +825,9 @@ const ReporteMantenimiento = () => {
                       <td>{getTecnicoNombre(fm)}</td>
                       <td>{formatDate(fm.fecha_mantenimiento) || 'N/A'}</td>
                       <td>{formatTo12h(fm.hora_mantenimiento_inicio) || 'N/A'}</td>
+                      <td>{formatDate(fm.fecha_mantenimiento_final) || 'N/A'}</td>
+                      <td>{formatTo12h(fm.hora_mantenimiento_final) || 'N/A'}</td>
+                      <td>{fm.detalles || '-'}</td>
                     </tr>
                   ))
                 )}

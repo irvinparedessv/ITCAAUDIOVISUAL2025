@@ -130,7 +130,7 @@ export default function EquipoDetalleModal({
     >
       <Modal.Header
         closeButton
-        style={{ border: "none", background: "#f8f9fa" }}
+        style={{ border: "none"}}
       >
         <Modal.Title>
           Detalles del Equipo&nbsp;
@@ -154,7 +154,6 @@ export default function EquipoDetalleModal({
             zIndex: 2,
             borderRadius: "50%",
             boxShadow: "0 0 8px #aaa",
-            border: "1px solid #d4d4d4",
             width: 38,
             height: 38,
             display: "flex",

@@ -180,7 +180,7 @@ export default function ReserveClassroom() {
       try {
         const { data } = await api.get(`/reservas-aula/${id}`);
         setSelectedDate(new Date(data.fecha));
-        setDescripcion(data.comentario || "");
+        setDescripcion(data.titulo || data.comentario || "");
         const [start, end] = data.horario.split(" - ");
         setStartTime(start.trim());
         setEndTime(end.trim());

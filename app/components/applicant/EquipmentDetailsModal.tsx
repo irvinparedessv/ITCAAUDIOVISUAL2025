@@ -330,111 +330,123 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                         .filter((equipo: any) => equipo.es_componente == false)
                         .map((equipo: any) => (
                           <div key={equipo.id}>
-                            <div className="list-group-item border-0 bg-body-secondary mb-2 rounded">
-                              {/* Contenedor para nombre y número de serie */}
-                              <div className="justify-content-between align-items-start">
-                                {/* Nombre y descripción */}
-                                <div style={{ width: "100%" }} className="mb-2">
-                                  <h6 className="fw-bold mb-1">
+                            <div className="list-group-item border-0 bg-body-secondary mb-3 rounded p-3">
+                              {/* Contenedor principal flex */}
+                              <div className="d-flex justify-content-between align-items-start flex-wrap">
+                                {/* Columna izquierda - Información del equipo */}
+                                <div style={{ flex: 1, minWidth: "200px" }} className="mb-2">
+                                  {/* Nombre del modelo - siempre visible completo */}
+                                  <h6 className="fw-bold mb-1" style={{ wordBreak: "break-word" }}>
                                     {equipo.modelo?.nombre || "Sin modelo"}
                                   </h6>
-                                  <p className="small text-body-secondary mb-0">
+
+                                  {/* Descripción */}
+                                  <p className="small text-body-secondary mb-2">
                                     {equipo.descripcion}
                                   </p>
+
+                                  {/* Observación existente si la hay */}
+                                  {equipo.comentario && (
+                                    <div className="alert alert-light py-1 px-2 mb-2">
+                                      <small>
+                                        <strong>Observación:</strong> {equipo.comentario}
+                                      </small>
+                                    </div>
+                                  )}
                                 </div>
-                                {/* Número de serie */}
-                                <div
-                                  style={{ maxWidth: "80%", fontSize: "10px" }}
-                                >
-                                  <span
-                                    className="badge rounded-pill bg-body-tertiary text-body-emphasis"
-                                    style={{ minWidth: "2rem" }}
+
+                                {/* Columna derecha - Número de serie y acciones */}
+                                <div className="d-flex flex-column">
+                                  {/* Número de serie completo (mismo diseño que en insumos) */}
+                                  <div
+                                    className="bg-body-tertiary text-body-emphasis p-2 rounded mb-2"
+                                    style={{
+                                      fontSize: "0.60rem",
+                                      wordBreak: "break-all",
+                                      fontWeight: "bold",
+                                      lineHeight: "1.2"
+                                    }}
                                   >
-                                    {equipo.numero_serie}
-                                  </span>
+                                    <strong>{equipo.numero_serie}</strong>
+                                  </div>
+
+                                  {/* Botón de observación */}
+                                  {(user.role == Role.Administrador || user.role == Role.Encargado) && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline-primary"
+                                      onClick={() => handleAbrirObsModal(equipo)}
+                                      className="mt-auto"
+                                    >
+                                      {equipo.pivot.comentario
+                                        ? "Editar observación"
+                                        : "Agregar observación"}
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
-                              {/* Observación */}
-                              {equipo.comentario && (
-                                <div className="ms-4 mt-1">
-                                  <small className="text-muted">
-                                    <strong>Observación:</strong>{" "}
-                                    {equipo.comentario}
+
+                              {/* Observación para prestamistas */}
+                              {user.role == Role.Prestamista && equipo.pivot.comentario && (
+                                <div className="alert alert-light py-1 px-2 mt-2">
+                                  <small>
+                                    <strong>Observación:</strong> {equipo.pivot.comentario}
                                   </small>
                                 </div>
                               )}
-                              {(user.role == Role.Administrador ||
-                                user.role == Role.Encargado) && (
-                                <Button
-                                  size="sm"
-                                  className="ms-4 mt-2"
-                                  variant="outline-primary"
-                                  onClick={() => handleAbrirObsModal(equipo)}
-                                >
-                                  {equipo.pivot.comentario
-                                    ? "Editar observación"
-                                    : "Agregar observación"}
-                                </Button>
-                              )}
-
-                              {user.role == Role.Prestamista &&
-                                equipo.pivot.comentario && (
-                                  <div>
-                                    Observación: {equipo.pivot.comentario}
-                                  </div>
-                                )}
                             </div>
                           </div>
                         ))}
                     </div>
                   </div>
-                  <div className="ps-5">
-                    <h5 className="fw-bold mb-0">Insumos</h5>
+                  <div className="ps-5 mt-4">
+                    <h5 className="fw-bold mb-3">Insumos</h5>
                     <div className="list-group">
                       {selectedReservation.equipos
                         .filter((equipo: any) => equipo.es_componente == true)
                         .map((equipo: any) => (
                           <div key={equipo.id}>
-                            <div className="list-group-item border-0 bg-body-secondary mb-2 rounded">
-                              {/* Contenedor para nombre y número de serie */}
-                              <div className="justify-content-between align-items-start">
-                                {/* Nombre y descripción */}
-                                <div style={{ width: "100%" }} className="mb-2">
-                                  <h6 className="fw-bold mb-1">
+                            <div className="list-group-item border-0 bg-body-secondary mb-3 rounded p-3">
+                              <div className="d-flex justify-content-between align-items-start flex-wrap">
+                                <div style={{ flex: 1, minWidth: "200px" }} className="mb-2">
+                                  <h6 className="fw-bold mb-1" style={{ wordBreak: "break-word" }}>
                                     {equipo.modelo?.nombre || "Sin modelo"}
                                   </h6>
-                                  <p className="small text-body-secondary mb-0">
+                                  <p className="small text-body-secondary mb-2">
                                     {equipo.descripcion}
                                   </p>
                                 </div>
-                                {/* Número de serie */}
-                                <div
-                                  style={{ maxWidth: "80%", fontSize: "10px" }}
-                                >
-                                  <span
-                                    className="badge rounded-pill bg-body-tertiary text-body-emphasis"
-                                    style={{ minWidth: "2rem" }}
+
+                                <div className="d-flex flex-column align-items-end">
+                                  {/* Mismo diseño para número de serie */}
+                                  <div
+                                    className="bg-body-tertiary text-body-emphasis p-2 rounded mb-2"
+                                    style={{
+                                      fontSize: "0.60rem",
+                                      wordBreak: "break-all",
+                                      fontWeight: "bold",
+                                      lineHeight: "1.2"
+                                    }}
                                   >
-                                    {equipo.numero_serie}
-                                  </span>
+                                    <strong>{equipo.numero_serie}</strong>
+                                  </div>
                                 </div>
                               </div>
-                              {/* Observación */}
+
                               {equipo.comentario && (
-                                <div className="ms-4 mt-1">
-                                  <small className="text-muted">
-                                    <strong>Observación:</strong>{" "}
-                                    {equipo.comentario}
+                                <div className="alert alert-light py-1 px-2 mb-2">
+                                  <small>
+                                    <strong>Observación:</strong> {equipo.comentario}
                                   </small>
                                 </div>
                               )}
-                              {(user.role == Role.Administrador ||
-                                user.role == Role.Encargado) && (
+
+                              {(user.role == Role.Administrador || user.role == Role.Encargado) && (
                                 <Button
                                   size="sm"
-                                  className="ms-4 mt-2"
                                   variant="outline-primary"
                                   onClick={() => handleAbrirObsModal(equipo)}
+                                  className="mt-2"
                                 >
                                   {equipo.pivot.comentario
                                     ? "Editar observación"
@@ -442,12 +454,13 @@ const EquipmentDetailsModal: React.FC<Props> = ({
                                 </Button>
                               )}
 
-                              {user.role == Role.Prestamista &&
-                                equipo.pivot.comentario && (
-                                  <div>
-                                    Observación: {equipo.pivot.comentario}
-                                  </div>
-                                )}
+                              {user.role == Role.Prestamista && equipo.pivot.comentario && (
+                                <div className="alert alert-light py-1 px-2 mt-2">
+                                  <small>
+                                    <strong>Observación:</strong> {equipo.pivot.comentario}
+                                  </small>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}

@@ -55,43 +55,43 @@ const FormMantenimiento = () => {
   const [equipoNoEncontrado, setEquipoNoEncontrado] = useState(false);
 
   // Modifica el useEffect que carga los datos
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setEquipoNoEncontrado(false);
-      const [equiposList, tiposList, usuariosList] = await Promise.all([
-        getEquipos({}, id),
-        getTiposMantenimiento(),
-        getUsuariosM(),
-      ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setEquipoNoEncontrado(false);
+        const [equiposList, tiposList, usuariosList] = await Promise.all([
+          getEquipos({}, id),
+          getTiposMantenimiento(),
+          getUsuariosM(),
+        ]);
 
-      // Verificar si se encontró el equipo
-      if (id && (!equiposList?.data || equiposList.data.length === 0)) {
-        setEquipoNoEncontrado(true);
-        return;
+        // Verificar si se encontró el equipo
+        if (id && (!equiposList?.data || equiposList.data.length === 0)) {
+          setEquipoNoEncontrado(true);
+          return;
+        }
+
+        setEquipos(equiposList?.data || []);
+        setTipos(tiposList || []);
+        setUsuarios(usuariosList?.data || []);
+      } catch (error) {
+        if (error.response?.status === 404) {
+          setEquipoNoEncontrado(true);
+        } else {
+          toast.error("Error al cargar datos");
+          console.error("Error:", error);
+        }
+      } finally {
+        setLoading(false);
       }
+    };
+    fetchData();
+  }, [id]);
 
-      setEquipos(equiposList?.data || []);
-      setTipos(tiposList || []);
-      setUsuarios(usuariosList?.data || []);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setEquipoNoEncontrado(true);
-      } else {
-        toast.error("Error al cargar datos");
-        console.error("Error:", error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-  fetchData();
-}, [id]);
-
-// Agrega esta condición antes del render principal
-if (equipoNoEncontrado) {
-  return <MantenimientoNoEncontrado />;
-}
+  // Agrega esta condición antes del render principal
+  if (equipoNoEncontrado) {
+    return <MantenimientoNoEncontrado />;
+  }
 
   const validateTimeRange = (time: string): boolean => {
     if (!time) return true;
@@ -154,14 +154,14 @@ if (equipoNoEncontrado) {
           setRangeError(null);
         }
 
-        // const today = new Date().toLocaleDateString('en-CA');
-        // if (newFormData.fecha_mantenimiento === today) {
-        //   if (!validateCurrentTime(value, newFormData.fecha_mantenimiento)) {
-        //     setTimeError('La hora no puede ser anterior a la hora actual');
-        //   } else {
-        //     setTimeError(null);
-        //   }
-        // }
+        const today = new Date().toLocaleDateString('en-CA');
+        if (newFormData.fecha_mantenimiento === today) {
+          if (!validateCurrentTime(value, newFormData.fecha_mantenimiento)) {
+            setTimeError('La hora no puede ser anterior a la hora actual');
+          } else {
+            setTimeError(null);
+          }
+        }
       }
     }
 
@@ -171,7 +171,7 @@ if (equipoNoEncontrado) {
         // Validar que no sea anterior a la fecha actual
         const diff = compareDateOnly(value);
         setFinalDateError(diff < 0);
-        
+
         // Validar que no sea anterior a la fecha de inicio si está presente
         if (formData.fecha_mantenimiento && value < formData.fecha_mantenimiento) {
           setFinalDateError(true);
@@ -201,10 +201,13 @@ if (equipoNoEncontrado) {
         }
 
         // Validar que no sea anterior a la hora de inicio si es el mismo día
-        if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final && 
-            formData.hora_mantenimiento_inicio && 
-            value < formData.hora_mantenimiento_inicio) {
+        if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final &&
+          formData.hora_mantenimiento_inicio &&
+          value < formData.hora_mantenimiento_inicio) {
           setFinalTimeError('La hora final no puede ser anterior a la hora de inicio');
+        } else {
+          // Limpiar el error si no aplica
+          setFinalTimeError(null);
         }
       } else {
         setFinalTimeError(null);
@@ -230,8 +233,8 @@ if (equipoNoEncontrado) {
         return;
       }
 
-      if (formData.fecha_mantenimiento && 
-          formData.fecha_mantenimiento_final < formData.fecha_mantenimiento) {
+      if (formData.fecha_mantenimiento &&
+        formData.fecha_mantenimiento_final < formData.fecha_mantenimiento) {
         toast.error("La fecha final no puede ser anterior a la fecha de inicio");
         return;
       }
@@ -250,9 +253,9 @@ if (equipoNoEncontrado) {
         }
       }
 
-      if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final && 
-          formData.hora_mantenimiento_inicio && 
-          formData.hora_mantenimiento_final < formData.hora_mantenimiento_inicio) {
+      if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final &&
+        formData.hora_mantenimiento_inicio &&
+        formData.hora_mantenimiento_final < formData.hora_mantenimiento_inicio) {
         toast.error("La hora final no puede ser anterior a la hora de inicio");
         return;
       }
@@ -268,6 +271,15 @@ if (equipoNoEncontrado) {
     }
     if (!formData.hora_mantenimiento_inicio) {
       toast.error("Debe ingresar la hora de inicio.");
+      return;
+    }
+    if (!formData.fecha_mantenimiento_final) {
+      toast.error("Debe ingresar la fecha de mantenimiento final.");
+      return;
+    }
+
+    if (!formData.hora_mantenimiento_final) {
+      toast.error("Debe ingresar la hora de final.");
       return;
     }
 
@@ -299,15 +311,46 @@ if (equipoNoEncontrado) {
         } else {
           toast.error("El estado del equipo no fue actualizado");
         }
-      } else {
-        throw new Error(result.message);
-      }
 
-      navigate("/mantenimiento");
-    } catch (error) {
+        navigate("/mantenimiento");
+      } else {
+        // Mostrar mensaje de error del servidor si existe
+        throw result;
+      }
+    } catch (error: any) {
       console.error("Error al procesar mantenimiento:", error);
-      toast.error(error.message || "Error al procesar mantenimiento");
-    } finally {
+
+      // Manejo específico para errores de validación del backend
+      if (error.data?.errors) {
+        const errors = error.data.errors;
+        Object.keys(errors).forEach(key => {
+          errors[key].forEach((message: string) => {
+            toast.error(message, { duration: 5000 });
+          });
+        });
+      }
+      // Manejo para errores de disponibilidad (como conflictos con reservas)
+      else if (error.message) {
+        // Mensaje principal
+        toast.error(error.message, { duration: 5000 });
+
+        // Si hay información adicional de conflicto (como en el caso de reservas)
+        if (error.data?.conflict_info) {
+          const conflict = error.data.conflict_info;
+          const conflictMessage = `Conflicto con reserva de ${conflict.reservado_por} desde ${new Date(conflict.fecha_inicio).toLocaleString()} hasta ${new Date(conflict.fecha_fin).toLocaleString()}`;
+
+          toast.error(conflictMessage, {
+            duration: 6000,
+            position: "top-right",
+          });
+        }
+      }
+      // Manejo para otros tipos de errores
+      else {
+        toast.error(error.message || "Error al procesar el mantenimiento");
+      }
+    }
+    finally {
       setIsSubmitting(false);
     }
   };
@@ -347,8 +390,7 @@ if (equipoNoEncontrado) {
         </strong>{" "}
         El equipo no cambiará a estado "En Mantenimiento" hasta que confirmes y
         guardes este registro. Solo debes especificar el tipo de mantenimiento
-        que se realizará y la descripción de mantenimiento a realizar. 
-        Si no se especifica una hora de finalización, el tiempo de mantenimiento sera de 3 horas.
+        que se realizará y la descripción de mantenimiento a realizar.
         Nota: El estado "En Mantenimiento" no se cambiara hasta que el usuario lo realice manualmente
       </div>
 
@@ -426,12 +468,11 @@ if (equipoNoEncontrado) {
             name="hora_mantenimiento_inicio"
             value={formData.hora_mantenimiento_inicio}
             onChange={handleChange}
-            className={`form-control ${
-              timeError || rangeError ? "is-invalid" : ""
-            }`}
-            min="07:00"
-            max="17:00"
-            disabled
+            className={`form-control ${timeError || rangeError ? "is-invalid" : ""
+              }`}
+          min="07:00"
+          max="17:00"
+          disabled
           />
           {timeError && <div className="invalid-feedback">{timeError}</div>}
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
@@ -439,7 +480,7 @@ if (equipoNoEncontrado) {
 
         {/* Fecha Final (Opcional) */}
         <div className="mb-3">
-          <label className="form-label">Fecha Final (Opcional)</label>
+          <label className="form-label">Fecha Final (Prevista)</label>
           <input
             type="date"
             name="fecha_mantenimiento_final"
@@ -458,7 +499,7 @@ if (equipoNoEncontrado) {
 
         {/* Hora Final (Opcional) */}
         <div className="mb-3">
-          <label className="form-label">Hora Final (Opcional)</label>
+          <label className="form-label">Hora Final (Prevista)</label>
           <input
             type="time"
             name="hora_mantenimiento_final"

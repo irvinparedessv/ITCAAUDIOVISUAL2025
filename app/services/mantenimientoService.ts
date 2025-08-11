@@ -68,15 +68,16 @@ export const createMantenimiento = async (mantenimientoData: Partial<Mantenimien
     const response = await api.post("/mantenimientos", mantenimientoData);
     return {
       success: true,
-      data: response.data.data, // Accede a la propiedad data anidada
+      data: response.data.data,
       message: response.data.message
     };
   } catch (error: any) {
     if (error.response) {
+      // Devuelve toda la respuesta de error para que el componente pueda acceder a todo
       return {
         success: false,
         message: error.response.data.message || "Error al crear mantenimiento",
-        error: error.response.data
+        data: error.response.data // Cambiado de 'error' a 'data' para consistencia
       };
     }
     return {

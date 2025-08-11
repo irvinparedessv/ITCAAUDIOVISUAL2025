@@ -216,7 +216,7 @@ const FormFuturoMantenimiento = () => {
         // Validar que no sea anterior a la fecha actual
         const diff = compareDateOnly(value);
         setFinalDateError(diff < 0);
-        
+
         // Validar que no sea anterior a la fecha de inicio si está presente
         if (formData.fecha_mantenimiento && value < formData.fecha_mantenimiento) {
           setFinalDateError(true);
@@ -245,11 +245,14 @@ const FormFuturoMantenimiento = () => {
           }
         }
 
-        // Validar que no sea anterior a la hora de inicio si es el mismo día
-        if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final && 
-            formData.hora_mantenimiento_inicio && 
-            value < formData.hora_mantenimiento_inicio) {
+        // Validar que no sea anterior a la hora de inicio SOLO si es el mismo día
+        if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final &&
+          formData.hora_mantenimiento_inicio &&
+          value < formData.hora_mantenimiento_inicio) {
           setFinalTimeError('La hora final no puede ser anterior a la hora de inicio');
+        } else {
+          // Limpiar el error si no aplica
+          setFinalTimeError(null);
         }
       } else {
         setFinalTimeError(null);
@@ -277,6 +280,15 @@ const FormFuturoMantenimiento = () => {
     }
     if (!formData.hora_mantenimiento_inicio) {
       toast.error("Debe ingresar la hora de inicio.");
+      return;
+    }
+
+    if (!formData.fecha_mantenimiento_final) {
+      toast.error("Debe ingresar la fecha de mantenimiento final.");
+      return;
+    }
+    if (!formData.hora_mantenimiento_final) {
+      toast.error("Debe ingresar la hora de final.");
       return;
     }
     if (!formData.user_id) {
@@ -312,8 +324,8 @@ const FormFuturoMantenimiento = () => {
         return;
       }
 
-      if (formData.fecha_mantenimiento && 
-          formData.fecha_mantenimiento_final < formData.fecha_mantenimiento) {
+      if (formData.fecha_mantenimiento &&
+        formData.fecha_mantenimiento_final < formData.fecha_mantenimiento) {
         toast.error("La fecha final no puede ser anterior a la fecha de inicio");
         return;
       }
@@ -332,9 +344,10 @@ const FormFuturoMantenimiento = () => {
         }
       }
 
-      if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final && 
-          formData.hora_mantenimiento_inicio && 
-          formData.hora_mantenimiento_final < formData.hora_mantenimiento_inicio) {
+      // Solo validar si es el mismo día
+      if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final &&
+        formData.hora_mantenimiento_inicio &&
+        formData.hora_mantenimiento_final < formData.hora_mantenimiento_inicio) {
         toast.error("La hora final no puede ser anterior a la hora de inicio");
         return;
       }
@@ -356,22 +369,34 @@ const FormFuturoMantenimiento = () => {
 
       await createFuturoMantenimiento(dataToSend);
 
-      toast.success("Futuro mantenimiento creado con éxito", {
-        id: "submit-toast",
-        duration: 3000,
-        position: "top-right",
-      });
-
+      toast.success("Futuro mantenimiento creado con éxito");
       navigate("/futuroMantenimiento");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al crear mantenimiento:", error);
-      if (error.response && error.response.data && error.response.data.message &&
-        error.response.data.message.includes('Ya existe un mantenimiento programado')) {
-        toast.error(error.response.data.message, {
-          duration: 5000,
+
+      if (error.response?.data?.errors) {
+        // Mostrar cada error de validación individualmente
+        const errors = error.response.data.errors;
+        Object.keys(errors).forEach(key => {
+          errors[key].forEach((message: string) => {
+            toast.error(message, { duration: 5000 });
+          });
         });
+      } else if (error.response?.data?.message) {
+        // Mostrar mensaje de error general
+        toast.error(error.response.data.message, { duration: 5000 });
       } else {
-        toast.error("Error al crear el mantenimiento.");
+        toast.error("Error al crear el mantenimiento");
+      }
+
+      if (error.response.data.conflict_info) {
+        const conflict = error.response.data.conflict_info;
+        const conflictMessage = `Conflicto con reserva de ${conflict.reservado_por} desde ${conflict.fecha_inicio} hasta ${conflict.fecha_fin}`;
+
+        toast.error(conflictMessage, {
+          duration: 6000,
+          position: "top-right",
+        });
       }
     } finally {
       setIsSubmitting(false);
@@ -434,13 +459,15 @@ const FormFuturoMantenimiento = () => {
         <h2 className="fw-bold">Nuevo Futuro Mantenimiento</h2>
       </div>
 
-      <div className="alert alert-warning mt-3" role="alert">
+      <div className="alert alert-info mt-3" role="alert">
         <strong>
           Importante:
         </strong>{" "}
-        Si no se especifica una hora de finalización, el equipo permanecerá en estado 
-        "En Mantenimiento" hasta que se actualice manualmente su estado. Asegúrese de 
-        proporcionar una hora de finalización si el mantenimiento tendrá una duración definida.
+        Debes ingresar la fecha y hora previstas de finalización del mantenimiento.
+        El equipo no cambiará de estado automáticamente al llegar esa fecha y hora.
+        Para finalizar el mantenimiento, deberás ingresar los detalles correspondientes y guardar la información.
+        Solo entonces el equipo cambiará de estado.
+        Podrás ver la asociación con el mantenimiento una vez que haya comenzado, según la fecha y hora programadas.
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -466,10 +493,10 @@ const FormFuturoMantenimiento = () => {
                       ...props.innerProps.style,
                       opacity: props.data.isDisabled ? 0.5 : 1,
                       cursor: props.data.isDisabled ? 'not-allowed' : 'pointer',
-                      backgroundColor: props.isSelected 
-                        ? (darkMode ? "#555" : "#d3d3d3") 
-                        : props.isFocused 
-                          ? (darkMode ? "#444" : "#e6e6e6") 
+                      backgroundColor: props.isSelected
+                        ? (darkMode ? "#555" : "#d3d3d3")
+                        : props.isFocused
+                          ? (darkMode ? "#444" : "#e6e6e6")
                           : "transparent",
                       color: darkMode ? "#f8f9fa" : "#212529",
                       padding: '8px 12px',
@@ -540,7 +567,7 @@ const FormFuturoMantenimiento = () => {
 
         {/* Fecha Final (Opcional) */}
         <div className="mb-3">
-          <label className="form-label">Fecha Final (Opcional)</label>
+          <label className="form-label">Fecha Final (Prevista)</label>
           <input
             type="date"
             name="fecha_mantenimiento_final"
@@ -559,7 +586,7 @@ const FormFuturoMantenimiento = () => {
 
         {/* Hora Final (Opcional) */}
         <div className="mb-3">
-          <label className="form-label">Hora Final (Opcional)</label>
+          <label className="form-label">Hora Final (Prevista)</label>
           <input
             type="time"
             name="hora_mantenimiento_final"

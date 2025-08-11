@@ -77,7 +77,27 @@ const MantenimientoEdit = () => {
           return;
         }
 
-        // Resto de la lógica de carga...
+        const equipoResponse = await getEquipos({}, mantenimiento.equipo_id?.toString());
+
+        // 3. Cargar los demás datos en paralelo
+        const [tiposList, usuariosList] = await Promise.all([
+          getTiposMantenimiento(),
+          getUsuarios(),
+        ]);
+
+        setFormData({
+          equipo_id: mantenimiento.equipo_id?.toString() || "",
+          tipo_id: mantenimiento.tipo_id?.toString() || "",
+          fecha_mantenimiento: mantenimiento.fecha_mantenimiento || "",
+          hora_mantenimiento_inicio: mantenimiento.hora_mantenimiento_inicio?.slice(0, 5) || "",
+          detalles: mantenimiento.detalles || "",
+          user_id: mantenimiento.user_id?.toString() || "",
+        });
+
+        // El equipo viene en equipoResponse.data[0] porque getEquipos con ID devuelve un array con un solo elemento
+        setEquipos(equipoResponse.data || []);
+        setTipos(tiposList || []);
+        setUsuarios(usuariosList?.data || []);
 
       } catch (error) {
         if (error.response?.status === 404) {

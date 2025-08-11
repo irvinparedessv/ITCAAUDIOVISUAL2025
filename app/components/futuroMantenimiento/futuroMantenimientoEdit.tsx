@@ -47,11 +47,9 @@ const FuturoMantenimientoEdit = () => {
   const esEncargado = user?.role === Role.Encargado;
   const [mantenimientoNoEncontrado, setMantenimientoNoEncontrado] = useState(false);
 
-
   // Función para validar el rango horario (7:00 AM a 5:00 PM)
   const validateTimeRange = (time: string): boolean => {
     if (!time) return true;
-
     const [hours, minutes] = time.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes;
     return totalMinutes >= 420 && totalMinutes <= 1020; // 7:00 AM a 5:00 PM
@@ -60,19 +58,16 @@ const FuturoMantenimientoEdit = () => {
   // Función para validar si la hora es mayor a la actual
   const validateCurrentTime = (time: string, date: string): boolean => {
     if (!time || !date) return true;
-
     const today = new Date().toLocaleDateString('en-CA');
     if (date !== today) return true;
 
     const now = new Date();
     const currentHours = now.getHours();
     const currentMinutes = now.getMinutes();
-
     const [hours, minutes] = time.split(':').map(Number);
 
     if (hours < currentHours) return false;
     if (hours === currentHours && minutes < currentMinutes) return false;
-
     return true;
   };
 
@@ -132,12 +127,15 @@ const FuturoMantenimientoEdit = () => {
 
         setUsuarios(usuariosList?.data || []);
         setTipos(tiposList?.data || tiposList || []);
-      } catch (error) {
+      } catch (error: any) {
         if (error.response?.status === 404) {
           setMantenimientoNoEncontrado(true);
         } else {
           console.error("Error al cargar datos:", error);
-          toast.error("Error al cargar datos del mantenimiento programado");
+          toast.error("Error al cargar datos del mantenimiento programado", {
+            duration: 5000,
+            position: "top-right",
+          });
         }
       } finally {
         setLoading(false);
@@ -242,23 +240,52 @@ const FuturoMantenimientoEdit = () => {
 
     // Validación de campos requeridos
     if (!formData.equipo_id) {
-      toast.error("Debe seleccionar un equipo.");
+      toast.error("Debe seleccionar un equipo.", {
+        duration: 5000,
+        position: "top-right",
+      });
       return;
     }
     if (!formData.tipo_mantenimiento_id) {
-      toast.error("Debe seleccionar un tipo de mantenimiento.");
+      toast.error("Debe seleccionar un tipo de mantenimiento.", {
+        duration: 5000,
+        position: "top-right",
+      });
       return;
     }
     if (!formData.fecha_mantenimiento) {
-      toast.error("Debe ingresar la fecha de mantenimiento.");
+      toast.error("Debe ingresar la fecha de mantenimiento.", {
+        duration: 5000,
+        position: "top-right",
+      });
       return;
     }
     if (!formData.hora_mantenimiento_inicio) {
-      toast.error("Debe ingresar la hora de inicio.");
+      toast.error("Debe ingresar la hora de inicio.", {
+        duration: 5000,
+        position: "top-right",
+      });
+      return;
+    }
+    if (!formData.fecha_mantenimiento_final) {
+      toast.error("Debe ingresar la fecha de mantenimiento final.", {
+        duration: 5000,
+        position: "top-right",
+      });
+      return;
+    }
+    if (!formData.hora_mantenimiento_final) {
+      toast.error("Debe ingresar la hora de final.", {
+        duration: 5000,
+        position: "top-right",
+      });
       return;
     }
     if (!formData.user_id) {
-      toast.error("Debe seleccionar un responsable.");
+      toast.error("Debe seleccionar un responsable.", {
+        duration: 5000,
+        position: "top-right",
+      });
       return;
     }
 
@@ -266,21 +293,30 @@ const FuturoMantenimientoEdit = () => {
     if (formData.fecha_mantenimiento) {
       const diff = compareDateOnly(formData.fecha_mantenimiento);
       if (diff < 0) {
-        toast.error("La fecha no puede ser anterior al día actual");
+        toast.error("La fecha no puede ser anterior al día actual", {
+          duration: 5000,
+          position: "top-right",
+        });
         return;
       }
     }
 
     // Validación de rango horario
     if (!validateTimeRange(formData.hora_mantenimiento_inicio)) {
-      toast.error("La hora de inicio debe estar entre 7:00 AM y 5:00 PM");
+      toast.error("La hora de inicio debe estar entre 7:00 AM y 5:00 PM", {
+        duration: 5000,
+        position: "top-right",
+      });
       return;
     }
 
     // Validación de hora actual
     if (formData.fecha_mantenimiento === new Date().toISOString().split('T')[0]) {
       if (!validateCurrentTime(formData.hora_mantenimiento_inicio, formData.fecha_mantenimiento)) {
-        toast.error("La hora de inicio no puede ser anterior a la hora actual");
+        toast.error("La hora de inicio no puede ser anterior a la hora actual", {
+          duration: 5000,
+          position: "top-right",
+        });
         return;
       }
     }
@@ -289,26 +325,38 @@ const FuturoMantenimientoEdit = () => {
     if (formData.fecha_mantenimiento_final) {
       const diff = compareDateOnly(formData.fecha_mantenimiento_final);
       if (diff < 0) {
-        toast.error("La fecha final no puede ser anterior al día actual");
+        toast.error("La fecha final no puede ser anterior al día actual", {
+          duration: 5000,
+          position: "top-right",
+        });
         return;
       }
 
       if (formData.fecha_mantenimiento &&
         formData.fecha_mantenimiento_final < formData.fecha_mantenimiento) {
-        toast.error("La fecha final no puede ser anterior a la fecha de inicio");
+        toast.error("La fecha final no puede ser anterior a la fecha de inicio", {
+          duration: 5000,
+          position: "top-right",
+        });
         return;
       }
     }
 
     if (formData.hora_mantenimiento_final) {
       if (!validateTimeRange(formData.hora_mantenimiento_final)) {
-        toast.error("La hora final debe estar entre 7:00 AM y 5:00 PM");
+        toast.error("La hora final debe estar entre 7:00 AM y 5:00 PM", {
+          duration: 5000,
+          position: "top-right",
+        });
         return;
       }
 
       if (formData.fecha_mantenimiento_final === new Date().toLocaleDateString('en-CA')) {
         if (!validateCurrentTime(formData.hora_mantenimiento_final, formData.fecha_mantenimiento_final)) {
-          toast.error("La hora final no puede ser anterior a la hora actual");
+          toast.error("La hora final no puede ser anterior a la hora actual", {
+            duration: 5000,
+            position: "top-right",
+          });
           return;
         }
       }
@@ -316,7 +364,10 @@ const FuturoMantenimientoEdit = () => {
       if (formData.fecha_mantenimiento === formData.fecha_mantenimiento_final &&
         formData.hora_mantenimiento_inicio &&
         formData.hora_mantenimiento_final < formData.hora_mantenimiento_inicio) {
-        toast.error("La hora final no puede ser anterior a la hora de inicio");
+        toast.error("La hora final no puede ser anterior a la hora de inicio", {
+          duration: 5000,
+          position: "top-right",
+        });
         return;
       }
     }
@@ -335,11 +386,48 @@ const FuturoMantenimientoEdit = () => {
       };
 
       await updateFuturoMantenimiento(Number(id), dataToSend);
-      toast.success("Futuro mantenimiento actualizado");
+
+      toast.success("Futuro mantenimiento actualizado correctamente", {
+        duration: 5000,
+        position: "top-right",
+      });
       navigate("/futuroMantenimiento");
     } catch (error: any) {
-      console.error("Error al actualizar mantenimiento:", error.response?.data);
-      toast.error(error.response?.data?.message || "Error al actualizar mantenimiento");
+      console.error("Error al actualizar mantenimiento:", error);
+
+      if (error.response?.data?.errors) {
+        // Mostrar cada error de validación individualmente
+        const errors = error.response.data.errors;
+        Object.keys(errors).forEach(key => {
+          errors[key].forEach((message: string) => {
+            toast.error(message, {
+              duration: 5000,
+              position: "top-right",
+            });
+          });
+        });
+      } else if (error.response?.data?.message) {
+        // Mostrar mensaje de error general
+        toast.error(error.response.data.message, {
+          duration: 5000,
+          position: "top-right",
+        });
+      } else {
+        toast.error("Error al actualizar el mantenimiento", {
+          duration: 5000,
+          position: "top-right",
+        });
+      }
+
+      if (error.response?.data?.conflict_info) {
+        const conflict = error.response.data.conflict_info;
+        const conflictMessage = `Conflicto con reserva de ${conflict.reservado_por} desde ${conflict.fecha_inicio} hasta ${conflict.fecha_fin}`;
+
+        toast.error(conflictMessage, {
+          duration: 6000,
+          position: "top-right",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -365,6 +453,14 @@ const FuturoMantenimientoEdit = () => {
           style={{ cursor: "pointer", fontSize: "2rem", marginRight: "0.5rem" }}
         />
         <h2 className="fw-bold">Editar Futuro Mantenimiento</h2>
+      </div>
+
+      <div className="alert alert-info mt-3" role="alert">
+        <strong>Importante:</strong> Debes ingresar la fecha y hora previstas de finalización del mantenimiento.
+        El equipo no cambiará de estado automáticamente al llegar esa fecha y hora.
+        Para finalizar el mantenimiento, deberás ingresar los detalles correspondientes y guardar la información.
+        Solo entonces el equipo cambiará de estado.
+        Podrás ver la asociación con el mantenimiento una vez que haya comenzado, según la fecha y hora programadas.
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -434,6 +530,11 @@ const FuturoMantenimientoEdit = () => {
               borderColor: darkMode ? "#444" : "#ccc",
             }}
           />
+          {dateError && (
+            <div className="invalid-feedback">
+              No se pueden registrar mantenimientos con fecha anterior al día actual
+            </div>
+          )}
         </div>
 
         {/* Hora inicio */}
@@ -458,9 +559,9 @@ const FuturoMantenimientoEdit = () => {
           {rangeError && <div className="invalid-feedback">{rangeError}</div>}
         </div>
 
-        {/* Fecha Final (Opcional) */}
+        {/* Fecha Final */}
         <div className="mb-3">
-          <label className="form-label">Fecha Final (Opcional)</label>
+          <label className="form-label">Fecha Final (Prevista)</label>
           <input
             type="date"
             name="fecha_mantenimiento_final"
@@ -481,9 +582,9 @@ const FuturoMantenimientoEdit = () => {
           )}
         </div>
 
-        {/* Hora Final (Opcional) */}
+        {/* Hora Final */}
         <div className="mb-3">
-          <label className="form-label">Hora Final (Opcional)</label>
+          <label className="form-label">Hora Final (Prevista)</label>
           <input
             type="time"
             name="hora_mantenimiento_final"

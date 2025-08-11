@@ -94,12 +94,12 @@ export default function Dashboard() {
               link="/administracion"
               description="Configuración del sistema"
             />
-            <DashboardCard
+            {/* <DashboardCard
               title="Gestion de Imagenes"
               icon={<FaImage size={24} />}
               link="/imagenes"
               description="Administracion de Imagenes"
-            />
+            /> */}
           </Row>
         </div>
       )}

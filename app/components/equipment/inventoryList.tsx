@@ -454,7 +454,7 @@ export default function InventoryList() {
                   <th>Mantenimiento</th>
                   <th>Dañados</th>
                   <th>No disponibles</th>
-                  <th>Accesorios</th>
+                  <th>Kit / Combo</th>
                   <th className="rounded-top-end">Acciones</th>
                 </tr>
               </thead>

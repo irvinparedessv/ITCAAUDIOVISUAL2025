@@ -124,30 +124,41 @@ export default function MarcaManager() {
 
   // Cambiado a /mar/marcas
   const handleSubmit = async () => {
-    setFormValidated(true);
+  setFormValidated(true);
 
-    if (formData.nombre.trim() === "") {
-      toast.error("Por favor, completa el nombre de la marca.");
-      return;
-    }
+  // ID único para la notificación de validación
+  const validationToastId = "marca-nombre-vacio";
+  
+  // Validación del campo nombre
+  if (formData.nombre.trim() === "") {
+    // Elimina cualquier notificación previa con el mismo ID
+    toast.dismiss(validationToastId);
+    // Muestra la nueva notificación
+    toast.error("Por favor, completa el nombre de la marca.", {
+      id: validationToastId,
+      duration: 4000
+    });
+    return;
+  }
 
-    setSubmitting(true);
-    try {
-      if (editing) {
-        await api.put(`/mar/marcas/${editing.id}`, formData);
-        toast.success("Marca actualizada correctamente.");
-      } else {
-        await api.post("/mar/marcas", formData);
-        toast.success("Marca creada correctamente.");
-      }
-      fetchMarcas();
-      handleClose();
-    } catch (err) {
-      toast.error("Ocurrió un error al guardar.");
-    } finally {
-      setSubmitting(false);
+  setSubmitting(true);
+  try {
+    if (editing) {
+      await api.put(`/mar/marcas/${editing.id}`, formData);
+      toast.success("Marca actualizada correctamente.");
+    } else {
+      await api.post("/mar/marcas", formData);
+      toast.success("Marca creada correctamente.");
     }
-  };
+    fetchMarcas();
+    handleClose();
+  } catch (err: any) {
+    const errorMessage = err.response?.data?.message || "Ocurrió un error al guardar";
+    toast.error(errorMessage, { duration: 5000 });
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   // Cambiado a /mar/marcas
   const confirmarEliminacion = async (id: number) => {

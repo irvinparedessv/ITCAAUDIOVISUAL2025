@@ -23,6 +23,8 @@ export interface AsistenteRespuesta {
   correccion?: boolean;
 }
 
+type ConflictoTipo = "reserva_aula" | "reserva_equipo" | null;
+
 export const useChatbotLogic = (user?: UserLogin) => {
   const [isReady, setIsReady] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -56,6 +58,13 @@ export const useChatbotLogic = (user?: UserLogin) => {
 
   const [mostrarEquipos, setMostrarEquipos] = useState(false);
   const [seleccionDeAulaCompleta, setSeleccionDeAulaCompleta] = useState(false);
+
+  // 🆕 Estado para conflictos devueltos por el backend
+  const [conflicto, setConflicto] = useState<{
+    tipo: ConflictoTipo;
+    mensaje?: string;
+    reserva?: any;
+  } | null>(null);
 
   // Extrae JSON de la respuesta de ChatGPT
   const extraeJson = (text: string): any => {
@@ -110,15 +119,15 @@ export const useChatbotLogic = (user?: UserLogin) => {
     setPensando(false);
     setMostrarEquipos(false);
     setSeleccionDeAulaCompleta(false);
-    // console.log("[resetChat] Estado reseteado.");
+    setConflicto(null); // 🆕 limpiar conflicto
   };
 
   const toggleChat = () => {
     resetChat();
     setIsOpen(!isOpen);
   };
-  function padHora(hora) {
-    // Si ya está bien, no toca nada. Si es "9:00", lo pasa a "09:00"
+
+  function padHora(hora: string) {
     if (!hora) return "";
     const [h, m] = hora.split(":");
     return `${h.padStart(2, "0")}:${m.padStart(2, "0")}`;
@@ -282,7 +291,6 @@ export const useChatbotLogic = (user?: UserLogin) => {
             sender: "bot",
           })
       );
-      // console.error("[enviarMensajeAsistente] Error:", e);
     } finally {
       setPensando(false);
     }
@@ -294,24 +302,19 @@ export const useChatbotLogic = (user?: UserLogin) => {
   };
 
   // --- GUARDAR RESERVA DE EQUIPOS ---
-  // ... (resto del hook igual)
-
   const onGuardarReserva = async () => {
-    // Aquí: datos requeridos están en formData
-    // Se asume que los datos ya están completos (no validaciones)
     setLoadingReserva(true);
     setReservaConfirmada(null);
 
     try {
-      // --- Si es reserva de AULA + EQUIPOS ---
       if (formData.equiposSeleccionados?.length > 0 && formData.aula?.id) {
         const formPayload = new FormData();
-        formPayload.append("user_id", user.id.toString());
+        formPayload.append("user_id", user!.id.toString());
         formPayload.append("aula", formData.aula.id);
         formPayload.append("fecha_reserva", formData.fecha);
         formPayload.append("startTime", formData.horaInicio);
         formPayload.append("endTime", formData.horaFin);
-        formPayload.append("tipo_reserva_id", "3"); // Siempre 1 para tu lógica
+        formPayload.append("tipo_reserva_id", "3");
         let withReposo = false;
         formData.equiposSeleccionados.forEach((eq: any, idx: number) => {
           if (eq.en_reposo) {
@@ -368,7 +371,7 @@ export const useChatbotLogic = (user?: UserLogin) => {
     setMostrarEquipos(false);
   };
 
-  // -- Resto igual (espacios sugeridos, selecciona aula, etc) --
+  // --- Enviar espacios a GPT para recomendaciones ---
   const enviarRecomendacionEspacios = async (aulas: any[]) => {
     const prompt = `
 A continuación tienes una lista de espacios disponibles para un evento.
@@ -505,13 +508,14 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
         recomendacionesEspacios: recomendaciones,
       }));
     } catch (err) {
-      // Manejo de error silencioso
+      // Silencioso
     } finally {
       setLoadingSugerencias(false);
       setLoadingSpaces(false);
     }
   };
 
+  // 🆕 Manejo centralizado de la respuesta de /sugerir-espacios (incluye conflictos)
   useEffect(() => {
     if (loadingSpaces) {
       (async () => {
@@ -523,7 +527,46 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
             personas: formData.personas,
             fecha_fin: formData.fecha_fin ?? null,
           });
-          const aulas = resp.data.aulas || [];
+
+          // Si el backend devuelve 'tipo', priorizamos ese flujo
+          const tipo = resp.data?.tipo as
+            | ConflictoTipo
+            | "sugerencia"
+            | undefined;
+
+          if (tipo === "reserva_aula") {
+            setConflicto({
+              tipo: "reserva_aula",
+              mensaje:
+                resp.data?.mensaje ||
+                "Ya tienes una reserva de aula para ese horario.",
+              reserva: resp.data?.reserva || null,
+            });
+            setAulasDisponibles([]);
+            setEspaciosParaSeleccionar([]);
+            setShowFullScreen(true);
+            setLoadingSpaces(false);
+            return;
+          }
+
+          if (tipo === "reserva_equipo") {
+            setConflicto({
+              tipo: "reserva_equipo",
+              mensaje:
+                resp.data?.mensaje ||
+                "Ya tienes una reserva de equipo para ese horario.",
+              reserva: resp.data?.reserva || null,
+            });
+            setAulasDisponibles([]);
+            setEspaciosParaSeleccionar([]);
+            setShowFullScreen(true);
+            setLoadingSpaces(false);
+            return;
+          }
+
+          // Flujo normal (sugerencia): procesar aulas y pedir recomendación
+          const aulas = resp.data?.aulas || [];
+          setConflicto(null);
           setAulasDisponibles(aulas);
           await enviarRecomendacionEspacios(aulas);
         } catch (err) {
@@ -598,6 +641,34 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
     }
   };
 
+  // 🆕 Usa el aula de una reserva existente (caso conflicto 'reserva_aula')
+  const onUsarAulaExistente = (reservaAula: any) => {
+    if (!reservaAula?.aula && !reservaAula?.aula_id) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          text: "No se pudo obtener el detalle del aula de la reserva. Intenta modificar o cancelar.",
+          sender: "bot",
+        },
+      ]);
+      return;
+    }
+
+    const aulaSrc = reservaAula.aula || {};
+    const aula = {
+      id: aulaSrc.id ?? reservaAula.aula_id,
+      nombre: aulaSrc.name || aulaSrc.nombre || `Espacio #${aulaSrc.id ?? "-"}`,
+      imagen_normal: aulaSrc.imagen_normal ?? null,
+      path_modelo: aulaSrc.path_modelo ?? null,
+    };
+
+    setConflicto(null);
+    handleSeleccionarEspacio(aula, {
+      recomendacion: "Usar aula de tu reserva existente",
+    });
+  };
+
   return {
     isOpen,
     isReady,
@@ -621,9 +692,11 @@ No expliques nada, no agregues texto fuera de ese objeto JSON.
     aulasDisponibles,
     mostrarEquipos,
     setMostrarEquipos,
-    // NUEVAS FUNCIONES PARA TUS BOTONES
+    // NUEVAS funciones y estados
     onGuardarReserva,
     onCancelarReserva,
     onModificarReserva,
+    conflicto, // 🆕
+    onUsarAulaExistente, // 🆕
   };
 };

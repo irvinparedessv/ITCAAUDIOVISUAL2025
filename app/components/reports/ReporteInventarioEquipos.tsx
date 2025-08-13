@@ -278,16 +278,16 @@ const ReporteInventarioEquipos = () => {
                         head: [["#", "N° Serie", "Tipo", "Categoría", "Modelo", "Marca", "Estado", "Características", "Fecha Registro"]],
                         body,
                         startY: startY,
-                        styles: { 
-                          fontSize: 7, 
+                        styles: {
+                          fontSize: 7,
                           cellPadding: 2,
                           overflow: 'linebreak',
                           valign: 'middle'
                         },
                         columnStyles: columnStyles,
-                        headStyles: { 
-                          fillColor: [107, 0, 0], 
-                          textColor: 255, 
+                        headStyles: {
+                          fillColor: [107, 0, 0],
+                          textColor: 255,
                           fontStyle: "bold",
                           cellPadding: 3
                         },
@@ -526,7 +526,7 @@ const ReporteInventarioEquipos = () => {
                 ) : (
                   equipos.map((e, i) => (
                     <tr key={e.id}>
-                      <td>{i + 1}</td>
+                      <td>{e.id}</td>
                       <td>{e.numero_serie}</td>
                       <td>{e.tipo_nombre}</td>
                       <td>{e.categoria_nombre}</td>

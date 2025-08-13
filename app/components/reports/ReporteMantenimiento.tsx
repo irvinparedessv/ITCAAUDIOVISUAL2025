@@ -856,7 +856,7 @@ const ReporteMantenimiento = () => {
                   ) : (
                     mantenimientos.map((m, i) => (
                       <tr key={m.id}>
-                        <td>{i + 1}</td>
+                        <td>{m.id}</td>
                         <td>{getEquipoNombre(m)}</td>
                         <td>{getNumeroSerie(m)}</td>
                         <td>{getTipoMantenimiento(m)}</td>
@@ -883,7 +883,7 @@ const ReporteMantenimiento = () => {
                 ) : (
                   futurosMantenimientos.map((fm, i) => (
                     <tr key={fm.id}>
-                      <td>{i + 1}</td>
+                      <td>{fm.id}</td>
                       <td>{getEquipoNombre(fm)}</td>
                       <td>{getNumeroSerie(fm)}</td>
                       <td>{getTipoMantenimiento(fm)}</td>

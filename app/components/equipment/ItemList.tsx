@@ -851,7 +851,7 @@ export default function ItemList({
                                   }
                                 );
                               }}
-                              disabled={ESTADOS_BLOQUEADOS.includes(item.estado_id)}
+                              disabled={item.tipo === "insumo" || ESTADOS_BLOQUEADOS.includes(item.estado_id)}
                             >
                               <FaWrench />
                             </Button>

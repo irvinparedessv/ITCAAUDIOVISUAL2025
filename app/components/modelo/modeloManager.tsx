@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Button,
   Spinner,
@@ -23,6 +23,8 @@ import {
   FaImages,
 } from "react-icons/fa";
 import PaginationComponent from "~/utils/Pagination";
+import AsyncSelect from "react-select/async";
+import { useTheme } from "~/hooks/ThemeContext";
 
 interface Modelo {
   id: number;
@@ -37,6 +39,12 @@ interface Marca {
   nombre: string;
 }
 
+interface SelectOption {
+  value: string;
+  label: string;
+  originalId: number;
+}
+
 export default function ModeloManager() {
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
@@ -46,7 +54,7 @@ export default function ModeloManager() {
     perPage: 5,
   });
   const [totalPaginas, setTotalPaginas] = useState(1);
-  const [loading, setLoading] = useState(true); // Cambiado a true inicialmente
+  const [loading, setLoading] = useState(true);
   const [loadingMarcas, setLoadingMarcas] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formValidated, setFormValidated] = useState(false);
@@ -56,13 +64,123 @@ export default function ModeloManager() {
   const [formData, setFormData] = useState({ nombre: "", marca_id: "" });
 
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
+
+  const customSelectStyles = useMemo(() => ({
+    control: (base: any, { isDisabled }: any) => ({
+      ...base,
+      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+      borderColor: darkMode ? "#444" : "#ccc",
+      color: darkMode ? "#f8f9fa" : "#212529",
+      minHeight: '48px',
+      opacity: isDisabled ? 0.7 : 1,
+      cursor: isDisabled ? 'not-allowed' : 'default',
+      boxShadow: 'none',
+      ':hover': {
+        borderColor: darkMode ? "#666" : "#adb5bd"
+      }
+    }),
+    menu: (base: any) => ({
+      ...base,
+      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
+      color: darkMode ? "#f8f9fa" : "#212529",
+      zIndex: 9999,
+      marginTop: '2px'
+    }),
+    menuPortal: (base: any) => ({
+      ...base,
+      zIndex: 9999
+    }),
+    input: (base: any) => ({
+      ...base,
+      color: darkMode ? "#f8f9fa" : "#212529",
+    }),
+    singleValue: (base: any) => ({
+      ...base,
+      color: darkMode ? "#f8f9fa" : "#212529",
+    }),
+    placeholder: (base: any) => ({
+      ...base,
+      color: darkMode ? "#bbb" : "#6c757d",
+    }),
+    option: (base: any, { isFocused, isSelected }: any) => ({
+      ...base,
+      backgroundColor: isSelected
+        ? (darkMode ? "#555" : "#d3d3d3")
+        : isFocused
+          ? (darkMode ? "#444" : "#e6e6e6")
+          : "transparent",
+      color: darkMode ? "#f8f9fa" : "#212529",
+      cursor: "pointer",
+      ':active': {
+        backgroundColor: darkMode ? "#666" : "#e9ecef"
+      }
+    }),
+    indicatorsContainer: (base: any) => ({
+      ...base,
+      padding: '0 8px'
+    }),
+    clearIndicator: (base: any) => ({
+      ...base,
+      color: darkMode ? "#aaa" : "#666",
+      ':hover': {
+        color: darkMode ? "#fff" : "#333"
+      }
+    }),
+    dropdownIndicator: (base: any) => ({
+      ...base,
+      color: darkMode ? "#aaa" : "#666",
+      ':hover': {
+        color: darkMode ? "#fff" : "#333"
+      }
+    })
+  }), [darkMode]);
+
+  const searchMarcasForSelect = async (
+    inputValue: string
+  ): Promise<SelectOption[]> => {
+    try {
+      // Solo hacer la petición si hay texto de búsqueda
+      if (inputValue.trim() === "") {
+        return [];
+      }
+
+      const response = await api.get('/marcas', {
+        params: {
+          search: inputValue,
+          limit: 10,
+          fields: 'id,nombre'
+        }
+      });
+
+      // Verificar diferentes estructuras de respuesta
+      let marcasData = [];
+      if (Array.isArray(response.data)) {
+        marcasData = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        marcasData = response.data.data;
+      } else if (response.data && response.data.data && Array.isArray(response.data.data.data)) {
+        marcasData = response.data.data.data;
+      }
+
+      return marcasData.map((marca: Marca) => ({
+        value: marca.nombre,
+        label: marca.nombre,
+        originalId: marca.id
+      }));
+    } catch (error) {
+      console.error("Error buscando marcas:", error);
+      toast.error("Error al cargar marcas");
+      return [];
+    }
+  };
+
 
   const fetchMarcas = async () => {
     setLoadingMarcas(true);
     try {
       const res = await api.get("/mod/marcas");
       const data = res.data;
-      console.log(data);
       if (Array.isArray(data)) {
         setMarcas(data);
       } else {
@@ -132,7 +250,10 @@ export default function ModeloManager() {
   const handleShow = (modelo?: Modelo) => {
     if (modelo) {
       setEditing(modelo);
-      setFormData({ nombre: modelo.nombre, marca_id: String(modelo.marca_id) });
+      setFormData({
+        nombre: modelo.nombre,
+        marca_id: String(modelo.marca_id)
+      });
     } else {
       setEditing(null);
       setFormData({ nombre: "", marca_id: "" });
@@ -202,7 +323,6 @@ export default function ModeloManager() {
       return;
     }
 
-    // Verificar si tiene equipos asociados
     if (modelo.equipos_count && modelo.equipos_count > 0) {
       toast.error(
         `No se puede eliminar "${modelo.nombre}" porque tiene ${modelo.equipos_count} equipo(s) asociado(s)`,
@@ -222,7 +342,6 @@ export default function ModeloManager() {
             <strong>{modelo.nombre}</strong>?
           </p>
           <div className="d-flex justify-content-end gap-2 mt-2">
-            {/* @ts-ignore*/}
             <Button
               variant="danger"
               size="sm"
@@ -284,7 +403,6 @@ export default function ModeloManager() {
         </div>
 
         <div className="d-flex align-items-center gap-2 ms-md-0 ms-auto">
-          {/* @ts-ignore */}
           <Button
             variant="primary"
             className="d-flex align-items-center gap-2"
@@ -499,33 +617,40 @@ export default function ModeloManager() {
 
             <Form.Group controlId="marca">
               <Form.Label>Marca</Form.Label>
-              {loadingMarcas ? (
-                <div className="d-flex align-items-center gap-2">
-                  <Spinner animation="border" size="sm" />
-                  <span>Cargando marcas...</span>
-                </div>
-              ) : (
-                <>
-                  <Form.Select
-                    required
-                    name="marca_id"
-                    value={formData.marca_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, marca_id: e.target.value })
+              <AsyncSelect
+                cacheOptions
+                defaultOptions={[]} // No cargar opciones por defecto
+                loadOptions={searchMarcasForSelect}
+                value={
+                  formData.marca_id
+                    ? {
+                      value: marcas.find(m => m.id === Number(formData.marca_id))?.nombre || '',
+                      label: marcas.find(m => m.id === Number(formData.marca_id))?.nombre || '',
+                      originalId: Number(formData.marca_id)
                     }
-                    isInvalid={formValidated && formData.marca_id === ""}
-                  >
-                    <option value="">Seleccionar marca</option>
-                    {marcas.map((marca) => (
-                      <option key={marca.id} value={marca.id}>
-                        {marca.nombre}
-                      </option>
-                    ))}
-                  </Form.Select>
-                  <Form.Control.Feedback type="invalid">
-                    Selecciona una marca.
-                  </Form.Control.Feedback>
-                </>
+                    : null
+                }
+                onChange={(selected: SelectOption | null) => {
+                  setFormData({
+                    ...formData,
+                    marca_id: selected ? String(selected.originalId) : ""
+                  });
+                }}
+                placeholder="Buscar marca..."
+                noOptionsMessage={({ inputValue }) =>
+                  inputValue ? "No se encontraron marcas" : "Escribe para buscar..."
+                }
+                loadingMessage={() => "Buscando marcas..."}
+                styles={customSelectStyles}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
+                isClearable
+                required
+              />
+              {formValidated && formData.marca_id === "" && (
+                <div className="invalid-feedback d-block">
+                  Selecciona una marca.
+                </div>
               )}
             </Form.Group>
           </Form>

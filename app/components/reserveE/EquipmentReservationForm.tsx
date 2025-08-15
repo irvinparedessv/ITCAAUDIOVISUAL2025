@@ -10,7 +10,9 @@ import EquiposSelect from "./Equipos";
 import UbicacionSelect from "./Ubication";
 import FormActions from "./FormAction";
 import { Role } from "~/types/roles";
-import useReservationFormLogic from "./hooks/useReservationFormLogic";
+import useReservationFormLogic, {
+  type UserOption,
+} from "./hooks/useReservationFormLogic";
 import { useAuth } from "~/hooks/AuthContext";
 import "./style/reserva.css";
 import { useParams } from "react-router-dom";
@@ -27,6 +29,7 @@ export default function EquipmentReservationForm() {
   const [reservaNotFound, setReservaNotFound] = useState(false);
   const { id } = useParams(); // `id` será undefined si es creación
   const isEditing = !!id;
+  type PrestamistaOption = { label: string; value: string };
 
   const {
     formData,
@@ -60,6 +63,12 @@ export default function EquipmentReservationForm() {
       try {
         const { data } = await api.get(`/detail/${id}`);
         console.log(data);
+        const prestamistaOpt = {
+          label: data.usuario.name ?? `Usuario #${data.usuario.id}`,
+          value: data.usuario.id,
+        };
+
+        setSelectedPrestamista(prestamistaOpt);
         setFormData({
           date: data.fecha_reserva,
           startTime: data.start_time,
@@ -68,6 +77,7 @@ export default function EquipmentReservationForm() {
             label: data.tipo_reserva.nombre,
             value: data.tipo_reserva.id.toString(),
           },
+          user_id: data.usuario.id,
           aula: {
             label: data.aula.name,
             value: data.aula.id.toString(),
@@ -139,13 +149,13 @@ export default function EquipmentReservationForm() {
         />
         {(user?.role === Role.Administrador ||
           user?.role === Role.Encargado) && (
-            <PrestamistaSelect
-              isDateTimeComplete={isDateTimeComplete}
-              selectedPrestamista={selectedPrestamista}
-              setSelectedPrestamista={setSelectedPrestamista}
-              prestamistaOptions={prestamistaOptions}
-            />
-          )}
+          <PrestamistaSelect
+            isDateTimeComplete={isDateTimeComplete}
+            selectedPrestamista={selectedPrestamista}
+            setSelectedPrestamista={setSelectedPrestamista}
+            prestamistaOptions={prestamistaOptions}
+          />
+        )}
         <TipoReservaSelect
           formData={formData}
           setFormData={setFormData}

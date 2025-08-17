@@ -444,7 +444,7 @@ export default function ReservationDetail() {
                 className="mx-2"
                 onClick={() => handleAbrirModal("Aprobar")}
               >
-                Actualizar Estadoss
+                Actualizar Estados
               </Button>
             </div>
           ) : (

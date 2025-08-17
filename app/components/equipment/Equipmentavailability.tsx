@@ -8,6 +8,7 @@ import { formatTo12h, timeOptions } from "~/utils/time";
 import { FaEye, FaLongArrowAltLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import PaginationComponent from "~/utils/Pagination";
+import { APIURL } from "~/constants/constant";
 
 export default function EquipmentAvailabilityList() {
   interface Equipo {
@@ -77,10 +78,16 @@ export default function EquipmentAvailabilityList() {
     normal: string | null,
     name: string
   ) => {
+    console.log(APIURL + glb);
+    console.log(APIURL + normal);
     if (glb) {
-      setSelectedEquipment({ imageUrl: glb, name, isGLB: true });
+      setSelectedEquipment({ imageUrl: APIURL + "/" + glb, name, isGLB: true });
     } else if (normal) {
-      setSelectedEquipment({ imageUrl: normal, name, isGLB: false });
+      setSelectedEquipment({
+        imageUrl: APIURL + "/" + normal,
+        name,
+        isGLB: false,
+      });
     }
     setShowImageModal(true);
   };
